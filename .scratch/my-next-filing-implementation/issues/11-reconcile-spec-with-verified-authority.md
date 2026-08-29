@@ -24,7 +24,7 @@ The specification now:
 - records the 29 August 2026 review status of every initial tutorial candidate;
 - defers a return tutorial until a suitable Tax Year 2026-27 source exists;
 - updates the fictional example to ₹19,10,000 GST aggregate turnover and ₹90,000 below the Maharashtra threshold; and
-- adds test expectations for exact-threshold, Unavailable, and bank-interest double-counting behavior.
+- adds expectations for exact-threshold, Unavailable, and bank-interest double-counting behavior.
 
 Consistency checks found 158 sequential user stories, only HTTPS source references, and no remaining stale source URL or replaced GST term.
 
@@ -36,4 +36,4 @@ Consistency checks found 158 sequential user stories, only HTTPS source referenc
 - Income-tax section 516 supplies the retained nearest-₹10 rounding rule. Source: the same amended Act.
 - CGST section 2(6) defines aggregate turnover and section 22 applies turnover-based registration when turnover exceeds the threshold. Source: [Central Goods and Services Tax Act, 2017, consolidated as on 11 June 2026](https://www.indiacode.nic.in/indiacode/bitstream/123456789/15689/1/A2017-12.pdf), Act dated 12 April 2017.
 
-No application code or Rule dataset existed for these behaviors, so this task changed the authoritative specification and its required test cases only.
+No application code or Rule dataset existed for these behaviors, so this task changed the authoritative specification only.

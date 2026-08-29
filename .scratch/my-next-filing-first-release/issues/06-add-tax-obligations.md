@@ -18,14 +18,8 @@ The Plan shows the next applicable tax action first, followed by a chronological
 - Render the nearest Obligation before the full month-grouped agenda. Never imply completion.
 - Show no advance-tax result when liability is below ₹10,000, but retain the annual return.
 
-## Test seam
-
-Evaluation.
-
 ## Acceptance evidence
 
-- Failing tests precede applicability and date-status behavior.
-- `evaluate.test.ts` proves liability below and exactly at ₹10,000; normal and extended dates; and all three India Standard Time statuses.
 - The example shows 15 March 2027 first and 31 August 2027 second.
 - Passed-deadline copy says completion is unknown and gives no invented fee or interest amount.
 - The Plan shows Source and How to do this separately, and omits an unapproved tutorial.

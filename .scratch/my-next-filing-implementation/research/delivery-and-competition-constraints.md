@@ -95,11 +95,11 @@ Judging covers the problem, the working build, usability and accessibility, prod
 | Topic | Finding | Plan consequence |
 | --- | --- | --- |
 | React, Vite, Workers Static Assets, no Worker script | Aligned with current Cloudflare support. | Keep the stack. Omit `main` and the assets binding. |
-| SPA fallback and application not-found state | Compatible, with one qualification: Cloudflare returns `index.html` and HTTP 200 for an unmatched asset path. | Test the client not-found view. Do not claim an HTTP 404. Add server code only if an HTTP 404 becomes a requirement. |
+| SPA fallback and application not-found state | Compatible, with one qualification: Cloudflare returns `index.html` and HTTP 200 for an unmatched asset path. | Verify the client not-found view. Do not claim an HTTP 404. Add server code only if an HTTP 404 becomes a requirement. |
 | Preview builds | Intent is aligned, but the spec does not name the non-production build toggle, preview deploy command, or explicit preview URL setting. | Add them to infrastructure setup and release evidence. |
 | Protected `main` | Aligned, but Cloudflare only selects a production branch. | Configure protection in GitHub or GitLab. |
 | Canonical domain, `www`, and HTTPS | Aligned, but a Custom Domain alone covers only the exact root hostname. | Add the `www` proxied DNS record, Redirect Rule, and HTTPS redirect setting. |
-| Production-only Analytics | Intent is aligned, but the enforcement mechanism is unspecified. | Separate the production and preview trigger variables and test network behavior on both deployments. |
+| Production-only Analytics | Intent is aligned, but the enforcement mechanism is unspecified. | Separate the production and preview trigger variables and verify network behavior on both deployments. |
 | Synthetic data, no live government integration, no endorsement, meaningful Codex contribution, and working demo controls | Aligned. | Preserve these as demo acceptance checks. |
 | Competition submission | Material omission. The spec does not record the deadline, public video, summary limit, or team submission fields. | Add a submission checklist owned outside the application build. |
 | Permission and tool disclosure | Partly covered by repository licensing, but the competition also requires permission for all submitted assets and disclosure of tools and libraries. | Audit assets and prepare a concise dependency and Codex-contribution disclosure. |

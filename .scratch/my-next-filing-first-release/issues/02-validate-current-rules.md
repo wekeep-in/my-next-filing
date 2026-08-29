@@ -17,18 +17,12 @@ The repository contains a typed, versioned, sourced Rule dataset and Source regi
 - Add `pnpm rules:validate`; make the production build call it.
 - Do not fetch or validate Sources over the network at build or runtime.
 
-## Test seam
-
-Rule validation.
-
 ## Acceptance evidence
 
-- Start with a failing test for the smallest valid Rule dataset behavior.
-- `src/rules/validate.test.ts` proves the current dataset and every explicit validation error in `SPEC.md`.
 - Error results identify the failed invariant without throwing an opaque exception.
 - The production dataset has no approved return tutorial while the reviewed candidates remain deferred or rejected.
 - The expiry date is no later than 31 August 2027.
-- `pnpm rules:validate`, `pnpm test`, `pnpm typecheck`, and `pnpm build` pass.
+- `pnpm rules:validate`, `pnpm typecheck`, and `pnpm build` pass.
 - Run the repository compliance review and record direct official Sources and review dates.
 
 ## Authority

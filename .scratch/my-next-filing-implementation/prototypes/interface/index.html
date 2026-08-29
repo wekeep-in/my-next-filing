@@ -391,20 +391,6 @@
         font-size: 12px;
       }
 
-      .saved {
-        display: inline-flex;
-        gap: 7px;
-        align-items: center;
-      }
-
-      .saved::before {
-        width: 7px;
-        height: 7px;
-        content: "";
-        background: var(--orange);
-        border-radius: 50%;
-      }
-
       .progress-line {
         height: 4px;
         margin: 18px 0 38px;
@@ -1461,15 +1447,12 @@
         <option value="disclaimer">Disclaimer</option>
         <option value="notfound">Not found</option>
       </select>
-      <label class="sr-only" for="state-select">Result or storage state</label>
+      <label class="sr-only" for="state-select">Result state</label>
       <select id="state-select">
         <option value="supported">Supported</option>
         <option value="unsupported">Unsupported</option>
         <option value="stale">Stale rules</option>
-        <option value="empty">No saved profile</option>
-        <option value="corrupt">Corrupt saved data</option>
-        <option value="storage">Storage unavailable</option>
-        <option value="saved">Saved profile</option>
+        <option value="empty">No current profile</option>
       </select>
     </div>
 
@@ -1495,9 +1478,6 @@
         "unsupported",
         "stale",
         "empty",
-        "corrupt",
-        "storage",
-        "saved",
       ]);
 
       const groups = [
@@ -1589,11 +1569,11 @@
       }
 
       function sidebar(active, group, includeSteps = false) {
-        return `<aside class="sidebar">${brand()}${sideNavigation(active)}${includeSteps ? stepNavigation(group) : ""}<div class="side-footer"><button data-screen="privacy">Privacy</button><button data-screen="disclaimer">Product limits</button><button>Delete saved answers</button></div></aside>`;
+        return `<aside class="sidebar">${brand()}${sideNavigation(active)}${includeSteps ? stepNavigation(group) : ""}<div class="side-footer"><button data-screen="privacy">Privacy</button><button data-screen="disclaimer">Product limits</button></div></aside>`;
       }
 
-      function topMeta(state) {
-        return `<div class="top-meta"><span>Income earned 1 Apr 2026 to 31 Mar 2027</span><span class="saved">${state === "storage" ? "Not saved" : "Saved in this browser"}</span></div>`;
+      function topMeta() {
+        return `<div class="top-meta"><span>Income earned 1 Apr 2026 to 31 Mar 2027</span></div>`;
       }
 
       function moneyField(id, label, value, help) {
@@ -1617,19 +1597,12 @@
         return content[group];
       }
 
-      function stateNotice(state) {
-        if (state === "storage") return '<div class="notice"><strong>Not saved</strong><span>Your browser blocked storage. You can finish this check, but your answers will disappear after refresh.</span></div>';
-        if (state === "saved") return '<div class="notice"><strong>Saved locally</strong><span>Last changed 29 August 2026 at 1:42 AM. No account is connected.</span></div>';
-        if (state === "corrupt") return '<div class="notice"><strong>Saved answers need a reset</strong><span>We could not read this browser\'s saved profile. Reset it to start a clean check.</span></div>';
-        return "";
-      }
-
       function formContent(group, state, centered = false) {
         const index = groups.findIndex(([key]) => key === group);
         const [, title, summary] = groups[index];
         const previous = groups[Math.max(0, index - 1)][0];
         const next = groups[Math.min(groups.length - 1, index + 1)][0];
-        return `${stateNotice(state)}<section class="page-title" ${centered ? 'style="text-align:center"' : ""}><p class="kicker">Group ${index + 1} of 7 · ${summary}</p><h1>${title}</h1><p>${group === "about" ? "Confirm the supported profile together before entering amounts." : "Check the answer, then continue. Nothing is sent to a server."}</p></section><div class="progress-line" style="--progress:${((index + 1) / groups.length) * 100}%"><span></span></div><form class="field-stack">${groupContent(group)}<div class="form-actions"><button type="button" class="secondary pressable" data-group="${previous}">Back</button><button type="button" class="primary pressable" ${index === groups.length - 1 ? 'data-screen="plan"' : `data-group="${next}"`}>${index === groups.length - 1 ? "Calculate plan" : "Continue"}</button></div></form>`;
+        return `<section class="page-title" ${centered ? 'style="text-align:center"' : ""}><p class="kicker">Group ${index + 1} of 7 · ${summary}</p><h1>${title}</h1><p>${group === "about" ? "Confirm the supported profile together before entering amounts." : "Check the answer, then continue. Nothing is sent to a server."}</p></section><div class="progress-line" style="--progress:${((index + 1) / groups.length) * 100}%"><span></span></div><form class="field-stack">${groupContent(group)}<div class="form-actions"><button type="button" class="secondary pressable" data-group="${previous}">Back</button><button type="button" class="primary pressable" ${index === groups.length - 1 ? 'data-screen="plan"' : `data-group="${next}"`}>${index === groups.length - 1 ? "Calculate plan" : "Continue"}</button></div></form>`;
       }
 
       function planStop(state) {
@@ -1637,7 +1610,6 @@
           unsupported: ["!", "This version cannot calculate a reliable plan for this answer.", "You selected foreign clients. Export-of-service and GST place-of-supply rules sit outside this release. Your other answers remain editable.", "Change this answer", "check"],
           stale: ["↻", "The rules need a new review.", "The dataset expired, so calculation controls stay disabled. Official source links remain available.", "Open official sources", "sources"],
           empty: ["→", "Check your answers before opening a plan.", "No profile exists in this browser. Start the questionnaire or load the fictional example.", "Check my dates", "check"],
-          corrupt: ["×", "Your saved answers could not be read.", "Reset the local copy to continue. No government account is connected.", "Reset saved answers", "check"],
         };
         const item = states[state];
         if (!item) return null;
@@ -1658,9 +1630,9 @@
         const copy = {
           methodology: ["How this estimate works", "The application applies a versioned local rule dataset to your declared profile and the current date in India Standard Time.", "Calculation stages", "Professional income uses the higher of half of gross receipts or higher expected profit. Total income is rounded before slab tax. Credits are subtracted after cess."],
           sources: ["Sources and review dates", "Statutory sources establish the rule. Tutorials explain an external task and never become legal authority.", "Income tax", "Income-tax Act, 2025 as amended by Finance Act, 2026. Reviewed 29 August 2026."],
-          privacy: ["Privacy", "Your profile stays in this browser. The application has no account, backend, database, or government connection.", "Analytics", "Production Analytics loads only after opt-in and receives sanitized page names, never questionnaire answers, money, or results."],
+          privacy: ["Privacy", "Questionnaire answers and calculations stay only in memory while this page is open. The application has no account, backend, database, or government connection.", "Analytics", "Production Analytics loads only after opt-in and receives sanitized page names, never questionnaire answers, money, or results."],
           disclaimer: ["Product limits", "My Next Filing gives general information and a best-effort estimate for one narrow profile and period.", "Your responsibility", "Rules, forms, portal behavior, and extensions can change. Verify filing and payment decisions."],
-          notfound: ["This page does not exist", "The address does not match a page in My Next Filing.", "Start again", "Return home. Your locally saved answers remain in this browser."],
+          notfound: ["This page does not exist", "The address does not match a page in My Next Filing.", "Start again", "Return home to begin a new check."],
         }[screen];
         return `<div class="reference-layout"><article class="reference-copy"><p class="kicker">Reference</p><h1>${copy[0]}</h1><p>${copy[1]}</p><h2>${copy[2]}</h2><p>${copy[3]}</p><button class="text-link pressable" data-screen="landing">Return home</button></article><aside class="reference-aside"><strong>Reviewed</strong><span>29 August 2026</span><strong style="margin-top:20px">Applies to</strong><span>Income earned from 1 April 2026 to 31 March 2027</span></aside></div>`;
       }

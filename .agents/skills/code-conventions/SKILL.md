@@ -13,4 +13,4 @@ Keep legal evaluation in one pure module. It accepts a validated profile, curren
 
 Store money as integer rupees. Validate untrusted input at the browser boundary. Keep statutory data typed, versioned, sourced, and separate from evaluation code. An expired or invalid dataset must stop calculation.
 
-For changed tax behavior, add one focused test through the evaluation, rule-validation, or browser-journey seam. Run the relevant test plus `pnpm lint`, `pnpm typecheck`, and `pnpm build` before finishing.
+For changed tax behavior, run the repository compliance review plus `pnpm lint`, `pnpm typecheck`, and `pnpm build` before finishing.

@@ -15,7 +15,7 @@ Deadline: 29 August 2026 at 10:00 PM IST, with no grace period.
 | Registered submission owner | Unknown | Human must confirm registration and the email used. Do not record the email in this public-planning artifact. |
 | Solo or two-person team | Unknown | Human must confirm. A partner must have registered separately. |
 | Public browser URL with no approval request | Blocked | `mynextfiling.com` does not resolve. No Cloudflare or `wrangler.jsonc` setup exists. |
-| Working citizen journey | Blocked | `src/App.tsx` is a setup placeholder. Questionnaire, Evaluation, Rule dataset, result states, saved Profile, and synthetic example are absent. |
+| Working citizen journey | Blocked | `src/App.tsx` is a setup placeholder. Questionnaire, Evaluation, Rule dataset, result states, in-memory Profile flow, and synthetic example are absent. |
 | Static production build | Partial | A `dist` directory exists, but it contains the placeholder application and is not a submission candidate. |
 | Public video, at most two minutes | Missing | No video artifact or link exists. Record only after the submitted build is stable. |
 | Project summary under 250 words | Draft below | Finalize only after the build matches the claims. |
@@ -33,7 +33,7 @@ This is a deadline sequence, not authorization to deploy or submit.
 1. Implement one complete synthetic journey: landing, example entry, Profile review, Evaluation, supported Plan, and declared external links.
 2. Include the strict stop states that affect honesty: unsupported Profile and stale Rules. Leave unfinished routes or controls out of the video.
 3. Build static assets and deploy a public no-approval preview with Analytics disabled.
-4. Test the submitted journey on a phone-sized viewport and a private browser window. Confirm every shown control works.
+4. Check the submitted journey on a phone-sized viewport and in a private browser window. Confirm every shown control works.
 5. Freeze the build used for the video. Record a public video no longer than two minutes.
 6. Finalize the summary and Codex disclosure against that exact build.
 7. Check the public URL, video URL, registered email, partner field, permissions, and disclosure immediately before the human submits.

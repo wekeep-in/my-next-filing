@@ -6,7 +6,7 @@ Blocked by: none
 
 ## Question
 
-Using a rough responsive prototype and live human review, what exact layout, spacing, card composition, visual tokens, questionnaire composition, result hierarchy, source presentation, accessibility behavior, and motion treatment should the first release use across its required routes and supported, unsupported, stale, empty, error, and saved-data states? Preserve every design constraint and required copy in `SPEC.md`.
+Using a rough responsive prototype and live human review, what exact layout, spacing, card composition, visual tokens, questionnaire composition, result hierarchy, source presentation, accessibility behavior, and motion treatment should the first release use across its required routes and supported, unsupported, stale, empty, and error states? Preserve every design constraint and required copy in `SPEC.md`.
 
 ## Assets
 
@@ -21,7 +21,7 @@ Using a rough responsive prototype and live human review, what exact layout, spa
 
 ## Answer
 
-Use the prototype's **Focused flow** direction. The landing page uses the simple centered Wise-style hierarchy; the questionnaire removes application navigation and keeps one group in a centered working column with four-stage progress; the result keeps the same focused shell and places the next deadline before calculation detail. The prototype covers the required reference, unsupported, stale, empty, corrupt-data, storage, and saved-profile states and works at 320 CSS pixels.
+Use the prototype's **Focused flow** direction. The landing page uses the simple centered Wise-style hierarchy; the questionnaire removes application navigation and keeps one group in a centered working column with four-stage progress; the result keeps the same focused shell and places the next deadline before calculation detail. The prototype covers the required reference, unsupported, stale, empty, and error states and works at 320 CSS pixels.
 
 Use Substack's orange `#ff6719`, hover orange `#ff5600`, white, and neutral gray tokens. Use `#111111` for the darker primary ink requested in review. Set interface typography from a 16-pixel base on a 1.2 minor-third scale, with the landing display capped at 82.56 pixels. Use sentence-case labels in normal flow; do not repeat tracked uppercase eyebrow labels.
 

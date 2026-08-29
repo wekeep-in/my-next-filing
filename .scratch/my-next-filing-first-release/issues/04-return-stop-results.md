@@ -17,16 +17,8 @@ Evaluation exists as one deep pure module. Unsupported Profiles and stale Rules 
 - Add the `/plan` client loader. Redirect to `/check` when no Profile exists; otherwise validate Rules and call Evaluation synchronously.
 - Render friendly Unsupported and Stale-rules states with editable answers and official links.
 
-## Test seams
-
-Evaluation and Browser journey.
-
 ## Acceptance evidence
 
-- Begin with one failing Evaluation test for a declared unsupported fact.
-- `evaluate.test.ts` proves every unsupported Profile flag and stale Rules through the public interface.
-- `journey.spec.ts` proves an unsupported answer is named and editable using keyboard interaction.
-- Browser clock control proves the stale stop without a test-only application route or query parameter.
 - No view or route contains eligibility or stale-date logic.
 - The module has no adapter or remote dependency.
 

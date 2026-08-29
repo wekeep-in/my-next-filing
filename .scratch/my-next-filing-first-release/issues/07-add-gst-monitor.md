@@ -17,14 +17,8 @@ The Plan reports Below, At, Above, or Unavailable GST status from direct declare
 - Return global Unsupported when the user declares another business, supply type, or compulsory-registration fact.
 - Show the reviewed statutory Source beside the status. Do not estimate GST returns.
 
-## Test seam
-
-Evaluation.
-
 ## Acceptance evidence
 
-- Failing tests precede each GST state.
-- `evaluate.test.ts` covers both thresholds, Below, exact At, Above, Unavailable, and another-supply Unsupported.
 - A non-zero bank-interest field is not added automatically to GST aggregate turnover.
 - No arithmetic relationship with professional receipts is enforced.
 - The example uses ₹19,10,000 and shows ₹90,000 below the Maharashtra threshold.

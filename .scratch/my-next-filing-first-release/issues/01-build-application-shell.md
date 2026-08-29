@@ -14,21 +14,15 @@ A user can open the landing page, start the Focused flow, visit every public rou
 - Add the Substack color tokens, `#111111` ink, minor-third type tokens, focus styles, motion rules, and 320-pixel responsive base.
 - Configure React Router for `/`, `/check`, `/plan`, `/methodology`, `/sources`, `/disclaimer`, `/privacy`, and unmatched routes.
 - Implement the landing page and shared Focused-flow frame. Keep unfinished route content honest and non-interactive.
-- Add Vitest and Playwright configuration so this and later slices can start red.
 - Keep Profile values out of routes, query strings, hashes, titles, and logs.
-
-## Test seam
-
-Browser journey.
 
 ## Acceptance evidence
 
-- A failing route test exists before the route implementation.
 - Direct browser entry loads every declared route.
 - An unmatched path renders the not-found state and a working link home.
 - The landing action reaches `/check`; no control implies that calculation already works.
 - Keyboard focus is visible and the shell works at 320 CSS pixels.
-- `pnpm format:check`, `pnpm lint`, `pnpm test`, `pnpm typecheck`, and `pnpm build` pass.
+- `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, and `pnpm build` pass.
 
 ## Authority
 

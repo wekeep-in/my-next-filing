@@ -16,10 +16,6 @@ Users can inspect how the estimate works, the reviewed Source registry, product 
 - Open external links in a new tab with safe `rel` attributes.
 - Do not prefetch external tutorials or append Profile, query, hash, or result data.
 
-## Test seams
-
-Rule validation and Browser journey.
-
 ## Acceptance evidence
 
 - Rule validation rejects a missing Statutory source and an unapproved Tutorial publisher.

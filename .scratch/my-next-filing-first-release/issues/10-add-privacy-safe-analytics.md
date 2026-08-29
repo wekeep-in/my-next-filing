@@ -17,18 +17,14 @@ The Application can collect sanitized production page views only after opt-in co
 - Keep local and preview configuration disabled. Do not enable production Analytics until the release-gate ticket records qualified approval.
 - Configure no User-ID, user properties, enhanced measurement, Google signals, advertising, product links, custom events, or data exports.
 
-## Test seam
-
-Browser journey.
-
 ## Acceptance evidence
 
 - A fresh page before choice sends no Google request and sets no Analytics cookie.
 - Reject and reload send nothing when storage works.
 - Allow sends only one sanitized page view with fixed route name, title, and canonical allowlisted path.
 - Query strings, hashes, unmatched paths, Profile facts, money, results, validation errors, and unsupported reasons never appear in Analytics data.
-- Withdrawal stops later events without changing or deleting the saved Profile.
-- Blocking Google hosts leaves every route, Evaluation result, and deletion behavior unchanged.
+- Withdrawal stops later events without changing the current Profile.
+- Blocking Google hosts leaves every route, Evaluation result, and navigation behavior unchanged.
 
 ## Authority
 

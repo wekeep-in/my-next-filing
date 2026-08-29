@@ -10,7 +10,7 @@ Please review the proposed Google Analytics and privacy posture for the public M
 
 - Public static website at `mynextfiling.com`, focused on users in India.
 - No account, login, backend, database, server function, government connection, or cloud Profile storage.
-- Questionnaire answers and money amounts stay in browser storage or current-page memory.
+- Questionnaire answers and money amounts stay only in current-page memory and clear on refresh or close.
 - The Application does not collect a name, PAN, Aadhaar number, GSTIN, email address, phone number, bank account, password, or OTP.
 - The supported audience is a resident individual providing IT or software consulting. The site is intended for adults but is publicly accessible.
 - Google Analytics is the only proposed third-party data collection.
@@ -27,7 +27,7 @@ Please review the proposed Google Analytics and privacy posture for the public M
 - Enhanced measurement, Google signals, advertising features, product links, User-ID, user-provided data, custom dimensions, Measurement Protocol, and BigQuery export off.
 - Session Analytics cookies with `cookie_expires: 0` and `cookie_update: false`.
 - GA4 user and event retention set to 14 months with reset on new activity off.
-- Withdrawal stops future events, denies all consent types, and removes first-party Analytics cookies where possible. It does not alter saved questionnaire data.
+- Withdrawal stops future events, denies all consent types, and removes first-party Analytics cookies where possible. It does not alter the current questionnaire.
 - `Analytics choices` remains available from the persistent footer.
 - If counsel cannot close the child-processing question, Analytics stays disabled on and after 13 May 2027.
 

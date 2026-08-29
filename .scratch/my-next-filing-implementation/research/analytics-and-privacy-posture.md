@@ -8,7 +8,7 @@ This is implementation research, not legal advice. Formal privacy text and the u
 
 ## Decision
 
-Use a production-only GA4 property through `gtag.js`. Collect only sanitized page views after an adult visitor gives a clear affirmative choice. Use basic consent mode: do not load the Google tag and do not send cookieless pings before consent. A rejection or withdrawal sends nothing further to Google and has no effect on the questionnaire, calculation, saved profile, or result.
+Use a production-only GA4 property through `gtag.js`. Collect only sanitized page views after an adult visitor gives a clear affirmative choice. Use basic consent mode: do not load the Google tag and do not send cookieless pings before consent. A rejection or withdrawal sends nothing further to Google and has no effect on the questionnaire, calculation, current Profile, or result.
 
 Keep the integration deliberately small:
 
@@ -64,7 +64,7 @@ The panel should say, in substance:
 
 > We use Google Analytics to count visits and page views. If you allow it, Google receives a random browser identifier, the page path and title, approximate location, and browser and device information. We never send your answers, amounts, or results. Your choice does not change how the application works.
 
-Link `Privacy details` to `/privacy`. Save only the choice, policy version, and decision time in browser storage. Keep that record separate from the saved questionnaire. A blocked-storage browser may keep the choice in memory for the current page; on a later visit, ask again rather than assume consent.
+Link `Privacy details` to `/privacy`. Save only the choice, policy version, and decision time in browser storage. Questionnaire answers and calculations are never stored there. A blocked-storage browser may keep the choice in memory for the current page; on a later visit, ask again rather than assume consent.
 
 Put `Analytics choices` in the persistent footer. Withdrawal must immediately stop future events, deny every consent type, remove the first-party `_ga` and property cookie where possible, and leave the application state untouched. Explain that withdrawal does not retroactively erase data already processed. The privacy page must give a monitored contact route for access, erasure, and grievance requests. Google supports deletion by effective user ID in User Explorer, but mapping a no-account visitor to a pseudonymous client ID is an operational problem that counsel must review. [Google User Explorer deletion controls](https://support.google.com/analytics/answer/9283607?hl=en)
 
@@ -97,7 +97,7 @@ Google's default cookies last two years and distinguish users and sessions. That
 The reviewed `/privacy` page must state:
 
 1. Who operates the site and a monitored business contact for privacy requests.
-2. Questionnaire answers stay in the visitor's browser, what fields are saved, and how `Delete my saved answers` works.
+2. Questionnaire answers and calculations stay only in current-page memory and clear on refresh or close.
 3. Google Analytics runs only in production and only after permission.
 4. The exact Analytics data categories, page-measurement purpose, Google as recipient or processor, first-party cookie names and session lifetime, 14-month user and event retention, and the possible persistence of non-user-level aggregate reports.
 5. No profile, answer, money, tax result, GST result, name, or application user identifier goes to Analytics.
@@ -127,8 +127,8 @@ Before release, record one browser-network check that proves all of the followin
 - Local and preview builds contain no measurement ID, load no Google tag, and send no Analytics request.
 - A fresh production visit before choice sends no Google request and sets no `_ga` cookie.
 - Reject sends no request. Reloading preserves the rejection when browser storage works.
-- Allow sends only a sanitized `page_view`. Tests with money, rupee symbols, unsupported answers, result values, query strings, hashes, and arbitrary unmatched paths show none of those values in request URLs or payloads.
+- Allow sends only a sanitized `page_view`. Network checks with money, rupee symbols, unsupported answers, result values, query strings, hashes, and arbitrary unmatched paths show none of those values in request URLs or payloads.
 - Route changes send fixed route names and titles only. Form interaction and outbound source clicks send no events.
-- Withdrawal stops later events and removes Analytics cookies without deleting or changing the saved questionnaire.
-- Blocking `googletagmanager.com` and `google-analytics.com` does not change any route, validation, evaluation, result, or deletion behavior.
+- Withdrawal stops later events and removes Analytics cookies without changing the current questionnaire.
+- Blocking `googletagmanager.com` and `google-analytics.com` does not change any route, validation, evaluation, result, or navigation behavior.
 - The GA property settings match the baseline above, because most of them live outside source control.

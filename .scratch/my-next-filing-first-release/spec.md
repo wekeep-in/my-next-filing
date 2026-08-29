@@ -46,7 +46,7 @@ src/
   rules/index.ts        # validation, current Rules, Source registry, Rules-owned types
   components/ui/        # official shadcn components
   app.tsx
-  saved-profile.ts
+  current-check.ts
   analytics.ts
 ```
 
@@ -58,7 +58,7 @@ Evaluation accepts a validated Profile, current `Date`, and validated Rule datas
 
 Rules exports the current typed Rule dataset, read-only Source registry, Rule-owned types, and `validateRuleDataset(unknown)`. Author production Rules and Sources as TypeScript objects with `satisfies`. Runtime validation still checks identities, versions, dates, expiry, provenance, rates, thresholds, HTTPS Sources, duplicates, and tutorial approval.
 
-`saved-profile.ts` owns browser storage, schema versioning, update time, corrupt-data detection, deletion, and the in-memory fallback. Questionnaire state remains route-local. `/plan` uses a client-side React Router loader to load the Profile, validate Rules, pass the current date into Evaluation, and redirect to `/check` when no Profile exists.
+`current-check.ts` holds the active Profile only in memory while the page remains open. Questionnaire state remains route-local. `/plan` uses a client-side React Router loader to load the current Profile, validate Rules, pass the current date into Evaluation, and redirect to `/check` when no complete Profile exists.
 
 `analytics.ts` accepts only an allowlisted route identity. It never accepts Profile or Evaluation data.
 
@@ -69,30 +69,6 @@ Collect one direct **GST aggregate turnover for this PAN** amount and one explic
 When complete, compare with the location threshold using `<`, `=`, and `>` for Below, At, and Above. At remains supported. Above keeps the income-tax result and marks GST coverage incomplete. Cannot confirm produces GST Unavailable, keeps the income-tax result, and marks GST coverage incomplete. Another business or supply type remains globally Unsupported.
 
 The synthetic example declares ₹19,10,000 GST aggregate turnover and shows ₹90,000 below Maharashtra's ₹20 lakh starting threshold.
-
-## Testing and evidence
-
-Add only `vitest` and `@playwright/test`.
-
-```text
-src/evaluation/evaluate.test.ts
-src/rules/validate.test.ts
-e2e/journey.spec.ts
-```
-
-Tests cross only Evaluation, Rule validation, or Browser journey. Expected statutory values are independent literals with Source context. Do not add coverage targets, snapshots, internal mocks, private-function tests, call-order assertions, React Testing Library, jsdom, an accessibility package, or visual-regression tooling.
-
-Every behavior slice follows red, green, then structure review. The final browser file contains focused cases for the fictional example, unsupported and editable Profile, stale Rules through browser clock control, saved Profile restoration, corrupt saved data, and unavailable storage.
-
-Every merge runs:
-
-1. `pnpm format:check`
-2. `pnpm lint`
-3. `pnpm test`
-4. `pnpm test:e2e`
-5. `pnpm build`
-
-`pnpm build` runs Rule validation, TypeScript, and Vite. Playwright runs Chromium with zero retries and keeps trace or screenshot output only on failure.
 
 ## Delivery and release
 
@@ -114,7 +90,7 @@ Check in `docs/release-checklist.md`. Complete it in the production release pull
 
 1. [Build the application shell and route frame](issues/01-build-application-shell.md)
 2. [Validate and publish the current Rule dataset](issues/02-validate-current-rules.md)
-3. [Capture and preserve a Profile](issues/03-capture-and-save-profile.md)
+3. [Capture a Profile in memory](issues/03-capture-profile.md)
 4. [Return Unsupported and Stale-rules results](issues/04-return-stop-results.md)
 5. [Calculate the supported income-tax estimate](issues/05-calculate-income-tax.md)
 6. [Add advance-tax and return Obligations](issues/06-add-tax-obligations.md)
@@ -127,4 +103,4 @@ Check in `docs/release-checklist.md`. Complete it in the production release pull
 
 ## First-release completion
 
-The release is complete only when every implementation ticket is resolved, `SPEC.md` behavior is present, all automated checks pass, the manual release checklist is complete, statutory Sources are re-verified, and qualified privacy review permits the production Analytics posture. A preview or partial journey is not the first release.
+The release is complete only when every implementation ticket is resolved, `SPEC.md` behavior is present, formatting, lint, type checking, Rule validation, and the production build pass, the manual release checklist is complete, statutory Sources are re-verified, and qualified privacy review permits the production Analytics posture. A preview or partial journey is not the first release.

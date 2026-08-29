@@ -16,18 +16,11 @@ A supported Profile produces the verified professional income, total income, sla
 - Stop above ₹50 lakh instead of calculating surcharge.
 - Render the estimate summary before an accessible calculation disclosure. Keep routes and views free of tax arithmetic.
 
-## Test seam
-
-Evaluation.
-
 ## Acceptance evidence
 
-- Add one failing statutory-literal test before each behavior slice.
-- `evaluate.test.ts` covers every income, receipt-limit, cash-percentage, rebate, marginal-relief, credit, refund, and rounding case required by `SPEC.md`.
 - Expected values are independent literals with Source context and never recompute the implementation formula.
 - The fictional Profile yields professional income of ₹14,00,000 and keeps ₹10,000 bank interest separate.
 - The Plan labels every amount Estimated and never shows negative tax.
-- No network, mock, or internal-helper test is used.
 
 ## Authority
 

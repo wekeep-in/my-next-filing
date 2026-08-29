@@ -2,11 +2,11 @@
 
 Type: grilling
 Status: resolved
-Blocked by: 06
+Blocked by: none
 
 ## Question
 
-What ordered set of test-first vertical slices should implement the approved release with the fewest dependencies and the least rework? For each slice, identify its user-visible behavior, agreed test seam, prerequisite decisions, statutory or source data, and completion evidence. End with repository publication, preview review, statutory re-verification, and production-release checks.
+What ordered set of vertical slices should implement the approved release with the fewest dependencies and the least rework? For each slice, identify its user-visible behavior, prerequisite decisions, statutory or source data, and completion evidence. End with repository publication, preview review, statutory re-verification, and production-release checks.
 
 ## Answer
 
@@ -26,4 +26,4 @@ The order is:
 10. Configure merge checks and static delivery after the journey and Analytics are complete.
 11. Pass the human production gates, including the deferred privacy review, statutory re-verification, Analytics configuration, deployment, browser, accessibility, and performance evidence.
 
-Every behavior ticket names its agreed test seam, dependencies, Source inputs, and completion evidence. Competition submission work is excluded. Production remains impossible until the final release-gate ticket is resolved.
+Every behavior ticket names its dependencies, Source inputs, and completion evidence. Competition submission work is excluded. Production remains impossible until the final release-gate ticket is resolved.

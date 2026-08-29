@@ -5,7 +5,7 @@
 | Document type | Product specification |
 | Status | Approved for implementation |
 | Product | My Next Filing |
-| Domain | `mynextfiling.com` |
+| Domain | `mynextfiling.wekeep.in` |
 | Author | Sarthak Mishra |
 | Software licence | Apache License 2.0 |
 | Statutory period | Tax Year 2026-27 |
@@ -58,7 +58,7 @@ For a supported profile, the application gives the user:
 
 The application does not send reminders. It does not file a return. It does not record completion. It does not calculate late fees or interest. It does not give tax or legal advice.
 
-The application stores questionnaire answers in the browser. The user can change the answers or delete the saved answers. The application does not collect a name, PAN, Aadhaar number, GSTIN, email address, phone number, bank account, password, or OTP.
+The application keeps questionnaire answers and the calculation in memory only while the page is open. It does not save them. Refreshing or closing the page clears them. The application does not collect a name, PAN, Aadhaar number, GSTIN, email address, phone number, bank account, password, or OTP.
 
 The first release supports only the following profile:
 
@@ -79,27 +79,27 @@ The first release covers income earned from 1 April 2026 to 31 March 2027. The i
 
 1. As a self-employed IT consultant, I want the landing page to name the supported profile, so that I do not enter data for an unsupported case.
 2. As a first-time visitor, I want a short product description, so that I know that the application gives an overview and not a filing service.
-3. As a first-time visitor, I want to select "Check my dates," so that I can start with my own information.
+3. As a first-time visitor, I want to select "Start now," so that I can start with my own information.
 4. As a competition reviewer, I want to select "Try an example," so that I can inspect a complete result without tax records.
 5. As a cautious taxpayer, I want the landing page to state that the result is best-effort guidance, so that I do not treat it as professional advice.
 6. As a privacy-conscious user, I want to know that the application has no account, so that I do not expect an identity check.
 7. As a user on a slow connection, I want the core application to load as static files, so that I can start without an application-server request.
 8. As a mobile user, I want the first action to remain visible without horizontal scrolling, so that I can start on a small screen.
 
-### Profile confirmation
+### Supported profile and scope
 
-9. As a user, I want to confirm my profile on one screen, so that I can reject a wrong assumption before I enter amounts.
-10. As a user, I want to confirm that I am a resident individual, so that the application does not apply this profile to another taxpayer type.
-11. As a user, I want to confirm that I use the new tax regime, so that the application does not mix two slab systems.
-12. As a user, I want to confirm that I provide IT or software consulting, so that the application can use the supported profession rule.
-13. As a user, I want to confirm that I use presumptive professional taxation, so that the application can use the supported income method.
-14. As a user, I want to confirm that I work directly for clients in India, so that the application does not ignore export or platform rules.
-15. As a user, I want to confirm that I do not have a GSTIN, so that the application does not omit GST-return deadlines.
-16. As a user who cannot make a confirmation, I want a clear unsupported result, so that I do not receive an approximate plan.
+9. As a user, I want the landing page to describe the supported profile, so that I can decide whether to use the check before entering amounts.
+10. As a user, I want the FAQ to explain the resident-individual requirement, so that I do not apply this check to another taxpayer type.
+11. As a user, I want the FAQ to explain the new-regime requirement, so that I do not mix two slab systems.
+12. As a user, I want the FAQ to explain the IT or software consulting requirement, so that I can judge whether the profession is covered.
+13. As a user, I want the FAQ to explain the presumptive-professional requirement, so that I can judge whether the income method is covered.
+14. As a user, I want the FAQ to explain the direct-Indian-client requirement, so that I do not apply this check to export, platform, or agency income.
+15. As a user, I want the FAQ to explain the no-GSTIN requirement, so that I do not omit GST-return deadlines.
+16. As a user outside the supported profile, I want a clear unsupported result, so that I do not receive an approximate plan.
 17. As an unsupported user, I want the application to name the unsupported fact, so that I know why calculation stopped.
 18. As an unsupported user, I want to change the failed answer, so that I do not have to start again.
 19. As an unsupported user, I want an official starting link when one is relevant, so that I can continue outside the application.
-20. As a returning user, I want my valid confirmations to remain in the browser, so that I do not repeat the full questionnaire.
+20. As a user, I want my answers to remain available while I move between the questionnaire and result, so that I can correct a value without starting again.
 
 ### Professional receipts and profit
 
@@ -132,7 +132,7 @@ The first release covers income earned from 1 April 2026 to 31 March 2027. The i
 
 ### Unsupported tax facts
 
-44. As a user, I want one checklist of unsupported facts, so that I can confirm the calculation limit at one time.
+44. As a user, I want the landing-page FAQ to list unsupported facts, so that I can understand the calculation limit before starting.
 45. As a user with salary income, I want an unsupported result, so that the application does not omit salary computation.
 46. As a user with house-property income, I want an unsupported result, so that the application does not omit property rules.
 47. As a user with dividends or gifts, I want an unsupported result, so that the application does not classify them as bank interest.
@@ -144,7 +144,7 @@ The first release covers income earned from 1 April 2026 to 31 March 2027. The i
 53. As a user with a disputed tax credit, I want an unsupported result, so that the application does not treat the dispute as settled.
 54. As a user who selected the old tax regime, I want an unsupported result, so that the application does not use new-regime slabs.
 55. As a user above the supported income ceiling, I want an unsupported result, so that the application does not omit surcharge and marginal relief.
-56. As a user, I want all unsupported answers to remain editable, so that I can correct an accidental selection.
+56. As a user, I want the supported-profile limits to be explained before calculation, so that I can stop when the check does not cover my facts.
 
 ### Review and evaluation
 
@@ -157,7 +157,7 @@ The first release covers income earned from 1 April 2026 to 31 March 2027. The i
 63. As a user, I want a stale-rules result after the rule dataset expires, so that the application does not present old law as current law.
 64. As a user with stale rules, I want official links to remain available, so that I can verify the current position.
 65. As a user with stale rules, I want the calculation controls disabled, so that I do not produce a new result from expired data.
-66. As a user, I want an explicit error when saved answers are corrupt, so that I can reset them without a broken page.
+66. As a user, I want a refresh to start a new check, so that no previous answers are restored.
 
 ### Plan and chronological agenda
 
@@ -202,7 +202,6 @@ The first release covers income earned from 1 April 2026 to 31 March 2027. The i
 99. As a GST-unregistered user below the threshold, I want to see the remaining threshold amount, so that I know when to review registration.
 100. As a GST-unregistered user exactly at the threshold, I want a review-before-further-turnover action, so that the application does not claim that equality creates turnover-based registration liability.
 101. As a user above the threshold, I want the income-tax result to remain available and GST coverage marked incomplete, so that one GST action does not remove a valid estimate.
-102. As a user who cannot confirm complete GST aggregate turnover, I want the income-tax result to remain available and the GST status marked unavailable, so that the application does not guess.
 103. As a user in a lower-threshold state, I want the correct supported threshold, so that the application does not use the normal-state value.
 104. As a user with a compulsory-registration fact, I want an unsupported result, so that turnover alone does not determine GST status.
 105. As a user, I want the threshold source beside the status, so that I can verify the registration rule.
@@ -215,7 +214,7 @@ The first release covers income earned from 1 April 2026 to 31 March 2027. The i
 109. As a user, I want each tutorial link to show its review date, so that I can judge how current it is.
 110. As a user, I want one primary tutorial per action, so that I do not receive a list of competing links.
 111. As a user, I want an official source link beside a commercial tutorial, so that I can verify the underlying rule.
-112. As a user, I want external links to open in a new tab, so that my saved plan remains available.
+112. As a user, I want external links to open in a new tab, so that my current result remains available.
 113. As a user, I want external links to carry no profile data, so that the publisher does not receive my answers.
 114. As a maintainer, I want a source registry, so that tutorial approval and statutory provenance remain reviewable.
 115. As a maintainer, I want to remove a stale tutorial without editing evaluation logic, so that link maintenance stays local.
@@ -223,17 +222,14 @@ The first release covers income earned from 1 April 2026 to 31 March 2027. The i
 117. As a maintainer, I want the application to distinguish a statutory source from a tutorial, so that educational content never becomes legal authority.
 118. As a maintainer, I want normal and operative dates to keep separate provenance, so that an extension remains auditable.
 
-### Saved data and privacy
+### Privacy
 
-119. As a returning user, I want valid questionnaire answers to load from browser storage, so that I can get an updated date status quickly.
-120. As a returning user, I want a saved-data update time, so that I know when I last changed the profile.
-121. As a user, I want to delete all saved answers, so that I can remove my local data.
-122. As a user whose browser blocks storage, I want the current session to continue, so that storage failure does not block calculation.
-123. As a user whose browser blocks storage, I want a short notice, so that I know the answers will not remain after refresh.
-124. As a user, I want a privacy page, so that I can understand browser storage and Google Analytics use.
+124. As a user, I want the landing-page FAQs to state that questionnaire data is not saved and explain Google Analytics use, so that I understand data handling before starting.
 125. As a user, I want no money values in a route or page title, so that Analytics and browser history do not expose them.
 126. As a user, I want Analytics failure to have no effect on the application, so that tracking cannot block the result.
 127. As a maintainer, I want Analytics integration separate from evaluation logic, so that tracking changes cannot change a tax result.
+
+The application must not put a profile value in a route, query string, hash, page title, log message, Analytics event, or external link.
 
 ### Responsive and interaction behavior
 
@@ -258,13 +254,11 @@ The first release covers income earned from 1 April 2026 to 31 March 2027. The i
 143. As a contributor, I want a public specification, so that I can understand the required behavior before I edit code.
 144. As a contributor, I want controlled domain terms, so that profile, rule, result, and source names stay consistent.
 145. As a contributor, I want one evaluation interface, so that legal logic does not spread across route and view code.
-146. As a contributor, I want test-first vertical changes, so that each added behavior starts with an observable failure.
-147. As a contributor, I want statutory expected values from worked examples, so that tests do not copy the implementation formula.
 148. As a contributor, I want formatting and lint checks, so that mechanical style differences do not distract from review.
 149. As a contributor, I want a rule validator, so that an invalid date or missing source fails before deployment.
 150. As a contributor, I want preview deployment for a proposed change, so that reviewers can inspect the full journey.
 151. As a maintainer, I want production deployment from the main branch, so that the public site matches reviewed source.
-152. As a maintainer, I want preview analytics disabled, so that test traffic does not pollute production data.
+152. As a maintainer, I want preview analytics disabled, so that preview traffic does not pollute production data.
 153. As a maintainer, I want stale production rules to fail closed, so that a successful build cannot make expired calculations.
 154. As a maintainer, I want a small dependency set, so that updates do not dominate a small static application.
 155. As a maintainer, I want no hidden GST-return implementation, so that unfinished future scope cannot reach a user.
@@ -299,8 +293,7 @@ The specification uses these terms:
 ### 2. Product identity and publication
 
 - The product name is My Next Filing.
-- The canonical domain is `https://mynextfiling.com`.
-- The `www` host redirects to the canonical domain.
+- The canonical domain is `https://mynextfiling.wekeep.in`.
 - HTTP redirects to HTTPS.
 - Sarthak Mishra is the author.
 - The source code uses the Apache License 2.0.
@@ -320,8 +313,6 @@ The first release is complete when all of these statements are true:
 - The plan shows the annual return date.
 - The plan shows the GST-registration threshold status.
 - The plan shows sources and external tutorials.
-- The application restores valid saved answers.
-- The application deletes saved answers on request.
 - The application stops calculation for stale rules.
 - The application works as a static deployment on the canonical domain.
 - No questionnaire value leaves the browser through an application request.
@@ -351,45 +342,18 @@ The implementation must avoid a dependency when the browser or selected stack su
 
 | Route | Purpose | Required behavior |
 | --- | --- | --- |
-| `/` | Landing page | Explain scope. Show "Check my dates" and "Try an example." |
-| `/check` | Questionnaire | Edit and validate the profile. Save valid progress when storage is available. |
-| `/plan` | Result | Show the supported, unsupported, or stale result. Redirect to `/check` when no profile exists. |
-| `/methodology` | Calculation method | Explain supported formulas, assumptions, rounding, and exclusions. |
-| `/sources` | Source register | List statutory and tutorial sources with review dates. |
-| `/disclaimer` | Product limits | State the best-effort and no-advice terms. |
-| `/privacy` | Data use | Explain browser storage and Google Analytics. |
+| `/` | Landing page | Explain scope. Show "Start now" and "Try an example." Keep the questionnaire overview beside the FAQs on wide screens. |
+| `/check` | Questionnaire | Edit and validate the profile in memory. Keep the active group and primary action in the sticky journey timeline on wide screens. |
+| `/plan` | Result | Show the supported, unsupported, or stale result. Keep Calculation active in the journey timeline and offer Back and Start over actions. Redirect to `/check` when no current in-memory profile exists. |
 | Any unmatched route | Not-found state | Explain that the page does not exist. Link to `/`. |
 
 React Router controls client routes. Cloudflare serves the application entry file for an unmatched static path. A direct request to each public route must load the application.
 
 ### 6. Questionnaire flow
 
-The questionnaire uses seven content groups. The design run can change the visual composition. It cannot split the profile confirmations into separate questions.
+The questionnaire uses five content groups. The journey timeline adds Overview before them and Calculation after them, for seven steps total. Its available steps act as navigation. The supported profile is described in the landing-page FAQ rather than confirmed in a separate step.
 
-#### Group 1: About you
-
-Show this period first:
-
-> Income earned from 1 April 2026 to 31 March 2027
-
-Show this secondary label:
-
-> Tax Year 2026-27
-
-Show the profile confirmations together:
-
-- I am a resident individual.
-- I use the new tax regime.
-- I provide IT or software consulting.
-- I use the presumptive method for professional income.
-- I work directly for clients in India.
-- I do not have a GSTIN.
-
-Show this help text:
-
-> This version supports only this profile. If one statement is not true, we will show where this version stops.
-
-#### Group 2: Professional receipts
+#### Group 1: Professional receipts
 
 Use this label:
 
@@ -397,7 +361,7 @@ Use this label:
 
 Use this description:
 
-> Enter the gross professional receipts that you will report for this tax year. Use your invoice or receipt record. Do not subtract expenses or TDS.
+> Enter this tax year's gross professional receipts from your invoice or receipt records. Do not subtract expenses or TDS.
 
 Use this label:
 
@@ -405,7 +369,7 @@ Use this label:
 
 Use this description:
 
-> Enter the part paid in cash. Also include a cheque or bank draft that was not account-payee. Enter zero if all receipts used normal bank or online payment.
+> Include cash and non-account-payee cheques or drafts. Enter zero if all receipts came through bank or online payments.
 
 Use this label:
 
@@ -413,11 +377,11 @@ Use this label:
 
 Use this description:
 
-> The presumptive method treats at least half of your receipts as profit. If your actual profit is higher, enter the higher amount. Otherwise, keep the calculated amount.
+> The presumptive minimum is 50% of receipts. Enter a higher actual profit, or keep the calculated amount.
 
 The application calculates 50 percent of gross professional receipts. The higher expected profit cannot be less than this amount.
 
-#### Group 3: Bank interest
+#### Group 2: Bank interest
 
 Use this label:
 
@@ -425,11 +389,11 @@ Use this label:
 
 Use this description:
 
-> Enter gross taxable interest before TDS. You can find this value in your bank interest certificate or annual statement. Enter zero if you have none.
+> Enter taxable bank or deposit interest before TDS. Use your interest certificate or annual statement. Enter zero if none.
 
 The application does not support another income type in this field.
 
-#### Group 4: Tax credits and payments
+#### Group 3: Tax credits and payments
 
 Use this label:
 
@@ -437,7 +401,7 @@ Use this label:
 
 Use this description:
 
-> Enter TDS that a client or bank already deducted from the income in this check. Do not enter TDS that you only expect.
+> Enter TDS already deducted by a client or bank for this income. Exclude expected TDS.
 
 Use this label:
 
@@ -445,7 +409,7 @@ Use this label:
 
 Use this description:
 
-> Enter TCS that was already collected and is available as your tax credit. Enter zero if you have none.
+> Enter TCS already collected and available as credit. Enter zero if none.
 
 Use this label:
 
@@ -453,11 +417,11 @@ Use this label:
 
 Use this description:
 
-> Enter advance tax that you already paid for this tax year. Do not include self-assessment tax for another year.
+> Enter advance tax already paid for this tax year. Exclude self-assessment tax for another year.
 
 The application can link to an official tax-credit statement guide. The application must not request a statement upload.
 
-#### Group 5: GST check
+#### Group 4: GST check
 
 Use this label:
 
@@ -465,7 +429,7 @@ Use this label:
 
 Use this description:
 
-> Select the place from which you provide your services. This check uses it to select the supported GST-registration threshold.
+> Select where you provide services. This sets the supported GST registration threshold.
 
 Use this label:
 
@@ -473,56 +437,15 @@ Use this label:
 
 Use this description:
 
-> Enter the total value of your taxable and exempt supplies across India for the same PAN, before GST. Include your IT or software invoices and relevant interest. Do not enter profit.
+> Enter taxable and exempt supplies across India for this PAN, before GST. Include IT or software invoices and relevant interest, not profit.
 
-Use this question:
+Treat GST aggregate turnover as one direct declared amount. Do not calculate it from professional receipts or bank interest. Do not enforce an arithmetic relationship with an income-tax field because GST valuation and timing can differ.
 
-> Can you confirm that this is your complete GST aggregate turnover?
+#### Group 5: Assumption review
 
-Require one answer:
+Show all declared facts and calculated input assumptions. Provide "Change" for each input group.
 
-- I confirm this is my complete GST aggregate turnover.
-- I cannot confirm this total.
-
-Use this description:
-
-> GST aggregate turnover can include taxable and exempt supplies, including relevant interest. Other than my IT or software services and interest, I have no other supplies for this check.
-
-Treat GST aggregate turnover as one direct declared amount. Do not calculate it from professional receipts or bank interest. Do not enforce an arithmetic relationship with an income-tax field because GST valuation and timing can differ. When the user cannot confirm the total, preserve any entered amount for editing but do not use it to produce a GST threshold status.
-
-#### Group 6: Unsupported facts
-
-Use this question:
-
-> Do you have any of these items for this tax year?
-
-List these items:
-
-- Salary income.
-- House-property income.
-- Dividend or gift income.
-- Capital gains.
-- Crypto, lottery, or gaming income.
-- Foreign income or foreign-tax relief.
-- Agricultural income.
-- A deduction, loss, or tax credit that this check does not show.
-- A disputed TDS or TCS credit.
-- Another business or profession.
-- Foreign clients.
-- Platform, marketplace, agency, commission, or brokerage income.
-- Goods sales.
-- Employees or deductor filing duties.
-- An audit requirement under tax law or another law.
-
-Use this description:
-
-> Select every item that applies. This version will stop instead of guessing.
-
-#### Group 7: Assumption review
-
-Show all declared facts and calculated input assumptions. Provide "Change" for each group. Require this confirmation:
-
-> I checked these answers. I understand that the result is general guidance and can be incomplete for my facts.
+Do not add a separate unsupported-facts question. The landing-page FAQ lists the unsupported facts and limits before the user starts, and the Review step documents the assumptions used by a supported result.
 
 ### 7. Money and input rules
 
@@ -581,7 +504,7 @@ The interface returns exactly one result kind:
 
 The interface includes its invariants, validation errors, rounding rules, and date behavior. View modules must not calculate tax. Route modules must not decide which obligation applies. Source modules must not change an evaluation result outside the rule dataset.
 
-The evaluation is a pure in-process operation. It has no adapter and no remote dependency. Tests use the same interface as the application.
+The evaluation is a pure in-process operation. It has no adapter and no remote dependency.
 
 ### 10. Supported income calculation
 
@@ -693,29 +616,23 @@ Use these starting thresholds:
 | Manipur, Mizoram, Nagaland, and Tripura | ₹10 lakh |
 | Other states and Union territories | ₹20 lakh |
 
-When the user confirms complete GST aggregate turnover, the evaluation compares the direct declared amount with the selected threshold. It does not add professional receipts, bank interest, or another Profile amount.
+The evaluation compares the direct declared amount with the selected threshold. It does not add professional receipts, bank interest, or another Profile amount.
 
 Below the threshold, show:
 
-> Your declared GST aggregate turnover is ₹X below the ₹Y starting threshold for [state]. Some facts can require registration earlier.
+> Your declared GST aggregate turnover is ₹X below the ₹Y starting threshold for [state]. Some facts require earlier registration.
 
 Exactly at the threshold, show:
 
-> Your declared GST aggregate turnover equals the ₹Y starting threshold. Turnover-based registration starts only after you exceed it. Review before further turnover.
+> Your declared GST aggregate turnover is at the ₹Y starting threshold. Turnover-based registration starts after you exceed it. Review before more turnover.
 
 Keep the overall plan supported at the exact threshold.
 
 Above the threshold, show:
 
-> Review GST registration now. Your declared GST aggregate turnover is ₹X above the starting threshold. This version does not calculate GST returns.
+> Your declared GST aggregate turnover is ₹X above the ₹Y starting threshold. Review GST registration now. This version does not calculate GST returns.
 
 Keep the income-tax result and mark GST coverage incomplete.
-
-When the user cannot confirm complete GST aggregate turnover, use GST status "Unavailable" and show:
-
-> We can still show your income-tax result, but we cannot show a GST threshold status without complete GST aggregate turnover.
-
-Keep the income-tax result, mark GST coverage incomplete, and provide official starting links.
 
 Return an unsupported result when the user declares a compulsory-registration fact or another supply type.
 
@@ -855,27 +772,9 @@ These candidates were reviewed on 29 August 2026. A candidate marked provisional
 
 The initial release can replace a candidate with a manually reviewed commercial tutorial. The replacement must satisfy the source-registry rules.
 
-### 22. Saved profile behavior
-
-- Store the profile, storage-schema version, and update time in browser storage.
-- Do not store a result as an independent legal fact.
-- Re-evaluate saved answers on every plan load.
-- Re-evaluate when the current date changes.
-- Re-evaluate when the rule dataset changes.
-- Clear incompatible stored data after an explicit user notice.
-- Continue in memory when browser storage is unavailable.
-- Provide "Change answers."
-- Provide "Delete my saved answers."
-- Require confirmation before deletion.
-- Return to the landing page after deletion.
-
-The application must not put a profile value in a route, query string, hash, page title, log message, or Analytics event.
-
 ### 23. Result copy
 
-Show this notice near the top of every personalized result:
-
-> This result uses the answers that you provided and rules verified on the date shown. It is general guidance, not tax or legal advice. Rules, extensions, and your facts can change. Verify the result before you file or pay.
+The landing-page FAQ contains the general-guidance and verification notice. Do not repeat it on every result.
 
 Show this title above the nearest obligation:
 
@@ -899,20 +798,21 @@ If the profile is unsupported, show:
 
 Follow the unsupported title with the exact fact and one short reason.
 
-### 24. Disclaimer
+### 24. FAQ product limits
 
-The detailed disclaimer must use plain language. It must include these statements:
+The landing-page FAQs must explain the calculation method and product limits in plain language. They must include these statements:
 
 - The application gives general information and a best-effort estimate.
 - The application does not give tax, accounting, or legal advice.
 - The application does not create a professional relationship.
 - The application covers only the stated profile and tax period.
+- The application does not save questionnaire answers or calculations.
 - The user is responsible for verification, filing, and payment decisions.
 - Government rules, forms, portal behavior, and extensions can change.
 - External tutorial publishers control their own pages.
 - The author and contributors provide the software without warranties, to the extent that law permits.
 
-Formal public terms and privacy text require legal review. The implementation must not claim that a disclaimer cures an incorrect calculation.
+Formal public terms and privacy text require legal review. The implementation must not claim that FAQ text cures an incorrect calculation.
 
 ### 25. Google Analytics and privacy
 
@@ -924,7 +824,7 @@ Formal public terms and privacy text require legal review. The implementation mu
 - Do not include sensitive values in a route or page title.
 - Keep Analytics outside the evaluation module.
 - Make application behavior independent of Analytics availability.
-- Describe Analytics on the privacy page.
+- Describe Analytics in the landing-page FAQs.
 
 The specification does not prescribe detailed Analytics consent configuration. The implementation must complete an applicable privacy review before public release.
 
@@ -941,6 +841,8 @@ The specification does not prescribe detailed Analytics consent configuration. T
 - Hide advanced detail in an accessible disclosure control.
 - Keep errors close to the related input.
 - Do not show an empty dashboard.
+- Keep the journey timeline sticky beside the landing page, questionnaire, and result on wide screens. Update its active step and primary action with the current view. Stack it in document order on narrow screens.
+- Make available timeline steps clickable so the user can move between Overview, questionnaire groups, and Calculation.
 
 ### 27. Visual and interaction direction
 
@@ -951,7 +853,7 @@ The later design run can select exact visual tokens and layout. It must keep the
 - Use dark, high-contrast text.
 - Use one lively accent color.
 - Use rounded but compact cards.
-- Use the system font stack.
+- Use Fraunces for headings and Inter for everything else.
 - Use no mascot.
 - Use no government logo.
 - Do not imitate a government portal.
@@ -1033,8 +935,7 @@ The example page must state:
 - Use Workers Builds with the source repository.
 - Create preview deployments for proposed changes.
 - Deploy production from the protected main branch.
-- Attach `mynextfiling.com` as the production custom domain.
-- Redirect `www.mynextfiling.com` to the canonical domain.
+- Attach `mynextfiling.wekeep.in` as the production custom domain.
 - Enable HTTPS.
 - Use no server code, function, data store, or secret for the core application.
 - Limit Google Analytics configuration to production.
@@ -1061,7 +962,7 @@ The future public repository must include:
 - A `README` with purpose, scope, local commands, deployment summary, disclaimer, and source policy.
 - This product specification.
 - A lockfile.
-- Commands for development, build, format, lint, type check, rule validation, and tests.
+- Commands for development, build, format, lint, type checking, and rule validation.
 
 The repository must not contain real taxpayer data, credentials, private portal captures, private APIs, or copied government code.
 
@@ -1076,7 +977,6 @@ A rule change is not a copy edit. A rule change must include:
 - The source URL.
 - The source issue or publication date.
 - A plain change note.
-- A behavior test through an agreed seam.
 - A rule-dataset validation result.
 
 A tutorial-link change must include:
@@ -1087,106 +987,6 @@ A tutorial-link change must include:
 - The reason for replacement.
 
 Do not approve a statutory change from a search snippet, forum answer, social post, or generated summary.
-
-## Testing Decisions
-
-### 1. Development method
-
-Use test-driven development for behavior changes.
-
-For each vertical slice:
-
-1. Write one failing test for observable behavior.
-2. Add only enough implementation to pass the test.
-3. Continue with the next observable behavior.
-4. Review structure after the behavior works.
-
-Do not write all tests before implementation. Do not test private functions. Do not assert internal call order.
-
-### 2. Agreed test seams
-
-The project has three agreed seams:
-
-| Seam | Input | Observable result |
-| --- | --- | --- |
-| Evaluation | Profile, current date, and rule dataset | Supported, unsupported, or stale result. |
-| Rule validation | Rule dataset | Valid dataset or explicit validation errors. |
-| Browser journey | User actions from questionnaire entry | Rendered plan or declared stop state. |
-
-Tests must use these interfaces. Tests must not reach through an interface to test internal helpers.
-
-The implementation plan or design wayfinder can choose the final mix of unit, integration, browser, and smoke tests. The chosen mix must prove the specified behavior with the least maintenance cost.
-
-### 3. Independent expected values
-
-Expected statutory values must come from an official worked example or an independently worked literal. A test must not calculate its expected value with the implementation formula.
-
-At minimum, the test plan must consider these cases:
-
-- Total income at ₹4 lakh.
-- Total income at ₹8 lakh.
-- Total income at ₹12 lakh.
-- Total income at ₹12.10 lakh, including section 156 marginal relief and 4-percent cess.
-- Total income at ₹50 lakh.
-- Total income above ₹50 lakh.
-- Cash receipts exactly 5 percent of professional receipts.
-- Cash receipts above 5 percent.
-- Receipts at each section 58 limit.
-- Higher profit equal to the 50-percent minimum.
-- Higher profit above the minimum.
-- TDS that reduces advance-tax liability below ₹10,000.
-- Advance-tax liability exactly ₹10,000.
-- Credits that produce an estimated refund.
-- Final rounding below and above a units digit of 5.
-- The 15 March 2027 advance-tax date.
-- The 31 August 2027 return date.
-- A normal due date with no extension.
-- A normal due date with a verified operative date.
-- Upcoming, due-today, and deadline-passed status in India Standard Time.
-- Normal and lower GST service thresholds.
-- GST aggregate turnover below, exactly at, and above the threshold.
-- An unavailable GST status when the user cannot confirm complete GST aggregate turnover.
-- A non-zero bank-interest input that is not added automatically to declared GST aggregate turnover.
-- Each unsupported profile flag.
-- A stale rule dataset.
-- A missing statutory source.
-- An unapproved tutorial publisher.
-- Corrupt saved data.
-- Unavailable browser storage.
-
-### 4. Browser behavior
-
-The test plan must prove the full example journey through the browser seam. It must also prove the critical stop states. The implementation plan decides whether this proof uses one long journey or a small focused set.
-
-Do not add view-module tests by default. Add one only when the browser seam cannot prove an important behavior at a reasonable cost.
-
-### 5. Mechanical checks
-
-The continuous-integration plan includes, as applicable:
-
-- Oxfmt check.
-- Oxlint check.
-- TypeScript check.
-- Rule-dataset validation.
-- Selected behavior tests.
-- Production build.
-
-Browser-matrix and Lighthouse automation are optional. The implementation plan can use manual release checks or automated checks. Do not make an unverified compliance claim.
-
-### 6. Test quality
-
-A good test must:
-
-- Describe user or caller behavior.
-- Use an agreed seam.
-- Use an independent expected value.
-- Fail when the behavior is absent.
-- Survive an internal refactor.
-- Avoid a mock for owned in-process logic.
-- Control the current date through the evaluation interface.
-- Avoid network access to a tutorial or government page.
-
-Mock only a true external operation. The core evaluation has no external operation and needs no mock.
 
 ## Out of Scope
 
@@ -1288,7 +1088,6 @@ A later design or implementation wayfinder can decide:
 - Exact visual tokens.
 - Exact layout.
 - Exact spacing and card composition.
-- Exact test mix.
 - Detailed implementation order.
 - Minor route organization.
 - Minor module organization behind the agreed seams.
