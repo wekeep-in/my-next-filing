@@ -5,15 +5,18 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "pnpm rules:validate && tsc && vite build",
     "preview": "vite preview",
-    "format": "oxfmt --write package.json index.html tsconfig.json vite.config.ts src",
-    "format:check": "oxfmt --check package.json index.html tsconfig.json vite.config.ts src",
-    "lint": "oxlint",
-    "typecheck": "tsc --noEmit"
+    "format": "oxfmt --write package.json index.html tsconfig.json vite.config.ts scripts src",
+    "format:check": "oxfmt --check package.json index.html tsconfig.json vite.config.ts scripts src",
+    "lint": "oxlint --ignore-pattern 'public/video/hls/**/*.ts'",
+    "typecheck": "tsc --noEmit",
+    "rules:validate": "node --experimental-strip-types scripts/validate-rules.ts"
   },
   "dependencies": {
+    "@mux/mux-player-react": "^3.13.2",
     "react": "^19.2.8",
+    "react-confetti-boom": "^2.0.1",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.2"
   },
@@ -24,7 +27,8 @@
     "oxfmt": "^0.65.0",
     "oxlint": "^1.80.0",
     "typescript": "^7.0.2",
-    "vite": "^8.2.2"
+    "vite": "^8.2.2",
+    "wrangler": "^4.127.0"
   },
   "packageManager": "pnpm@11.24.0"
 }
