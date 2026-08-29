@@ -371,14 +371,14 @@ export function PlanRoute() {
           y={confettiOrigin?.y}
         />
       )}
+      {example && (
+        <p className="notice notice--top notice--example">
+          Fictional amounts — replace them before using this check.
+        </p>
+      )}
       <div
         className={`plan-main${routeState?.animate ? ' journey-view--enter' : ''}`}
       >
-        {example && (
-          <p className="notice notice--top notice--example">
-            Fictional amounts — replace them before using this check.
-          </p>
-        )}
         {evaluation.kind === 'supported' && (
           <SupportedPlan result={evaluation} />
         )}

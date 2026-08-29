@@ -143,7 +143,6 @@ li {
   flex-direction: column;
 }
 
-.site-footer,
 main {
   width: min(100% - 2rem, 90rem);
   margin-inline: auto;
@@ -160,10 +159,6 @@ main {
   padding-block: clamp(3rem, 7vw, 5.5rem);
 }
 
-.app--journey .site-footer {
-  width: min(72vw, 86rem);
-}
-
 .app--journey main {
   align-items: stretch;
   padding-top: clamp(1.5rem, 3vw, 3rem);
@@ -178,19 +173,17 @@ main {
   align-items: flex-start;
   justify-content: space-between;
   gap: 1.5rem;
+  width: min(72vw, 86rem);
+  margin-inline: auto;
   border-top: 1px solid var(--line);
   padding: 1.5rem 0 2.5rem;
-}
-
-.app--landing .site-footer {
-  width: min(72vw, 86rem);
-  border-top: 0;
-  padding-left: clamp(1.5rem, 3.5vw, 4rem);
 }
 
 .site-footer p {
   max-width: 34rem;
   margin-bottom: 0;
+  font-size: clamp(1rem, 0.9vw, 1.1rem);
+  line-height: 1.5;
 }
 
 .site-footer a span {
@@ -216,30 +209,31 @@ main {
 
 .landing-title-row {
   display: flex;
+  flex-direction: column;
   align-items: flex-start;
-  gap: 0.35rem;
-  width: fit-content;
+  gap: 0.85rem;
+  width: 100%;
 }
 
 .landing-title-row h1 {
+  width: 100%;
   margin-bottom: 1.5rem;
   font-size: clamp(3rem, 4vw, 4.8rem);
   line-height: 0.95;
 }
 
 .version {
-  margin-top: 0.12rem;
   border: 1px solid #8b9aa5;
   border-radius: 999px;
-  padding: 0.1rem 0.28rem;
+  padding: 0.2rem 0.45rem;
   color: var(--muted);
-  font-size: 0.65rem;
+  font-size: clamp(0.85rem, 0.8vw, 1rem);
   font-weight: 700;
   line-height: 1;
 }
 
 .landing-intro {
-  max-width: 40ch;
+  max-width: none;
   margin-bottom: 1.2rem;
   font-size: clamp(1.2rem, 2vw, 1.8rem);
   line-height: 1.5;
@@ -275,6 +269,11 @@ main {
   border-radius: 0.7rem;
   background: var(--paper);
   box-shadow: 0 1rem 2.5rem rgb(16 40 60 / 0.09);
+}
+
+.journey-progress-nav,
+.journey-actions.journey-actions--sticky {
+  display: none;
 }
 
 .journey-list {
@@ -378,10 +377,24 @@ main {
   grid-column: 1 / -1;
 }
 
-.site-footer p,
 .journey-note {
   font-size: clamp(0.72rem, 0.72vw, 0.86rem);
   line-height: 1.45;
+}
+
+.journey-actions--sticky {
+  position: fixed;
+  z-index: 110;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 0.65rem max(1rem, calc((100vw - 44rem) / 2 + 1rem))
+    calc(0.65rem + env(safe-area-inset-bottom));
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  background: var(--paper);
+  box-shadow: 0 -0.25rem 0.75rem rgb(16 40 60 / 0.08);
 }
 
 .journey-note {
@@ -431,7 +444,7 @@ main {
 
 .faq-list p,
 .faq-list li {
-  font-size: clamp(1rem, 1.1vw, 1.3rem);
+  font-size: clamp(1.125rem, 1.1vw, 1.3rem);
   line-height: 1.5;
 }
 
@@ -532,6 +545,7 @@ main {
   column-gap: clamp(1.75rem, 2.2vw, 2.75rem);
   width: min(72vw, 86rem);
   margin: 0 auto;
+  align-content: start;
   align-items: start;
 }
 
@@ -681,6 +695,15 @@ select {
   outline: 0;
 }
 
+select {
+  appearance: none;
+  padding-right: 2.75rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%2310283c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.9rem center;
+  background-size: 1rem;
+}
+
 select:focus {
   border-color: #155eef;
 }
@@ -777,6 +800,12 @@ select:focus {
   border-radius: 0;
   padding: 0.7rem max(1.25rem, calc((100vw - 86rem) / 2));
   line-height: 1.35;
+}
+
+.journey-layout > .notice--top {
+  z-index: 130;
+  grid-column: 1 / -1;
+  position: relative;
 }
 
 .notice.notice--top {
@@ -1039,31 +1068,32 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
     width: min(100%, 42rem);
   }
 
+  .landing-hero,
+  .landing-faqs {
+    padding-inline: 0;
+  }
+
+  .landing-sidebar,
+  .landing-sidebar .journey-panel {
+    display: contents;
+  }
+
+  .landing-sidebar .journey-nav--desktop,
+  .landing-sidebar .journey-progress-nav,
+  .landing-sidebar .journey-note {
+    display: none;
+  }
+
+  .landing-sidebar .journey-actions--main {
+    display: none;
+  }
+
+  .landing-sidebar .journey-actions--sticky {
+    display: grid;
+  }
+
   .app--landing .site-footer {
-    width: min(100%, 42rem);
-  }
-
-  .journey-layout {
-    grid-template-columns: minmax(0, 1fr);
-    width: min(100%, 44rem);
-  }
-
-  .app--journey .site-footer {
-    width: min(100%, 44rem);
-  }
-
-  .journey-sidebar {
-    position: static;
-    width: min(100%, 24rem);
-    margin-top: 2rem;
-  }
-
-  .app--journey .journey-sidebar {
-    margin-top: 2rem;
-  }
-
-  .journey-note {
-    text-align: left;
+    padding-bottom: calc(7rem + env(safe-area-inset-bottom));
   }
 
   .product-preview {
@@ -1072,15 +1102,118 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
 }
 
 @media (max-width: 1100px) {
+  html {
+    scrollbar-gutter: auto;
+  }
+
+  .site-footer {
+    width: min(100% - 2rem, 44rem);
+  }
+
   .journey-layout {
     grid-template-columns: minmax(0, 1fr);
     width: min(100%, 44rem);
   }
 
-  .app--journey .journey-sidebar {
-    position: static;
-    width: min(100%, 24rem);
-    margin-top: 2rem;
+  .app--journey main {
+    padding-top: 0;
+  }
+
+  .app--journey .journey-sidebar,
+  .app--journey .journey-panel {
+    display: contents;
+  }
+
+  .app--journey .journey-nav--desktop,
+  .app--journey .journey-note {
+    display: none;
+  }
+
+  .app--journey .journey-progress-nav {
+    position: sticky;
+    z-index: 120;
+    top: 0;
+    display: block;
+    grid-row: 1;
+    width: 100vw;
+    margin: 0 0 0 calc((100% - 100vw) / 2);
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    padding: 0;
+    background: var(--paper);
+    box-shadow: 0 0.35rem 1rem rgb(16 40 60 / 0.06);
+  }
+
+  .journey-layout > .notice--top {
+    grid-row: 1;
+    margin: 0 0 0 calc((100% - 100vw) / 2);
+  }
+
+  .journey-layout:has(> .notice--top) .journey-progress-nav {
+    grid-row: 2;
+  }
+
+  .journey-progress {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: clamp(0.35rem, 1.6vw, 0.75rem);
+    width: min(calc(100% - 2rem), 37rem);
+    min-height: 4rem;
+    margin-inline: auto;
+    align-items: center;
+  }
+
+  .journey-progress-number {
+    display: grid;
+    width: clamp(1.75rem, 8vw, 2.5rem);
+    place-self: center;
+    aspect-ratio: 1;
+    place-items: center;
+    border-radius: 50%;
+    border: 0;
+    padding: 0.125rem 0 0;
+    color: var(--muted);
+    background: #e9eef1;
+    font-size: clamp(0.8rem, 2.5vw, 1rem);
+    font-weight: 700;
+    line-height: 1;
+    transition: transform 100ms var(--ease-out);
+  }
+
+  .journey-progress-number.is-current {
+    color: #ffffff;
+    background: var(--ink);
+  }
+
+  .journey-progress-number.is-complete {
+    color: #ffffff;
+    background: var(--accent);
+  }
+
+  .journey-progress-number:active:not(:focus-visible):not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  .questionnaire-main,
+  .plan-main {
+    grid-row: 2;
+  }
+
+  .journey-layout:has(> .notice--top) .questionnaire-main,
+  .journey-layout:has(> .notice--top) .plan-main {
+    grid-row: 3;
+  }
+
+  .app--journey .journey-actions--main {
+    display: none;
+  }
+
+  .app--journey .journey-actions--sticky {
+    display: grid;
+  }
+
+  .app--journey .site-footer {
+    padding-bottom: calc(7rem + env(safe-area-inset-bottom));
   }
 
   .notice--top {
@@ -1117,14 +1250,21 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
 }
 
 @media (max-width: 380px) {
-  .site-footer,
   main {
     width: min(100% - 1.25rem, 90rem);
   }
 
-  .app--journey .site-footer,
-  .app--landing .site-footer {
+  .site-footer {
     width: min(100% - 1.25rem, 90rem);
+  }
+
+  .journey-progress {
+    width: min(calc(100% - 1.25rem), 37rem);
+  }
+
+  .journey-actions--sticky {
+    padding-right: 0.625rem;
+    padding-left: 0.625rem;
   }
 
   .button {
@@ -1160,6 +1300,7 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
 
   .button:active:not(:focus-visible),
   .text-button:active:not(:focus-visible),
+  .journey-progress-number:active:not(:focus-visible),
   .journey-step-link:active:not(:focus-visible) .journey-number {
     transform: none;
   }

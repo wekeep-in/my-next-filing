@@ -841,7 +841,7 @@ The specification does not prescribe detailed Analytics consent configuration. T
 - Hide advanced detail in an accessible disclosure control.
 - Keep errors close to the related input.
 - Do not show an empty dashboard.
-- Keep the journey timeline sticky beside the landing page, questionnaire, and result on wide screens. Update its active step and primary action with the current view. Stack it in document order on narrow screens.
+- Keep the journey timeline sticky beside the landing page, questionnaire, and result on wide screens. Update its active step and primary action with the current view. On narrow screens, hide the landing-page timeline, keep the current actions in a full-width sticky bottom bar, and use a full-width sticky top row of numbered step buttons to navigate questionnaire and result steps.
 - Make available timeline steps clickable so the user can move between Overview, questionnaire groups, and Calculation.
 
 ### 27. Visual and interaction direction

@@ -1,14 +1,10 @@
 import type { MouseEvent } from 'react'
 import MuxPlayer from '@mux/mux-player-react/lazy'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { JourneySidebar, calculationStep } from '../journey-sidebar'
 
 export function LandingRoute() {
-  const location = useLocation()
   const navigate = useNavigate()
-  const animateRequested = Boolean(
-    (location.state as { animate?: boolean } | null)?.animate,
-  )
 
   const navigateToCheckFromPointer = (
     event: MouseEvent<HTMLAnchorElement>,
@@ -28,14 +24,11 @@ export function LandingRoute() {
   }
 
   return (
-    <section
-      className={`landing${animateRequested ? ' journey-view--enter' : ''}`}
-      aria-labelledby="landing-title"
-    >
+    <section className="landing" aria-labelledby="landing-title">
       <header className="landing-hero">
         <div className="landing-title-row">
-          <h1 id="landing-title">My Next Filing</h1>
           <span className="version">0.0.1</span>
+          <h1 id="landing-title">My Next Filing</h1>
         </div>
         <p className="landing-intro">
           A simple tax estimate and filing calendar for independent IT

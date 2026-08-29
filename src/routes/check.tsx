@@ -381,15 +381,14 @@ export function CheckRoute() {
       className="questionnaire journey-layout"
       aria-labelledby="check-title"
     >
+      {usingExample && (
+        <p className="notice notice--top notice--example">
+          Fictional amounts — replace them before using this check.
+        </p>
+      )}
       <div
         className={`questionnaire-main${motion === 'error' ? ' is-pointer-activated' : ''}`}
       >
-        {usingExample && (
-          <p className="notice notice--top notice--example">
-            Fictional amounts — replace them before using this check.
-          </p>
-        )}
-
         {step === 0 && (
           <div
             className={questionGroupClassName}
