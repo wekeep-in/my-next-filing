@@ -49,6 +49,9 @@ function SourceReference({ id }: { readonly id: string }) {
     <p className="source-reference">
       <strong>Source</strong>{' '}
       <ExternalLink href={source.url}>{source.title}</ExternalLink>
+      <span className="source-meta">
+        {source.publisher}. Reviewed {formatDate(source.reviewDate)}.
+      </span>
     </p>
   )
 }
@@ -77,10 +80,10 @@ function GstCard({ gst }: { readonly gst: GstStatus }) {
     <article className="result-card gst-card">
       <h2>
         {gst.kind === 'below'
-          ? 'Below the GST threshold'
+          ? 'Below the GST starting threshold'
           : gst.kind === 'at'
-            ? 'At the GST threshold'
-            : 'Above the GST threshold'}
+            ? 'At the GST starting threshold'
+            : 'Above the GST starting threshold'}
       </h2>
       <p>{message}</p>
       {gst.coverageIncomplete && (
@@ -190,7 +193,10 @@ function Agenda({
             <article className="agenda-item" key={obligation.id}>
               <div className="agenda-date">
                 <strong>
-                  {new Date(`${obligation.dueDate}T00:00:00+05:30`).getDate()}
+                  {new Intl.DateTimeFormat('en-IN', {
+                    day: 'numeric',
+                    timeZone: 'Asia/Kolkata',
+                  }).format(new Date(`${obligation.dueDate}T00:00:00+05:30`))}
                 </strong>
                 <span>
                   {new Intl.DateTimeFormat('en-IN', {
@@ -204,10 +210,15 @@ function Agenda({
                 <h4>{obligation.title}</h4>
                 <p>{obligation.reasons[0]}</p>
                 {obligation.operativeDueDate && (
-                  <p>
-                    Normal date: {formatDate(obligation.normalDueDate)}.
-                    Operative date: {formatDate(obligation.operativeDueDate)}.
-                  </p>
+                  <>
+                    <p>
+                      Normal date: {formatDate(obligation.normalDueDate)}.
+                      Operative date: {formatDate(obligation.operativeDueDate)}.
+                    </p>
+                    {obligation.extensionSourceId && (
+                      <SourceReference id={obligation.extensionSourceId} />
+                    )}
+                  </>
                 )}
                 {obligation.status === 'deadline-passed' && (
                   <p>
@@ -242,30 +253,80 @@ function SupportedPlan({
         aria-labelledby="next-filing-title"
       >
         <p className="card-label">Your next filing</p>
-        <h1 id="next-filing-title">{next.title}</h1>
-        <p className="deadline-date">{formatDate(next.dueDate)}</p>
-        <p>{next.reasons[0]}</p>
-        {typeof next.amountDue === 'number' && (
-          <p className="amount-due">
-            Estimated amount remaining: {formatMoney(next.amountDue)}
-          </p>
+        {next ? (
+          <>
+            <h1 id="next-filing-title">{next.title}</h1>
+            <p className="deadline-date">{formatDate(next.dueDate)}</p>
+            <p>{next.reasons[0]}</p>
+            {typeof next.amountDue === 'number' && (
+              <p className="amount-due">
+                Estimated amount remaining: {formatMoney(next.amountDue)}
+              </p>
+            )}
+            {next.status === 'deadline-passed' && (
+              <p>
+                This deadline has passed. The application does not know whether
+                you completed this obligation.
+              </p>
+            )}
+            {next.operativeDueDate && next.extensionSourceId && (
+              <SourceReference id={next.extensionSourceId} />
+            )}
+            <SourceReference id={next.statutorySourceId} />
+          </>
+        ) : (
+          <>
+            <h1 id="next-filing-title">No filing is indicated</h1>
+            <p>{result.noAdvanceTaxMessage}</p>
+            <p>{result.annualReturn.message}</p>
+            <p>
+              If you need to file, the normal date for this non-audit
+              professional profile is{' '}
+              {formatDate(result.annualReturn.normalDueDate)}.
+            </p>
+            {result.annualReturn.operativeDueDate && (
+              <p>
+                A verified extension changes the operative date to{' '}
+                {formatDate(result.annualReturn.operativeDueDate)}.
+              </p>
+            )}
+            {result.annualReturn.extensionSourceId && (
+              <SourceReference id={result.annualReturn.extensionSourceId} />
+            )}
+            <SourceReference id="section-404" />
+            <SourceReference id={result.annualReturn.statutorySourceId} />
+          </>
         )}
-        {next.status === 'deadline-passed' && (
-          <p>
-            This deadline has passed. The application does not know whether you
-            completed this obligation.
-          </p>
-        )}
-        <SourceReference id={next.statutorySourceId} />
       </section>
       <div className="result-grid">
         <TaxSummary tax={result.tax} />
         <GstCard gst={result.gst} />
       </div>
-      {!result.advanceTaxApplies && (
+      {!result.advanceTaxApplies && next && (
         <p className="notice">{result.noAdvanceTaxMessage}</p>
       )}
-      <Agenda obligations={result.obligations} />
+      {result.annualReturn.message && next && (
+        <div className="notice return-note">
+          <p>{result.annualReturn.message}</p>
+          <p>
+            If you need to file, the normal date for this non-audit professional
+            profile is {formatDate(result.annualReturn.normalDueDate)}.
+          </p>
+          {result.annualReturn.operativeDueDate && (
+            <p>
+              A verified extension changes the operative date to{' '}
+              {formatDate(result.annualReturn.operativeDueDate)}.
+            </p>
+          )}
+          {result.annualReturn.extensionSourceId && (
+            <SourceReference id={result.annualReturn.extensionSourceId} />
+          )}
+          <SourceReference id={result.annualReturn.statutorySourceId} />
+        </div>
+      )}
+      {result.obligations.length > 0 && (
+        <Agenda obligations={result.obligations} />
+      )}
       <details className="assumptions result-card">
         <summary>Assumptions used</summary>
         <ul>
@@ -273,6 +334,12 @@ function SupportedPlan({
             <li key={assumption}>{assumption}</li>
           ))}
         </ul>
+      </details>
+      <details className="assumptions result-card">
+        <summary>Statutory sources used</summary>
+        {result.statutorySourceIds.map((id) => (
+          <SourceReference id={id} key={id} />
+        ))}
       </details>
     </>
   )
@@ -349,7 +416,13 @@ export function PlanRoute() {
     Boolean(confettiOrigin) &&
     !window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const backStep =
-    evaluation.kind === 'unsupported' ? 0 : questionnaireSteps.length - 1
+    evaluation.kind === 'unsupported'
+      ? evaluation.facts.some(
+          (fact) => fact.label === 'Supported profile confirmation',
+        )
+        ? questionnaireSteps.length - 1
+        : 0
+      : questionnaireSteps.length - 1
 
   const selectJourneyStep = (journeyStep: number, animate: boolean) => {
     if (journeyStep === 0) navigate('/', { state: { animate } })
@@ -373,7 +446,8 @@ export function PlanRoute() {
       )}
       {example && (
         <p className="notice notice--top notice--example">
-          Fictional amounts — replace them before using this check.
+          These are fictional amounts. Replace them with your own answers if you
+          use the personal check.
         </p>
       )}
       <div

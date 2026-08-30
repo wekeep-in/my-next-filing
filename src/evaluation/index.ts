@@ -1,5 +1,5 @@
-import { validateRuleDataset } from '../rules'
-import type { DateOnly, RuleDataset } from '../rules'
+import { validateRuleDataset } from '../rules/index.ts'
+import type { DateOnly, RuleDataset } from '../rules/index.ts'
 
 export const unsupportedFactLabels = {
   salary: 'Salary income',
@@ -25,6 +25,7 @@ export const unsupportedFactLabels = {
 export type UnsupportedFact = keyof typeof unsupportedFactLabels
 
 export type Profile = {
+  readonly scopeConfirmed: boolean | null
   readonly residentIndividual: boolean
   readonly newTaxRegime: boolean
   readonly itOrSoftwareConsulting: boolean
@@ -51,6 +52,7 @@ export type Obligation = {
   readonly taxPeriod: string
   readonly normalDueDate: DateOnly
   readonly operativeDueDate: DateOnly | null
+  readonly extensionSourceId: string | null
   readonly dueDate: DateOnly
   readonly status: DeadlineStatus
   readonly reasons: readonly string[]
@@ -95,8 +97,17 @@ export type SupportedResult = {
   readonly tax: TaxEstimate
   readonly advanceTaxApplies: boolean
   readonly noAdvanceTaxMessage: string | null
+  readonly annualReturn: {
+    readonly requiredByIncome: boolean
+    readonly normalDueDate: DateOnly
+    readonly operativeDueDate: DateOnly | null
+    readonly extensionSourceId: string | null
+    readonly dueDate: DateOnly
+    readonly statutorySourceId: string
+    readonly message: string | null
+  }
   readonly obligations: readonly Obligation[]
-  readonly nextObligation: Obligation
+  readonly nextObligation: Obligation | null
   readonly gst: GstStatus
   readonly assumptions: readonly string[]
   readonly statutorySourceIds: readonly string[]
@@ -183,10 +194,20 @@ function unsupported(
   return { label, reason }
 }
 
-function sourceIdsForRules(rules: RuleDataset) {
-  return rules.sources
-    .filter((source) => source.kind === 'statutory')
-    .map((source) => source.id)
+function sourceIdsForRules(rules: unknown) {
+  if (!rules || typeof rules !== 'object' || !('sources' in rules)) return []
+  const sources = (rules as { readonly sources?: unknown }).sources
+  if (!Array.isArray(sources)) return []
+  return sources.flatMap((source) =>
+    source &&
+    typeof source === 'object' &&
+    'kind' in source &&
+    source.kind === 'statutory' &&
+    'id' in source &&
+    typeof source.id === 'string'
+      ? [source.id]
+      : [],
+  )
 }
 
 function calculateTax(profile: Profile, rules: RuleDataset): TaxEstimate {
@@ -240,7 +261,7 @@ function calculateTax(profile: Profile, rules: RuleDataset): TaxEstimate {
     estimatedAdvanceTaxLiability,
     advanceTaxPaid: profile.advanceTaxAlreadyPaid,
     outcome:
-      finalBalance > 0 ? 'payable' : finalBalance < 0 ? 'refund' : 'settled',
+      finalAmount === 0 ? 'settled' : finalBalance < 0 ? 'refund' : 'payable',
     finalAmount,
   }
 }
@@ -291,21 +312,28 @@ function obligations(
   tax: TaxEstimate,
   today: DateOnly,
   rules: RuleDataset,
-): { readonly applies: boolean; readonly items: readonly Obligation[] } {
-  const applies =
+): {
+  readonly advanceTaxApplies: boolean
+  readonly annualReturn: SupportedResult['annualReturn']
+  readonly items: readonly Obligation[]
+} {
+  const advanceTaxApplies =
     tax.estimatedAdvanceTaxLiability >= rules.advanceTax.liabilityThreshold
+  const annualReturnRequiredByIncome =
+    tax.roundedTotalIncome > rules.annualReturn.filingIncomeThreshold
   const advanceDueDate =
     rules.advanceTax.operativeDueDate ?? rules.advanceTax.normalDueDate
   const returnDueDate =
     rules.annualReturn.operativeDueDate ?? rules.annualReturn.normalDueDate
   const items: Obligation[] = []
-  if (applies) {
+  if (advanceTaxApplies) {
     items.push({
       id: 'advance-tax',
       title: 'Pay advance tax',
       taxPeriod: rules.taxPeriod,
       normalDueDate: rules.advanceTax.normalDueDate,
       operativeDueDate: rules.advanceTax.operativeDueDate,
+      extensionSourceId: rules.advanceTax.extensionSourceId,
       dueDate: advanceDueDate,
       status: deadlineStatus(today, advanceDueDate),
       reasons: [
@@ -316,29 +344,44 @@ function obligations(
       statutorySourceId: 'income-tax-act-2026',
       tutorialSourceId: null,
       verifiedOn: rules.verifiedOn,
-      amountDue: roundToNearestTen(
-        Math.max(0, tax.estimatedAdvanceTaxLiability - tax.advanceTaxPaid),
-      ),
+      amountDue: tax.outcome === 'payable' ? tax.finalAmount : 0,
     })
   }
-  items.push({
-    id: 'annual-return',
-    title: 'File your annual income-tax return',
-    taxPeriod: rules.taxPeriod,
-    normalDueDate: rules.annualReturn.normalDueDate,
-    operativeDueDate: rules.annualReturn.operativeDueDate,
-    dueDate: returnDueDate,
-    status: deadlineStatus(today, returnDueDate),
-    reasons: [
-      'This is the normal date for the supported non-audit professional profile.',
-    ],
-    consequence:
-      'A filing fee and other effects can apply after the deadline. This application does not calculate them. Verify the current position before you file.',
-    statutorySourceId: 'income-tax-act-2026',
-    tutorialSourceId: null,
-    verifiedOn: rules.verifiedOn,
-  })
-  return { applies, items }
+  if (annualReturnRequiredByIncome) {
+    items.push({
+      id: 'annual-return',
+      title: 'File your annual income-tax return',
+      taxPeriod: rules.taxPeriod,
+      normalDueDate: rules.annualReturn.normalDueDate,
+      operativeDueDate: rules.annualReturn.operativeDueDate,
+      extensionSourceId: rules.annualReturn.extensionSourceId,
+      dueDate: returnDueDate,
+      status: deadlineStatus(today, returnDueDate),
+      reasons: [
+        'Your rounded total income is above ₹4,00,000. This is the normal date for the supported non-audit professional profile.',
+      ],
+      consequence:
+        'A filing fee and other effects can apply after the deadline. This application does not calculate them. Verify the current position before you file.',
+      statutorySourceId: 'income-tax-act-2026',
+      tutorialSourceId: null,
+      verifiedOn: rules.verifiedOn,
+    })
+  }
+  return {
+    advanceTaxApplies,
+    annualReturn: {
+      requiredByIncome: annualReturnRequiredByIncome,
+      normalDueDate: rules.annualReturn.normalDueDate,
+      operativeDueDate: rules.annualReturn.operativeDueDate,
+      extensionSourceId: rules.annualReturn.extensionSourceId,
+      dueDate: returnDueDate,
+      statutorySourceId: 'income-tax-act-2026',
+      message: annualReturnRequiredByIncome
+        ? null
+        : 'This estimate does not indicate a mandatory income-tax return from the income it covers. Other filing conditions that this application does not collect can still require a return.',
+    },
+    items,
+  }
 }
 
 export function evaluate(
@@ -357,6 +400,13 @@ export function evaluate(
   }
 
   const facts: { label: string; reason: string }[] = []
+  if (profile.scopeConfirmed !== true)
+    facts.push(
+      unsupported(
+        'Supported profile confirmation',
+        'This check can calculate only when every stated profile assumption applies.',
+      ),
+    )
   if (!profile.residentIndividual)
     facts.push(
       unsupported(
@@ -488,15 +538,17 @@ export function evaluate(
   const gst = calculateGst(profile, ruleValidation.data)
   const nextObligation =
     obligationResult.items.find((item) => item.status !== 'deadline-passed') ??
-    obligationResult.items.at(-1)!
+    obligationResult.items.at(-1) ??
+    null
 
   return {
     kind: 'supported',
     tax,
-    advanceTaxApplies: obligationResult.applies,
-    noAdvanceTaxMessage: obligationResult.applies
+    advanceTaxApplies: obligationResult.advanceTaxApplies,
+    noAdvanceTaxMessage: obligationResult.advanceTaxApplies
       ? null
-      : 'No advance tax is indicated by this estimate. Your annual return and GST-registration status can still require attention.',
+      : 'No advance tax is indicated by this estimate. Your GST-registration status can still require attention.',
+    annualReturn: obligationResult.annualReturn,
     obligations: obligationResult.items,
     nextObligation,
     gst,
@@ -505,11 +557,14 @@ export function evaluate(
       'IT or software consultant using the supported presumptive method.',
       'Direct Indian clients and no GSTIN.',
       'The estimate uses declared receipts, bank interest, tax credits, and advance tax paid.',
-      'No FAQ-listed unsupported fact applies. Receipts fit the limit for your cash level; total income is within ₹50 lakh.',
+      'You confirmed that no FAQ-listed unsupported fact applies. Receipts fit the limit for your cash level; total income is within ₹50 lakh.',
     ],
     statutorySourceIds: [
       'section-58',
+      'section-62',
+      'budget-faq-2026',
       'section-156',
+      'finance-act-2026',
       'section-404',
       'income-tax-act-2026',
       'gst-act-2026',

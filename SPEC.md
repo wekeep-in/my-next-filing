@@ -9,7 +9,7 @@
 | Author | Sarthak Mishra |
 | Software licence | Apache License 2.0 |
 | Statutory period | Tax Year 2026-27 |
-| Law verification date | 29 August 2026 |
+| Law verification date | 30 August 2026 |
 | Document language | ASD-STE100 Simplified Technical English |
 
 ## Problem Statement
@@ -48,7 +48,7 @@ For a supported profile, the application gives the user:
 - An estimated income-tax calculation.
 - An advance-tax applicability result.
 - The normal advance-tax deadline.
-- The annual income-tax-return deadline.
+- An annual-return applicability result and the normal date when filing is indicated.
 - A GST-registration threshold status.
 - A chronological agenda.
 - A short reason for each result.
@@ -165,7 +165,7 @@ The first release covers income earned from 1 April 2026 to 31 March 2027. The i
 68. As a supported user, I want a chronological agenda after the next action, so that I can see the complete supported period.
 69. As a supported user, I want advance tax to appear only when the estimated liability is at least ₹10,000, so that the agenda matches the supported rule.
 70. As a supported user without advance tax, I want an explicit no-advance-tax result, so that I know the application did not forget the check.
-71. As a supported user, I want the annual return deadline to appear even when no advance tax applies, so that I do not confuse tax payment with return filing.
+71. As a supported user, I want the annual-return result to state whether income alone indicates filing, so that a low-income estimate does not create a false obligation.
 72. As a user before a deadline, I want the status "Upcoming," so that I know the date has not arrived.
 73. As a user on the due date, I want the status "Due today," so that the current action is clear.
 74. As a user after the due date, I want the status "Deadline passed," so that the application does not claim that I failed to file.
@@ -173,7 +173,7 @@ The first release covers income earned from 1 April 2026 to 31 March 2027. The i
 76. As a user, I want the operative due date to control the status, so that a verified extension changes the displayed deadline.
 77. As a user, I want to see both normal and extended dates, so that the extension does not erase the statutory schedule.
 78. As a user, I want the extension source beside the changed date, so that I can verify the change.
-79. As a user, I want the agenda to end with 31 August 2027, so that it includes the return for the supported tax year.
+79. As a user whose income indicates return filing, I want the agenda to end with 31 August 2027, so that it includes the return for the supported tax year.
 80. As a user, I do not want a completion control, so that the application does not act like a filing record.
 81. As a user, I do not want a reminder control, so that the application does not add another notification channel.
 
@@ -258,7 +258,7 @@ The application must not put a profile value in a route, query string, hash, pag
 149. As a contributor, I want a rule validator, so that an invalid date or missing source fails before deployment.
 150. As a contributor, I want preview deployment for a proposed change, so that reviewers can inspect the full journey.
 151. As a maintainer, I want production deployment from the main branch, so that the public site matches reviewed source.
-152. As a maintainer, I want preview analytics disabled, so that preview traffic does not pollute production data.
+152. As a maintainer, I want preview Analytics disabled, so that preview traffic does not pollute production data.
 153. As a maintainer, I want stale production rules to fail closed, so that a successful build cannot make expired calculations.
 154. As a maintainer, I want a small dependency set, so that updates do not dominate a small static application.
 155. As a maintainer, I want no hidden GST-return implementation, so that unfinished future scope cannot reach a user.
@@ -310,7 +310,7 @@ The first release is complete when all of these statements are true:
 - The questionnaire rejects each declared unsupported profile.
 - The evaluation produces the verified tax estimate.
 - The plan shows the applicable advance-tax result.
-- The plan shows the annual return date.
+- The plan shows whether income indicates annual-return filing and shows the date when it applies.
 - The plan shows the GST-registration threshold status.
 - The plan shows sources and external tutorials.
 - The application stops calculation for stale rules.
@@ -351,7 +351,7 @@ React Router controls client routes. Cloudflare serves the application entry fil
 
 ### 6. Questionnaire flow
 
-The questionnaire uses five content groups. The journey timeline adds Overview before them and Calculation after them, for seven steps total. Its available steps act as navigation. The supported profile is described in the landing-page FAQ rather than confirmed in a separate step.
+The questionnaire uses five content groups. The journey timeline adds Overview before them and Calculation after them, for seven steps total. Its available steps act as navigation after the preceding groups validate. The landing-page FAQ describes the supported profile. The Review group requires one confirmation that every supported-profile assumption applies and no listed unsupported fact applies.
 
 #### Group 1: Professional receipts
 
@@ -365,7 +365,7 @@ Use this description:
 
 Use this label:
 
-> Receipts paid in cash
+> Professional receipts received in cash
 
 Use this description:
 
@@ -377,7 +377,7 @@ Use this label:
 
 Use this description:
 
-> The presumptive minimum is 50% of receipts. Enter a higher actual profit, or keep the calculated amount.
+> Enter your expected profit. It must be at least 50% of gross professional receipts.
 
 The application calculates 50 percent of gross professional receipts. The higher expected profit cannot be less than this amount.
 
@@ -429,7 +429,7 @@ Use this label:
 
 Use this description:
 
-> Select where you provide services. This sets the supported GST registration threshold.
+> Select the state or Union territory from which you make taxable supplies. Do not select your client's location.
 
 Use this label:
 
@@ -445,7 +445,7 @@ Treat GST aggregate turnover as one direct declared amount. Do not calculate it 
 
 Show all declared facts and calculated input assumptions. Provide "Change" for each input group.
 
-Do not add a separate unsupported-facts question. The landing-page FAQ lists the unsupported facts and limits before the user starts, and the Review step documents the assumptions used by a supported result.
+Show one Yes or No confirmation for the full supported-profile boundary. A missing answer stops submission. A No answer returns an unsupported result. Do not add a separate question for each unsupported fact.
 
 ### 7. Money and input rules
 
@@ -469,6 +469,7 @@ An empty optional money field has the value zero after the user leaves the field
 
 The evaluation returns an unsupported result if one of these conditions is true:
 
+- The user does not confirm that every stated supported-profile assumption applies.
 - The user is not a resident individual.
 - The user does not use the new tax regime.
 - The work is not IT or software consulting.
@@ -590,11 +591,19 @@ The application does not calculate interest under section 424 or section 425. Us
 
 If estimated advance-tax liability is below ₹10,000, use this result copy:
 
-> No advance tax is indicated by this estimate. Your annual return and GST-registration status can still require attention.
+> No advance tax is indicated by this estimate. Your GST-registration status can still require attention.
 
 ### 15. Annual return obligation
 
-For the supported non-audit business or professional profile:
+Income alone indicates mandatory return filing when rounded total income exceeds ₹4,00,000. The application adds an annual-return obligation only in that case.
+
+When rounded total income is not more than ₹4,00,000, show:
+
+> This estimate does not indicate a mandatory income-tax return from the income it covers. Other filing conditions that this application does not collect can still require a return.
+
+Show the 31 August 2027 normal date as conditional information in this state. Do not label it as an obligation.
+
+When income indicates filing for the supported non-audit business or professional profile:
 
 - The normal return due date is 31 August 2027.
 - The application must not name a future return form before the official form is available and verified.
@@ -741,13 +750,14 @@ When an official tutorial is usable, prefer it. Use a reviewed commercial tutori
 
 The application does not scrape, embed, summarize, or copy a tutorial. It stores and displays the reviewed link metadata.
 
-### 20. Statutory sources reviewed on 29 August 2026
+### 20. Statutory sources reviewed on 30 August 2026
 
 These primary sources were reviewed on the specification's law verification date. The implementation must verify them again before release:
 
 | Subject | Reviewed primary source |
 | --- | --- |
 | Income-tax Act, 2025 as amended by Finance Act, 2026 | https://www.incometaxindia.gov.in/documents/d/guest/income_tax_act_2025_as_amended_by_fa_act_2026-pdf |
+| Health and Education Cess and surcharge boundary under Finance Act, 2026 | https://www.incometaxindia.gov.in/documents/d/guest/finance-act-2026-pdf-1 |
 | Presumptive income under section 58 | https://www.incometaxindia.gov.in/w/section-58-138 |
 | Specified professions under section 62 | https://www.incometaxindia.gov.in/w/section-62-134 |
 | Rebate under section 156 | https://wmstatic-prd.incometaxindia.gov.in/documents/20117/42998/Section-156_2026-04-01_05-11-58_344893_en.pdf/415b0f0e-8826-feaa-b374-481e54d4b98e |
@@ -755,7 +765,7 @@ These primary sources were reviewed on the specification's law verification date
 | Advance-tax due date under section 408 | https://www.incometaxindia.gov.in/documents/d/guest/income_tax_act_2025_as_amended_by_fa_act_2026-pdf |
 | Income and tax rounding under section 516 | https://www.incometaxindia.gov.in/documents/d/guest/income_tax_act_2025_as_amended_by_fa_act_2026-pdf |
 | Tax slabs and rebate examples | https://www.incometaxindia.gov.in/documents/20117/15766092/FAQs-Budget-2026%2BUpdated.pdf/daf54d14-aca9-c4ea-b786-598fd2f8d4c4 |
-| Return due date under section 263 | https://www.incometaxindia.gov.in/documents/d/guest/income_tax_act_2025_as_amended_by_fa_act_2026-pdf |
+| Return applicability and due date under sections 202 and 263 | https://www.incometaxindia.gov.in/documents/d/guest/income_tax_act_2025_as_amended_by_fa_act_2026-pdf |
 | GST aggregate turnover under section 2(6) and registration under section 22 | https://www.indiacode.nic.in/indiacode/bitstream/123456789/15689/1/A2017-12.pdf |
 
 ### 21. Tutorial candidate review
@@ -779,6 +789,10 @@ The landing-page FAQ contains the general-guidance and verification notice. Do n
 Show this title above the nearest obligation:
 
 > Your next filing
+
+If neither advance tax nor annual-return filing is indicated, show:
+
+> No filing is indicated
 
 If advance tax applies, show:
 
@@ -816,17 +830,18 @@ Formal public terms and privacy text require legal review. The implementation mu
 
 ### 25. Google Analytics and privacy
 
-- Integrate Google Analytics for page analytics.
-- Do not send questionnaire answers.
-- Do not send money amounts.
-- Do not send a tax result.
-- Do not send a name or user identifier.
-- Do not include sensitive values in a route or page title.
+- Load Google Analytics only on `mynextfiling.wekeep.in` with measurement ID `G-94S2KGJFNL`.
+- Send one manual page-view event for each allowlisted React Router path.
+- Disable the tag's automatic page view to prevent duplicate initial events.
+- Disable Enhanced Measurement page changes based on browser-history events in the Analytics property to prevent duplicate route events.
+- Disable Google Signals and advertising-personalization signals.
+- Do not send questionnaire answers, money amounts, tax results, errors, names, or profile values.
+- Use fixed page titles and route-only page locations.
 - Keep Analytics outside the evaluation module.
 - Make application behavior independent of Analytics availability.
-- Describe Analytics in the landing-page FAQs.
+- Describe Analytics cookies and standard collection in the landing-page FAQ.
 
-The specification does not prescribe detailed Analytics consent configuration. The implementation must complete an applicable privacy review before public release.
+The implementation requires applicable privacy review before public release.
 
 ### 26. Information design
 
@@ -857,7 +872,7 @@ The later design run can select exact visual tokens and layout. It must keep the
 - Use no mascot.
 - Use no government logo.
 - Do not imitate a government portal.
-- Use no confetti.
+- Use confetti only for a pointer-initiated supported result. Respect reduced motion.
 - Do not joke about fines, tax debt, or missed filing.
 - Use shadcn/ui as the interface base.
 
@@ -938,7 +953,7 @@ The example page must state:
 - Attach `mynextfiling.wekeep.in` as the production custom domain.
 - Enable HTTPS.
 - Use no server code, function, data store, or secret for the core application.
-- Limit Google Analytics configuration to production.
+- Limit Google Analytics to the canonical production hostname.
 
 ### 32. Performance behavior
 
@@ -1106,7 +1121,7 @@ The wayfinder cannot change:
 
 ### 4. Statutory review before release
 
-The law verification date in this specification is 29 August 2026. The implementation must verify all statutory sources again before public release.
+The law verification date in this specification is 30 August 2026. The implementation must verify all statutory sources again before public release.
 
 The review must check:
 

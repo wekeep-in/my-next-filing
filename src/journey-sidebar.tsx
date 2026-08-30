@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 
 export const questionnaireSteps = [
   'Professional receipts',
@@ -10,7 +11,7 @@ export const questionnaireSteps = [
 
 export const calculationStep = questionnaireSteps.length + 1
 
-const journeySteps = ['Overview', ...questionnaireSteps, 'Next Filing']
+const journeySteps = ['Overview', ...questionnaireSteps, 'Calculation']
 
 function JourneySteps({
   activeStep,
@@ -95,7 +96,11 @@ export function JourneySidebar({
         </div>
       </div>
       <p className="journey-note">
-        Review all of the <a href="/#faqs">FAQs</a> prior to starting.
+        Read the{' '}
+        <Link to="/#faqs" target="_blank" rel="noreferrer">
+          FAQs
+        </Link>{' '}
+        before calculating.
       </p>
       <div className="journey-actions journey-actions--sticky">
         {backAction}

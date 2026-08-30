@@ -222,10 +222,18 @@ main {
   line-height: 0.95;
 }
 
-.version {
+.landing-title-row > .period-pill {
+  margin-bottom: 0;
+}
+
+.period-pill {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
   border: 1px solid #8b9aa5;
   border-radius: 999px;
-  padding: 0.2rem 0.45rem;
+  margin-bottom: 0.85rem;
+  padding: 0.3rem 0.65rem;
   color: var(--muted);
   font-size: clamp(0.85rem, 0.8vw, 1rem);
   font-weight: 700;
@@ -633,6 +641,9 @@ legend {
 }
 
 .choice-row label {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
   border: 1px solid var(--line);
   border-radius: 0.6rem;
   padding: 0.45rem 0.6rem;
@@ -765,6 +776,21 @@ select:focus {
   font-size: 0.9rem;
 }
 
+.scope-list {
+  margin: 0.55rem 0 0.9rem;
+  padding-left: 1.25rem;
+}
+
+.scope-list li {
+  font-size: 0.9rem;
+}
+
+.review-confirmation {
+  margin-top: 0.9rem;
+  border-top: 1px solid var(--line);
+  padding-top: 0.9rem;
+}
+
 .text-button,
 .text-link {
   color: var(--ink);
@@ -822,6 +848,14 @@ select:focus {
 .notice--warning {
   border-color: #a15c00;
   background: #fff4d8;
+}
+
+.return-note {
+  margin-top: 1rem;
+}
+
+.return-note p {
+  margin-bottom: 0.55rem;
 }
 
 .result-card {
@@ -888,7 +922,6 @@ select:focus {
 
 .result-grid h2 {
   margin: 0 0 0.7rem;
-  text-transform: capitalize;
 }
 
 .money-result {
@@ -964,6 +997,12 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
 
 .source-reference strong {
   color: var(--ink);
+}
+
+.source-meta {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--muted);
 }
 
 .agenda {

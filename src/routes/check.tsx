@@ -62,6 +62,7 @@ const statesAndUnionTerritories = [
 ] as const
 
 const emptyProfile = (): Profile => ({
+  scopeConfirmed: null,
   residentIndividual: true,
   newTaxRegime: true,
   itOrSoftwareConsulting: true,
@@ -81,6 +82,7 @@ const emptyProfile = (): Profile => ({
 })
 
 const exampleProfile: Profile = {
+  scopeConfirmed: true,
   residentIndividual: true,
   newTaxRegime: true,
   itOrSoftwareConsulting: true,
@@ -187,7 +189,12 @@ function MoneyField({
 }
 
 function QuestionHeading({ title }: { readonly title: string }) {
-  return <h1 id="check-title">{title}</h1>
+  return (
+    <>
+      <span className="period-pill">1 April 2026 to 31 March 2027</span>
+      <h1 id="check-title">{title}</h1>
+    </>
+  )
 }
 
 export function CheckRoute() {
@@ -212,15 +219,21 @@ export function CheckRoute() {
     : !personalRequested && currentCheck
       ? currentCheck.profile
       : emptyProfile()
+  const startingHighestStep = usingExample
+    ? questionnaireSteps.length - 1
+    : !personalRequested && currentCheck
+      ? currentCheck.highestStep
+      : 0
   const [profile, setProfile] = useState<Profile>(startingProfile)
   const [rawMoney, setRawMoney] = useState<Record<MoneyKey, string>>(() =>
     moneyText(startingProfile),
   )
   const [step, setStep] = useState(
     Number.isInteger(requestedStep)
-      ? Math.min(Math.max(requestedStep ?? 0, 0), questionnaireSteps.length - 1)
+      ? Math.min(Math.max(requestedStep ?? 0, 0), startingHighestStep)
       : 0,
   )
+  const [highestStep, setHighestStep] = useState(startingHighestStep)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [motion, setMotion] = useState<'none' | 'step' | 'error'>(
     animateRequested ? 'step' : 'none',
@@ -228,7 +241,7 @@ export function CheckRoute() {
 
   useEffect(() => {
     if (exampleRequested || personalRequested) {
-      setCurrentCheck(startingProfile, usingExample, false)
+      setCurrentCheck(startingProfile, usingExample, false, startingHighestStep)
       navigate('/check', { replace: true, state: null })
     }
   }, [
@@ -236,6 +249,7 @@ export function CheckRoute() {
     navigate,
     personalRequested,
     startingProfile,
+    startingHighestStep,
     usingExample,
   ])
 
@@ -244,13 +258,21 @@ export function CheckRoute() {
   }, [step])
 
   const setMoney = (key: MoneyKey, value: string) => {
+    setHighestStep((current) => Math.min(current, step))
     setRawMoney((current) => ({ ...current, [key]: value }))
   }
 
   const commitMoney = (key: MoneyKey, optional: boolean) => {
     const parsed = parseMoney(rawMoney[key], optional)
     if ('error' in parsed) return
-    setProfile((current) => ({ ...current, [key]: parsed.value }))
+    const nextProfile = { ...profile, [key]: parsed.value }
+    setProfile(nextProfile)
+    setCurrentCheck(
+      nextProfile,
+      usingExample,
+      false,
+      Math.min(highestStep, step),
+    )
     setRawMoney((current) => ({
       ...current,
       [key]: parsed.value.toLocaleString('en-IN'),
@@ -324,6 +346,8 @@ export function CheckRoute() {
       if (!next.stateOrUnionTerritory)
         nextErrors.stateOrUnionTerritory = 'Select a state or Union territory.'
     }
+    if (step === 4 && profile.scopeConfirmed === null)
+      nextErrors.scopeConfirmed = 'Choose Yes or No before calculating.'
     setErrors(nextErrors)
     return Object.keys(nextErrors).length === 0 ? nextProfile : null
   }
@@ -343,7 +367,12 @@ export function CheckRoute() {
     }
     if (step === questionnaireSteps.length - 1) {
       setMotion('none')
-      setCurrentCheck(nextProfile, usingExample, true)
+      setCurrentCheck(
+        nextProfile,
+        usingExample,
+        true,
+        questionnaireSteps.length - 1,
+      )
       const button = event.currentTarget.getBoundingClientRect()
       navigate('/plan', {
         state: animate
@@ -359,7 +388,8 @@ export function CheckRoute() {
       return
     }
     const nextStep = step + 1
-    setCurrentCheck(nextProfile, usingExample, false)
+    setHighestStep((current) => Math.max(current, nextStep))
+    setCurrentCheck(nextProfile, usingExample, false, nextStep)
     changeStep(nextStep, animate)
   }
 
@@ -383,7 +413,8 @@ export function CheckRoute() {
     >
       {usingExample && (
         <p className="notice notice--top notice--example">
-          Fictional amounts — replace them before using this check.
+          These are fictional amounts. Replace them with your own answers if you
+          use the personal check.
         </p>
       )}
       <div
@@ -399,7 +430,7 @@ export function CheckRoute() {
             <MoneyField
               id="grossProfessionalReceipts"
               label="Gross professional receipts"
-              help="Enter this tax year's gross professional receipts from your invoice or receipt records. Do not subtract expenses or TDS."
+              help="Enter gross professional receipts from your invoice or receipt records. Do not subtract expenses or TDS."
               value={rawMoney.grossProfessionalReceipts}
               error={errors.grossProfessionalReceipts}
               onChange={(value) => setMoney('grossProfessionalReceipts', value)}
@@ -407,7 +438,7 @@ export function CheckRoute() {
             />
             <MoneyField
               id="cashReceipts"
-              label="Receipts paid in cash"
+              label="Professional receipts received in cash"
               help="Include cash and non-account-payee cheques or drafts. Enter zero if all receipts came through bank or online payments."
               value={rawMoney.cashReceipts}
               error={errors.cashReceipts}
@@ -417,7 +448,7 @@ export function CheckRoute() {
             <MoneyField
               id="higherExpectedProfit"
               label="Higher expected profit"
-              help="The presumptive minimum is 50% of receipts. Enter a higher actual profit, or keep the calculated amount."
+              help="Enter your expected profit. It must be at least 50% of gross professional receipts."
               value={rawMoney.higherExpectedProfit}
               error={errors.higherExpectedProfit}
               onChange={(value) => setMoney('higherExpectedProfit', value)}
@@ -473,7 +504,7 @@ export function CheckRoute() {
             <MoneyField
               id="advanceTaxAlreadyPaid"
               label="Advance tax already paid"
-              help="Enter advance tax already paid for this tax year. Exclude self-assessment tax for another year."
+              help="Enter advance tax already paid for income earned from 1 April 2026 to 31 March 2027. Exclude self-assessment tax for another period."
               value={rawMoney.advanceTaxAlreadyPaid}
               error={errors.advanceTaxAlreadyPaid}
               onChange={(value) => setMoney('advanceTaxAlreadyPaid', value)}
@@ -494,20 +525,28 @@ export function CheckRoute() {
                 State or Union territory
               </label>
               <p className="field-help" id="state-help">
-                Select where you provide services. This sets the supported GST
-                registration threshold.
+                Select the state or Union territory from which you make taxable
+                supplies. Do not select your client's location.
               </p>
               <select
                 id="stateOrUnionTerritory"
                 aria-describedby={`state-help${errors.stateOrUnionTerritory ? ' state-error' : ''}`}
                 aria-invalid={Boolean(errors.stateOrUnionTerritory)}
                 value={profile.stateOrUnionTerritory}
-                onChange={(event) =>
-                  setProfile((current) => ({
-                    ...current,
+                onChange={(event) => {
+                  const nextProfile = {
+                    ...profile,
                     stateOrUnionTerritory: event.target.value,
-                  }))
-                }
+                  }
+                  setHighestStep((current) => Math.min(current, step))
+                  setProfile(nextProfile)
+                  setCurrentCheck(
+                    nextProfile,
+                    usingExample,
+                    false,
+                    Math.min(highestStep, step),
+                  )
+                }}
               >
                 <option value="">Select a state or Union territory</option>
                 {statesAndUnionTerritories.map((state) => (
@@ -544,12 +583,102 @@ export function CheckRoute() {
             </p>
             <div className="review-list">
               <article>
-                <h2>Receipts and interest</h2>
+                <h2>Supported profile</h2>
+                <p>
+                  Resident individual; new tax regime; presumptive IT or
+                  software consulting; direct clients in India; no GSTIN.
+                </p>
+                <ul className="scope-list">
+                  <li>
+                    No salary, house-property income, dividends, gifts, capital
+                    gains, crypto, lottery, gaming, foreign income or relief, or
+                    agricultural income.
+                  </li>
+                  <li>
+                    No other business or profession, foreign clients, platform,
+                    marketplace or agency income, commission, brokerage, or
+                    goods sales.
+                  </li>
+                  <li>
+                    No unlisted deductions, losses, or credits; disputed TDS or
+                    TCS; employee or deductor duties; audit requirement;
+                    compulsory GST-registration fact; or another unsupported
+                    fact.
+                  </li>
+                </ul>
+                <fieldset
+                  className="review-confirmation"
+                  aria-invalid={Boolean(errors.scopeConfirmed)}
+                  aria-describedby={
+                    errors.scopeConfirmed ? 'scope-confirmed-error' : undefined
+                  }
+                >
+                  <legend>Do all of these statements apply?</legend>
+                  <div className="choice-row">
+                    <label>
+                      <input
+                        type="radio"
+                        name="scopeConfirmed"
+                        checked={profile.scopeConfirmed === true}
+                        onChange={() => {
+                          const nextProfile = {
+                            ...profile,
+                            scopeConfirmed: true,
+                          }
+                          setProfile(nextProfile)
+                          setErrors((current) => ({
+                            ...current,
+                            scopeConfirmed: '',
+                          }))
+                          setCurrentCheck(
+                            nextProfile,
+                            usingExample,
+                            false,
+                            highestStep,
+                          )
+                        }}
+                      />{' '}
+                      Yes
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        name="scopeConfirmed"
+                        checked={profile.scopeConfirmed === false}
+                        onChange={() => {
+                          const nextProfile = {
+                            ...profile,
+                            scopeConfirmed: false,
+                          }
+                          setProfile(nextProfile)
+                          setErrors((current) => ({
+                            ...current,
+                            scopeConfirmed: '',
+                          }))
+                          setCurrentCheck(
+                            nextProfile,
+                            usingExample,
+                            false,
+                            highestStep,
+                          )
+                        }}
+                      />{' '}
+                      No
+                    </label>
+                  </div>
+                  <FieldError
+                    id="scope-confirmed-error"
+                    error={errors.scopeConfirmed}
+                  />
+                </fieldset>
+              </article>
+              <article>
+                <h2>Professional receipts</h2>
                 <p>
                   {formatMoney(profile.grossProfessionalReceipts)} gross
-                  receipts; {formatMoney(profile.cashReceipts)} cash;{' '}
-                  {formatMoney(profile.higherExpectedProfit)} higher profit;{' '}
-                  {formatMoney(profile.taxableBankInterest)} interest.
+                  receipts; {formatMoney(profile.cashReceipts)} received in
+                  cash; {formatMoney(profile.higherExpectedProfit)} expected
+                  profit.
                 </p>
                 <button
                   type="button"
@@ -560,11 +689,36 @@ export function CheckRoute() {
                 </button>
               </article>
               <article>
-                <h2>Credits and GST</h2>
+                <h2>Bank interest</h2>
+                <p>
+                  {formatMoney(profile.taxableBankInterest)} taxable interest.
+                </p>
+                <button
+                  type="button"
+                  className="text-button"
+                  onClick={(event) => changeStep(1, event.detail > 0)}
+                >
+                  Change
+                </button>
+              </article>
+              <article>
+                <h2>Tax credits and payments</h2>
                 <p>
                   {formatMoney(profile.tdsAlreadyDeducted)} TDS;{' '}
                   {formatMoney(profile.tcsAlreadyCollected)} TCS;{' '}
-                  {formatMoney(profile.advanceTaxAlreadyPaid)} advance tax;{' '}
+                  {formatMoney(profile.advanceTaxAlreadyPaid)} advance tax.
+                </p>
+                <button
+                  type="button"
+                  className="text-button"
+                  onClick={(event) => changeStep(2, event.detail > 0)}
+                >
+                  Change
+                </button>
+              </article>
+              <article>
+                <h2>GST check</h2>
+                <p>
                   {profile.stateOrUnionTerritory};{' '}
                   {formatMoney(profile.gstAggregateTurnover)} GST aggregate
                   turnover.
@@ -612,7 +766,13 @@ export function CheckRoute() {
               : 'Next'}
           </button>
         }
-        disabledSteps={[calculationStep]}
+        disabledSteps={Array.from(
+          { length: calculationStep + 1 },
+          (_, index) => index,
+        ).filter(
+          (journeyStep) =>
+            journeyStep === calculationStep || journeyStep > highestStep + 1,
+        )}
         onStepSelect={selectJourneyStep}
       />
     </section>

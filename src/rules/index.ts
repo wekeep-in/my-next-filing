@@ -70,6 +70,7 @@ export type RuleDataset = {
     readonly extensionSourceId: string | null
   }
   readonly annualReturn: {
+    readonly filingIncomeThreshold: number
     readonly normalDueDate: DateOnly
     readonly operativeDueDate: DateOnly | null
     readonly extensionSourceId: string | null
@@ -82,7 +83,7 @@ export type RuleDataset = {
 }
 
 const taxPeriod = 'Tax Year 2026-27'
-const reviewedOn = '2026-08-29' as DateOnly
+const reviewedOn = '2026-08-30' as DateOnly
 
 export const sourceRegistry = [
   {
@@ -100,8 +101,20 @@ export const sourceRegistry = [
       'presumptive-profit',
       'advance-tax-date',
       'income-rounding',
+      'annual-return-threshold',
       'annual-return-date',
     ],
+  },
+  {
+    id: 'finance-act-2026',
+    kind: 'statutory',
+    publisher: 'Ministry of Law and Justice',
+    title: 'Finance Act, 2026',
+    url: 'https://www.incometaxindia.gov.in/documents/d/guest/finance-act-2026-pdf-1',
+    publicationDate: '2026-03-30',
+    reviewDate: reviewedOn,
+    taxPeriod,
+    coveredRuleIds: ['income-ceiling', 'health-education-cess'],
   },
   {
     id: 'section-58',
@@ -150,6 +163,7 @@ export const sourceRegistry = [
     publisher: 'Income Tax Department',
     title: 'Budget 2026 FAQs: tax slabs and rebate examples',
     url: 'https://www.incometaxindia.gov.in/documents/20117/15766092/FAQs-Budget-2026%2BUpdated.pdf/daf54d14-aca9-c4ea-b786-598fd2f8d4c4',
+    publicationDate: '2026-01-30',
     reviewDate: reviewedOn,
     taxPeriod,
     coveredRuleIds: ['new-regime-slabs'],
@@ -199,7 +213,7 @@ export const sourceRegistry = [
 ] as const satisfies readonly Source[]
 
 export const currentRules = {
-  id: 'my-next-filing-2026-27-v1',
+  id: 'my-next-filing-2026-27-v2',
   schemaVersion: 1,
   taxPeriod,
   effectiveStart: '2026-04-01',
@@ -207,19 +221,26 @@ export const currentRules = {
   verifiedOn: reviewedOn,
   expiresOn: '2027-08-31',
   changeNotes: [
-    'Initial Tax Year 2026-27 dataset reviewed on 29 August 2026.',
+    'Tax Year 2026-27 dataset reviewed on 30 August 2026.',
+    'annual-return-threshold changed from an unconditional filing obligation to rounded total income above ₹4,00,000, effective 1 April 2026, under sections 202 and 263 of the Act amended 30 March 2026. Other filing triggers remain outside this check.',
     'GST turnover is a direct declared amount and is never derived from income-tax inputs.',
   ],
   sources: sourceRegistry,
   ruleSources: [
+    { id: 'period', sourceId: 'income-tax-act-2026' },
     { id: 'supported-profession', sourceId: 'section-62' },
     { id: 'presumptive-receipts', sourceId: 'section-58' },
     { id: 'presumptive-profit', sourceId: 'section-58' },
+    { id: 'income-ceiling', sourceId: 'finance-act-2026' },
     { id: 'new-regime-slabs', sourceId: 'budget-faq-2026' },
     { id: 'rebate-and-marginal-relief', sourceId: 'section-156' },
+    { id: 'health-education-cess', sourceId: 'finance-act-2026' },
+    { id: 'income-rounding', sourceId: 'income-tax-act-2026' },
     { id: 'advance-tax-threshold', sourceId: 'section-404' },
     { id: 'advance-tax-date', sourceId: 'income-tax-act-2026' },
+    { id: 'annual-return-threshold', sourceId: 'income-tax-act-2026' },
     { id: 'annual-return-date', sourceId: 'income-tax-act-2026' },
+    { id: 'gst-aggregate-turnover', sourceId: 'gst-act-2026' },
     { id: 'gst-registration-threshold', sourceId: 'gst-act-2026' },
   ],
   presumptive: {
@@ -250,6 +271,7 @@ export const currentRules = {
     extensionSourceId: null,
   },
   annualReturn: {
+    filingIncomeThreshold: 400_000,
     normalDueDate: '2027-08-31',
     operativeDueDate: null,
     extensionSourceId: null,
@@ -265,10 +287,37 @@ export type RuleValidation =
   | { readonly valid: true; readonly data: RuleDataset }
   | { readonly valid: false; readonly errors: readonly string[] }
 
-const isDate = (value: unknown): value is DateOnly =>
-  typeof value === 'string' &&
-  /^\d{4}-\d{2}-\d{2}$/.test(value) &&
-  !Number.isNaN(Date.parse(`${value}T00:00:00Z`))
+const requiredRuleIds = [
+  'period',
+  'supported-profession',
+  'presumptive-receipts',
+  'presumptive-profit',
+  'income-ceiling',
+  'new-regime-slabs',
+  'rebate-and-marginal-relief',
+  'health-education-cess',
+  'income-rounding',
+  'advance-tax-threshold',
+  'advance-tax-date',
+  'annual-return-threshold',
+  'annual-return-date',
+  'gst-aggregate-turnover',
+  'gst-registration-threshold',
+] as const
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+
+const isDate = (value: unknown): value is DateOnly => {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value))
+    return false
+  const [year, month, day] = value.split('-').map(Number)
+  const date = new Date(Date.UTC(year, month - 1, day))
+  return date.toISOString().slice(0, 10) === value
+}
+
+const isText = (value: unknown): value is string =>
+  typeof value === 'string' && value.trim().length > 0
 
 const todayInIndia = (now: Date) => {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -287,20 +336,28 @@ export function validateRuleDataset(
   now = new Date(),
 ): RuleValidation {
   const errors: string[] = []
-  if (!value || typeof value !== 'object')
+  if (!isRecord(value))
     return { valid: false, errors: ['Rules must be an object.'] }
 
-  const rules = value as Partial<RuleDataset>
-  if (!rules.id) errors.push('Rules need a dataset identity.')
+  const rules = value
+  if (!isText(rules.id)) errors.push('Rules need a dataset identity.')
   if (rules.schemaVersion !== 1)
     errors.push('Rules use an unknown schema version.')
+  if (rules.taxPeriod !== taxPeriod)
+    errors.push('Rules use an unsupported tax period.')
   if (
     !isDate(rules.effectiveStart) ||
     !isDate(rules.effectiveEnd) ||
+    !isDate(rules.verifiedOn) ||
     !isDate(rules.expiresOn)
   ) {
-    errors.push('Rules need valid effective and expiry dates.')
+    errors.push('Rules need valid effective, verification, and expiry dates.')
   } else {
+    if (
+      rules.effectiveStart !== '2026-04-01' ||
+      rules.effectiveEnd !== '2027-03-31'
+    )
+      errors.push('Rules use dates outside the supported tax period.')
     if (rules.effectiveStart > rules.effectiveEnd)
       errors.push('Rules have an invalid effective date range.')
     if (rules.expiresOn < rules.effectiveEnd)
@@ -309,33 +366,79 @@ export function validateRuleDataset(
       errors.push('Rules expire after the supported review window.')
     if (rules.expiresOn < todayInIndia(now))
       errors.push('Rules have expired and must be reviewed.')
+    if (rules.verifiedOn > todayInIndia(now))
+      errors.push('Rules have a future verification date.')
   }
+  if (
+    !Array.isArray(rules.changeNotes) ||
+    rules.changeNotes.length === 0 ||
+    rules.changeNotes.some((note) => !isText(note))
+  )
+    errors.push('Rules need human-readable change notes.')
 
+  const sourceRecords = new Map<string, Record<string, unknown>>()
   if (!Array.isArray(rules.sources) || rules.sources.length === 0) {
     errors.push('Rules need statutory sources.')
   } else {
     const ids = new Set<string>()
     for (const source of rules.sources) {
-      if (!source || typeof source !== 'object') {
+      if (!isRecord(source)) {
         errors.push('Rules contain an invalid source.')
         continue
       }
-      const candidate = source as Partial<Source>
-      if (!candidate.id || ids.has(candidate.id))
+      if (!isText(source.id) || ids.has(source.id)) {
         errors.push('Rules contain a duplicate or missing source identity.')
-      if (candidate.id) ids.add(candidate.id)
-      if (!candidate.url || !candidate.url.startsWith('https://'))
-        errors.push('Rules contain a non-HTTPS source URL.')
-      if (
-        candidate.kind === 'statutory' &&
-        (!candidate.publisher || !candidate.title)
-      ) {
-        errors.push('Rules contain an incomplete statutory source.')
+      } else {
+        ids.add(source.id)
+        sourceRecords.set(source.id, source)
       }
-      if (candidate.kind === 'tutorial' && candidate.status === 'approved') {
+      if (!isText(source.url) || !source.url.startsWith('https://'))
+        errors.push('Rules contain a non-HTTPS source URL.')
+      if (!isDate(source.reviewDate))
+        errors.push('Rules contain a source without a valid review date.')
+      else if (source.reviewDate > todayInIndia(now))
+        errors.push('Rules contain a source with a future review date.')
+      if (
+        source.publicationDate !== undefined &&
+        !isDate(source.publicationDate)
+      )
+        errors.push('Rules contain an invalid source publication date.')
+      else if (
+        isDate(source.publicationDate) &&
+        isDate(source.reviewDate) &&
+        source.publicationDate > source.reviewDate
+      )
+        errors.push('Rules contain a source reviewed before publication.')
+      if (source.kind === 'statutory') {
+        if (
+          !isText(source.publisher) ||
+          !isText(source.title) ||
+          source.taxPeriod !== taxPeriod ||
+          !Array.isArray(source.coveredRuleIds) ||
+          source.coveredRuleIds.some((id) => !isText(id))
+        )
+          errors.push('Rules contain an incomplete statutory source.')
+      } else if (source.kind === 'tutorial') {
+        if (
+          !isText(source.publisher) ||
+          !isText(source.title) ||
+          !isText(source.coveredObligation) ||
+          ![
+            'approved',
+            'provisional',
+            'deferred',
+            'rejected',
+            'starting-link-only',
+          ].includes(String(source.status))
+        )
+          errors.push('Rules contain an incomplete tutorial source.')
+      } else {
+        errors.push('Rules contain an unknown source kind.')
+      }
+      if (source.kind === 'tutorial' && source.status === 'approved') {
         if (
           !['Income Tax Department', 'Goods and Services Tax'].includes(
-            candidate.publisher ?? '',
+            String(source.publisher ?? ''),
           )
         ) {
           errors.push(
@@ -344,7 +447,11 @@ export function validateRuleDataset(
         }
       }
     }
-    if (!rules.sources.some((source) => source.kind === 'statutory'))
+    if (
+      !rules.sources.some(
+        (source) => isRecord(source) && source.kind === 'statutory',
+      )
+    )
       errors.push('Rules need a statutory source.')
   }
 
@@ -352,41 +459,124 @@ export function validateRuleDataset(
     errors.push('Rules need rule provenance.')
   } else {
     const ids = new Set<string>()
-    const sourceIds = new Set((rules.sources ?? []).map((source) => source.id))
     for (const reference of rules.ruleSources) {
-      if (!reference.id || ids.has(reference.id))
+      if (!isRecord(reference)) {
+        errors.push('Rules contain an invalid rule reference.')
+        continue
+      }
+      if (!isText(reference.id) || ids.has(reference.id))
         errors.push('Rules contain a duplicate or missing rule identity.')
-      if (reference.id) ids.add(reference.id)
-      if (!sourceIds.has(reference.sourceId))
-        errors.push(`Rule ${reference.id || 'reference'} has a missing source.`)
+      if (isText(reference.id)) ids.add(reference.id)
+      const source = isText(reference.sourceId)
+        ? sourceRecords.get(reference.sourceId)
+        : undefined
+      if (!source || source.kind !== 'statutory') {
+        errors.push(
+          `Rule ${isText(reference.id) ? reference.id : 'reference'} has a missing statutory source.`,
+        )
+      } else if (
+        !Array.isArray(source.coveredRuleIds) ||
+        !source.coveredRuleIds.includes(reference.id)
+      ) {
+        errors.push(`Rule ${reference.id} is not covered by its source.`)
+      }
     }
+    for (const id of requiredRuleIds)
+      if (!ids.has(id)) errors.push(`Rule ${id} has no provenance.`)
   }
 
-  const expectedRates = [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3]
+  const presumptive = isRecord(rules.presumptive) ? rules.presumptive : null
   if (
-    !rules.income ||
-    !Array.isArray(rules.income.slabs) ||
-    rules.income.slabs.map((slab) => slab.rate).join(',') !==
-      expectedRates.join(',')
-  ) {
-    errors.push('Rules contain tax rates outside the supported slab set.')
-  }
+    !presumptive ||
+    presumptive.minimumProfitRate !== 0.5 ||
+    presumptive.cashReceiptRate !== 0.05 ||
+    presumptive.standardReceiptLimit !== 5_000_000 ||
+    presumptive.lowCashReceiptLimit !== 7_500_000
+  )
+    errors.push('Rules contain unsupported presumptive-tax values.')
+
+  const expectedSlabs = [
+    [400_000, 0],
+    [800_000, 0.05],
+    [1_200_000, 0.1],
+    [1_600_000, 0.15],
+    [2_000_000, 0.2],
+    [2_400_000, 0.25],
+    [null, 0.3],
+  ] as const
+  const income = isRecord(rules.income) ? rules.income : null
   if (
-    !rules.gst ||
-    rules.gst.lowerThreshold !== 1_000_000 ||
-    rules.gst.standardThreshold !== 2_000_000 ||
-    !Array.isArray(rules.gst.lowerThresholdStates)
-  ) {
+    !income ||
+    income.ceiling !== 5_000_000 ||
+    income.rebateLimit !== 1_200_000 ||
+    income.rebateMaximum !== 60_000 ||
+    income.cessRate !== 0.04 ||
+    !Array.isArray(income.slabs) ||
+    income.slabs.length !== expectedSlabs.length ||
+    !income.slabs.every((slab, index) => {
+      const expected = expectedSlabs[index]
+      return (
+        isRecord(slab) &&
+        slab.upper === expected[0] &&
+        slab.rate === expected[1]
+      )
+    })
+  )
+    errors.push('Rules contain income-tax values outside the supported set.')
+
+  const gst = isRecord(rules.gst) ? rules.gst : null
+  if (
+    !gst ||
+    gst.lowerThreshold !== 1_000_000 ||
+    gst.standardThreshold !== 2_000_000 ||
+    !Array.isArray(gst.lowerThresholdStates) ||
+    gst.lowerThresholdStates.join(',') !== 'Manipur,Mizoram,Nagaland,Tripura'
+  )
     errors.push('Rules contain GST thresholds outside the supported profile.')
-  }
 
-  for (const obligation of [rules.advanceTax, rules.annualReturn]) {
-    if (!obligation || !isDate(obligation.normalDueDate)) {
+  const obligations = [
+    ['advance tax', rules.advanceTax, '2027-03-15', 'advance-tax-date'],
+    ['annual return', rules.annualReturn, '2027-08-31', 'annual-return-date'],
+  ] as const
+  for (const [name, obligation, normalDueDate, ruleId] of obligations) {
+    if (!isRecord(obligation) || !isDate(obligation.normalDueDate)) {
       errors.push('Rules need valid obligation due dates.')
-    } else if (obligation.operativeDueDate && !obligation.extensionSourceId) {
+      continue
+    }
+    if (obligation.normalDueDate !== normalDueDate)
+      errors.push(`Rules contain an unsupported ${name} due date.`)
+    if (
+      obligation.operativeDueDate !== null &&
+      !isDate(obligation.operativeDueDate)
+    )
+      errors.push('Rules contain an invalid operative due date.')
+    if (
+      isDate(obligation.operativeDueDate) &&
+      obligation.operativeDueDate <= obligation.normalDueDate
+    )
+      errors.push('An operative due date must extend the normal due date.')
+    if (obligation.operativeDueDate && !isText(obligation.extensionSourceId))
       errors.push('An operative due date needs extension provenance.')
+    if (!obligation.operativeDueDate && obligation.extensionSourceId !== null)
+      errors.push('Extension provenance needs an operative due date.')
+    if (isText(obligation.extensionSourceId)) {
+      const source = sourceRecords.get(obligation.extensionSourceId)
+      if (
+        !source ||
+        source.kind !== 'statutory' ||
+        !Array.isArray(source.coveredRuleIds) ||
+        !source.coveredRuleIds.includes(ruleId)
+      )
+        errors.push('An operative due date needs a statutory extension source.')
     }
   }
+
+  const advanceTax = isRecord(rules.advanceTax) ? rules.advanceTax : null
+  if (!advanceTax || advanceTax.liabilityThreshold !== 10_000)
+    errors.push('Rules contain an unsupported advance-tax threshold.')
+  const annualReturn = isRecord(rules.annualReturn) ? rules.annualReturn : null
+  if (!annualReturn || annualReturn.filingIncomeThreshold !== 400_000)
+    errors.push('Rules contain an unsupported return-filing threshold.')
 
   return errors.length > 0
     ? { valid: false, errors }

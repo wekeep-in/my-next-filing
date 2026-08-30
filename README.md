@@ -6,7 +6,7 @@ It calculates a best-effort tax estimate in the browser and shows the next suppo
 
 ## Current state
 
-The application includes a five-step questionnaire, versioned local rules, an income-tax estimate, advance-tax and return agenda, GST registration-threshold monitor, and the synthetic example in `SPEC.md`. Answers and calculations stay in memory for the current page session and are not saved.
+The application includes a five-step questionnaire, versioned local rules, an income-tax estimate, advance-tax and conditional return agenda, GST registration-threshold monitor, and the synthetic example in `SPEC.md`. Answers and calculations stay in memory for the current page session and are not saved.
 
 It supports only Tax Year 2026-27 and one narrow profile. Unsupported facts and expired or invalid rules stop calculation rather than provide an estimate.
 
@@ -18,6 +18,7 @@ pnpm dev
 pnpm build
 pnpm format:check
 pnpm lint
+pnpm test
 pnpm typecheck
 pnpm rules:validate
 ```
@@ -26,11 +27,13 @@ pnpm rules:validate
 
 `pnpm build` creates static `dist` assets. `wrangler.jsonc` configures Cloudflare Workers Static Assets with single-page-application fallback and the canonical custom domain. HTTPS is a production release check; it is not implemented by application code.
 
+Production Analytics uses measurement ID `G-94S2KGJFNL`. The application sends React Router page views manually. In Google Analytics, open **Admin → Data streams → Enhanced measurement → Page views → Show advanced settings** and turn off **Page changes based on browser history events** to prevent duplicate route views.
+
 ## Sources and limits
 
 `SPEC.md` defines the supported profile, statutory source policy, and product limits. Statutory values and sources live in `src/rules`, are checked locally at build time, and expire on 31 August 2027. Tutorials remain separate from statutory authority and none are approved as a primary Tax Year 2026-27 action link.
 
-This project gives general information, not tax, accounting, or legal advice. Production Analytics and public launch remain subject to the qualified privacy and statutory re-review gates in [docs/release-checklist.md](docs/release-checklist.md).
+This project gives general information, not tax, accounting, or legal advice. Production uses Google Analytics for fixed React Router page views; questionnaire and result data are excluded. Public launch still requires the statutory and privacy review described in `SPEC.md`.
 
 Contributors using Claude Code or Codex should install [Matt Pocock's skills](https://github.com/mattpocock/skills).
 

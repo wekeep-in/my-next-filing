@@ -1,0 +1,117 @@
+WEBVTT
+
+00:00:00.370 --> 00:00:06.990
+I'm an independent IT consultant, and when it comes to taxes,
+I really just want to know two things.
+
+00:00:06.990 --> 00:00:11.270
+What do I need to file next?
+And when do I need to file it?
+
+00:00:11.270 --> 00:00:19.750
+The problem is tax websites show me dozens of forms, rules,
+thresholds, and deadlines, most of which I don't fully understand.
+
+00:00:19.750 --> 00:00:26.830
+And when I search for tutorials, I usually end up with even more
+information and somehow even more confusion.
+
+00:00:26.830 --> 00:00:30.710
+So I built this. This is My Next Filing.
+
+00:00:30.710 --> 00:00:37.110
+It's a small tool designed to answer one question:
+What do I need to do next?
+
+00:00:37.110 --> 00:00:43.590
+Let me show you how it works. I'll use an example here,
+and just to be clear, all of these amounts are fictional.
+
+00:00:43.590 --> 00:00:48.070
+The app supports one clearly defined type of user.
+That's intentional.
+
+00:00:48.070 --> 00:00:54.950
+By keeping the scope narrow, the app can avoid giving answers
+for situations it isn't designed to handle.
+
+00:00:54.950 --> 00:01:02.510
+In my example, I enter my professional receipts, my bank interest,
+my available tax credits, and my GST turnover.
+
+00:01:02.510 --> 00:01:06.350
+Each field explains what the number means
+and what I'm supposed to enter.
+
+00:01:06.350 --> 00:01:13.230
+And if I make a mistake or want to change something,
+I can simply go back and edit my answers.
+
+00:01:13.230 --> 00:01:18.150
+Once everything looks right, I calculate my plan.
+And this is the result.
+
+00:01:18.150 --> 00:01:24.590
+The app shows me my next tax date, the estimated amount involved,
+and my current GST threshold status.
+
+00:01:24.950 --> 00:01:31.830
+Below that, I get the complete calendar in date order,
+so I can see what is coming after that as well.
+
+00:01:31.830 --> 00:01:40.750
+And if I want to understand where a number came from, I can open
+the calculation, see how it was worked out, and check the official sources.
+
+00:01:40.750 --> 00:01:47.110
+The app does not file a return. It does not make payments,
+and it does not try to replace a tax professional.
+
+00:01:47.110 --> 00:01:52.710
+I just wanted one page that tells me what matters right now.
+
+00:01:52.750 --> 00:01:58.270
+I used Codex throughout the build.
+It helped me turn the initial idea into this working web app.
+
+00:01:58.270 --> 00:02:03.350
+And it also helped me test and check
+the important user paths along the way.
+
+00:02:03.350 --> 00:02:07.270
+The app itself is intentionally simple from a privacy perspective.
+
+00:02:07.270 --> 00:02:15.070
+There's no account, no database, and no third-party API connection.
+All of the calculations run directly in the browser.
+
+00:02:15.070 --> 00:02:17.830
+And when the page is closed, the answers disappear.
+
+00:02:18.830 --> 00:02:22.830
+There is another problem I wanted to account for:
+tax rules change.
+
+00:02:22.830 --> 00:02:29.350
+So the rules used by the app are stored locally,
+linked back to official sources, and given an expiry date.
+
+00:02:29.350 --> 00:02:39.550
+If a rule becomes too old or is no longer considered valid,
+the calculation stops. It would rather give me no answer
+than confidently give me an outdated one.
+
+00:02:39.550 --> 00:02:45.070
+And that's really the idea behind My Next Filing.
+It's a small and deliberately limited tool.
+
+00:02:45.070 --> 00:02:50.270
+It doesn't try to understand every tax situation.
+It doesn't try to do everything for me.
+
+00:02:50.270 --> 00:02:56.550
+It just tries to answer one useful question:
+What do I need to do next?
+
+00:02:56.550 --> 00:02:59.910
+And of course, it provides general guidance, not tax advice.

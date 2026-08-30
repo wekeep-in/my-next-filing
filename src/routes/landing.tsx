@@ -27,7 +27,7 @@ export function LandingRoute() {
     <section className="landing" aria-labelledby="landing-title">
       <header className="landing-hero">
         <div className="landing-title-row">
-          <span className="version">0.0.1</span>
+          <span className="period-pill">1 April 2026 to 31 March 2027</span>
           <h1 id="landing-title">My Next Filing</h1>
         </div>
         <p className="landing-intro">
@@ -63,10 +63,10 @@ export function LandingRoute() {
               navigateToCheckFromPointer(event, { personal: true })
             }
           >
-            Start Now
+            Start now
           </Link>
         }
-        disabledSteps={[calculationStep]}
+        disabledSteps={[2, 3, 4, 5, calculationStep]}
         onStepSelect={(step, animate) => {
           if (step === 0) window.scrollTo(0, 0)
           else
@@ -90,7 +90,15 @@ export function LandingRoute() {
           disableTracking
           noMutedPref
           noVolumePref
-        />
+        >
+          <track
+            default
+            kind="captions"
+            label="English"
+            src="/video/my-next-filing.en.vtt"
+            srcLang="en"
+          />
+        </MuxPlayer>
       </figure>
 
       <section className="landing-faqs" id="faqs" aria-labelledby="faqs-title">
@@ -111,19 +119,22 @@ export function LandingRoute() {
             <h3>Is my data saved?</h3>
             <p>
               No. Your answers and calculation stay only in this page's memory
-              while you use it. Refreshing or closing the page clears them.
-              Nothing is written to browser storage or sent to a server.
+              while you use it. Refreshing or closing the page clears them. The
+              application does not write questionnaire answers or calculations
+              to browser storage or send them to a server.
             </p>
             <p>
-              Production Analytics is always on. It sends only a fixed route
-              name, never answers, amounts, results, errors, names, or
-              identifiers. Local and preview builds do not load it.
+              Production uses Google Analytics for page analytics. Google
+              receives fixed route visits and standard Analytics data about the
+              browser, device, session, and approximate location. Analytics
+              stores a pseudonymous client ID in first-party cookies. Local and
+              preview deployments do not load Analytics.
             </p>
             <p>
-              Google receives the Analytics data. Qualified privacy review must
-              confirm retention and a monitored privacy contact before public
-              launch. Analytics cannot affect the questionnaire, your answers,
-              or the estimate.
+              Analytics never receives questionnaire answers, amounts, tax
+              results, errors, names, or profile values. Google Signals and ad
+              personalization are disabled. Analytics cannot affect the check or
+              its result.
             </p>
           </article>
 
@@ -132,7 +143,8 @@ export function LandingRoute() {
             <p>
               This check supports only resident individuals using the new tax
               regime, presumptive IT or software consulting, direct Indian
-              clients, and no GSTIN. It stops for:
+              clients, and no GSTIN. You must confirm these limits before the
+              calculation. It stops for:
             </p>
             <ul>
               <li>
@@ -147,7 +159,8 @@ export function LandingRoute() {
               </li>
               <li>
                 Unlisted deductions, losses, or credits; disputed TDS or TCS;
-                employee or deductor duties; or an audit requirement.
+                employee or deductor duties; an audit requirement; or a
+                compulsory GST-registration fact.
               </li>
               <li>
                 Any other unsupported fact, professional receipts above the
