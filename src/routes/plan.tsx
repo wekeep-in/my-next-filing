@@ -20,7 +20,7 @@ import {
   calculationStep,
   questionnaireSteps,
 } from '../journey-sidebar'
-import { currentRules, sourceRegistry, validateRuleDataset } from '../rules'
+import { currentRules, sourceRegistry } from '../rules'
 
 type PlanLoaderData = {
   readonly evaluation: EvaluationResult
@@ -32,12 +32,8 @@ const confettiColors = ['#008a30', '#10283c', '#155eef', '#fbbf24']
 export function planLoader(): PlanLoaderData | Response {
   const current = getCurrentCheck()
   if (!current?.complete) return redirect('/check')
-  const validation = validateRuleDataset(currentRules)
-  const evaluation = validation.valid
-    ? evaluate(current.profile, new Date(), validation.data)
-    : evaluate(current.profile, new Date(), currentRules)
   return {
-    evaluation,
+    evaluation: evaluate(current.profile, new Date(), currentRules),
     example: current.example,
   }
 }
@@ -66,16 +62,12 @@ function StatusPill({ status }: { readonly status: Obligation['status'] }) {
 }
 
 function GstCard({ gst }: { readonly gst: GstStatus }) {
-  let message = gst.message
-  if (gst.kind === 'below') {
-    message = `Your declared GST aggregate turnover is ${formatMoney(gst.difference)} below the ${formatMoney(gst.threshold)} starting threshold for ${gst.state}. Some facts require earlier registration.`
-  }
-  if (gst.kind === 'at') {
-    message = `Your declared GST aggregate turnover is at the ${formatMoney(gst.threshold)} starting threshold. Turnover-based registration starts after you exceed it. Review before more turnover.`
-  }
-  if (gst.kind === 'above') {
-    message = `Your declared GST aggregate turnover is ${formatMoney(gst.difference)} above the ${formatMoney(gst.threshold)} starting threshold. Review GST registration now. This version does not calculate GST returns.`
-  }
+  const message =
+    gst.kind === 'below'
+      ? `Your declared GST aggregate turnover is ${formatMoney(gst.difference)} below the ${formatMoney(gst.threshold)} starting threshold for ${gst.state}. Some facts require earlier registration.`
+      : gst.kind === 'at'
+        ? `Your declared GST aggregate turnover is at the ${formatMoney(gst.threshold)} starting threshold. Turnover-based registration starts after you exceed it. Review before more turnover.`
+        : `Your declared GST aggregate turnover is ${formatMoney(gst.difference)} above the ${formatMoney(gst.threshold)} starting threshold. Review GST registration now. This version does not calculate GST returns.`
   return (
     <article className="result-card gst-card">
       <h2>
@@ -304,25 +296,6 @@ function SupportedPlan({
       </div>
       {!result.advanceTaxApplies && next && (
         <p className="notice">{result.noAdvanceTaxMessage}</p>
-      )}
-      {result.annualReturn.message && next && (
-        <div className="notice return-note">
-          <p>{result.annualReturn.message}</p>
-          <p>
-            If you need to file, the normal date for this non-audit professional
-            profile is {formatDate(result.annualReturn.normalDueDate)}.
-          </p>
-          {result.annualReturn.operativeDueDate && (
-            <p>
-              A verified extension changes the operative date to{' '}
-              {formatDate(result.annualReturn.operativeDueDate)}.
-            </p>
-          )}
-          {result.annualReturn.extensionSourceId && (
-            <SourceReference id={result.annualReturn.extensionSourceId} />
-          )}
-          <SourceReference id={result.annualReturn.statutorySourceId} />
-        </div>
       )}
       {result.obligations.length > 0 && (
         <Agenda obligations={result.obligations} />

@@ -274,14 +274,9 @@ main {
   overflow: hidden;
   padding: clamp(0.45rem, 0.55vw, 0.65rem);
   border: 1px solid var(--line);
-  border-radius: 0.7rem;
+  border-radius: calc(0.7rem + clamp(0.45rem, 0.55vw, 0.65rem));
   background: var(--paper);
   box-shadow: 0 1rem 2.5rem rgb(16 40 60 / 0.09);
-}
-
-.journey-progress-nav,
-.journey-actions.journey-actions--sticky {
-  display: none;
 }
 
 .journey-list {
@@ -390,21 +385,6 @@ main {
   line-height: 1.45;
 }
 
-.journey-actions--sticky {
-  position: fixed;
-  z-index: 110;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  padding: 0.65rem max(1rem, calc((100vw - 44rem) / 2 + 1rem))
-    calc(0.65rem + env(safe-area-inset-bottom));
-  border: 0;
-  border-top: 1px solid var(--line);
-  border-radius: 0;
-  background: var(--paper);
-  box-shadow: 0 -0.25rem 0.75rem rgb(16 40 60 / 0.08);
-}
-
 .journey-note {
   margin: clamp(1rem, 1.2vw, 1.4rem) 0 0;
   text-align: center;
@@ -481,12 +461,6 @@ main {
   font-weight: 800;
   line-height: 1.3;
   margin-bottom: 0.25rem;
-}
-
-.subtle {
-  color: var(--muted);
-  font-size: 0.875rem;
-  margin-bottom: 1.5rem;
 }
 
 .button {
@@ -615,26 +589,6 @@ legend {
   margin-bottom: 0.8rem;
 }
 
-.confirmations {
-  display: grid;
-  gap: 0.75rem;
-  margin-top: 1.8rem;
-}
-
-.confirmation {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.9rem 0;
-  border-bottom: 1px solid var(--line);
-}
-
-.confirmation > span {
-  font-weight: 700;
-  line-height: 1.4;
-}
-
 .choice-row {
   display: flex;
   gap: 0.55rem;
@@ -650,8 +604,7 @@ legend {
   font-size: 0.875rem;
 }
 
-.choice-row input,
-.check-option input {
+.choice-row input {
   accent-color: var(--accent);
 }
 
@@ -688,7 +641,6 @@ legend {
   padding-left: 0.9rem;
 }
 
-input[type='text'],
 .money-input input,
 select {
   width: 100%;
@@ -741,22 +693,6 @@ select:focus {
   }
 }
 
-.check-option {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.7rem;
-  padding: 0.75rem 0;
-  font-weight: 600;
-  line-height: 1.45;
-}
-
-.check-option input {
-  flex: 0 0 auto;
-  width: 1.1rem;
-  height: 1.1rem;
-  margin-top: 0.15rem;
-}
-
 .review-list {
   display: grid;
   gap: 0.75rem;
@@ -791,8 +727,7 @@ select:focus {
   padding-top: 0.9rem;
 }
 
-.text-button,
-.text-link {
+.text-button {
   color: var(--ink);
   border: 0;
   border-bottom: 1px solid currentColor;
@@ -848,14 +783,6 @@ select:focus {
 .notice--warning {
   border-color: #a15c00;
   background: #fff4d8;
-}
-
-.return-note {
-  margin-top: 1rem;
-}
-
-.return-note p {
-  margin-bottom: 0.55rem;
 }
 
 .result-card {
@@ -1080,14 +1007,6 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   font-size: clamp(2.4rem, 5vw, 4.3rem);
 }
 
-.reference-page h2 {
-  margin-top: 2.5rem;
-}
-
-.reference-page li {
-  margin-bottom: 0.5rem;
-}
-
 .fact-list {
   padding-left: 1.25rem;
 }
@@ -1117,18 +1036,24 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
     display: contents;
   }
 
-  .landing-sidebar .journey-nav--desktop,
-  .landing-sidebar .journey-progress-nav,
+  .landing-sidebar .journey-nav,
   .landing-sidebar .journey-note {
     display: none;
   }
 
-  .landing-sidebar .journey-actions--main {
-    display: none;
-  }
-
-  .landing-sidebar .journey-actions--sticky {
-    display: grid;
+  .landing-sidebar .journey-actions {
+    position: fixed;
+    z-index: 110;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 0.65rem max(1rem, calc((100vw - 44rem) / 2 + 1rem))
+      calc(0.65rem + env(safe-area-inset-bottom));
+    border: 0;
+    border-top: 1px solid var(--line);
+    border-radius: 0;
+    background: var(--paper);
+    box-shadow: 0 -0.25rem 0.75rem rgb(16 40 60 / 0.08);
   }
 
   .app--landing .site-footer {
@@ -1163,12 +1088,11 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
     display: contents;
   }
 
-  .app--journey .journey-nav--desktop,
   .app--journey .journey-note {
     display: none;
   }
 
-  .app--journey .journey-progress-nav {
+  .app--journey .journey-nav {
     position: sticky;
     z-index: 120;
     top: 0;
@@ -1188,28 +1112,43 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
     margin: 0 0 0 calc((100% - 100vw) / 2);
   }
 
-  .journey-layout:has(> .notice--top) .journey-progress-nav {
+  .journey-layout:has(> .notice--top) .journey-nav {
     grid-row: 2;
   }
 
-  .journey-progress {
+  .app--journey .journey-list {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: clamp(0.35rem, 1.6vw, 0.75rem);
     width: min(calc(100% - 2rem), 37rem);
     min-height: 4rem;
     margin-inline: auto;
+    padding: 0;
     align-items: center;
   }
 
-  .journey-progress-number {
+  .app--journey .journey-step {
+    min-height: 0;
+    place-self: center;
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  .app--journey .journey-step:not(:last-child)::after,
+  .app--journey .journey-label {
+    display: none;
+  }
+
+  .app--journey .journey-step-link {
     display: grid;
     width: clamp(1.75rem, 8vw, 2.5rem);
+    min-height: 0;
     place-self: center;
     aspect-ratio: 1;
     place-items: center;
+    grid-template-columns: 1fr;
+    gap: 0;
     border-radius: 50%;
-    border: 0;
     padding: 0.125rem 0 0;
     color: var(--muted);
     background: #e9eef1;
@@ -1219,18 +1158,31 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
     transition: transform 100ms var(--ease-out);
   }
 
-  .journey-progress-number.is-current {
+  .app--journey .journey-step-link:disabled {
+    opacity: 0.55;
+  }
+
+  .app--journey .journey-step.is-current .journey-step-link {
     color: #ffffff;
     background: var(--ink);
   }
 
-  .journey-progress-number.is-complete {
+  .app--journey .journey-step.is-complete .journey-step-link {
     color: #ffffff;
     background: var(--accent);
   }
 
-  .journey-progress-number:active:not(:focus-visible):not(:disabled) {
+  .app--journey .journey-step-link:active:not(:focus-visible):not(:disabled) {
     transform: scale(0.97);
+  }
+
+  .app--journey .journey-number {
+    display: contents;
+    color: inherit;
+    background: transparent;
+    font: inherit;
+    transform: none;
+    transition: none;
   }
 
   .questionnaire-main,
@@ -1238,17 +1190,28 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
     grid-row: 2;
   }
 
+  .next-filing {
+    margin-top: 2rem;
+  }
+
   .journey-layout:has(> .notice--top) .questionnaire-main,
   .journey-layout:has(> .notice--top) .plan-main {
     grid-row: 3;
   }
 
-  .app--journey .journey-actions--main {
-    display: none;
-  }
-
-  .app--journey .journey-actions--sticky {
-    display: grid;
+  .app--journey .journey-actions {
+    position: fixed;
+    z-index: 110;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 0.65rem max(1rem, calc((100vw - 44rem) / 2 + 1rem))
+      calc(0.65rem + env(safe-area-inset-bottom));
+    border: 0;
+    border-top: 1px solid var(--line);
+    border-radius: 0;
+    background: var(--paper);
+    box-shadow: 0 -0.25rem 0.75rem rgb(16 40 60 / 0.08);
   }
 
   .app--journey .site-footer {
@@ -1267,10 +1230,6 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   }
 
   .result-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .confirmation {
     grid-template-columns: 1fr;
   }
 
@@ -1297,11 +1256,11 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
     width: min(100% - 1.25rem, 90rem);
   }
 
-  .journey-progress {
+  .app--journey .journey-list {
     width: min(calc(100% - 1.25rem), 37rem);
   }
 
-  .journey-actions--sticky {
+  .journey-actions {
     padding-right: 0.625rem;
     padding-left: 0.625rem;
   }
@@ -1339,12 +1298,8 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
 
   .button:active:not(:focus-visible),
   .text-button:active:not(:focus-visible),
-  .journey-progress-number:active:not(:focus-visible),
+  .journey-step-link:active:not(:focus-visible),
   .journey-step-link:active:not(:focus-visible) .journey-number {
     transform: none;
-  }
-
-  .preview-play:active:not(:focus-visible) {
-    transform: translate(-50%, -50%);
   }
 }

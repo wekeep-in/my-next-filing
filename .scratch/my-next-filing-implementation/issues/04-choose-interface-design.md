@@ -8,10 +8,6 @@ Blocked by: none
 
 Using a rough responsive prototype and live human review, what exact layout, spacing, card composition, visual tokens, questionnaire composition, result hierarchy, source presentation, accessibility behavior, and motion treatment should the first release use across its required routes and supported, unsupported, stale, empty, and error states? Preserve every design constraint and required copy in `SPEC.md`.
 
-## Assets
-
-- [Revised three-variant interface prototype](../prototypes/interface/index.html), served locally with `python3 -m http.server 4173 --directory .scratch/my-next-filing-implementation/prototypes/interface`
-
 ## References
 
 - [Wise account dashboard](https://mobbin.com/screens/d104a8bc-bc31-484d-80e8-2c9a2cb1e796)

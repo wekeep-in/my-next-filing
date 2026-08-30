@@ -88,7 +88,6 @@ export type GstStatus = {
   readonly difference: number
   readonly state: string
   readonly coverageIncomplete: boolean
-  readonly message: string
   readonly statutorySourceId: string
 }
 
@@ -280,7 +279,6 @@ function calculateGst(profile: Profile, rules: RuleDataset): GstStatus {
       difference,
       state: profile.stateOrUnionTerritory,
       coverageIncomplete: false,
-      message: `Your declared GST aggregate turnover is below the starting threshold for ${profile.stateOrUnionTerritory}. Some facts can require registration earlier.`,
       statutorySourceId: 'gst-act-2026',
     }
   }
@@ -291,8 +289,6 @@ function calculateGst(profile: Profile, rules: RuleDataset): GstStatus {
       difference: 0,
       state: profile.stateOrUnionTerritory,
       coverageIncomplete: false,
-      message:
-        'Your declared GST aggregate turnover equals the starting threshold. Turnover-based registration starts only after you exceed it. Review before further turnover.',
       statutorySourceId: 'gst-act-2026',
     }
   }
@@ -302,8 +298,6 @@ function calculateGst(profile: Profile, rules: RuleDataset): GstStatus {
     difference,
     state: profile.stateOrUnionTerritory,
     coverageIncomplete: true,
-    message:
-      'Review GST registration now. Your declared GST aggregate turnover is above the starting threshold. This version does not calculate GST returns.',
     statutorySourceId: 'gst-act-2026',
   }
 }

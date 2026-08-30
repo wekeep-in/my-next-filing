@@ -34,10 +34,11 @@ function JourneySteps({
             className="journey-step-link"
             type="button"
             disabled={disabledSteps.includes(index)}
+            aria-label={`${index + 1}. ${label}`}
             onClick={(event) => onStepSelect(index, event.detail > 0)}
           >
             <span className="journey-number">{index + 1}</span>
-            <span>{label}</span>
+            <span className="journey-label">{label}</span>
           </button>
         </li>
       ))}
@@ -66,31 +67,14 @@ export function JourneySidebar({
       aria-label="Questionnaire overview"
     >
       <div className="journey-panel">
-        <nav className="journey-nav--desktop" aria-label="Journey steps">
+        <nav className="journey-nav" aria-label="Journey steps">
           <JourneySteps
             activeStep={activeStep}
             disabledSteps={disabledSteps}
             onStepSelect={onStepSelect}
           />
         </nav>
-        <nav className="journey-progress-nav" aria-label="Journey steps">
-          <div className="journey-progress">
-            {journeySteps.map((label, index) => (
-              <button
-                className={`journey-progress-number${index === activeStep ? ' is-current' : ''}${index < activeStep ? ' is-complete' : ''}`}
-                type="button"
-                disabled={disabledSteps.includes(index)}
-                aria-current={index === activeStep ? 'step' : undefined}
-                aria-label={`${index + 1}. ${label}`}
-                key={label}
-                onClick={(event) => onStepSelect(index, event.detail > 0)}
-              >
-                {index + 1}
-              </button>
-            ))}
-          </div>
-        </nav>
-        <div className="journey-actions journey-actions--main">
+        <div className="journey-actions">
           {backAction}
           {action}
         </div>
@@ -102,10 +86,6 @@ export function JourneySidebar({
         </Link>{' '}
         before calculating.
       </p>
-      <div className="journey-actions journey-actions--sticky">
-        {backAction}
-        {action}
-      </div>
     </aside>
   )
 }
