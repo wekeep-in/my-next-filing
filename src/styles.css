@@ -531,6 +531,22 @@ main {
   align-items: start;
 }
 
+@media (min-width: 1101px) {
+  .plan.journey-layout > .notice--top {
+    grid-row: 1;
+  }
+
+  .plan.journey-layout > .plan-main {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .plan.journey-layout > .journey-sidebar {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+
 .questionnaire-main,
 .plan-main {
   min-width: 0;
@@ -789,22 +805,14 @@ select:focus {
   padding: clamp(1.15rem, 3vw, 1.8rem);
 }
 
-.plan-main .card-label {
-  color: var(--accent-text);
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  margin-bottom: 0.55rem;
-  text-transform: uppercase;
-}
-
 .next-filing {
-  margin: 4rem 0 1rem;
+  margin: calc(clamp(3rem, 7vw, 5.5rem) + 1rem - clamp(1.5rem, 3vw, 3rem)) 0
+    1rem;
 }
 
 .next-filing h1 {
   font-size: clamp(1.7rem, 3vw, 2.5rem);
-  margin: 0.7rem 0 0.25rem;
+  margin: 0 0 0.25rem;
 }
 
 .deadline-date {
@@ -813,19 +821,30 @@ select:focus {
   font-weight: 850;
 }
 
-.amount-due {
+.amount-description {
   color: var(--ink);
-  font-weight: 800;
+  font-weight: 850;
 }
 
 .status {
   display: inline-flex;
-  gap: 0.25rem;
   align-items: center;
   border-radius: 999px;
   padding: 0.28rem 0.55rem;
   font-size: 0.75rem;
   font-weight: 850;
+}
+
+.agenda-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0.35rem 0 0.55rem;
+}
+
+.agenda-heading h4 {
+  margin: 0;
 }
 
 .status--upcoming {
@@ -849,14 +868,6 @@ select:focus {
 
 .result-grid h2 {
   margin: 0 0 0.7rem;
-}
-
-.money-result {
-  color: var(--ink);
-  font-size: clamp(2rem, 5vw, 3.583rem);
-  font-weight: 850;
-  letter-spacing: -0.055em;
-  line-height: 1;
 }
 
 details {
@@ -946,6 +957,7 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
 
 .agenda-month > h3 {
   color: var(--muted);
+  font-family: inherit;
   font-size: 0.95rem;
   letter-spacing: 0;
 }

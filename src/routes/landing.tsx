@@ -1,7 +1,9 @@
 import type { MouseEvent } from 'react'
 import MuxPlayer from '@mux/mux-player-react/lazy'
 import { Link, useNavigate } from 'react-router-dom'
+import { formatDate } from '../app'
 import { JourneySidebar, calculationStep } from '../journey-sidebar'
+import { currentRules } from '../rules'
 
 const openSourceUrl = 'https://github.com/wekeep-in/my-next-filing'
 
@@ -218,6 +220,10 @@ export function LandingRoute() {
               This is general information and a best-effort estimate for this
               profile and tax period. It is not tax, accounting, or legal advice
               and creates no professional relationship.
+            </p>
+            <p>
+              The rules and statutory sources used by this check were last
+              reviewed on {formatDate(currentRules.verifiedOn)}.
             </p>
             <p>
               Check your facts and decide what to file or pay. Rules, forms,

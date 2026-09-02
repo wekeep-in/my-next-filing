@@ -29,6 +29,16 @@ type PlanLoaderData = {
 
 const confettiColors = ['#008a30', '#10283c', '#155eef', '#fbbf24']
 
+function formatDeadlineDate(date: string) {
+  const [day, ...rest] = formatDate(date).split(' ')
+  const number = Number(day)
+  const suffix =
+    number % 100 >= 11 && number % 100 <= 13
+      ? 'th'
+      : (['th', 'st', 'nd', 'rd'][number % 10] ?? 'th')
+  return `On ${day}${suffix} ${rest.join(' ')}`
+}
+
 export function planLoader(): PlanLoaderData | Response {
   const current = getCurrentCheck()
   if (!current?.complete) return redirect('/check')
@@ -45,9 +55,6 @@ function SourceReference({ id }: { readonly id: string }) {
     <p className="source-reference">
       <strong>Source</strong>{' '}
       <ExternalLink href={source.url}>{source.title}</ExternalLink>
-      <span className="source-meta">
-        {source.publisher}. Reviewed {formatDate(source.reviewDate)}.
-      </span>
     </p>
   )
 }
@@ -58,7 +65,7 @@ function StatusPill({ status }: { readonly status: Obligation['status'] }) {
     'due-today': 'Due today',
     'deadline-passed': 'Deadline passed',
   }
-  return <span className={`status status--${status}`}>● {labels[status]}</span>
+  return <span className={`status status--${status}`}>{labels[status]}</span>
 }
 
 function GstCard({ gst }: { readonly gst: GstStatus }) {
@@ -72,7 +79,7 @@ function GstCard({ gst }: { readonly gst: GstStatus }) {
     <article className="result-card gst-card">
       <h2>
         {gst.kind === 'below'
-          ? 'Below the GST starting threshold'
+          ? 'Below GST threshold'
           : gst.kind === 'at'
             ? 'At the GST starting threshold'
             : 'Above the GST starting threshold'}
@@ -90,17 +97,16 @@ function GstCard({ gst }: { readonly gst: GstStatus }) {
 }
 
 function TaxSummary({ tax }: { readonly tax: TaxEstimate }) {
-  const label =
+  const description =
     tax.outcome === 'refund'
-      ? 'Estimated refund'
+      ? 'is the estimated refund'
       : tax.outcome === 'settled'
-        ? 'Estimated balance'
-        : 'Estimated amount remaining'
+        ? 'is the estimated balance'
+        : 'is the estimated amount remaining'
   return (
     <article className="result-card tax-summary">
-      <p className="card-label">Income-tax estimate</p>
-      <h2>{label}</h2>
-      <p className="money-result">{formatMoney(tax.finalAmount)}</p>
+      <h2>{formatMoney(tax.finalAmount)}</h2>
+      <p className="amount-description">{description}</p>
       <p>
         {tax.outcome === 'refund'
           ? 'The filed return controls the final refund.'
@@ -166,6 +172,9 @@ function Agenda({
 }: {
   readonly obligations: readonly Obligation[]
 }) {
+  const firstUpcomingId = obligations.find(
+    ({ status }) => status === 'upcoming',
+  )?.id
   const months = new Map<string, Obligation[]>()
   for (const obligation of obligations) {
     const key = new Intl.DateTimeFormat('en-IN', {
@@ -198,8 +207,12 @@ function Agenda({
                 </span>
               </div>
               <div>
-                <StatusPill status={obligation.status} />
-                <h4>{obligation.title}</h4>
+                <div className="agenda-heading">
+                  <h4>{obligation.title}</h4>
+                  {obligation.id === firstUpcomingId && (
+                    <StatusPill status={obligation.status} />
+                  )}
+                </div>
                 <p>{obligation.reasons[0]}</p>
                 {obligation.operativeDueDate && (
                   <>
@@ -244,17 +257,11 @@ function SupportedPlan({
         className="next-filing result-card"
         aria-labelledby="next-filing-title"
       >
-        <p className="card-label">Your next filing</p>
         {next ? (
           <>
             <h1 id="next-filing-title">{next.title}</h1>
-            <p className="deadline-date">{formatDate(next.dueDate)}</p>
+            <p className="deadline-date">{formatDeadlineDate(next.dueDate)}</p>
             <p>{next.reasons[0]}</p>
-            {typeof next.amountDue === 'number' && (
-              <p className="amount-due">
-                Estimated amount remaining: {formatMoney(next.amountDue)}
-              </p>
-            )}
             {next.status === 'deadline-passed' && (
               <p>
                 This deadline has passed. The application does not know whether
@@ -301,15 +308,16 @@ function SupportedPlan({
         <Agenda obligations={result.obligations} />
       )}
       <details className="assumptions result-card">
-        <summary>Assumptions used</summary>
+        <summary>Assumptions and sources</summary>
+        <p className="source-meta">
+          Rules and statutory sources were last reviewed on{' '}
+          {formatDate(currentRules.verifiedOn)}.
+        </p>
         <ul>
           {result.assumptions.map((assumption) => (
             <li key={assumption}>{assumption}</li>
           ))}
         </ul>
-      </details>
-      <details className="assumptions result-card">
-        <summary>Statutory sources used</summary>
         {result.statutorySourceIds.map((id) => (
           <SourceReference id={id} key={id} />
         ))}
