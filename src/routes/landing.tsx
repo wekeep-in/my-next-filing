@@ -3,6 +3,8 @@ import MuxPlayer from '@mux/mux-player-react/lazy'
 import { Link, useNavigate } from 'react-router-dom'
 import { JourneySidebar, calculationStep } from '../journey-sidebar'
 
+const openSourceUrl = 'https://github.com/wekeep-in/my-next-filing'
+
 export function LandingRoute() {
   const navigate = useNavigate()
 
@@ -112,6 +114,17 @@ export function LandingRoute() {
               Estimates tax in this browser and orders supported deadlines. It
               does not file, pay, send reminders, track completion, or replace a
               tax professional.
+            </p>
+          </article>
+
+          <article>
+            <h3>Is the code open source?</h3>
+            <p>
+              Yes. The code is{' '}
+              <a href={openSourceUrl} target="_blank" rel="noreferrer">
+                open source
+              </a>{' '}
+              and available on GitHub.
             </p>
           </article>
 
