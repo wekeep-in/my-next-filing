@@ -464,6 +464,7 @@ function ChoiceField({
   value,
   options = ['yes', 'no', 'not-sure'],
   labels,
+  unsupportedOptions = [],
   error,
   onChange,
 }: {
@@ -473,6 +474,7 @@ function ChoiceField({
   readonly value: string
   readonly options?: readonly string[]
   readonly labels?: Readonly<Record<string, string>>
+  readonly unsupportedOptions?: readonly string[]
   readonly error?: string
   readonly onChange: (value: string) => void
 }) {
@@ -513,6 +515,8 @@ function ChoiceField({
   const describedBy = [help ? `${id}-help` : '', error ? `${id}-error` : '']
     .filter(Boolean)
     .join(' ')
+  const selectedUnsupported = unsupportedOptions.includes(value)
+  const unsupportedId = `${id}-unsupported`
   return (
     <fieldset
       id={id}
@@ -528,19 +532,32 @@ function ChoiceField({
         </p>
       )}
       <div className="choice-grid">
-        {options.map((option) => (
-          <label className="choice-card" key={option}>
-            <input
-              type="radio"
-              name={id}
-              value={option}
-              checked={value === option}
-              onChange={(event) => onChange(event.target.value)}
-            />
-            <span>{labels?.[option] ?? optionLabels[option] ?? option}</span>
-          </label>
-        ))}
+        {options.map((option) => {
+          const unsupported = selectedUnsupported && option === value
+          return (
+            <label
+              className={`choice-card${unsupported ? ' choice-card--unsupported' : ''}`}
+              key={option}
+            >
+              <input
+                type="radio"
+                name={id}
+                value={option}
+                checked={value === option}
+                aria-describedby={unsupported ? unsupportedId : undefined}
+                onChange={(event) => onChange(event.target.value)}
+              />
+              <span>{labels?.[option] ?? optionLabels[option] ?? option}</span>
+            </label>
+          )
+        })}
       </div>
+      {selectedUnsupported && (
+        <p className="choice-warning" id={unsupportedId} role="alert">
+          <strong>Not supported.</strong> Review what My Next Filing{' '}
+          <a href="/#faq-tax-support">supports</a>.
+        </p>
+      )}
       <FieldError id={`${id}-error`} error={error} />
     </fieldset>
   )
@@ -951,6 +968,7 @@ function UnsupportedFactsField({
         help="Choose Not sure if you cannot confirm the list."
         options={['none', 'selected', 'not-sure']}
         value={draft.unsupportedCertainty}
+        unsupportedOptions={['selected']}
         onChange={(value) =>
           setDraft({
             unsupportedCertainty: value as Draft['unsupportedCertainty'],
@@ -1372,6 +1390,7 @@ export function CheckRoute() {
                   value={draft.personKind}
                   options={['individual', 'not-individual', 'not-sure']}
                   labels={{ individual: 'Yes', 'not-individual': 'No' }}
+                  unsupportedOptions={['not-individual']}
                   error={errors.personKind}
                   onChange={(value) =>
                     patchDraft({ personKind: value as Draft['personKind'] })
@@ -1382,6 +1401,7 @@ export function CheckRoute() {
                   label="Are you 18 or older?"
                   help="This version can only estimate tax for adults. You must also confirm this before saving."
                   value={draft.adult}
+                  unsupportedOptions={['no']}
                   error={errors.adult}
                   onChange={(value) => patchDraft({ adult: value as TriState })}
                 />
@@ -1397,6 +1417,10 @@ export function CheckRoute() {
                     'not-sure',
                   ]}
                   error={errors.residence}
+                  unsupportedOptions={[
+                    'resident-not-ordinarily-resident',
+                    'non-resident',
+                  ]}
                   onChange={(value) =>
                     patchDraft({ residence: value as Draft['residence'] })
                   }
@@ -1407,6 +1431,7 @@ export function CheckRoute() {
                   help="This version only supports the new tax regime."
                   value={draft.taxRegime}
                   options={['new', 'old', 'not-sure']}
+                  unsupportedOptions={['old']}
                   error={errors.taxRegime}
                   onChange={(value) =>
                     patchDraft({ taxRegime: value as Draft['taxRegime'] })
@@ -1426,6 +1451,7 @@ export function CheckRoute() {
                   label="Do you run one self-employed service practice?"
                   help="Choose No if you have more than one business or profession."
                   value={draft.onePractice}
+                  unsupportedOptions={['no']}
                   error={errors.onePractice}
                   onChange={(value) =>
                     patchDraft({ onePractice: value as TriState })
@@ -1435,6 +1461,7 @@ export function CheckRoute() {
                   id="setupInIndia"
                   label="Is the practice set up and managed in India?"
                   value={draft.setupInIndia}
+                  unsupportedOptions={['no']}
                   error={errors.setupInIndia}
                   onChange={(value) =>
                     patchDraft({ setupInIndia: value as TriState })
@@ -1444,6 +1471,7 @@ export function CheckRoute() {
                   id="workInIndia"
                   label="Do you perform all the work that earns this income while in India?"
                   value={draft.workInIndia}
+                  unsupportedOptions={['no']}
                   error={errors.workInIndia}
                   onChange={(value) =>
                     patchDraft({ workInIndia: value as TriState })
@@ -1462,6 +1490,7 @@ export function CheckRoute() {
                   id="hasPartner"
                   label="Do you have a business partner in this practice?"
                   value={draft.hasPartner}
+                  unsupportedOptions={['yes']}
                   error={errors.hasPartner}
                   onChange={(value) =>
                     patchDraft({ hasPartner: value as TriState })
@@ -1471,6 +1500,7 @@ export function CheckRoute() {
                   id="hasEmployee"
                   label="Do you employ anyone in this practice?"
                   value={draft.hasEmployee}
+                  unsupportedOptions={['yes']}
                   error={errors.hasEmployee}
                   onChange={(value) =>
                     patchDraft({ hasEmployee: value as TriState })
@@ -1481,6 +1511,7 @@ export function CheckRoute() {
                   label="Does your practice have an office or other business operation outside India?"
                   help="Foreign clients alone do not count. We ask about clients later."
                   value={draft.hasForeignOperation}
+                  unsupportedOptions={['yes']}
                   error={errors.hasForeignOperation}
                   onChange={(value) =>
                     patchDraft({ hasForeignOperation: value as TriState })
@@ -1490,6 +1521,7 @@ export function CheckRoute() {
                   id="hasClientWorkSubcontractor"
                   label="Does a subcontractor help deliver work to your clients?"
                   value={draft.hasClientWorkSubcontractor}
+                  unsupportedOptions={['yes']}
                   error={errors.hasClientWorkSubcontractor}
                   onChange={(value) => {
                     const next = value as TriState
@@ -1599,6 +1631,7 @@ export function CheckRoute() {
                 id="notGoodsCarriage"
                 label="Does your practice provide services rather than transport goods?"
                 value={draft.notGoodsCarriage}
+                unsupportedOptions={['no']}
                 error={errors.notGoodsCarriage}
                 onChange={(value) =>
                   patchDraft({ notGoodsCarriage: value as TriState })
@@ -1608,6 +1641,7 @@ export function CheckRoute() {
                 id="notAgencyCommissionBrokerage"
                 label="Do you provide services on your own account, rather than as an agent, commission earner, or broker?"
                 value={draft.notAgencyCommissionBrokerage}
+                unsupportedOptions={['no']}
                 error={errors.notAgencyCommissionBrokerage}
                 onChange={(value) =>
                   patchDraft({
@@ -1619,6 +1653,7 @@ export function CheckRoute() {
                 id="noChapterViiiCDeduction"
                 label="Are you claiming no Chapter VIII-C deduction?"
                 value={draft.noChapterViiiCDeduction}
+                unsupportedOptions={['no']}
                 error={errors.noChapterViiiCDeduction}
                 onChange={(value) =>
                   patchDraft({ noChapterViiiCDeduction: value as TriState })
@@ -1630,6 +1665,7 @@ export function CheckRoute() {
                 help="This checks whether an earlier use of this method affects you now. Choose Not sure if you need to review earlier years."
                 options={['none', 'applies', 'not-sure']}
                 value={draft.fiveYearExclusion}
+                unsupportedOptions={['applies']}
                 error={errors.fiveYearExclusion}
                 onChange={(value) =>
                   patchDraft({
@@ -1754,6 +1790,7 @@ export function CheckRoute() {
                 id="platformOwnAccount"
                 label="Do you supply the main service on your own account?"
                 value={draft.platformOwnAccount}
+                unsupportedOptions={['no']}
                 error={errors.platformOwnAccount}
                 onChange={(value) =>
                   patchDraft({ platformOwnAccount: value as TriState })
@@ -1763,6 +1800,7 @@ export function CheckRoute() {
                 id="platformRecipientIdentifiable"
                 label="Can your records identify the contractual recipient?"
                 value={draft.platformRecipientIdentifiable}
+                unsupportedOptions={['no']}
                 error={errors.platformRecipientIdentifiable}
                 onChange={(value) =>
                   patchDraft({
@@ -1774,6 +1812,7 @@ export function CheckRoute() {
                 id="platformGrossBeforeFees"
                 label="Do your records show gross customer consideration before fees and withholding?"
                 value={draft.platformGrossBeforeFees}
+                unsupportedOptions={['no']}
                 error={errors.platformGrossBeforeFees}
                 onChange={(value) =>
                   patchDraft({ platformGrossBeforeFees: value as TriState })
@@ -1783,6 +1822,7 @@ export function CheckRoute() {
                 id="platformIncomeCharacter"
                 label="Is the income not employment, commission, brokerage, royalty, licensing, or agency income?"
                 value={draft.platformIncomeCharacter}
+                unsupportedOptions={['no']}
                 error={errors.platformIncomeCharacter}
                 onChange={(value) =>
                   patchDraft({ platformIncomeCharacter: value as TriState })
@@ -1793,6 +1833,14 @@ export function CheckRoute() {
                 label="Is foreign platform-fee GST treatment known?"
                 options={['not-applicable', 'known', 'not-sure']}
                 value={draft.platformForeignFeeGstTreatment}
+                unsupportedOptions={
+                  draft.clientKind === 'domestic'
+                    ? ['known']
+                    : draft.clientKind === 'foreign' ||
+                        draft.clientKind === 'mixed'
+                      ? ['not-applicable']
+                      : []
+                }
                 error={errors.platformForeignFeeGstTreatment}
                 onChange={(value) =>
                   patchDraft({
@@ -1805,6 +1853,7 @@ export function CheckRoute() {
                 id="platformNoRecipientReverseCharge"
                 label="Does the platform fee create no unsupported recipient-side reverse-charge duty?"
                 value={draft.platformNoRecipientReverseCharge}
+                unsupportedOptions={['no']}
                 error={errors.platformNoRecipientReverseCharge}
                 onChange={(value) =>
                   patchDraft({
@@ -1820,6 +1869,7 @@ export function CheckRoute() {
                 id="foreignWorkInIndia"
                 label="Is all income-producing work performed in India?"
                 value={draft.foreignWorkInIndia}
+                unsupportedOptions={['no']}
                 error={errors.foreignWorkInIndia}
                 onChange={(value) =>
                   patchDraft({ foreignWorkInIndia: value as TriState })
@@ -1829,6 +1879,7 @@ export function CheckRoute() {
                 id="foreignRecipientIdentifiable"
                 label="Can your records identify the overseas contractual recipient?"
                 value={draft.foreignRecipientIdentifiable}
+                unsupportedOptions={['no']}
                 error={errors.foreignRecipientIdentifiable}
                 onChange={(value) =>
                   patchDraft({
@@ -1840,6 +1891,7 @@ export function CheckRoute() {
                 id="foreignOwnAccount"
                 label="Do you supply the main service on your own account?"
                 value={draft.foreignOwnAccount}
+                unsupportedOptions={['no']}
                 error={errors.foreignOwnAccount}
                 onChange={(value) =>
                   patchDraft({ foreignOwnAccount: value as TriState })
@@ -1849,6 +1901,7 @@ export function CheckRoute() {
                 id="foreignPlaceOfSupply"
                 label="Does the ordinary cross-border place-of-supply rule apply?"
                 value={draft.foreignPlaceOfSupply}
+                unsupportedOptions={['no']}
                 error={errors.foreignPlaceOfSupply}
                 onChange={(value) =>
                   patchDraft({ foreignPlaceOfSupply: value as TriState })
@@ -1859,6 +1912,7 @@ export function CheckRoute() {
                 label="Are the supplier and recipient establishments of the same person?"
                 help="Choose No for the supported own-account branch."
                 value={draft.foreignSameEstablishment}
+                unsupportedOptions={['yes']}
                 error={errors.foreignSameEstablishment}
                 onChange={(value) =>
                   patchDraft({ foreignSameEstablishment: value as TriState })
@@ -1884,6 +1938,7 @@ export function CheckRoute() {
                 id="foreignSettledToIndianBank"
                 label="Does the covered path settle through an authorised route to your own Indian bank account?"
                 value={draft.foreignSettledToIndianBank}
+                unsupportedOptions={['no']}
                 error={errors.foreignSettledToIndianBank}
                 onChange={(value) =>
                   patchDraft({ foreignSettledToIndianBank: value as TriState })
@@ -1906,6 +1961,7 @@ export function CheckRoute() {
                 id="foreignOperation"
                 label="Is there a foreign operation?"
                 value={draft.foreignOperation}
+                unsupportedOptions={['yes']}
                 error={errors.foreignOperation}
                 onChange={(value) =>
                   patchDraft({ foreignOperation: value as TriState })
@@ -1915,6 +1971,7 @@ export function CheckRoute() {
                 id="foreignTax"
                 label="Was foreign tax withheld?"
                 value={draft.foreignTax}
+                unsupportedOptions={['yes']}
                 error={errors.foreignTax}
                 onChange={(value) =>
                   patchDraft({ foreignTax: value as TriState })
@@ -1924,6 +1981,7 @@ export function CheckRoute() {
                 id="foreignTreatyRelief"
                 label="Are you claiming foreign-tax or treaty relief?"
                 value={draft.foreignTreatyRelief}
+                unsupportedOptions={['yes']}
                 error={errors.foreignTreatyRelief}
                 onChange={(value) =>
                   patchDraft({ foreignTreatyRelief: value as TriState })
@@ -1933,6 +1991,7 @@ export function CheckRoute() {
                 id="foreignReceiptsResolved"
                 label="Are fees, withholding, refunds, chargebacks, receivables, and accounting method resolved in one annual rupee total?"
                 value={draft.foreignReceiptsResolved}
+                unsupportedOptions={['no']}
                 error={errors.foreignReceiptsResolved}
                 onChange={(value) =>
                   patchDraft({ foreignReceiptsResolved: value as TriState })
@@ -1942,6 +2001,7 @@ export function CheckRoute() {
                 id="foreignCurrencyResolved"
                 label="Are all currency effects already resolved in that annual rupee total?"
                 value={draft.foreignCurrencyResolved}
+                unsupportedOptions={['no']}
                 error={errors.foreignCurrencyResolved}
                 onChange={(value) =>
                   patchDraft({ foreignCurrencyResolved: value as TriState })

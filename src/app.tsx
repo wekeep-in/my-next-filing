@@ -74,8 +74,18 @@ function AppFrame() {
   }
 
   useEffect(() => {
-    window.scrollTo(0, 0)
-  }, [location.pathname])
+    const target = location.hash
+      ? document.getElementById(location.hash.slice(1))
+      : null
+    if (target)
+      target.scrollIntoView({
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+          ? 'auto'
+          : 'smooth',
+        block: 'start',
+      })
+    else window.scrollTo(0, 0)
+  }, [location.hash, location.pathname])
 
   useEffect(() => {
     const onStorage = (event: StorageEvent) => {

@@ -1245,10 +1245,19 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   border-color: rgb(var(--accent-rgb) / 0.55);
 }
 
+.choice-card--unsupported,
+.choice-card--unsupported:has(input:checked) {
+  border-color: var(--warning-line);
+}
+
 .choice-card input,
 .check-row input,
 .check-list input {
   accent-color: var(--accent);
+}
+
+.choice-card--unsupported input {
+  accent-color: var(--warning-text);
 }
 
 .choice-card input {
@@ -1258,6 +1267,13 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
 .choice-card:active,
 .text-button:active:not(:focus-visible) {
   transform: scale(0.98);
+}
+
+.choice-warning {
+  color: var(--warning-text);
+  font-size: var(--journey-copy-size);
+  line-height: 1.6;
+  margin: 0.75rem 0 0;
 }
 
 .check-list {
