@@ -261,7 +261,7 @@ function AttentionCard({
         <p className="card-kicker">Your next step</p>
         <h1>No supported action remains</h1>
         <p>
-          There is no open dated Obligation for the evaluated scope. Check the
+          There is no open dated Obligation for the evaluated scope. Review the
           separate Review areas below.
         </p>
       </section>
@@ -783,11 +783,11 @@ function SavedDataState({
         </h1>
         <p>
           No calculation was produced from the saved value. You can start a
-          separate unsaved check, or delete the saved value and start again.
+          separate unsaved estimate, or delete the saved value and start again.
         </p>
         <div className="button-row">
           <Link className="button button--primary" to="/check">
-            Start an unsaved check
+            Start an unsaved estimate
           </Link>
           <button
             className="button button--secondary"
@@ -815,7 +815,7 @@ function SavedDataState({
         </p>
         <div className="button-row">
           <Link className="button button--primary" to="/check">
-            Start an unsaved check
+            Start an unsaved estimate
           </Link>
           <button
             className="button button--secondary"
@@ -1403,7 +1403,7 @@ export function PlanRoute() {
             type="button"
             onClick={startOver}
           >
-            Start a new check
+            Start a new estimate
           </button>
         }
         disabledSteps={[]}

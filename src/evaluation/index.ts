@@ -40,7 +40,7 @@ const unsupportedFactLabels = {
   foreignAssets: 'A foreign asset or financial interest',
   foreignTaxOrRelief: 'Foreign tax or foreign-tax relief',
   deductionsLossesOrSpecialRate:
-    'A deduction, loss, or special-rate item this check does not show',
+    'A deduction, loss, or special-rate item this version does not cover',
   disputedCredit: 'A disputed TDS or TCS credit',
   anotherBusinessOrProfession: 'Another business or profession',
   employeesOrDeductorDuties: 'Employees or deductor filing duties',
@@ -1563,7 +1563,8 @@ function factForSharedProfile(profile: Profile, sourceIds: readonly string[]) {
       'The supported boundary excludes subcontracted client delivery.',
     ],
     [
-      profile.practice.contractorBoundary !== 'not-sure',
+      profile.practice.hasClientWorkSubcontractor !== 'no' ||
+        profile.practice.contractorBoundary !== 'not-sure',
       'contractor-boundary',
       'tax-year',
       'Contractor boundary',
@@ -1934,7 +1935,7 @@ function calculateAnnualReturn(
           ? 'annual-return-trigger-uncertain'
           : 'annual-return-age-uncertain',
         'The application cannot establish every annual-return trigger from these answers.',
-        'Check the prescribed triggers and current return guidance before relying on this area.',
+        'Review the prescribed triggers and current return guidance before relying on this area.',
         sourceIds,
       ),
       review: [

@@ -172,6 +172,27 @@ if (example.kind === 'supported') {
   assert.equal('nextObligation' in example, false)
 }
 
+const clientWorkSubcontractor = evaluate(
+  profileFrom({
+    ...baseCandidate,
+    practice: {
+      ...baseCandidate.practice,
+      hasClientWorkSubcontractor: 'yes',
+      contractorBoundary: 'not-sure',
+    },
+  }),
+  now,
+  currentRules,
+)
+assert.equal(clientWorkSubcontractor.kind, 'unsupported')
+if (clientWorkSubcontractor.kind === 'unsupported')
+  assert.deepEqual(
+    clientWorkSubcontractor.facts
+      .filter((fact) => fact.code.includes('contractor'))
+      .map((fact) => fact.code),
+    ['client-work-subcontractor'],
+  )
+
 const professionAtFive = profileFrom({
   ...baseCandidate,
   incomePath: {

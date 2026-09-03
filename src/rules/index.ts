@@ -586,7 +586,7 @@ export const currentRules: RuleDataset = {
       {
         transitionDate: '2026-10-01',
         message:
-          'A FEMA export-regulation transition takes effect on 1 October 2026. Check the applicable payment and export-declaration process with your authorised dealer or a qualified adviser.',
+          'A FEMA export-regulation transition takes effect on 1 October 2026. Review the applicable payment and export-declaration process with your authorised dealer or a qualified adviser.',
       },
       [
         {

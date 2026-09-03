@@ -88,6 +88,18 @@ Create distinctive terms only when the product introduces a genuinely distinct m
 
 Use the same term for the same object. Do not require the same button word in every context when outcomes differ. “Save,” “Create project,” “Start collecting answers,” and “Email invitation” may all be correct for different commitments.
 
+### Use a small product vocabulary
+
+For a product that estimates tax and organizes supported actions, use:
+
+- `My Next Filing` for the product.
+- `your estimate` for the calculation.
+- `your plan` for the result, dates, and actions.
+- `your saved workspace` for persisted browser state.
+- `this version` when explaining scope or limitations.
+
+Avoid using `this check` as the default name for the product or journey. Use `check` when it describes an actual action, such as `Check these answers`. Use `tax estimator` when the calculation needs a standalone name. Use `app` only when discussing the software itself. Avoid `calculator` as the product name when the product also provides filing dates or actions, because it implies exact arithmetic and undersells the rest of the experience.
+
 ### State facts the system knows
 
 - Prefer exact names, amounts, dates, recipients, and timing when reliable.

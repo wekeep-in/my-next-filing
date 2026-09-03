@@ -1166,6 +1166,10 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   margin-bottom: 0.7rem;
 }
 
+.question-heading p {
+  font-size: clamp(1.05rem, 1.05vw, 1.25rem);
+}
+
 .question-heading h1:focus {
   outline: 0.2rem solid transparent;
 }
@@ -1178,6 +1182,22 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
 .field-stack > .field,
 .unsupported-facts > .field {
   margin: 0;
+}
+
+.question-sections {
+  display: grid;
+  gap: clamp(3rem, 4vw, 4.5rem);
+  margin-top: 3rem;
+}
+
+.question-section {
+  display: grid;
+  gap: 2rem;
+}
+
+.question-section > h2 {
+  margin: 0;
+  font-size: clamp(1.35rem, 1.7vw, 1.75rem);
 }
 
 .choice-grid {

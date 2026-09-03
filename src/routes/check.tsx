@@ -173,7 +173,7 @@ const unsupportedFactLabels: Record<UnsupportedFact, string> = {
   foreignAssets: 'A foreign asset or financial interest',
   foreignTaxOrRelief: 'Foreign tax or foreign-tax relief',
   deductionsLossesOrSpecialRate:
-    'A deduction, loss, or special-rate item this check does not show',
+    'A deduction, loss, or special-rate item this version does not cover',
   disputedCredit: 'A disputed TDS or TCS credit',
   anotherBusinessOrProfession: 'Another business or profession',
   employeesOrDeductorDuties: 'Employees or deductor filing duties',
@@ -466,6 +466,7 @@ function ChoiceField({
   help,
   value,
   options = ['yes', 'no', 'not-sure'],
+  labels,
   error,
   onChange,
 }: {
@@ -474,6 +475,7 @@ function ChoiceField({
   readonly help?: string
   readonly value: string
   readonly options?: readonly string[]
+  readonly labels?: Readonly<Record<string, string>>
   readonly error?: string
   readonly onChange: (value: string) => void
 }) {
@@ -538,7 +540,7 @@ function ChoiceField({
               checked={value === option}
               onChange={(event) => onChange(event.target.value)}
             />
-            <span>{optionLabels[option] ?? option}</span>
+            <span>{labels?.[option] ?? optionLabels[option] ?? option}</span>
           </label>
         ))}
       </div>
@@ -646,7 +648,7 @@ function CheckHeading({
   return (
     <header className="question-heading">
       <span className="period-pill">
-        {first ? '1 April 2026 to 31 March 2027' : TAX_YEAR}
+        {first ? 'Tax year 2026-27' : TAX_YEAR}
       </span>
       <h1 id="check-title" tabIndex={-1}>
         {title}
@@ -1154,22 +1156,39 @@ export function CheckRoute() {
     if (step === 0) {
       if (!draft.personKind)
         nextErrors.personKind = 'Choose whether you are an individual.'
-      if (!draft.adult)
-        nextErrors.adult = 'Confirm whether you are eighteen or older.'
+      if (!draft.adult) nextErrors.adult = 'Choose whether you are 18 or older.'
       if (!draft.residence)
-        nextErrors.residence = 'Choose your residence status.'
-      if (!draft.taxRegime) nextErrors.taxRegime = 'Choose the tax regime.'
-      for (const [key, label] of [
-        ['onePractice', 'one self-employed practice'],
-        ['setupInIndia', 'practice location'],
-        ['workInIndia', 'work location'],
-        ['hasPartner', 'partner status'],
-        ['hasEmployee', 'employee status'],
-        ['hasForeignOperation', 'foreign operation status'],
-        ['hasClientWorkSubcontractor', 'client-work subcontractor status'],
-        ['contractorBoundary', 'contractor boundary'],
+        nextErrors.residence = 'Choose your Indian tax residence status.'
+      if (!draft.taxRegime)
+        nextErrors.taxRegime = 'Choose the tax regime you are using.'
+      for (const [key, message] of [
+        [
+          'onePractice',
+          'Choose whether you run one self-employed service practice.',
+        ],
+        [
+          'setupInIndia',
+          'Choose whether the practice is set up and managed in India.',
+        ],
+        ['workInIndia', 'Choose where you perform the work.'],
+        ['hasPartner', 'Choose whether you have a business partner.'],
+        ['hasEmployee', 'Choose whether you employ anyone.'],
+        [
+          'hasForeignOperation',
+          'Choose whether the practice operates outside India.',
+        ],
+        [
+          'hasClientWorkSubcontractor',
+          'Choose whether a subcontractor helps deliver client work.',
+        ],
       ] as const)
-        if (!draft[key]) nextErrors[key] = `Choose an answer for ${label}.`
+        if (!draft[key]) nextErrors[key] = message
+      if (
+        draft.hasClientWorkSubcontractor === 'no' &&
+        !draft.contractorBoundary
+      )
+        nextErrors.contractorBoundary =
+          'Choose whether you use a support-only contractor in India.'
     }
     if (step === 1) {
       if (!draft.activity) nextErrors.activity = 'Choose an activity label.'
@@ -1336,130 +1355,170 @@ export function CheckRoute() {
       return (
         <div className={questionGroupClassName} key={step}>
           <CheckHeading
-            title="Start with the facts that set the boundary"
-            description="This first release is for one adult India-based service practice."
+            title="Does this fit your situation?"
+            description="These questions decide whether this version can give you a tax estimate."
             first
           />
-          <ChoiceField
-            id="personKind"
-            label="What describes you?"
-            value={draft.personKind}
-            options={['individual', 'not-individual', 'not-sure']}
-            error={errors.personKind}
-            onChange={(value) =>
-              patchDraft({ personKind: value as Draft['personKind'] })
-            }
-          />
-          <ChoiceField
-            id="adult"
-            label="Are you eighteen or older?"
-            help="Saving is available only after this confirmation. The unsaved calculator remains available."
-            value={draft.adult}
-            error={errors.adult}
-            onChange={(value) => patchDraft({ adult: value as TriState })}
-          />
-          <ChoiceField
-            id="residence"
-            label="What was your residence status for this Tax Year?"
-            value={draft.residence}
-            options={[
-              'resident-ordinarily-resident',
-              'resident-not-ordinarily-resident',
-              'non-resident',
-              'not-sure',
-            ]}
-            error={errors.residence}
-            onChange={(value) =>
-              patchDraft({ residence: value as Draft['residence'] })
-            }
-          />
-          <ChoiceField
-            id="taxRegime"
-            label="Which tax regime will you use?"
-            value={draft.taxRegime}
-            options={['new', 'old', 'not-sure']}
-            error={errors.taxRegime}
-            onChange={(value) =>
-              patchDraft({ taxRegime: value as Draft['taxRegime'] })
-            }
-          />
-          <div className="field-stack">
-            <ChoiceField
-              id="onePractice"
-              label="Do you operate one self-employed service practice?"
-              value={draft.onePractice}
-              error={errors.onePractice}
-              onChange={(value) =>
-                patchDraft({ onePractice: value as TriState })
-              }
-            />
-            <ChoiceField
-              id="setupInIndia"
-              label="Is the practice set up and managed in India?"
-              value={draft.setupInIndia}
-              error={errors.setupInIndia}
-              onChange={(value) =>
-                patchDraft({ setupInIndia: value as TriState })
-              }
-            />
-            <ChoiceField
-              id="workInIndia"
-              label="Is all income-producing work performed in India?"
-              value={draft.workInIndia}
-              error={errors.workInIndia}
-              onChange={(value) =>
-                patchDraft({ workInIndia: value as TriState })
-              }
-            />
-            <ChoiceField
-              id="hasPartner"
-              label="Do you have a partner in this practice?"
-              value={draft.hasPartner}
-              error={errors.hasPartner}
-              onChange={(value) =>
-                patchDraft({ hasPartner: value as TriState })
-              }
-            />
-            <ChoiceField
-              id="hasEmployee"
-              label="Do you have an employee?"
-              value={draft.hasEmployee}
-              error={errors.hasEmployee}
-              onChange={(value) =>
-                patchDraft({ hasEmployee: value as TriState })
-              }
-            />
-            <ChoiceField
-              id="hasForeignOperation"
-              label="Do you have a foreign operation?"
-              value={draft.hasForeignOperation}
-              error={errors.hasForeignOperation}
-              onChange={(value) =>
-                patchDraft({ hasForeignOperation: value as TriState })
-              }
-            />
-            <ChoiceField
-              id="hasClientWorkSubcontractor"
-              label="Does a subcontractor deliver client work?"
-              value={draft.hasClientWorkSubcontractor}
-              error={errors.hasClientWorkSubcontractor}
-              onChange={(value) =>
-                patchDraft({ hasClientWorkSubcontractor: value as TriState })
-              }
-            />
-            <ChoiceField
-              id="contractorBoundary"
-              label="If you use a domestic contractor, which boundary applies?"
-              help="An incidental contractor is allowed only when they do not deliver client work or create another duty."
-              options={['none', 'incidental-domestic', 'not-sure']}
-              value={draft.contractorBoundary}
-              error={errors.contractorBoundary}
-              onChange={(value) =>
-                patchDraft({
-                  contractorBoundary: value as Draft['contractorBoundary'],
-                })
-              }
-            />
+          <div className="question-sections">
+            <section className="question-section" aria-labelledby="about-you">
+              <h2 id="about-you">About you</h2>
+              <div className="field-stack">
+                <ChoiceField
+                  id="personKind"
+                  label="Are you an individual, not a company or firm?"
+                  value={draft.personKind}
+                  options={['individual', 'not-individual', 'not-sure']}
+                  labels={{ individual: 'Yes', 'not-individual': 'No' }}
+                  error={errors.personKind}
+                  onChange={(value) =>
+                    patchDraft({ personKind: value as Draft['personKind'] })
+                  }
+                />
+                <ChoiceField
+                  id="adult"
+                  label="Are you 18 or older?"
+                  help="This version can only estimate tax for adults. You must also confirm this before saving."
+                  value={draft.adult}
+                  error={errors.adult}
+                  onChange={(value) => patchDraft({ adult: value as TriState })}
+                />
+                <ChoiceField
+                  id="residence"
+                  label="What was your Indian tax residence status for 2026-27?"
+                  help="Use the status in your tax records or confirmed by your tax adviser. Choose Not sure if you have not confirmed it."
+                  value={draft.residence}
+                  options={[
+                    'resident-ordinarily-resident',
+                    'resident-not-ordinarily-resident',
+                    'non-resident',
+                    'not-sure',
+                  ]}
+                  error={errors.residence}
+                  onChange={(value) =>
+                    patchDraft({ residence: value as Draft['residence'] })
+                  }
+                />
+                <ChoiceField
+                  id="taxRegime"
+                  label="Which tax regime are you using for 2026-27?"
+                  help="This version only supports the new tax regime."
+                  value={draft.taxRegime}
+                  options={['new', 'old', 'not-sure']}
+                  error={errors.taxRegime}
+                  onChange={(value) =>
+                    patchDraft({ taxRegime: value as Draft['taxRegime'] })
+                  }
+                />
+              </div>
+            </section>
+
+            <section
+              className="question-section"
+              aria-labelledby="about-practice"
+            >
+              <h2 id="about-practice">About your practice</h2>
+              <div className="field-stack">
+                <ChoiceField
+                  id="onePractice"
+                  label="Do you run one self-employed service practice?"
+                  help="Choose No if you have more than one business or profession."
+                  value={draft.onePractice}
+                  error={errors.onePractice}
+                  onChange={(value) =>
+                    patchDraft({ onePractice: value as TriState })
+                  }
+                />
+                <ChoiceField
+                  id="setupInIndia"
+                  label="Is the practice set up and managed in India?"
+                  value={draft.setupInIndia}
+                  error={errors.setupInIndia}
+                  onChange={(value) =>
+                    patchDraft({ setupInIndia: value as TriState })
+                  }
+                />
+                <ChoiceField
+                  id="workInIndia"
+                  label="Do you perform all the work that earns this income while in India?"
+                  value={draft.workInIndia}
+                  error={errors.workInIndia}
+                  onChange={(value) =>
+                    patchDraft({ workInIndia: value as TriState })
+                  }
+                />
+              </div>
+            </section>
+
+            <section
+              className="question-section"
+              aria-labelledby="people-involved"
+            >
+              <h2 id="people-involved">Who helps with the work</h2>
+              <div className="field-stack">
+                <ChoiceField
+                  id="hasPartner"
+                  label="Do you have a business partner in this practice?"
+                  value={draft.hasPartner}
+                  error={errors.hasPartner}
+                  onChange={(value) =>
+                    patchDraft({ hasPartner: value as TriState })
+                  }
+                />
+                <ChoiceField
+                  id="hasEmployee"
+                  label="Do you employ anyone in this practice?"
+                  value={draft.hasEmployee}
+                  error={errors.hasEmployee}
+                  onChange={(value) =>
+                    patchDraft({ hasEmployee: value as TriState })
+                  }
+                />
+                <ChoiceField
+                  id="hasForeignOperation"
+                  label="Does your practice have an office or other business operation outside India?"
+                  help="Foreign clients alone do not count. We ask about clients later."
+                  value={draft.hasForeignOperation}
+                  error={errors.hasForeignOperation}
+                  onChange={(value) =>
+                    patchDraft({ hasForeignOperation: value as TriState })
+                  }
+                />
+                <ChoiceField
+                  id="hasClientWorkSubcontractor"
+                  label="Does a subcontractor help deliver work to your clients?"
+                  value={draft.hasClientWorkSubcontractor}
+                  error={errors.hasClientWorkSubcontractor}
+                  onChange={(value) => {
+                    const next = value as TriState
+                    patchDraft(
+                      {
+                        hasClientWorkSubcontractor: next,
+                        contractorBoundary:
+                          next === 'no' ? draft.contractorBoundary : '',
+                      },
+                      'contractorBoundary',
+                    )
+                  }}
+                />
+                {draft.hasClientWorkSubcontractor === 'no' && (
+                  <ChoiceField
+                    id="contractorBoundary"
+                    label="Do you use a contractor in India for support work only?"
+                    help="Choose Yes only if they do not deliver client work, become an employee or agent, create another business, involve a foreign operation, or require you to deduct tax from their payments."
+                    options={['none', 'incidental-domestic', 'not-sure']}
+                    labels={{ none: 'No', 'incidental-domestic': 'Yes' }}
+                    value={draft.contractorBoundary}
+                    error={errors.contractorBoundary}
+                    onChange={(value) =>
+                      patchDraft({
+                        contractorBoundary:
+                          value as Draft['contractorBoundary'],
+                      })
+                    }
+                  />
+                )}
+              </div>
+            </section>
           </div>
         </div>
       )
@@ -1942,7 +2001,7 @@ export function CheckRoute() {
           <ChoiceField
             id="otherAnnualReturnTrigger"
             label="Do you know that another prescribed annual-return trigger applies?"
-            help="Choose Not sure if you need to check the banking, travel, electricity, or foreign-asset conditions."
+            help="Choose Not sure if you need to review the banking, travel, electricity, or foreign-asset conditions."
             value={draft.otherAnnualReturnTrigger}
             error={errors.otherAnnualReturnTrigger}
             onChange={(value) =>
@@ -2082,7 +2141,7 @@ export function CheckRoute() {
         />
         <GroupSummary draft={draft} onEdit={(nextStep) => go(nextStep, true)} />
         <div className="review-boundary">
-          <h2>What this check does not collect</h2>
+          <h2>What My Next Filing does not collect</h2>
           <p>
             No name, client or platform identity, country, account number,
             invoice, document, foreign-currency amount, or free text.
@@ -2107,8 +2166,8 @@ export function CheckRoute() {
     >
       {usingExample && (
         <div className="notice notice--top notice--example" role="status">
-          <strong>Fictional example.</strong> These values are for demonstration
-          only.
+          <strong>Fictional example.</strong> You can explore these answers, but
+          they cannot be saved.
         </div>
       )}
       <div

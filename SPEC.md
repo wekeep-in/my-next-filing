@@ -326,7 +326,7 @@ Every write replaces the complete small envelope. Immediately before a write or 
 
 A quota, security, private-mode, serialization, write, or removal failure preserves the valid in-memory work and the last saved value. It never displays false success. Invalid saved data produces no calculation and cannot be overwritten until the user deliberately deletes it.
 
-The user may start a separate unsaved check while invalid saved data remains. That check cannot overwrite the invalid value.
+The user may start a separate unsaved estimate while invalid saved data remains. That estimate cannot overwrite the invalid value.
 
 Retain the workspace until the user deletes it or the browser clears or evicts it. State that this is best effort, not a statutory record-keeping system. `Stop saving` withdraws the storage choice by deleting the complete workspace because the Application has no second purpose for retaining it.
 
@@ -372,9 +372,9 @@ If a later statutory correction affects an archive's recorded Rule dataset, show
 
 ## Entry, workspace, and correction experience
 
-The public landing page remains generic. Reuse its current origin story and self-hosted media where the copy remains accurate. Update only the scope, privacy, and actions needed by this successor. Without saved data, its primary action starts a check. With a valid Saved workspace, the primary action says `Continue your saved workspace` without exposing a Profile, amount, deadline, or Completion record.
+The public landing page remains generic. Reuse its current origin story and self-hosted media where the copy remains accurate. Update only the scope, privacy, and actions needed by this successor. Without saved data, its primary action starts an estimate. With a valid Saved workspace, the primary action says `Continue your saved workspace` without exposing a Profile, amount, deadline, or Completion record.
 
-Keep one `Try an example` path using the synthetic domestic professional Profile below. Label it fictional throughout. Example state cannot be saved, completed, rolled over, or archived. `Use my information` starts a blank personal check. Do not track edits to individual example fields.
+Keep one `Try a fictional example` path using the synthetic domestic professional Profile below. Label it fictional throughout. Example state cannot be saved, completed, rolled over, or archived. `Start your estimate` starts a blank personal estimate. Do not track edits to individual example fields.
 
 | Example fact | Value |
 | --- | --- |

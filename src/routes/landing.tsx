@@ -127,7 +127,7 @@ export function LandingRoute() {
                                 navigateToCheckFromPointer(event, { personal: true })
                         }}
                     >
-                        {hasSaved ? 'Continue your saved workspace' : 'Start your check'}
+                        {hasSaved ? 'Continue your saved workspace' : 'Start your estimate'}
                     </Link>
                 }
                 disabledSteps={[2, 3, 4, 5, 6, 7, calculationStep]}
@@ -171,7 +171,7 @@ export function LandingRoute() {
                 </h2>
                 <div className="faq-list">
                     <article>
-                        <h3>What can this check help me with?</h3>
+                        <h3>What can My Next Filing help me with?</h3>
                         <p>
                             It gives you a best-effort income-tax estimate, checks whether GST
                             registration may apply, and puts the supported filing and payment
@@ -186,13 +186,13 @@ export function LandingRoute() {
                     <article>
                         <h3>What happens to my answers?</h3>
                         <p>
-                            While you use the check, your answers and estimate stay in this
+                            While you answer the questions, your answers and estimate stay in this
                             tab. If you close or refresh it, they are lost unless you choose
                             to save after getting a supported result.
                         </p>
                         <p>
                             If you save, this browser keeps the answers needed to run the
-                            check again and the dates you mark actions complete. It does not
+                            run your estimate again and the dates you mark actions complete. It does not
                             save drafts, examples, calculated results, or tax rules. Saving is
                             available only if you confirm that you are 18 or older.
                         </p>
@@ -228,7 +228,7 @@ export function LandingRoute() {
                         <p>
                             On the last step, Your plan, choose <em>Stop saving</em>. This removes My Next
                             Filing's saved profile and completion dates from this browser. You
-                            can continue using the check without saving.
+                            can continue without saving.
                         </p>
                     </article>
 
@@ -257,7 +257,7 @@ export function LandingRoute() {
                     </article>
 
                     <article>
-                        <h3>Will this check work for me?</h3>
+                        <h3>Can My Next Filing estimate my tax?</h3>
                         <p>
                             This version is for an adult individual who is resident and
                             ordinarily resident in India, uses the new tax regime, and runs
@@ -294,7 +294,7 @@ export function LandingRoute() {
                     <article>
                         <h3>How is the estimate worked out?</h3>
                         <p>
-                            The check starts with the presumptive tax method you confirm and
+                            Your estimate starts with the presumptive tax method you confirm and
                             uses a higher declared profit if you enter one. It then:
                         </p>
                         <ol>
@@ -311,7 +311,7 @@ export function LandingRoute() {
                         </ol>
                         <p>
                             It shows advance tax when the amount left after TDS and TCS is at
-                            least ₹10,000. The GST check uses your GST aggregate turnover and
+                            least ₹10,000. The GST result uses your GST aggregate turnover and
                             state threshold, not your income-tax receipts.
                         </p>
                     </article>
@@ -329,7 +329,7 @@ export function LandingRoute() {
                         </p>
                         <p>
                             Rules, forms, portals, and deadline extensions can change, so
-                            check the linked official sources before you file or pay. Any
+                            review the linked official sources before you file or pay. Any
                             linked tutorial is maintained by its publisher.
                         </p>
                     </article>
