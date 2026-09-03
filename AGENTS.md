@@ -1,10 +1,10 @@
 # My Next Filing
 
-My Next Filing is a static React application for a narrow Indian IT-consulting profile. It has no backend, account, database, government connection, or filing action.
+My Next Filing is a static React application for supported resident-individual Solo freelancers in India. It has no backend, account, database, government connection, filing action, or remote runtime script.
 
-`SPEC.md` defines the product behavior and scope. Read the relevant section before changing behavior.
+`SPEC.md` defines the product behavior and scope. It includes the optional current-browser Saved workspace and user-declared Completion records. Read the relevant section before changing behavior.
 
-Keep profile and money values in the browser. Do not put them in URLs, titles, logs, Analytics events, or external links. Keep statutory rules local, typed, sourced, and expiry-bound. An invalid or stale dataset must stop calculation.
+Keep Profile and money values in the browser. Do not put them in URLs, titles, logs, Analytics events, sharing, or external links. Keep statutory Rules local, typed, sourced, and expiry-bound. An invalid or stale dataset must stop calculation or withhold only its independent area.
 
 ## Agent skills
 

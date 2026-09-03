@@ -1,6 +1,6 @@
-import { currentRules, validateRuleDataset } from '../src/rules/index.ts'
+import { currentRules, validateRules } from '../src/rules/index.ts'
 
-const result = validateRuleDataset(currentRules)
+const result = validateRules(currentRules)
 
 if (!result.valid) {
   process.stderr.write(`${result.errors.join('\n')}\n`)

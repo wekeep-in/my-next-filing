@@ -1,11 +1,32 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Outlet, createBrowserRouter, useLocation } from 'react-router-dom'
-import { trackPageView } from './analytics'
+import { WORKSPACE_KEY, loadSavedWorkspace } from './workspace/index.ts'
+import type { LoadSavedWorkspaceResult } from './workspace/index.ts'
 import { CheckRoute } from './routes/check'
 import { LandingRoute } from './routes/landing'
 import { NotFoundRoute } from './routes/not-found'
-import { PlanRoute, planLoader } from './routes/plan'
+import { PlanRoute } from './routes/plan'
+
+export type AppOutletContext = {
+  readonly savedWorkspace: LoadSavedWorkspaceResult
+  readonly refreshSavedWorkspace: () => void
+}
+
+function browserStorage(): Storage | null {
+  try {
+    return window.localStorage
+  } catch {
+    return null
+  }
+}
+
+function loadBrowserWorkspace(): LoadSavedWorkspaceResult {
+  const storage = browserStorage()
+  return storage
+    ? loadSavedWorkspace(storage)
+    : { kind: 'unavailable', reason: 'storage-unavailable' }
+}
 
 export function formatMoney(amount: number) {
   return new Intl.NumberFormat('en-IN', {
@@ -32,7 +53,7 @@ export function ExternalLink({
   readonly children: ReactNode
 }) {
   return (
-    <a href={href} target="_blank" rel="noreferrer">
+    <a href={href} target="_blank" rel="noopener noreferrer">
       {children}
       <span aria-hidden="true"> ↗</span>
       <span className="visually-hidden"> opens in a new tab</span>
@@ -45,17 +66,31 @@ function AppFrame() {
   const isLanding = location.pathname === '/'
   const isJourney =
     location.pathname === '/check' || location.pathname === '/plan'
+  const [savedWorkspace, setSavedWorkspace] =
+    useState<LoadSavedWorkspaceResult>(loadBrowserWorkspace)
+
+  const refreshSavedWorkspace = () => {
+    setSavedWorkspace(loadBrowserWorkspace())
+  }
+
   useEffect(() => {
     window.scrollTo(0, 0)
-    trackPageView(location.pathname)
   }, [location.pathname])
+
+  useEffect(() => {
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === WORKSPACE_KEY) refreshSavedWorkspace()
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
 
   return (
     <div
       className={`app${isJourney ? ' app--journey' : ''}${isLanding ? ' app--landing' : ''}`}
     >
       <main>
-        <Outlet />
+        <Outlet context={{ savedWorkspace, refreshSavedWorkspace }} />
       </main>
       <footer className="site-footer">
         <p>
@@ -73,7 +108,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <LandingRoute /> },
       { path: '/check', element: <CheckRoute /> },
-      { path: '/plan', loader: planLoader, element: <PlanRoute /> },
+      { path: '/plan', element: <PlanRoute /> },
       { path: '*', element: <NotFoundRoute /> },
     ],
   },
