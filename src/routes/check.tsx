@@ -1691,7 +1691,7 @@ export function CheckRoute() {
       return (
         <div className={questionGroupClassName} key={step}>
           <CheckHeading
-            title="Enter the amounts from your records"
+            title="Your receipts and profit"
             description="Enter whole-rupee amounts from your records. Receipt amounts should be before expenses, platform fees, and Indian withholding."
           />
           {draft.path === 'eligible-business' ? (
@@ -1771,13 +1771,14 @@ export function CheckRoute() {
       return (
         <div className={questionGroupClassName} key={step}>
           <CheckHeading
-            title="Tell us who pays and how the work is supplied"
-            description="No client, platform, country, account, invoice, or foreign-currency details are collected."
+            title="Tell us how you work"
+            description="A few questions about where your clients are based and how you deliver your service."
           />
           <ChoiceField
             id="clientKind"
-            label="Where are your clients?"
+            label="Where are your clients based?"
             options={['domestic', 'foreign', 'mixed', 'not-sure']}
+            labels={{ mixed: 'Both domestic and foreign clients' }}
             value={draft.clientKind}
             error={errors.clientKind}
             onChange={(value) =>
@@ -1786,8 +1787,12 @@ export function CheckRoute() {
           />
           <ChoiceField
             id="delivery"
-            label="How do you supply the service?"
+            label="How do you deliver the service?"
             options={['direct', 'platform', 'not-sure']}
+            labels={{
+              direct: 'Directly to your clients',
+              platform: 'Through a platform',
+            }}
             value={draft.delivery}
             error={errors.delivery}
             onChange={(value) =>
@@ -1798,7 +1803,7 @@ export function CheckRoute() {
             <div className="field-stack">
               <ChoiceField
                 id="platformOwnAccount"
-                label="Do you supply the main service on your own account?"
+                label="Are you providing the main service on your own account?"
                 value={draft.platformOwnAccount}
                 unsupportedOptions={['no']}
                 error={errors.platformOwnAccount}
@@ -1808,7 +1813,7 @@ export function CheckRoute() {
               />
               <ChoiceField
                 id="platformRecipientIdentifiable"
-                label="Can your records identify the contractual recipient?"
+                label="Do your records identify who the contract is with?"
                 value={draft.platformRecipientIdentifiable}
                 unsupportedOptions={['no']}
                 error={errors.platformRecipientIdentifiable}
@@ -1820,7 +1825,7 @@ export function CheckRoute() {
               />
               <ChoiceField
                 id="platformGrossBeforeFees"
-                label="Do your records show gross customer consideration before fees and withholding?"
+                label="Do your records show the customer's full payment before platform fees and withholding?"
                 value={draft.platformGrossBeforeFees}
                 unsupportedOptions={['no']}
                 error={errors.platformGrossBeforeFees}
@@ -1830,7 +1835,7 @@ export function CheckRoute() {
               />
               <ChoiceField
                 id="platformIncomeCharacter"
-                label="Is the income not employment, commission, brokerage, royalty, licensing, or agency income?"
+                label="Is this payment for your own service, not employment, commission, brokerage, royalty, licensing, or agency work?"
                 value={draft.platformIncomeCharacter}
                 unsupportedOptions={['no']}
                 error={errors.platformIncomeCharacter}
@@ -1840,8 +1845,12 @@ export function CheckRoute() {
               />
               <ChoiceField
                 id="platformForeignFeeGstTreatment"
-                label="Is foreign platform-fee GST treatment known?"
+                label="Does a foreign platform fee apply, and do you know its GST treatment?"
                 options={['not-applicable', 'known', 'not-sure']}
+                labels={{
+                  'not-applicable': 'No foreign platform fee',
+                  known: 'Yes, and I know its GST treatment',
+                }}
                 value={draft.platformForeignFeeGstTreatment}
                 unsupportedOptions={
                   draft.clientKind === 'domestic'
@@ -1861,7 +1870,7 @@ export function CheckRoute() {
               />
               <ChoiceField
                 id="platformNoRecipientReverseCharge"
-                label="Does the platform fee create no unsupported recipient-side reverse-charge duty?"
+                label="Does the platform fee leave you with no extra GST responsibility?"
                 value={draft.platformNoRecipientReverseCharge}
                 unsupportedOptions={['no']}
                 error={errors.platformNoRecipientReverseCharge}
@@ -1874,10 +1883,10 @@ export function CheckRoute() {
             </div>
           )}
           {(draft.clientKind === 'foreign' || draft.clientKind === 'mixed') && (
-            <div className="field-stack">
+            <div className="field-stack foreign-follow-up">
               <ChoiceField
                 id="foreignWorkInIndia"
-                label="Is all income-producing work performed in India?"
+                label="Do you do all the work for these clients from India?"
                 value={draft.foreignWorkInIndia}
                 unsupportedOptions={['no']}
                 error={errors.foreignWorkInIndia}
@@ -1887,7 +1896,7 @@ export function CheckRoute() {
               />
               <ChoiceField
                 id="foreignRecipientIdentifiable"
-                label="Can your records identify the overseas contractual recipient?"
+                label="Do your records identify the overseas client in the contract?"
                 value={draft.foreignRecipientIdentifiable}
                 unsupportedOptions={['no']}
                 error={errors.foreignRecipientIdentifiable}
@@ -1899,7 +1908,7 @@ export function CheckRoute() {
               />
               <ChoiceField
                 id="foreignOwnAccount"
-                label="Do you supply the main service on your own account?"
+                label="Are you providing the main service on your own account?"
                 value={draft.foreignOwnAccount}
                 unsupportedOptions={['no']}
                 error={errors.foreignOwnAccount}
@@ -1909,7 +1918,8 @@ export function CheckRoute() {
               />
               <ChoiceField
                 id="foreignPlaceOfSupply"
-                label="Does the ordinary cross-border place-of-supply rule apply?"
+                label="Does the normal cross-border GST rule apply to this work?"
+                help="Choose Not sure if you need to confirm the place-of-supply rule."
                 value={draft.foreignPlaceOfSupply}
                 unsupportedOptions={['no']}
                 error={errors.foreignPlaceOfSupply}
@@ -1919,8 +1929,8 @@ export function CheckRoute() {
               />
               <ChoiceField
                 id="foreignSameEstablishment"
-                label="Are the supplier and recipient establishments of the same person?"
-                help="Choose No for the supported own-account branch."
+                label="Are you and the overseas client part of the same business or legal entity?"
+                help="Choose No if you and the client are separate businesses."
                 value={draft.foreignSameEstablishment}
                 unsupportedOptions={['yes']}
                 error={errors.foreignSameEstablishment}
@@ -1930,7 +1940,7 @@ export function CheckRoute() {
               />
               <ChoiceField
                 id="foreignPaymentRoute"
-                label="How is payment received?"
+                label="How do you receive payment?"
                 options={[
                   'convertible-foreign-exchange',
                   'rbi-permitted-rupee',
@@ -1946,18 +1956,21 @@ export function CheckRoute() {
               />
               <ChoiceField
                 id="foreignSettledToIndianBank"
-                label="Does the covered path settle through an authorised route to your own Indian bank account?"
+                label="Do these payments reach your own Indian bank account through an authorised route?"
                 value={draft.foreignSettledToIndianBank}
                 unsupportedOptions={['no']}
                 error={errors.foreignSettledToIndianBank}
                 onChange={(value) =>
-                  patchDraft({ foreignSettledToIndianBank: value as TriState })
+                  patchDraft({
+                    foreignSettledToIndianBank: value as TriState,
+                  })
                 }
               />
               <ChoiceField
                 id="foreignAccountExposure"
-                label="Is there any foreign account, wallet, provider-held balance, or signing authority?"
+                label="Could these receipts involve a foreign account, wallet, provider-held balance, or signing authority?"
                 options={['none', 'possible', 'not-sure']}
+                labels={{ none: 'No' }}
                 value={draft.foreignAccountExposure}
                 error={errors.foreignAccountExposure}
                 onChange={(value) =>
@@ -1969,7 +1982,7 @@ export function CheckRoute() {
               />
               <ChoiceField
                 id="foreignOperation"
-                label="Is there a foreign operation?"
+                label="Does this work involve a business operation outside India?"
                 value={draft.foreignOperation}
                 unsupportedOptions={['yes']}
                 error={errors.foreignOperation}
@@ -1979,7 +1992,7 @@ export function CheckRoute() {
               />
               <ChoiceField
                 id="foreignTax"
-                label="Was foreign tax withheld?"
+                label="Was tax withheld outside India?"
                 value={draft.foreignTax}
                 unsupportedOptions={['yes']}
                 error={errors.foreignTax}
@@ -1989,7 +2002,7 @@ export function CheckRoute() {
               />
               <ChoiceField
                 id="foreignTreatyRelief"
-                label="Are you claiming foreign-tax or treaty relief?"
+                label="Are you claiming foreign-tax or tax-treaty relief?"
                 value={draft.foreignTreatyRelief}
                 unsupportedOptions={['yes']}
                 error={errors.foreignTreatyRelief}
@@ -1999,7 +2012,8 @@ export function CheckRoute() {
               />
               <ChoiceField
                 id="foreignReceiptsResolved"
-                label="Are fees, withholding, refunds, chargebacks, receivables, and accounting method resolved in one annual rupee total?"
+                label="Can you report these foreign receipts as one complete annual rupee amount?"
+                help="This amount should already account for fees, withholding, refunds, chargebacks, receivables, and your accounting method."
                 value={draft.foreignReceiptsResolved}
                 unsupportedOptions={['no']}
                 error={errors.foreignReceiptsResolved}
@@ -2009,7 +2023,7 @@ export function CheckRoute() {
               />
               <ChoiceField
                 id="foreignCurrencyResolved"
-                label="Are all currency effects already resolved in that annual rupee total?"
+                label="Does that annual rupee amount already include all currency effects?"
                 value={draft.foreignCurrencyResolved}
                 unsupportedOptions={['no']}
                 error={errors.foreignCurrencyResolved}

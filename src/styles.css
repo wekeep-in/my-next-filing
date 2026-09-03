@@ -1200,6 +1200,10 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   margin: 0;
 }
 
+.field-stack + .foreign-follow-up {
+  margin-top: 2.5rem;
+}
+
 .question-sections {
   display: grid;
   gap: clamp(3rem, 4vw, 4.5rem);
