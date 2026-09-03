@@ -393,7 +393,7 @@ main {
   aspect-ratio: 8 / 5;
   margin: clamp(2.7rem, 4vw, 4.75rem) 0 clamp(5rem, 7vw, 8rem);
   overflow: hidden;
-  border-radius: 0.35rem;
+  border-radius: var(--control-radius);
   background: #101715;
   box-shadow: 0 1.35rem 2rem rgb(var(--ink-rgb) / 0.16);
 }
@@ -1480,7 +1480,8 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   font-size: clamp(1.7rem, 3vw, 2.5rem);
 }
 
-.card-kicker {
+.card-kicker,
+.plan-main .card-kicker {
   margin-bottom: 0.45rem;
   color: var(--muted);
   font-size: 0.72rem;
@@ -1523,6 +1524,10 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
 .tax-summary h2 {
   margin: 0 0 0.7rem;
   font-size: 1.728rem;
+}
+
+.tax-summary details {
+  border-top: 0;
 }
 
 .coverage-card h2 {

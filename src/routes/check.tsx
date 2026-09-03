@@ -1135,12 +1135,19 @@ export function CheckRoute() {
     if (target instanceof HTMLElement) target.focus()
   }, [errors])
 
-  const patchDraft = (patch: Partial<Draft>) => {
+  const patchDraft = (patch: Partial<Draft>, ...errorKeys: string[]) => {
     setDraft((current) => ({ ...current, ...patch }))
+    setErrors((current) => {
+      const next = { ...current }
+      for (const key of [...Object.keys(patch), ...errorKeys]) {
+        if (key !== 'amounts') delete next[key]
+      }
+      return next
+    })
     setHighestStep((current) => Math.min(current, step))
   }
   const setAmount = (key: DraftAmountKey, value: string) =>
-    patchDraft({ amounts: { ...draft.amounts, [key]: value } })
+    patchDraft({ amounts: { ...draft.amounts, [key]: value } }, key)
 
   const validateStep = () => {
     const nextErrors: Record<string, string> = {}

@@ -662,7 +662,10 @@ function PaymentEditor({
           id="advance-tax-update"
           inputMode="numeric"
           value={value}
-          onChange={(event) => setValue(event.target.value)}
+          onChange={(event) => {
+            setValue(event.target.value)
+            setError('')
+          }}
         />
       </div>
       {error && (
@@ -727,7 +730,10 @@ function CompletionEditor({
         id="completion-date"
         value={date}
         max={todayInIndia()}
-        onChange={(value) => setDate(value as DateOnly)}
+        onChange={(value) => {
+          setDate(value as DateOnly)
+          setError('')
+        }}
       />
       {error && (
         <p className="field-error" role="alert">
