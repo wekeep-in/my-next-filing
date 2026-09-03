@@ -9,6 +9,7 @@ Keep profile and money values in the browser. Do not put them in URLs, titles, l
 ## Agent skills
 
 Use `.agents/skills/code-conventions` before changing TypeScript or application behavior. Use `.agents/skills/compliance-review` for statutory data, dates, thresholds, rates, sources, or tax calculations. Use `.agents/skills/commit` when creating a commit.
+Use `.agents/skills/write-ux-copy` for every UX and product-interface copywriting task, including writing, rewriting, critiquing, or systematizing interface copy.
 
 ### Issue tracker
 
