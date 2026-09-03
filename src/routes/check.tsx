@@ -63,7 +63,6 @@ type Draft = {
   readonly activity: Activity | ''
   readonly path: DraftPath
   readonly pathConfirmed: DraftChoice
-  readonly notSpecifiedProfession: DraftChoice
   readonly notGoodsCarriage: DraftChoice
   readonly notAgencyCommissionBrokerage: DraftChoice
   readonly noChapterViiiCDeduction: DraftChoice
@@ -207,7 +206,6 @@ const blankDraft = (): Draft => ({
   activity: '',
   path: '',
   pathConfirmed: '',
-  notSpecifiedProfession: '',
   notGoodsCarriage: '',
   notAgencyCommissionBrokerage: '',
   noChapterViiiCDeduction: '',
@@ -370,7 +368,6 @@ function draftFromProfile(profile: Profile): Draft {
     amounts.otherReceipts = path.otherReceipts.toLocaleString('en-IN')
     return {
       ...draft,
-      notSpecifiedProfession: choice(path.notSpecifiedProfession),
       notGoodsCarriage: choice(path.notGoodsCarriage),
       notAgencyCommissionBrokerage: choice(path.notAgencyCommissionBrokerage),
       noChapterViiiCDeduction: choice(path.noChapterViiiCDeduction),
@@ -658,15 +655,6 @@ function CheckHeading({
   )
 }
 
-function requiredChoice(
-  errors: Record<string, string>,
-  draft: Draft,
-  key: keyof Draft,
-  label: string,
-) {
-  if (!draft[key]) errors[key] = `Choose an answer for ${label.toLowerCase()}.`
-}
-
 function requiredAmount(
   errors: Record<string, string>,
   draft: Draft,
@@ -708,7 +696,7 @@ function candidateFromDraft(draft: Draft) {
           otherReceipts: amountValues.otherReceipts,
           cashReceipts: amountValues.cashReceipts,
           declaredProfit: amountValues.declaredProfit,
-          notSpecifiedProfession: draft.notSpecifiedProfession || 'not-sure',
+          notSpecifiedProfession: draft.pathConfirmed || 'not-sure',
           notGoodsCarriage: draft.notGoodsCarriage || 'not-sure',
           notAgencyCommissionBrokerage:
             draft.notAgencyCommissionBrokerage || 'not-sure',
@@ -874,7 +862,6 @@ function errorStep(key: string) {
       'activity',
       'path',
       'pathConfirmed',
-      'notSpecifiedProfession',
       'notGoodsCarriage',
       'notAgencyCommissionBrokerage',
       'noChapterViiiCDeduction',
@@ -1191,19 +1178,35 @@ export function CheckRoute() {
           'Choose whether you use a support-only contractor in India.'
     }
     if (step === 1) {
-      if (!draft.activity) nextErrors.activity = 'Choose an activity label.'
+      if (!draft.activity)
+        nextErrors.activity = 'Choose the option that best describes your work.'
       if (!draft.path)
-        nextErrors.path = 'Choose the income path used in your records.'
-      requiredChoice(nextErrors, draft, 'pathConfirmed', 'income path')
-      if (draft.path === 'eligible-business')
-        for (const [key, label] of [
-          ['notSpecifiedProfession', 'specified profession exclusion'],
-          ['notGoodsCarriage', 'goods carriage exclusion'],
-          ['notAgencyCommissionBrokerage', 'agency exclusion'],
-          ['noChapterViiiCDeduction', 'Chapter VIII-C deduction exclusion'],
-          ['fiveYearExclusion', 'five-year exclusion'],
-        ] as const)
-          if (!draft[key]) nextErrors[key] = `Choose an answer for ${label}.`
+        nextErrors.path = 'Choose the tax method you use for this work.'
+      if (draft.path && !draft.pathConfirmed)
+        nextErrors.pathConfirmed =
+          'Confirm the tax method for your whole practice.'
+      if (draft.path === 'eligible-business') {
+        const requiredFields: readonly [keyof Draft, string][] = [
+          [
+            'notGoodsCarriage',
+            'Confirm that your practice provides services rather than transport goods.',
+          ],
+          [
+            'notAgencyCommissionBrokerage',
+            'Confirm that you provide services on your own account.',
+          ],
+          [
+            'noChapterViiiCDeduction',
+            'Choose whether you are claiming no Chapter VIII-C deduction.',
+          ],
+          [
+            'fiveYearExclusion',
+            'Choose whether the five-year exclusion applies to this method.',
+          ],
+        ]
+        for (const [key, message] of requiredFields)
+          if (!draft[key]) nextErrors[key] = message
+      }
     }
     if (step === 2) {
       for (const key of draft.path === 'eligible-business'
@@ -1526,19 +1529,19 @@ export function CheckRoute() {
       return (
         <div className={questionGroupClassName} key={step}>
           <CheckHeading
-            title="Name the work, then choose its tax path"
-            description="The activity label explains the question. It never selects the statutory path."
+            title="Tell us about your work"
+            description="Choose the option that best describes your work. Then tell us which tax method you use."
           />
           <SelectField
             id="activity"
-            label="What kind of digital service do you provide?"
+            label="Which option best describes your work?"
             value={draft.activity}
             error={errors.activity}
             onChange={(value) => patchDraft({ activity: value as Activity })}
             options={[
               {
                 value: 'software-development',
-                label: 'Software development or information technology',
+                label: 'Software development or IT',
               },
               {
                 value: 'technical-consultancy',
@@ -1557,10 +1560,16 @@ export function CheckRoute() {
               { value: 'not-sure', label: 'Not sure' },
             ]}
           />
+          {draft.activity === 'not-sure' && (
+            <p className="field-help" role="status">
+              Not sure stops the estimate. Choose a specific option if you can
+              confirm one.
+            </p>
+          )}
           <ChoiceField
             id="path"
-            label="Which presumptive path does your practice use?"
-            help="Confirm the path used in your records or chosen with professional advice. Not sure stops the calculation."
+            label="Which tax method do you use for this work?"
+            help="Choose the method in your records or the one confirmed by your tax adviser. We cannot estimate your tax without a confirmed method."
             options={['specified-profession', 'eligible-business']}
             value={draft.path}
             error={errors.path}
@@ -1568,33 +1577,27 @@ export function CheckRoute() {
               patchDraft({ path: value as DraftPath, pathConfirmed: '' })
             }
           />
-          <ChoiceField
-            id="pathConfirmed"
-            label={
-              draft.path === 'eligible-business'
-                ? 'Is the whole practice an eligible business, not a specified profession?'
-                : 'Is the whole practice a specified profession under the applicable Rules?'
-            }
-            value={draft.pathConfirmed}
-            error={errors.pathConfirmed}
-            onChange={(value) =>
-              patchDraft({ pathConfirmed: value as TriState })
-            }
-          />
+          {draft.path && (
+            <ChoiceField
+              id="pathConfirmed"
+              label={
+                draft.path === 'eligible-business'
+                  ? 'Is your whole practice an eligible business?'
+                  : 'Is your whole practice a specified profession?'
+              }
+              help="Choose Yes only if this matches your records or professional advice."
+              value={draft.pathConfirmed}
+              error={errors.pathConfirmed}
+              onChange={(value) =>
+                patchDraft({ pathConfirmed: value as TriState })
+              }
+            />
+          )}
           {draft.path === 'eligible-business' && (
-            <div className="field-stack">
-              <ChoiceField
-                id="notSpecifiedProfession"
-                label="Is the practice not a specified profession?"
-                value={draft.notSpecifiedProfession}
-                error={errors.notSpecifiedProfession}
-                onChange={(value) =>
-                  patchDraft({ notSpecifiedProfession: value as TriState })
-                }
-              />
+            <div className="field-stack path-follow-up">
               <ChoiceField
                 id="notGoodsCarriage"
-                label="Is the practice not goods carriage?"
+                label="Does your practice provide services rather than transport goods?"
                 value={draft.notGoodsCarriage}
                 error={errors.notGoodsCarriage}
                 onChange={(value) =>
@@ -1603,7 +1606,7 @@ export function CheckRoute() {
               />
               <ChoiceField
                 id="notAgencyCommissionBrokerage"
-                label="Is the practice not agency, commission, or brokerage?"
+                label="Do you provide services on your own account, rather than as an agent, commission earner, or broker?"
                 value={draft.notAgencyCommissionBrokerage}
                 error={errors.notAgencyCommissionBrokerage}
                 onChange={(value) =>
@@ -1623,7 +1626,8 @@ export function CheckRoute() {
               />
               <ChoiceField
                 id="fiveYearExclusion"
-                label="Does the five-year presumptive-method exclusion not apply?"
+                label="Does the five-year exclusion apply to this method?"
+                help="This checks whether an earlier use of this method affects you now. Choose Not sure if you need to review earlier years."
                 options={['none', 'applies', 'not-sure']}
                 value={draft.fiveYearExclusion}
                 error={errors.fiveYearExclusion}
