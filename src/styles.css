@@ -241,17 +241,20 @@ main {
 .landing-intro {
   max-width: none;
   margin-bottom: 1.2rem;
-  font-size: clamp(1.2rem, 2vw, 1.8rem);
-  line-height: 1.5;
+  font-size: clamp(1.1rem, 1.8vw, 1.6rem);
+  line-height: 1.6;
 }
 
 .landing-example {
   margin-bottom: 0;
-  font-size: clamp(1.2rem, 2vw, 1.8rem);
+  font-size: clamp(1.1rem, 1.8vw, 1.6rem);
 }
 
 .landing-example .text-button {
+  border-bottom: 0;
   font-size: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.17em;
 }
 
 .landing-example a,
@@ -385,7 +388,7 @@ main {
 .journey-note {
   margin: clamp(1rem, 1.2vw, 1.4rem) 0 0;
   text-align: center;
-  font-size: clamp(0.72rem, 0.72vw, 0.86rem);
+  font-size: clamp(0.8rem, 0.8vw, 0.95rem);
   line-height: 1.45;
   white-space: nowrap;
 }
@@ -395,7 +398,7 @@ main {
   display: block;
   grid-area: preview;
   aspect-ratio: 8 / 5;
-  margin: clamp(2.7rem, 4vw, 4.75rem) 0 clamp(5rem, 7vw, 8rem);
+  margin: clamp(2.7rem, 4vw, 4.75rem) 0;
   overflow: hidden;
   border-radius: var(--control-radius);
   background: #101715;
@@ -425,7 +428,7 @@ main {
 }
 
 .faq-list h3 {
-  margin-bottom: 0.85rem;
+  margin-bottom: 1.1rem;
   font-size: clamp(1.55rem, 1.85vw, 2.2rem);
 }
 
@@ -1761,7 +1764,7 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   }
 
   .product-preview {
-    margin-top: 3rem;
+    margin-block: 3rem;
   }
 
   .plan-summary,
