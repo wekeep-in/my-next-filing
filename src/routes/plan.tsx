@@ -93,17 +93,10 @@ function StatusPill({
 }
 
 function TaxSummary({ tax }: { readonly tax: TaxEstimate }) {
-  const description =
-    tax.outcome === 'refund'
-      ? 'estimated refund'
-      : tax.outcome === 'settled'
-        ? 'estimated balance'
-        : 'estimated amount remaining'
   return (
     <article className="result-card tax-summary">
       <p className="card-kicker">Income-tax estimate</p>
       <h2>{formatMoney(tax.finalAmount)}</h2>
-      <p className="amount-description">{description}</p>
       <p>This is a best-effort estimate, not a government demand.</p>
       <details>
         <summary>See calculation detail</summary>
