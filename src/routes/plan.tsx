@@ -1403,7 +1403,7 @@ export function PlanRoute() {
             type="button"
             onClick={startOver}
           >
-            Start over
+            Start a new check
           </button>
         }
         disabledSteps={[]}

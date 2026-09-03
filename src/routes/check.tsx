@@ -1011,12 +1011,12 @@ function GroupSummary({
     <div className="review-list">
       {[
         [
-          'Your situation',
+          'You and your practice',
           `${draft.personKind || 'Person not selected'}; ${draft.residence || 'residence not selected'}; ${draft.taxRegime || 'tax regime not selected'}.`,
           0,
         ],
         [
-          'Activity and path',
+          'Your work and tax method',
           `${draft.activity || 'Activity not selected'}; ${pathLabel}.`,
           1,
         ],
@@ -1026,17 +1026,17 @@ function GroupSummary({
           2,
         ],
         [
-          'Clients and work',
+          'Clients and payments',
           `${clientLabel}; ${draft.delivery || 'delivery method not selected'}.`,
           3,
         ],
         [
-          'Other income',
+          'Other income and tax paid',
           `${draft.amounts.taxableBankInterest || '0'} interest; ${draft.amounts.tds || '0'} TDS; ${draft.amounts.advanceTaxPaid || '0'} advance tax paid.`,
           4,
         ],
         [
-          'GST and return facts',
+          'GST and filing',
           `${draft.gstKind || 'GST branch not selected'}${draft.gstState ? `; ${draft.gstState}` : ''}.`,
           5,
         ],

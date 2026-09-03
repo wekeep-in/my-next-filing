@@ -250,6 +250,10 @@ main {
   font-size: clamp(1.2rem, 2vw, 1.8rem);
 }
 
+.landing-example .text-button {
+  font-size: inherit;
+}
+
 .landing-example a,
 .site-footer a,
 .journey-note a,

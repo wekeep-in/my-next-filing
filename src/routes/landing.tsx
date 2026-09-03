@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { MouseEvent } from 'react'
 import MuxPlayer from '@mux/mux-player-react/lazy'
 import { Link, useNavigate, useOutletContext } from 'react-router-dom'
@@ -7,6 +8,58 @@ import { JourneySidebar, calculationStep } from '../journey-sidebar.tsx'
 import { currentRules } from '../rules/index.ts'
 
 const openSourceUrl = 'https://github.com/wekeep-in/my-next-filing'
+const sharePayload = {
+  title: 'My Next Filing',
+  text: 'A clear, best-effort tax and filing overview for supported solo freelancers in India.',
+  url: 'https://mynextfiling.wekeep.in/',
+} as const
+
+function ShareLink() {
+  const [status, setStatus] = useState<'idle' | 'copied' | 'failed'>('idle')
+
+  const share = async () => {
+    setStatus('idle')
+    if (typeof navigator.share === 'function') {
+      try {
+        await navigator.share(sharePayload)
+      } catch (error) {
+        if (!(error instanceof DOMException && error.name === 'AbortError'))
+          setStatus('failed')
+      }
+      return
+    }
+    if (!navigator.clipboard) {
+      setStatus('failed')
+      return
+    }
+    try {
+      await navigator.clipboard.writeText(sharePayload.url)
+      setStatus('copied')
+    } catch {
+      setStatus('failed')
+    }
+  }
+
+  return (
+    <>
+      <button className="text-button" type="button" onClick={share}>
+        share My Next Filing
+      </button>
+      {status === 'copied' && (
+        <span className="share-result" role="status">
+          {' '}
+          Link copied
+        </span>
+      )}
+      {status === 'failed' && (
+        <span className="field-error" role="alert">
+          {' '}
+          Couldn't share the link. Copy it from the address bar instead
+        </span>
+      )}
+    </>
+  )
+}
 
 export function LandingRoute() {
   const navigate = useNavigate()
@@ -35,15 +88,15 @@ export function LandingRoute() {
     <section className="landing" aria-labelledby="landing-title">
       <header className="landing-hero">
         <div className="landing-title-row">
-          <span className="period-pill">1 April 2026 to 31 March 2027</span>
+          <span className="period-pill">Tax year 2026-27</span>
           <h1 id="landing-title">My Next Filing</h1>
         </div>
         <p className="landing-intro">
-          A local, best-effort tax and filing overview for supported solo
-          freelancers in India.
+          Estimate your tax and see the filing dates this check supports. It
+          runs in your browser and is made for solo digital freelancers in
+          India.
         </p>
         <p className="landing-example">
-          Here's{' '}
           <Link
             to="/check"
             state={{ example: true }}
@@ -51,9 +104,10 @@ export function LandingRoute() {
               navigateToCheckFromPointer(event, { example: true })
             }
           >
-            an example
+            Try a fictional example
           </Link>
-          .
+          {' or '}
+          <ShareLink />.
         </p>
       </header>
 
@@ -71,7 +125,7 @@ export function LandingRoute() {
                 navigateToCheckFromPointer(event, { personal: true })
             }}
           >
-            {hasSaved ? 'Continue' : 'Start now'}
+            {hasSaved ? 'Continue your saved workspace' : 'Start your check'}
           </Link>
         }
         disabledSteps={[2, 3, 4, 5, 6, 7, calculationStep]}
@@ -115,148 +169,177 @@ export function LandingRoute() {
         </h2>
         <div className="faq-list">
           <article>
-            <h3>What does it do?</h3>
+            <h3>What can this check help me with?</h3>
             <p>
-              It estimates tax in this browser and orders supported deadlines.
-              It does not file, pay, send reminders, verify government
-              acceptance, or replace a tax professional.
+              It gives you a best-effort income-tax estimate, checks whether GST
+              registration may apply, and puts the supported filing and payment
+              dates in order.
+            </p>
+            <p>
+              It does not file or pay anything, send reminders, confirm
+              government acceptance, or replace a tax professional.
             </p>
           </article>
 
           <article>
-            <h3>Is my data saved?</h3>
+            <h3>What happens to my answers?</h3>
             <p>
-              Your answers and calculation stay only in this page's memory while
-              you use it. If you explicitly choose to save a completed profile,
-              this browser may keep the Profile facts needed to re-run the
-              current Tax Year check and the completion dates you declare for
-              supported Obligations. Saving is optional, current-browser only,
-              and drafts and calculated results are never saved.
+              While you use the check, your answers and estimate stay in this
+              tab. If you close or refresh it, they are lost unless you choose
+              to save after getting a supported result.
             </p>
             <p>
-              It stores no name, PAN, Aadhaar number, GSTIN value, client or
-              platform identity, account number, invoice, document, note,
-              calculated result, Rule value, Deadline status, or tracking
-              identifier.
-            </p>
-          </article>
-
-          <article>
-            <h3>Where does saved data stay?</h3>
-            <p>
-              Application code does not upload saved values or put them in URLs,
-              page titles, logs, external links, or sharing. Scripts on this
-              origin and other people using this browser profile may be able to
-              access browser storage. Do not save on a shared or public browser.
+              If you save, this browser keeps the answers needed to run the
+              check again and the dates you mark actions complete. It does not
+              save drafts, examples, calculated results, or tax rules. Saving is
+              available only if you confirm that you are 18 or older.
             </p>
             <p>
-              There is no account, sync, backup, or recovery. Browser clearing,
-              private browsing, browser eviction, or device failure may remove
-              the value. Saved data is treated as untrusted input and is
-              revalidated and re-evaluated locally on restore.
+              My Next Filing does not ask for or save your name, PAN, Aadhaar
+              number, GSTIN, account numbers, client or platform names,
+              invoices, documents, or notes.
             </p>
           </article>
 
           <article>
-            <h3>How do I remove saved data?</h3>
+            <h3>Where does saved information stay?</h3>
             <p>
-              Use <em>Stop saving</em> on Your plan to remove the saved
-              workspace. Production static assets are hosted through Cloudflare.
-              Normal requests may include technical connection metadata needed
-              to deliver the site. The application sends no page measurements,
-              product usage events, or error reports, and executes no
-              third-party runtime code. For access, correction, deletion,
-              incident, or grievance questions, contact{' '}
-              <ExternalLink href="https://wekeep.in">WeKeep</ExternalLink> and
-              do not include taxpayer amounts or identifiers in an email or
-              link.
+              Your saved workspace stays in this browser profile. My Next Filing
+              does not upload it or put it in URLs, page titles, logs, external
+              links, or sharing.
+            </p>
+            <p>
+              Other people using the same browser profile, and code running on
+              this site, may be able to read browser storage. Do not save on a
+              shared or public browser.
+            </p>
+            <p>
+              There is no account, sync, backup, or recovery. Private browsing,
+              clearing site data, browser cleanup, or device failure may remove
+              saved information. A browser or device backup may also retain a
+              copy outside My Next Filing's control.
             </p>
           </article>
 
           <article>
-            <h3>What's not supported?</h3>
+            <h3>How do I stop saving and delete my data?</h3>
             <p>
-              This check supports only the declared resident-individual profile
-              covered by this release. It stops for:
+              On Your plan, choose <em>Stop saving</em>. This removes My Next
+              Filing's saved profile and completion dates from this browser. You
+              can continue using the check without saving.
             </p>
+          </article>
+
+          <article>
+            <h3>What does this site send over the internet?</h3>
+            <p>
+              Cloudflare hosts and delivers the site, so ordinary requests
+              include technical connection information. My Next Filing does not
+              include your answers, amounts, estimate, or saved workspace in
+              those requests.
+            </p>
+            <p>
+              The site has no analytics, product tracking, or remote error
+              reporting. It does not load third-party scripts from other sites.
+            </p>
+          </article>
+
+          <article>
+            <h3>Who runs My Next Filing?</h3>
+            <p>
+              Sarthak Mishra operates My Next Filing. For access, correction,
+              deletion, security, or grievance questions, email{' '}
+              <a href="mailto:sarthak@wekeep.in">sarthak@wekeep.in</a>. Do not
+              include tax amounts or personal identifiers in your message.
+            </p>
+          </article>
+
+          <article>
+            <h3>Will this check work for me?</h3>
+            <p>
+              This version is for an adult individual who is resident and
+              ordinarily resident in India, uses the new tax regime, and runs
+              one solo service practice.
+            </p>
+            <p>It stops without showing a personal estimate if you have:</p>
             <ul>
               <li>
-                Companies, non-residents, regular-books or audit cases, and
-                unsupported tax regimes or income paths.
+                A company, non-resident status, a regular-books case, an audit,
+                a surcharge, or another tax regime.
               </li>
               <li>
-                Salary, house-property, dividend, gift, capital-gains, crypto,
-                lottery, gaming, agricultural, or unrelated foreign-source
-                income and foreign-tax relief.
+                Salary, house-property income, dividends, gifts, capital gains,
+                crypto, lottery or gaming, agricultural income, unrelated
+                foreign income, or foreign-tax relief.
               </li>
               <li>
-                Another business or profession, unsupported client or platform
-                arrangements, commission, brokerage, goods sales, deductions,
-                losses, disputed credits, or employee and deductor duties.
+                Another business or profession, commission, brokerage, agency
+                work, goods sales, or an unsupported client or platform
+                arrangement.
               </li>
               <li>
-                Audit or surcharge cases, compulsory GST-registration facts, and
-                any other unsupported fact or amount above the supported limit.
+                Unsupported deductions, losses or tax credits, employee or
+                deductor duties, compulsory GST-registration facts, or amounts
+                above this version's limits.
               </li>
             </ul>
             <p>
-              It does not calculate late interest, fees, penalties, GST returns,
-              or return forms.
+              It also does not calculate late interest, fees, penalties, GST
+              returns, or choose a tax return form.
             </p>
           </article>
 
           <article>
-            <h3>How does the estimate work?</h3>
+            <h3>How is the estimate worked out?</h3>
             <p>
-              Professional income uses the applicable presumptive method for the
-              selected path and the higher declared profit when entered. The
-              application adds taxable bank or deposit interest, rounds total
-              income to the nearest ₹10, and applies the current Tax Year
-              2026-27 new-regime slabs, relief, cess, and Indian credits. Then
-              it:
+              The check starts with the presumptive tax method you confirm and
+              uses a higher declared profit if you enter one. It then:
             </p>
             <ol>
-              <li>Applies rebate or marginal relief when eligible.</li>
-              <li>Adds 4% Health and Education Cess.</li>
-              <li>Subtracts actual TDS, TCS, and advance tax already paid.</li>
+              <li>Adds taxable bank or deposit interest.</li>
+              <li>Rounds total income to the nearest ₹10.</li>
               <li>
-                Rounds the estimated payable amount or refund to the nearest
-                ₹10.
+                Applies the Tax Year 2026-27 new-regime slabs, rebate or
+                marginal relief, and 4% Health and Education Cess.
+              </li>
+              <li>
+                Subtracts TDS, TCS, and advance tax already paid, then rounds
+                the final estimate to the nearest ₹10.
               </li>
             </ol>
             <p>
-              Advance tax appears when liability after TDS and TCS reaches
-              ₹10,000. GST status uses declared aggregate turnover and the state
-              threshold, not income-tax fields.
+              It shows advance tax when the amount left after TDS and TCS is at
+              least ₹10,000. The GST check uses your GST aggregate turnover and
+              state threshold, not your income-tax receipts.
             </p>
           </article>
 
           <article>
             <h3>How should I use this estimate?</h3>
             <p>
-              This is general information and a best-effort estimate for the
-              declared profile and tax period. It is not tax, accounting, or
-              legal advice and creates no professional relationship.
+              Use it as a starting point. It is based on the answers you provide
+              and the rules this version supports. It is not tax, accounting, or
+              legal advice and does not create a professional relationship.
             </p>
             <p>
-              The local Rules and statutory Sources used by this check were last
-              reviewed on {formatDate(currentRules.verifiedOn)}.
+              The rules and official sources were last checked on{' '}
+              {formatDate(currentRules.verifiedOn)}.
             </p>
             <p>
-              Check your facts and decide what to file or pay. Rules, forms,
-              portals, and extensions can change. Tutorial publishers control
-              their pages.
+              Rules, forms, portals, and deadline extensions can change, so
+              check the linked official sources before you file or pay. Any
+              linked tutorial is maintained by its publisher.
             </p>
           </article>
 
           <article>
-            <h3>Is the code open source?</h3>
+            <h3>Can I see the source code?</h3>
             <p>
-              Yes. The code is{' '}
-              <a href={openSourceUrl} target="_blank" rel="noopener noreferrer">
-                open source
-              </a>{' '}
-              and available on GitHub.
+              Yes.{' '}
+              <ExternalLink href={openSourceUrl}>
+                View the source code on GitHub
+              </ExternalLink>
+              .
             </p>
           </article>
         </div>
