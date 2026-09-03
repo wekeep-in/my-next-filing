@@ -5,14 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "pnpm rules:validate && pnpm test && tsc && vite build",
+    "build": "vite build",
     "preview": "vite preview",
     "format": "oxfmt --write package.json index.html tsconfig.json vite.config.ts scripts src",
     "format:check": "oxfmt --check package.json index.html tsconfig.json vite.config.ts scripts src",
     "lint": "oxlint --ignore-pattern 'public/video/hls/**/*.ts'",
     "test": "node --experimental-strip-types scripts/verify.ts",
     "typecheck": "tsc --noEmit",
-    "rules:validate": "node --experimental-strip-types scripts/validate-rules.ts"
+    "rules:validate": "node --experimental-strip-types scripts/validate-rules.ts",
+    "verify:build": "node --experimental-strip-types scripts/verify-build.ts",
+    "verify:release": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm rules:validate && pnpm test && pnpm build && pnpm verify:build"
   },
   "dependencies": {
     "@mux/mux-player-react": "^3.13.2",

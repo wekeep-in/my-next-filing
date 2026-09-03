@@ -7,16 +7,16 @@
 | Product | My Next Filing |
 | Production domain | `mynextfiling.wekeep.in` |
 | Initial statutory period | Tax Year 2026-27 |
-| Planning authority | [.scratch/my-next-filing-solo-freelancer/map.md](.scratch/my-next-filing-solo-freelancer/map.md) |
-| Implementation plan | [.scratch/my-next-filing-solo-freelancer/implementation-plan.md](.scratch/my-next-filing-solo-freelancer/implementation-plan.md) |
+| Planning authority | [Solo-freelancer Wayfinder map](map.md) |
+| Implementation plan | [Solo-freelancer implementation plan](implementation-plan.md) |
 
 ## Document authority
 
-This root specification is authoritative for the successor implementation. The previous release specification remains recoverable in version control history and is not a second public journey.
+The root [`SPEC.md`](../../SPEC.md) is now the authority for this successor implementation. The previous release specification remains recoverable in version control and is not a second public journey.
 
-[`CONTEXT.md`](CONTEXT.md) defines controlled product language. The decision tickets linked from the [final audit](.scratch/my-next-filing-solo-freelancer/issues/15-audit-decision-completeness.md) explain why this specification makes each material change. This document defines the resulting behavior.
+[`CONTEXT.md`](../../CONTEXT.md) defines controlled product language. The decision tickets linked from the [final audit](issues/15-audit-decision-completeness.md) explain why this specification makes each material change. This document defines the resulting behavior.
 
-Statutory values in this specification come from the planning research dated 2 September 2026. They are implementation inputs, not release approval. The compliance gate in [Define verification and release gates](.scratch/my-next-filing-solo-freelancer/issues/14-define-verification-and-release-gates.md) must verify them again against then-current official sources before Rule freeze and public release.
+Statutory values in this specification come from the planning research dated 2 September 2026. They are implementation inputs, not release approval. The compliance gate in [Define verification and release gates](issues/14-define-verification-and-release-gates.md) must verify them again against then-current official sources before Rule freeze and public release.
 
 ## Product outcome
 
@@ -295,7 +295,7 @@ Before the first write, show this standalone notice, subject to qualified privac
 
 > Save this profile and the filing completions you mark in this browser. Anyone using this browser profile may be able to see them. There is no account, sync, backup, or recovery. Private browsing or clearing site data may remove them.
 
-Actions are `Save on this device` and `Continue without saving`. The landing-page FAQ explains saved-data behavior. The user must confirm they are eighteen or older. Rejection does not impair the journey and does not trigger another prompt in the same unsaved session.
+Actions are `Save on this device`, `Continue without saving`, and `Privacy details`. The user must confirm they are eighteen or older. Rejection does not impair the journey and does not trigger another prompt in the same unsaved session.
 
 The one stable key is `my-next-filing:workspace`. Its version-1 envelope contains only:
 
@@ -338,7 +338,7 @@ Deletion removes only `my-next-filing:workspace`. It never calls `localStorage.c
 
 A Completion record stores exactly one composite Obligation identity and one valid `completedOn` India date no later than today. Absence means not marked complete. It stores no note, amount, acknowledgement, portal status, document, URL, evidence, or payment reference.
 
-Only a current Obligation can create a record. The confirmation shows a calendar date selector defaulted to today's India date. Display:
+Only a current Obligation can create a record. The confirmation shows a native date input defaulted to today's India date. Display:
 
 > Marked complete by you. My Next Filing has not verified government acceptance.
 
@@ -409,7 +409,7 @@ The selected workspace design is the focused timeline:
 
 `Review answers` opens the grouped summary. Contextual Coverage and Needs-review links open the affected group. Unsupported keeps in-memory answers and identifies the correction group. It offers no save action or approximate result.
 
-Stale core Rules preserve saved data, replace the main card with `Rules need review`, withhold affected calculation and dated agenda items, link fixed official Sources, and keep the saved-data FAQ and deletion controls reachable.
+Stale core Rules preserve saved data, replace the main card with `Rules need review`, withhold affected calculation and dated agenda items, link fixed official Sources, and keep privacy and deletion controls reachable.
 
 ## Routes and presentation
 
@@ -417,24 +417,25 @@ Keep these routes:
 
 - `/` for the generic landing and optional share action;
 - `/check` for the questionnaire and review;
-- `/plan` for a transient result or restored workspace; and
+- `/plan` for a transient result or restored workspace;
+- `/privacy` for current privacy behavior and deletion; and
 - the existing not-found route.
 
 Selected Tax Year, Profile values, amounts, Evaluation state, Completion state, and save state remain in memory or the one workspace value. They do not enter routes, queries, fragments, titles, logs, clipboard content, Analytics, or external links.
 
 Preserve the current visual language: Fraunces headings, Inter body text, warm neutral ground, dark ink, green accent, compact rounded cards, one primary action, and chronological information. Reuse the current components and CSS. Do not add shadcn/ui or another component system.
 
-Use restrained CSS transitions for press, hover, disclosure, and short content entry. Respect reduced motion. A successful plan transition may show brief confetti feedback, but do not animate money, urgency, or Deadline status.
+Use restrained CSS transitions for press, hover, disclosure, and short content entry. Respect reduced motion. Do not use confetti or animate money, urgency, or Deadline status.
 
 ## Privacy, Analytics, and sharing
 
 The successor has no Google Analytics, product events, session replay, remote error reporting, or remotely executed third-party script. All scripts, fonts, images, video, and captions are bundled or same-origin.
 
-The landing-page FAQ must describe the legal operator and contact, stored categories, restore purpose, current-browser scope, shared-browser risk, best-effort retention, loss, archives, migrations, deletion, Cloudflare hosting request metadata, absence of Analytics, user access/correction/deletion routes, adult-only saving, and incident/grievance contacts approved by the qualified reviewer.
+The privacy page must describe the legal operator and contact, stored categories, restore purpose, current-browser scope, shared-browser risk, best-effort retention, loss, archives, migrations, deletion, Cloudflare hosting request metadata, absence of Analytics, user access/correction/deletion routes, adult-only saving, and incident/grievance contacts approved by the qualified reviewer.
 
 It must not call browser storage private, anonymous, encrypted, permanent, securely erased, accessible only by the user, or guaranteed to remain on one physical device. State that application code does not upload saved values or include them in application requests, while scripts on the origin and other users of the browser profile may be able to access them.
 
-Qualified review of the [privacy applicability review packet](.scratch/my-next-filing-solo-freelancer/privacy-applicability-review-packet.md) is mandatory before release. Without approval or controlling official clarification for the exact configuration, saved functionality must fail closed no later than 13 May 2027. Bounded deletion and the separately reviewed unsaved calculator remain available.
+Qualified review of the [privacy applicability review packet](privacy-applicability-review-packet.md) is mandatory before release. Without approval or controlling official clarification for the exact configuration, saved functionality must fail closed no later than 13 May 2027. Bounded deletion and the separately reviewed unsaved calculator remain available.
 
 The optional `Share My Next Filing` action appears only on the public landing page. Use native Web Share when available and copy-link fallback otherwise. The fallback copies only the canonical URL. Preview and share only:
 
@@ -475,7 +476,7 @@ Each group has identity, effective interval, verification and expiry dates, valu
 
 The Source registry distinguishes statutory and Tutorial Sources. Every personalized conclusion points through Rules to direct statutory authority. An extension requires its own notification Source. A Tutorial Source has review status and never establishes a Rule.
 
-The release compliance review must cover every item listed in [Define verification and release gates](.scratch/my-next-filing-solo-freelancer/issues/14-define-verification-and-release-gates.md), including the 1 October 2026 FEMA transition and the then-current status of the intermediary place-of-supply amendment.
+The release compliance review must cover every item listed in [Define verification and release gates](issues/14-define-verification-and-release-gates.md), including the 1 October 2026 FEMA transition and the then-current status of the intermediary place-of-supply amendment.
 
 ## Later registered-exporter calendar
 
@@ -500,11 +501,11 @@ VoiceOver on Safari and one desktop screen reader must complete save, resume, Co
 
 Evaluation and workspace derivation remain synchronous. No questionnaire transition shows a loading state. After initial same-origin assets load, the core calculation works without a network connection. Route-level splitting is allowed only after measurement shows a need.
 
-The production preview targets mobile Lighthouse Performance of at least 90 and Accessibility of 100 for the landing, questionnaire state classes, and plan/workspace.
+The production preview targets mobile Lighthouse Performance of at least 90 and Accessibility of 100 for the landing, questionnaire state classes, plan/workspace, and privacy page.
 
 ## Release acceptance
 
-The release commit must pass the complete gate in [Define verification and release gates](.scratch/my-next-filing-solo-freelancer/issues/14-define-verification-and-release-gates.md). This includes:
+The release commit must pass the complete gate in [Define verification and release gates](issues/14-define-verification-and-release-gates.md). This includes:
 
 - one formatting, lint, type, Rule, deterministic-test, and production-build path;
 - exact Profile, Evaluation, Rules, workspace, Completion, rollover, and failure fixtures;

@@ -1,18 +1,22 @@
 import type { MouseEvent } from 'react'
 import MuxPlayer from '@mux/mux-player-react/lazy'
-import { Link, useNavigate } from 'react-router-dom'
-import { formatDate } from '../app'
-import { JourneySidebar, calculationStep } from '../journey-sidebar'
-import { currentRules } from '../rules'
+import { Link, useNavigate, useOutletContext } from 'react-router-dom'
+import type { AppOutletContext } from '../app.tsx'
+import { ExternalLink, formatDate } from '../app.tsx'
+import { JourneySidebar, calculationStep } from '../journey-sidebar.tsx'
+import { currentRules } from '../rules/index.ts'
 
 const openSourceUrl = 'https://github.com/wekeep-in/my-next-filing'
 
 export function LandingRoute() {
   const navigate = useNavigate()
+  const { savedWorkspace } = useOutletContext<AppOutletContext>()
+  const hasSaved =
+    savedWorkspace.kind === 'ready' && Boolean(savedWorkspace.workspace.active)
 
   const navigateToCheckFromPointer = (
     event: MouseEvent<HTMLAnchorElement>,
-    state: { readonly example: true } | { readonly personal: true },
+    state: { readonly example?: true; readonly personal?: true },
   ) => {
     if (
       event.button !== 0 ||
@@ -35,15 +39,14 @@ export function LandingRoute() {
           <h1 id="landing-title">My Next Filing</h1>
         </div>
         <p className="landing-intro">
-          A simple tax estimate and filing calendar for independent IT
-          consultants in India.
+          A local, best-effort tax and filing overview for supported solo
+          freelancers in India.
         </p>
         <p className="landing-example">
           Here's{' '}
           <Link
             to="/check"
             state={{ example: true }}
-            aria-label="Try an example"
             onClick={(event) =>
               navigateToCheckFromPointer(event, { example: true })
             }
@@ -61,23 +64,24 @@ export function LandingRoute() {
         action={
           <Link
             className="button button--primary landing-start"
-            to="/check"
-            state={{ personal: true }}
-            onClick={(event) =>
-              navigateToCheckFromPointer(event, { personal: true })
-            }
+            to={hasSaved ? '/plan' : '/check'}
+            state={hasSaved ? undefined : { personal: true }}
+            onClick={(event) => {
+              if (!hasSaved)
+                navigateToCheckFromPointer(event, { personal: true })
+            }}
           >
-            Start now
+            {hasSaved ? 'Continue' : 'Start now'}
           </Link>
         }
-        disabledSteps={[2, 3, 4, 5, calculationStep]}
-        onStepSelect={(step, animate) => {
-          if (step === 0) window.scrollTo(0, 0)
-          else
-            navigate('/check', {
-              state: { personal: true, step: step - 1, animate },
-            })
-        }}
+        disabledSteps={[2, 3, 4, 5, 6, 7, calculationStep]}
+        onStepSelect={(step, animate) =>
+          step === 0
+            ? window.scrollTo(0, 0)
+            : navigate('/check', {
+                state: { personal: true, step: step - 1, animate },
+              })
+        }
       />
 
       <figure className="product-preview">
@@ -113,73 +117,86 @@ export function LandingRoute() {
           <article>
             <h3>What does it do?</h3>
             <p>
-              Estimates tax in this browser and orders supported deadlines. It
-              does not file, pay, send reminders, track completion, or replace a
-              tax professional.
-            </p>
-          </article>
-
-          <article>
-            <h3>Is the code open source?</h3>
-            <p>
-              Yes. The code is{' '}
-              <a href={openSourceUrl} target="_blank" rel="noreferrer">
-                open source
-              </a>{' '}
-              and available on GitHub.
+              It estimates tax in this browser and orders supported deadlines.
+              It does not file, pay, send reminders, verify government
+              acceptance, or replace a tax professional.
             </p>
           </article>
 
           <article>
             <h3>Is my data saved?</h3>
             <p>
-              No. Your answers and calculation stay only in this page's memory
-              while you use it. Refreshing or closing the page clears them. The
-              application does not write questionnaire answers or calculations
-              to browser storage or send them to a server.
+              Your answers and calculation stay only in this page's memory while
+              you use it. If you explicitly choose to save a completed profile,
+              this browser may keep the Profile facts needed to re-run the
+              current Tax Year check and the completion dates you declare for
+              supported Obligations. Saving is optional, current-browser only,
+              and drafts and calculated results are never saved.
             </p>
             <p>
-              Production uses Google Analytics for page analytics. Google
-              receives fixed route visits and standard Analytics data about the
-              browser, device, session, and approximate location. Analytics
-              stores a pseudonymous client ID in first-party cookies. Local and
-              preview deployments do not load Analytics.
+              It stores no name, PAN, Aadhaar number, GSTIN value, client or
+              platform identity, account number, invoice, document, note,
+              calculated result, Rule value, Deadline status, or tracking
+              identifier.
+            </p>
+          </article>
+
+          <article>
+            <h3>Where does saved data stay?</h3>
+            <p>
+              Application code does not upload saved values or put them in URLs,
+              page titles, logs, external links, or sharing. Scripts on this
+              origin and other people using this browser profile may be able to
+              access browser storage. Do not save on a shared or public browser.
             </p>
             <p>
-              Analytics never receives questionnaire answers, amounts, tax
-              results, errors, names, or profile values. Google Signals and ad
-              personalization are disabled. Analytics cannot affect the check or
-              its result.
+              There is no account, sync, backup, or recovery. Browser clearing,
+              private browsing, browser eviction, or device failure may remove
+              the value. Saved data is treated as untrusted input and is
+              revalidated and re-evaluated locally on restore.
+            </p>
+          </article>
+
+          <article>
+            <h3>How do I remove saved data?</h3>
+            <p>
+              Use <em>Stop saving</em> on Your plan to remove the saved
+              workspace. Production static assets are hosted through Cloudflare.
+              Normal requests may include technical connection metadata needed
+              to deliver the site. The application sends no page measurements,
+              product usage events, or error reports, and executes no
+              third-party runtime code. For access, correction, deletion,
+              incident, or grievance questions, contact{' '}
+              <ExternalLink href="https://wekeep.in">WeKeep</ExternalLink> and
+              do not include taxpayer amounts or identifiers in an email or
+              link.
             </p>
           </article>
 
           <article>
             <h3>What's not supported?</h3>
             <p>
-              This check supports only resident individuals using the new tax
-              regime, presumptive IT or software consulting, direct Indian
-              clients, and no GSTIN. You must confirm these limits before the
-              calculation. It stops for:
+              This check supports only the declared resident-individual profile
+              covered by this release. It stops for:
             </p>
             <ul>
               <li>
-                Income from salary, house property, dividends, gifts, capital
-                gains, crypto, lottery, gaming, agriculture, or foreign sources
-                and relief.
+                Companies, non-residents, regular-books or audit cases, and
+                unsupported tax regimes or income paths.
               </li>
               <li>
-                Another business or profession, foreign clients, platform,
-                marketplace or agency income, commission, brokerage, or goods
-                sales.
+                Salary, house-property, dividend, gift, capital-gains, crypto,
+                lottery, gaming, agricultural, or unrelated foreign-source
+                income and foreign-tax relief.
               </li>
               <li>
-                Unlisted deductions, losses, or credits; disputed TDS or TCS;
-                employee or deductor duties; an audit requirement; or a
-                compulsory GST-registration fact.
+                Another business or profession, unsupported client or platform
+                arrangements, commission, brokerage, goods sales, deductions,
+                losses, disputed credits, or employee and deductor duties.
               </li>
               <li>
-                Any other unsupported fact, professional receipts above the
-                supported limit, or total income above ₹50 lakh.
+                Audit or surcharge cases, compulsory GST-registration facts, and
+                any other unsupported fact or amount above the supported limit.
               </li>
             </ul>
             <p>
@@ -191,45 +208,55 @@ export function LandingRoute() {
           <article>
             <h3>How does the estimate work?</h3>
             <p>
-              Professional income is the higher of 50% of gross receipts or your
-              higher expected profit. We add taxable bank or deposit interest,
-              round total income to the nearest ₹10, and apply the Tax Year
-              2026-27 new-regime slabs. Then we:
+              Professional income uses the applicable presumptive method for the
+              selected path and the higher declared profit when entered. The
+              application adds taxable bank or deposit interest, rounds total
+              income to the nearest ₹10, and applies the current Tax Year
+              2026-27 new-regime slabs, relief, cess, and Indian credits. Then
+              it:
             </p>
             <ol>
+              <li>Applies rebate or marginal relief when eligible.</li>
+              <li>Adds 4% Health and Education Cess.</li>
+              <li>Subtracts actual TDS, TCS, and advance tax already paid.</li>
               <li>
-                Apply the resident-individual rebate or marginal relief when
-                eligible.
-              </li>
-              <li>Add 4% Health and Education Cess.</li>
-              <li>Subtract actual TDS, TCS, and advance tax already paid.</li>
-              <li>
-                Round the estimated payable amount or refund to the nearest ₹10.
+                Rounds the estimated payable amount or refund to the nearest
+                ₹10.
               </li>
             </ol>
             <p>
               Advance tax appears when liability after TDS and TCS reaches
-              ₹10,000. GST status uses your declared aggregate turnover and
-              state threshold, not income-tax fields.
+              ₹10,000. GST status uses declared aggregate turnover and the state
+              threshold, not income-tax fields.
             </p>
           </article>
 
           <article>
             <h3>How should I use this estimate?</h3>
             <p>
-              This is general information and a best-effort estimate for this
-              profile and tax period. It is not tax, accounting, or legal advice
-              and creates no professional relationship.
+              This is general information and a best-effort estimate for the
+              declared profile and tax period. It is not tax, accounting, or
+              legal advice and creates no professional relationship.
             </p>
             <p>
-              The rules and statutory sources used by this check were last
+              The local Rules and statutory Sources used by this check were last
               reviewed on {formatDate(currentRules.verifiedOn)}.
             </p>
             <p>
               Check your facts and decide what to file or pay. Rules, forms,
               portals, and extensions can change. Tutorial publishers control
-              their pages. To the extent law permits, the author and
-              contributors provide no warranties.
+              their pages.
+            </p>
+          </article>
+
+          <article>
+            <h3>Is the code open source?</h3>
+            <p>
+              Yes. The code is{' '}
+              <a href={openSourceUrl} target="_blank" rel="noopener noreferrer">
+                open source
+              </a>{' '}
+              and available on GitHub.
             </p>
           </article>
         </div>
