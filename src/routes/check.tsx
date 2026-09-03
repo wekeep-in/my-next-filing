@@ -933,7 +933,7 @@ function profileErrorKey(error: ProfileInputError) {
     foreign: 'clientKind',
     person: 'personKind',
     practice: 'onePractice',
-    incomePath: 'path',
+    incomePath: 'otherReceipts',
     otherIncome: 'otherAnnualReturnTrigger',
     gst: 'gstKind',
     unsupportedFacts: 'unsupportedCertainty',
@@ -1233,6 +1233,7 @@ export function CheckRoute() {
         requiredAmount(nextErrors, draft, key)
       const qualifying = parseMoney(draft.amounts.qualifyingReceipts)
       const gross = parseMoney(draft.amounts.grossReceipts)
+      const otherReceipts = parseMoney(draft.amounts.otherReceipts)
       if (
         draft.path === 'eligible-business' &&
         'value' in qualifying &&
@@ -1241,6 +1242,15 @@ export function CheckRoute() {
       )
         nextErrors.qualifyingReceipts =
           'Qualifying receipts cannot exceed gross receipts.'
+      if (
+        draft.path === 'eligible-business' &&
+        'value' in qualifying &&
+        'value' in gross &&
+        'value' in otherReceipts &&
+        qualifying.value + otherReceipts.value !== gross.value
+      )
+        nextErrors.otherReceipts =
+          'Qualifying and other receipts must add up to gross business receipts.'
     }
     if (step === 3) {
       if (!draft.clientKind)
@@ -1681,39 +1691,39 @@ export function CheckRoute() {
       return (
         <div className={questionGroupClassName} key={step}>
           <CheckHeading
-            title="Use the totals from your records"
-            description="Enter whole-rupee amounts before expenses, platform fees, and Indian withholding."
+            title="Enter the amounts from your records"
+            description="Enter whole-rupee amounts from your records. Receipt amounts should be before expenses, platform fees, and Indian withholding."
           />
           {draft.path === 'eligible-business' ? (
             <>
               <MoneyField
                 id="grossReceipts"
                 label="Gross business receipts"
-                help="Use the complete annual gross amount for this practice."
+                help="Enter the full gross amount for this practice."
                 value={draft.amounts.grossReceipts}
                 error={errors.grossReceipts}
                 onChange={(value) => setAmount('grossReceipts', value)}
               />
               <MoneyField
                 id="qualifyingReceipts"
-                label="Qualifying banking or online receipts"
-                help="Include receipts received through the specified banking or online modes during the Tax Year or by the applicable return due date."
+                label="Qualifying bank or online receipts"
+                help="Use the amount your records classify as qualifying bank or online receipts. Include payments received during 2026-27 or by the return due date."
                 value={draft.amounts.qualifyingReceipts}
                 error={errors.qualifyingReceipts}
                 onChange={(value) => setAmount('qualifyingReceipts', value)}
               />
               <MoneyField
                 id="otherReceipts"
-                label="All other receipts"
-                help="This amount plus qualifying receipts must equal gross business receipts."
+                label="All other business receipts"
+                help="Together with qualifying receipts, this must equal gross business receipts."
                 value={draft.amounts.otherReceipts}
                 error={errors.otherReceipts}
                 onChange={(value) => setAmount('otherReceipts', value)}
               />
               <MoneyField
                 id="cashReceipts"
-                label="Receipts in cash"
-                help="Include cash and non-account-payee cheques or drafts."
+                label="Receipts paid in cash"
+                help="Include cash, non-account-payee cheques, and drafts."
                 value={draft.amounts.cashReceipts}
                 error={errors.cashReceipts}
                 onChange={(value) => setAmount('cashReceipts', value)}
@@ -1721,7 +1731,7 @@ export function CheckRoute() {
               <MoneyField
                 id="declaredProfit"
                 label="Declared profit"
-                help="The supported business floor is 6% of qualifying receipts plus 8% of other receipts."
+                help="Enter at least 6% of qualifying receipts plus 8% of other receipts."
                 value={draft.amounts.declaredProfit}
                 error={errors.declaredProfit}
                 onChange={(value) => setAmount('declaredProfit', value)}
@@ -1732,7 +1742,7 @@ export function CheckRoute() {
               <MoneyField
                 id="grossReceipts"
                 label="Gross professional receipts"
-                help="Do not subtract expenses, platform fees, or Indian withholding."
+                help="Enter the total before expenses, platform fees, or Indian withholding."
                 value={draft.amounts.grossReceipts}
                 error={errors.grossReceipts}
                 onChange={(value) => setAmount('grossReceipts', value)}
@@ -1740,7 +1750,7 @@ export function CheckRoute() {
               <MoneyField
                 id="cashReceipts"
                 label="Professional receipts received in cash"
-                help="Include cash and non-account-payee cheques or drafts. Exactly 5% still uses the higher receipt limit."
+                help="Include cash, non-account-payee cheques, and drafts. If cash is exactly 5%, the higher receipt limit applies."
                 value={draft.amounts.cashReceipts}
                 error={errors.cashReceipts}
                 onChange={(value) => setAmount('cashReceipts', value)}
@@ -1748,7 +1758,7 @@ export function CheckRoute() {
               <MoneyField
                 id="declaredProfit"
                 label="Declared profit"
-                help="It must be at least 50% of gross professional receipts."
+                help="Enter at least 50% of gross professional receipts."
                 value={draft.amounts.declaredProfit}
                 error={errors.declaredProfit}
                 onChange={(value) => setAmount('declaredProfit', value)}
