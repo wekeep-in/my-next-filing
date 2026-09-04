@@ -1,29 +1,15 @@
+@import '@fontsource-variable/fraunces/standard.css';
+@import '@fontsource-variable/inter/wght.css';
 @import 'tailwindcss' source('./');
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
-
-@font-face {
-  font-family: 'Fraunces';
-  font-style: normal;
-  font-weight: 600 700;
-  font-display: swap;
-  src: url('/fonts/fraunces-latin.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 400 800;
-  font-display: swap;
-  src: url('/fonts/inter-latin.woff2') format('woff2');
-}
 
 :root {
   color: var(--foreground);
   background: var(--background);
   line-height: 1.15;
   font-family:
-    Inter,
+    'Inter Variable',
     ui-sans-serif,
     system-ui,
     -apple-system,
@@ -170,7 +156,7 @@
   h2,
   h3 {
     color: var(--foreground);
-    font-family: Fraunces, Georgia, serif;
+    font-family: 'Fraunces Variable', Georgia, serif;
     font-optical-sizing: auto;
     font-weight: 700;
     letter-spacing: -0.035em;
@@ -1224,16 +1210,10 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   margin: 0.75rem 0 0;
 }
 
-.section-note,
-.review-boundary {
+.section-note {
   margin-top: 1.5rem;
   border-top: 1px solid var(--page-divider);
   padding-top: 1rem;
-}
-
-.review-boundary h2 {
-  margin-top: 0;
-  font-size: 1.25rem;
 }
 
 .attention-card {
@@ -1713,8 +1693,8 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
 
 /* Tailwind v4 theme. Keep semantic mappings aligned with DESIGN.md. */
 @theme inline {
-  --font-heading: Fraunces, Georgia, serif;
-  --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-heading: 'Fraunces Variable', Georgia, serif;
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
   --text-display: clamp(2.488rem, 6vw, 5.16rem);
   --text-landing-display: clamp(3rem, 4vw, 4.8rem);
   --text-heading-2: 1.728rem;

@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
 import { cn } from 'cn'
 import { Link } from 'react-router-dom'
-import { Button } from './ui/button.tsx'
-import { Card } from './ui/card.tsx'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 
 export const questionnaireSteps = [
   'You and your practice',
@@ -16,6 +16,7 @@ export const questionnaireSteps = [
 
 export const calculationStep = questionnaireSteps.length + 1
 const journeySteps = ['Overview', ...questionnaireSteps, 'Your plan']
+const noDisabledSteps: readonly number[] = []
 
 function JourneySteps({
   activeStep,
@@ -60,7 +61,7 @@ export function JourneySidebar({
   backAction,
   action,
   onStepSelect,
-  disabledSteps = [],
+  disabledSteps = noDisabledSteps,
   className = '',
 }: {
   readonly activeStep: number

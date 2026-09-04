@@ -1,11 +1,7 @@
-import { parseProfile } from '../evaluation/index.ts'
-import type {
-  EvaluationResult,
-  Obligation,
-  Profile,
-} from '../evaluation/index.ts'
-import { TAX_YEAR } from '../rules/index.ts'
-import type { DateOnly, TaxYear } from '../rules/index.ts'
+import { parseProfile } from '@/evaluation'
+import type { EvaluationResult, Obligation, Profile } from '@/evaluation'
+import { TAX_YEAR } from '@/rules'
+import type { DateOnly, TaxYear } from '@/rules'
 
 export const WORKSPACE_KEY = 'my-next-filing:workspace'
 export const STORAGE_NOTICE_VERSION = 1 as const
@@ -195,7 +191,10 @@ function validSavedRecord(value: unknown, taxYear: TaxYear, today: DateOnly) {
   )
 }
 
-function validPriorRecord(value: unknown, today: DateOnly) {
+function validPriorRecord(
+  value: unknown,
+  today: DateOnly,
+): value is PriorYearRecord {
   if (
     !isRecord(value) ||
     !isTaxYear(value.taxYear) ||
@@ -260,14 +259,15 @@ function decodeWorkspace(
     !isIsoTimestamp(value.updatedAt)
   )
     return null
+  const priorYears: unknown[] = value.priorYears
   if (
     value.active !== null &&
     !validSavedRecord(value.active, value.activeTaxYear, today)
   )
     return null
-  if (value.active === null && value.priorYears.length === 0) return null
+  if (value.active === null && priorYears.length === 0) return null
   const years = new Set<string>([value.activeTaxYear])
-  for (const prior of value.priorYears) {
+  for (const prior of priorYears) {
     if (!validPriorRecord(prior, today) || years.has(prior.taxYear)) return null
     years.add(prior.taxYear)
   }
@@ -459,7 +459,7 @@ function currentYearView(
       completed: [],
       needsReview: [],
     }
-  if (!evaluation || evaluation.kind !== 'supported') {
+  if (evaluation?.kind !== 'supported') {
     return {
       taxYear: record.profile.taxYear,
       state,

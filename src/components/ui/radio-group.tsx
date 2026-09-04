@@ -23,7 +23,7 @@ function RadioGroupItem({
     <RadioPrimitive.Root
       data-slot="radio-group-item"
       className={cn(
-        'relative grid aspect-square size-3.5 shrink-0 place-items-center rounded-full border border-strong-border bg-card p-0 leading-none outline-none after:absolute after:-inset-[.9375rem] focus-visible:border-ring focus-visible:outline-[.2rem] focus-visible:outline-solid focus-visible:outline-offset-[.2rem] focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-55 aria-invalid:border-destructive data-checked:border-primary',
+        'relative grid aspect-square size-3.5 shrink-0 place-items-center rounded-full border border-strong-border bg-card p-0 leading-none outline-none after:absolute after:-inset-3.75 focus-visible:border-ring focus-visible:outline-[.2rem] focus-visible:outline-solid focus-visible:outline-offset-[.2rem] focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-55 aria-invalid:border-destructive data-checked:border-primary',
         tone === 'warning' && 'data-checked:border-warning',
         className,
       )}

@@ -3,6 +3,9 @@
   "semi": false,
   "singleQuote": true,
   "trailingComma": "all",
+  "sortTailwindcss": {
+    "stylesheet": "./src/styles.css"
+  },
   "printWidth": 80,
   "sortPackageJson": false,
   "ignorePatterns": [

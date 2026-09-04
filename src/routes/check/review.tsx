@@ -1,19 +1,19 @@
 import { useRef } from 'react'
-import type { UnsupportedFact } from '../../evaluation/index.ts'
+import type { UnsupportedFact } from '@/evaluation'
 import { flushSync } from 'react-dom'
-import { Button } from '../../components/ui/button.tsx'
-import { Card } from '../../components/ui/card.tsx'
-import { Checkbox } from '../../components/ui/checkbox.tsx'
-import { RadioGroup, RadioGroupItem } from '../../components/ui/radio-group.tsx'
-import type { Draft, PatchDraft } from './model.ts'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import type { Draft, PatchDraft } from '@/routes/check/model'
 import {
   activityOptions,
   creditTriggerMayApply,
   optionLabels,
   parseMoney,
   unsupportedFactLabels,
-} from './model.ts'
-import { CheckHeading, FieldError } from './fields.tsx'
+} from '@/routes/check/model'
+import { CheckHeading, FieldError } from '@/routes/check/fields'
 
 function ErrorSummary({ errors }: { readonly errors: Record<string, string> }) {
   const entries = Object.entries(errors)
@@ -92,7 +92,7 @@ export function UnsupportedFactsField({
               }}
             >
               <Checkbox
-                className="!absolute !size-px !overflow-hidden !border-0 !p-0 !whitespace-nowrap [clip:rect(0,0,0,0)]"
+                className="absolute! size-px! overflow-hidden! border-0! p-0! whitespace-nowrap! [clip:rect(0,0,0,0)]"
                 name="unsupportedFacts"
                 value={value}
                 checked={checked}
@@ -507,7 +507,7 @@ function GroupSummary({
           <div className="review-card-header">
             <h2>{title}</h2>
             <Button
-              className="shrink-0 !font-extrabold !leading-[1.1]"
+              className="shrink-0 leading-[1.1]! font-extrabold!"
               variant="link"
               type="button"
               aria-label={editLabel}
@@ -548,14 +548,6 @@ export function ReviewStep({
         description="We'll use these answers to calculate your estimate and plan. Edit any section that isn't right."
       />
       <GroupSummary draft={draft} onEdit={onEdit} />
-      <div className="review-boundary">
-        <h2>Details you haven't entered</h2>
-        <p>
-          Your answers don't include your name, client or platform names,
-          countries, account numbers, invoices, documents, foreign-currency
-          amounts, or free text.
-        </p>
-      </div>
       <ErrorSummary errors={errors} />
     </div>
   )

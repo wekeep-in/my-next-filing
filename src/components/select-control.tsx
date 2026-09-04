@@ -46,7 +46,7 @@ export function SelectControl({
         align="start"
         alignItemWithTrigger={false}
         sideOffset={6}
-        className="z-[140] rounded-control border border-border p-[.35rem] shadow-panel ring-0 duration-[160ms] ease-app-out data-open:fade-in-0 data-open:zoom-in-[.97] data-closed:fade-out-0 data-closed:zoom-out-[.97] motion-reduce:animate-none"
+        className="z-140 rounded-control border border-border p-[.35rem] shadow-panel ring-0 duration-160 ease-app-out motion-reduce:animate-none data-open:fade-in-0 data-open:zoom-in-[.97] data-closed:fade-out-0 data-closed:zoom-out-[.97]"
       >
         {options.map((option) => (
           <SelectItem

@@ -143,13 +143,13 @@ export function DatePicker({
         ) : (
           formatDateValue(value)
         )}
-        <ChevronDownIcon className="size-4 shrink-0 text-foreground transition-transform duration-[160ms] ease-app-out group-data-popup-open:rotate-180 motion-reduce:transition-none" />
+        <ChevronDownIcon className="size-4 shrink-0 text-foreground transition-transform duration-160 ease-app-out group-data-popup-open:rotate-180 motion-reduce:transition-none" />
       </PopoverTrigger>
       <PopoverContent
         align="start"
         collisionPadding={0}
         sideOffset={6}
-        className="z-[140] w-[min(20rem,100vw)] gap-[.65rem] overflow-hidden rounded-control border border-border p-[.3rem] shadow-panel ring-0 duration-[160ms] ease-app-out data-open:fade-in-0 data-open:zoom-in-[.97] data-closed:fade-out-0 data-closed:zoom-out-[.97] motion-reduce:animate-none"
+        className="z-140 w-[min(20rem,100vw)] gap-[.65rem] overflow-hidden rounded-control border border-border p-[.3rem] shadow-panel ring-0 duration-160 ease-app-out motion-reduce:animate-none data-open:fade-in-0 data-open:zoom-in-[.97] data-closed:fade-out-0 data-closed:zoom-out-[.97]"
       >
         <PopoverTitle className="sr-only">Choose a date</PopoverTitle>
         <div className="grid grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center text-center">
@@ -164,7 +164,7 @@ export function DatePicker({
           >
             ‹
           </Button>
-          <strong className="[font-size:.95rem] text-foreground">
+          <strong className="text-[.95rem] text-foreground">
             {formatMonth(month)}
           </strong>
           <Button
@@ -180,7 +180,7 @@ export function DatePicker({
           </Button>
         </div>
         <div
-          className="grid grid-cols-7 text-center [font-size:.72rem] font-extrabold text-muted-foreground"
+          className="grid grid-cols-7 text-center text-[.72rem] font-extrabold text-muted-foreground"
           aria-hidden="true"
         >
           {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
@@ -193,7 +193,7 @@ export function DatePicker({
               <Button
                 aria-label={formatDateValue(item.value)}
                 aria-pressed={item.value === value}
-                className="size-auto min-h-11 min-w-11 w-full rounded-option border-0 p-[.35rem] font-normal text-foreground active:not-focus-visible:scale-100 aria-pressed:bg-primary aria-pressed:text-primary-foreground disabled:text-strong-border disabled:opacity-60"
+                className="size-auto min-h-11 w-full min-w-11 rounded-option border-0 p-[.35rem] font-normal text-foreground active:not-focus-visible:scale-100 disabled:text-strong-border disabled:opacity-60 aria-pressed:bg-primary aria-pressed:text-primary-foreground"
                 disabled={!isWithin(item.value, safeMin, safeMax)}
                 key={item.value}
                 size="icon"

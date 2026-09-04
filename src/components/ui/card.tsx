@@ -16,7 +16,7 @@ function Card({
       className={cn(
         'rounded-card border border-border bg-card text-card-foreground',
         variant === 'result' &&
-          'p-[clamp(1.15rem,3vw,1.8rem)] [&_h1]:leading-[1.25]! [&_h2]:leading-[1.25]! [&_h3]:leading-[1.25]!',
+          'p-[clamp(1.15rem,3vw,1.8rem)] [&_h1]:leading-tight! [&_h2]:leading-tight! [&_h3]:leading-tight!',
         className,
       )}
       {...props}

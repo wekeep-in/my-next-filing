@@ -16,7 +16,7 @@ const buttonVariants = cva(
           'bg-destructive text-primary-foreground hover:bg-destructive-hover',
         ghost:
           'border-0 bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground',
-        link: "relative min-h-0 rounded-none border-0 bg-transparent p-0 [font-size:.9rem] text-foreground underline decoration-[1.5px] underline-offset-[.17em] after:absolute after:top-1/2 after:left-1/2 after:min-h-11 after:min-w-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] active:not-focus-visible:scale-[.98]",
+        link: "relative min-h-0 rounded-none border-0 bg-transparent p-0 text-[.9rem] text-foreground underline decoration-[1.5px] underline-offset-[.17em] after:absolute after:top-1/2 after:left-1/2 after:min-h-11 after:min-w-11 after:-translate-1/2 after:content-[''] active:not-focus-visible:scale-[.98]",
       },
       size: {
         default: '',

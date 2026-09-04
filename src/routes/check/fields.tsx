@@ -1,10 +1,13 @@
-import { SelectControl } from '../../components/select-control.tsx'
-import { Badge } from '../../components/ui/badge.tsx'
-import { Input } from '../../components/ui/input.tsx'
-import { RadioGroup, RadioGroupItem } from '../../components/ui/radio-group.tsx'
-import { TAX_YEAR } from '../../rules/index.ts'
-import type { DraftAmountKey } from './model.ts'
-import { optionLabels, parseMoney } from './model.ts'
+import { SelectControl } from '@/components/select-control'
+import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { TAX_YEAR } from '@/rules'
+import type { DraftAmountKey } from '@/routes/check/model'
+import { optionLabels, parseMoney } from '@/routes/check/model'
+
+const defaultChoiceOptions = ['yes', 'no', 'not-sure'] as const
+const noUnsupportedOptions: readonly string[] = []
 
 export function FieldError({
   id,
@@ -25,9 +28,9 @@ export function ChoiceField({
   label,
   help,
   value,
-  options = ['yes', 'no', 'not-sure'],
+  options = defaultChoiceOptions,
   labels,
-  unsupportedOptions = [],
+  unsupportedOptions = noUnsupportedOptions,
   error,
   onChange,
 }: {

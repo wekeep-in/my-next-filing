@@ -1,11 +1,11 @@
-import type { TriState } from '../../evaluation/index.ts'
-import { CheckHeading, ChoiceField } from './fields.tsx'
+import type { TriState } from '@/evaluation'
+import { CheckHeading, ChoiceField } from '@/routes/check/fields'
 import type {
   Draft,
   DraftClientKind,
   DraftDelivery,
   PatchDraft,
-} from './model.ts'
+} from '@/routes/check/model'
 
 export function ClientsStep({
   className,

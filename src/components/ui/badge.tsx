@@ -11,7 +11,7 @@ const badgeVariants = cva(
       variant: {
         default: 'bg-primary text-primary-foreground',
         period:
-          'border-strong-border bg-transparent px-[.65rem] py-[.3rem] [font-size:clamp(.85rem,.8vw,1rem)] font-bold leading-none text-muted-foreground',
+          'border-strong-border bg-transparent px-[.65rem] py-[.3rem] text-[clamp(.85rem,.8vw,1rem)] font-bold leading-none text-muted-foreground',
         upcoming: 'bg-success-surface text-success-foreground',
         warning: 'bg-warning-status-surface text-warning',
         destructive: 'bg-destructive-surface text-destructive',

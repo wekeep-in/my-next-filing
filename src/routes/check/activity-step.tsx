@@ -1,7 +1,7 @@
-import type { Activity, TriState } from '../../evaluation/index.ts'
-import { CheckHeading, ChoiceField, SelectField } from './fields.tsx'
-import type { Draft, DraftPath, PatchDraft } from './model.ts'
-import { activityOptions } from './model.ts'
+import type { Activity, TriState } from '@/evaluation'
+import { CheckHeading, ChoiceField, SelectField } from '@/routes/check/fields'
+import type { Draft, DraftPath, PatchDraft } from '@/routes/check/model'
+import { activityOptions } from '@/routes/check/model'
 
 export function ActivityStep({
   className,

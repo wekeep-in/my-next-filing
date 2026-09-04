@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button } from './ui/button.tsx'
+import { Button } from '@/components/ui/button'
 
 const sharePayload = {
   title: 'My Next Filing',
@@ -52,7 +52,7 @@ export function ShareLink() {
       )}
       {status === 'failed' && (
         <span
-          className="font-bold leading-[1.6] text-destructive [font-size:var(--text-journey)]"
+          className="text-journey leading-[1.6] font-bold text-destructive"
           role="alert"
         >
           {' '}

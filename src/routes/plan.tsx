@@ -7,54 +7,51 @@ import {
   useNavigate,
   useOutletContext,
 } from 'react-router-dom'
-import type { AppOutletContext } from '../app.tsx'
-import {
-  Alert,
-  AlertAction,
-  AlertDescription,
-} from '../components/ui/alert.tsx'
-import { Badge } from '../components/ui/badge.tsx'
-import { Button, buttonVariants } from '../components/ui/button.tsx'
-import { Card } from '../components/ui/card.tsx'
-import { formatDate } from '../lib/format.ts'
+import type { AppOutletContext } from '@/app'
+import { Alert, AlertAction, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { formatDate } from '@/lib/format'
 import {
   clearCurrentCheck,
   getCurrentCheck,
   setCurrentCheck,
-} from '../current-check.ts'
-import { evaluate, parseProfile } from '../evaluation/index.ts'
-import type { Obligation, Profile, ProfileGroup } from '../evaluation/index.ts'
+} from '@/current-check'
+import { evaluate, parseProfile } from '@/evaluation'
+import type { Obligation, Profile, ProfileGroup } from '@/evaluation'
 import {
   JourneySidebar,
   calculationStep,
   questionnaireSteps,
-} from '../components/journey-sidebar.tsx'
-import { currentRules } from '../rules/index.ts'
-import type { DateOnly } from '../rules/index.ts'
+} from '@/components/journey-sidebar'
+import { currentRules } from '@/rules'
+import type { DateOnly } from '@/rules'
 import {
-  deriveWorkspaceView,
   deleteSavedWorkspace,
+  deriveWorkspaceView,
   saveSavedWorkspace,
-} from '../workspace/index.ts'
-import type {
-  CompletionRecord,
-  SavedWorkspaceDraft,
-} from '../workspace/index.ts'
+} from '@/workspace'
+import type { CompletionRecord, SavedWorkspaceDraft } from '@/workspace'
 import {
   Agenda,
   NeedsReview,
   ReviewAreas,
   reviewLabel,
-} from './plan/agenda.tsx'
+} from '@/routes/plan/agenda'
 import {
   AttentionCard,
   GstCard,
   SourceLinks,
   SourceReferences,
   TaxSummary,
-} from './plan/cards.tsx'
-import { DeleteNotice, SavedDataState, todayInIndia } from './plan/editors.tsx'
-import type { PlanEditor } from './plan/editors.tsx'
+} from '@/routes/plan/cards'
+import {
+  DeleteNotice,
+  SavedDataState,
+  todayInIndia,
+} from '@/routes/plan/editors'
+import type { PlanEditor } from '@/routes/plan/editors'
 
 const confettiColors = ['#15803d', '#0f172a', '#2563eb', '#fbbf24']
 const deletedWorkspaceMessage =
@@ -353,7 +350,7 @@ export function PlanRoute() {
   const review = (group: ProfileGroup, animate = false) => {
     if (!profile) return
     setCurrentCheck(profile, isExample, true, saved)
-    navigate('/check', {
+    void navigate('/check', {
       state: animate
         ? { step: groupStep(group), animate: true }
         : { step: groupStep(group) },
@@ -362,7 +359,7 @@ export function PlanRoute() {
 
   const startOver = () => {
     clearCurrentCheck()
-    navigate('/check', { state: { personal: true } })
+    void navigate('/check', { state: { personal: true } })
   }
 
   const content = deletedWorkspace ? (

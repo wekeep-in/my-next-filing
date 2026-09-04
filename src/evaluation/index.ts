@@ -1,4 +1,4 @@
-import { validateRules } from '../rules/index.ts'
+import { validateRules } from '@/rules'
 import type {
   AnnualReturnRules,
   CommonIncomeTaxRules,
@@ -7,7 +7,7 @@ import type {
   IncomePathRules,
   RuleDataset,
   TaxYear,
-} from '../rules/index.ts'
+} from '@/rules'
 
 export type TriState = 'yes' | 'no' | 'not-sure'
 
@@ -337,6 +337,9 @@ const activities = [
   'not-sure',
 ] as const
 const unsupportedFacts = Object.keys(unsupportedFactLabels) as UnsupportedFact[]
+const isUnsupportedFact = (value: unknown): value is UnsupportedFact =>
+  typeof value === 'string' &&
+  unsupportedFacts.includes(value as UnsupportedFact)
 const knownStates = [
   'Andaman and Nicobar Islands',
   'Andhra Pradesh',
@@ -668,7 +671,7 @@ export function parseProfile(value: unknown): ParseProfileResult {
   )
   if (!root) return { valid: false, kind: 'invalid', errors }
   const taxYear = isTaxYear(root.taxYear)
-    ? (root.taxYear as TaxYear)
+    ? root.taxYear
     : ('Tax Year 2026-27' as TaxYear)
   if (taxYear !== root.taxYear)
     addError(
@@ -1149,7 +1152,7 @@ export function parseProfile(value: unknown): ParseProfileResult {
     const thresholdDate =
       record.thresholdLiabilityDate === null ||
       isDate(record.thresholdLiabilityDate)
-        ? (record.thresholdLiabilityDate as DateOnly | null)
+        ? record.thresholdLiabilityDate
         : null
     if (
       record.thresholdLiabilityDate !== null &&
@@ -1201,15 +1204,11 @@ export function parseProfile(value: unknown): ParseProfileResult {
     }
   }
 
+  const declaredFacts: unknown[] | null = Array.isArray(root.unsupportedFacts)
+    ? root.unsupportedFacts
+    : null
   const facts: UnsupportedFact[] = []
-  if (
-    !Array.isArray(root.unsupportedFacts) ||
-    root.unsupportedFacts.some(
-      (fact) =>
-        typeof fact !== 'string' ||
-        !unsupportedFacts.includes(fact as UnsupportedFact),
-    )
-  ) {
+  if (declaredFacts === null || !declaredFacts.every(isUnsupportedFact)) {
     addError(
       errors,
       'invalid',
@@ -1219,7 +1218,7 @@ export function parseProfile(value: unknown): ParseProfileResult {
     )
   } else {
     const seen = new Set<string>()
-    for (const fact of root.unsupportedFacts) {
+    for (const fact of declaredFacts) {
       if (seen.has(fact))
         addError(
           errors,
@@ -1229,7 +1228,7 @@ export function parseProfile(value: unknown): ParseProfileResult {
           'Do not repeat an unsupported-fact code.',
         )
       seen.add(fact)
-      facts.push(fact as UnsupportedFact)
+      facts.push(fact)
     }
   }
 

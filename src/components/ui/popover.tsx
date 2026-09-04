@@ -31,12 +31,12 @@ function PopoverContent({
         side={side}
         sideOffset={sideOffset}
         collisionPadding={collisionPadding}
-        className="isolate z-[140]"
+        className="isolate z-140"
       >
         <PopoverPrimitive.Popup
           data-slot="popover-content"
           className={cn(
-            'z-[140] flex w-72 origin-(--transform-origin) flex-col gap-2.5 rounded-control border border-border bg-popover p-2.5 text-sm text-popover-foreground shadow-panel outline-hidden duration-[160ms] ease-app-out data-open:animate-in data-open:fade-in-0 data-open:zoom-in-[.97] data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-[.97] motion-reduce:animate-none',
+            'z-140 flex w-72 origin-(--transform-origin) flex-col gap-2.5 rounded-control border border-border bg-popover p-2.5 text-sm text-popover-foreground shadow-panel outline-hidden duration-160 ease-app-out data-open:animate-in data-open:fade-in-0 data-open:zoom-in-[.97] data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-[.97] motion-reduce:animate-none',
             className,
           )}
           {...props}

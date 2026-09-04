@@ -1,30 +1,26 @@
 import { useId } from 'react'
-import { ExternalLink } from '../../components/external-link.tsx'
-import { Alert } from '../../components/ui/alert.tsx'
-import { Badge } from '../../components/ui/badge.tsx'
-import { Button } from '../../components/ui/button.tsx'
-import { Card } from '../../components/ui/card.tsx'
+import { ExternalLink } from '@/components/external-link'
+import { Alert } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '../../components/ui/tooltip.tsx'
-import type {
-  Obligation,
-  SupportedResult,
-  TaxEstimate,
-} from '../../evaluation/index.ts'
-import { formatDate, formatMoney } from '../../lib/format.ts'
-import { sourceRegistry } from '../../rules/index.ts'
-import type { DateOnly } from '../../rules/index.ts'
-import type { CompletionRecord } from '../../workspace/index.ts'
+} from '@/components/ui/tooltip'
+import type { Obligation, SupportedResult, TaxEstimate } from '@/evaluation'
+import { formatDate, formatMoney } from '@/lib/format'
+import { sourceRegistry } from '@/rules'
+import type { DateOnly } from '@/rules'
+import type { CompletionRecord } from '@/workspace'
 import {
   CompletionEditor,
   PaymentEditor,
   SaveNotice,
   todayInIndia,
-} from './editors.tsx'
-import type { PlanEditor } from './editors.tsx'
+} from '@/routes/plan/editors'
+import type { PlanEditor } from '@/routes/plan/editors'
 
 const cardKickerClass =
   'mb-[.45rem] flex border-0 bg-transparent p-0 [font-size:.72rem] leading-[1.6] font-extrabold tracking-[.04em] text-muted-foreground uppercase'
@@ -94,7 +90,7 @@ export function CompletionStatus({
           render={
             <Badge
               aria-describedby={descriptionId}
-              className="relative cursor-help after:absolute after:top-1/2 after:left-1/2 after:min-h-11 after:min-w-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-['']"
+              className="relative cursor-help after:absolute after:top-1/2 after:left-1/2 after:min-h-11 after:min-w-11 after:-translate-1/2 after:content-['']"
               tabIndex={0}
             />
           }
@@ -311,13 +307,13 @@ export function AttentionCard({
       <p>{next.reasons[0]}</p>
       <div className="attention-meta">
         {next.kind === 'advance-tax' && (
-          <span className="[font-size:1.1rem] font-extrabold text-foreground">
+          <span className="text-[1.1rem] font-extrabold text-foreground">
             {next.amountDue === 0
               ? 'No estimated amount left to pay'
               : `${formatMoney(next.amountDue ?? 0)} estimated left to pay`}
           </span>
         )}
-        <span className="[font-size:1.1rem] font-extrabold text-foreground">
+        <span className="text-[1.1rem] font-extrabold text-foreground">
           {formatDeadline(next.dueDate)}
         </span>
       </div>
@@ -345,7 +341,7 @@ export function AttentionCard({
         </div>
       ) : !saved && isExample ? (
         <Alert
-          className="mt-4 mb-[var(--text-journey)] [font-size:var(--text-journey)] leading-[1.6] text-warning"
+          className="mt-4 mb-(--text-journey) text-journey leading-[1.6] text-warning"
           role={undefined}
         >
           This fictional example cannot be saved or marked complete.

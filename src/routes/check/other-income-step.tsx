@@ -1,8 +1,8 @@
-import type { TriState } from '../../evaluation/index.ts'
-import { CheckHeading, ChoiceField, MoneyField } from './fields.tsx'
-import type { Draft, DraftAmountKey, PatchDraft } from './model.ts'
-import { creditTriggerMayApply } from './model.ts'
-import { UnsupportedFactsField } from './review.tsx'
+import type { TriState } from '@/evaluation'
+import { CheckHeading, ChoiceField, MoneyField } from '@/routes/check/fields'
+import type { Draft, DraftAmountKey, PatchDraft } from '@/routes/check/model'
+import { creditTriggerMayApply } from '@/routes/check/model'
+import { UnsupportedFactsField } from '@/routes/check/review'
 
 export function OtherIncomeStep({
   className,

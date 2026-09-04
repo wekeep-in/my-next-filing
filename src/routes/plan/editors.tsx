@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { DatePicker } from '../../components/date-picker.tsx'
-import { Badge } from '../../components/ui/badge.tsx'
-import { Button, buttonVariants } from '../../components/ui/button.tsx'
-import { Card } from '../../components/ui/card.tsx'
-import { Input } from '../../components/ui/input.tsx'
-import type { Obligation } from '../../evaluation/index.ts'
-import type { DateOnly } from '../../rules/index.ts'
-import type { LoadSavedWorkspaceResult } from '../../workspace/index.ts'
+import { DatePicker } from '@/components/date-picker'
+import { Badge } from '@/components/ui/badge'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import type { Obligation } from '@/evaluation'
+import type { DateOnly } from '@/rules'
+import type { LoadSavedWorkspaceResult } from '@/workspace'
 
 export type PlanEditor =
   | { readonly kind: 'completion'; readonly obligation: Obligation }
@@ -100,7 +100,7 @@ export function PaymentEditor({
           ₹
         </span>
         <Input
-          className="pl-[2rem]"
+          className="pl-8"
           id="advance-tax-update"
           inputMode="numeric"
           value={value}

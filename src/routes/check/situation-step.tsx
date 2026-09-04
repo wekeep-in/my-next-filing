@@ -1,6 +1,6 @@
-import type { TriState } from '../../evaluation/index.ts'
-import { CheckHeading, ChoiceField } from './fields.tsx'
-import type { Draft, PatchDraft } from './model.ts'
+import type { TriState } from '@/evaluation'
+import { CheckHeading, ChoiceField } from '@/routes/check/fields'
+import type { Draft, PatchDraft } from '@/routes/check/model'
 
 export function SituationStep({
   className,

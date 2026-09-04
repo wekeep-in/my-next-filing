@@ -866,8 +866,7 @@ function validateGroup(
       provenanceIds.add(reference.ruleId)
       const source = sources.get(reference.sourceId)
       if (
-        !source ||
-        source.kind !== 'statutory' ||
+        source?.kind !== 'statutory' ||
         !Array.isArray(source.coveredRuleIds) ||
         !source.coveredRuleIds.includes(reference.ruleId)
       )
@@ -892,7 +891,7 @@ function validateGroup(
           reference.role === 'extension',
       )
     const source = sources.get(groupValues.extensionSourceId)
-    if (!source || source.kind !== 'statutory' || !hasExtensionProvenance)
+    if (source?.kind !== 'statutory' || !hasExtensionProvenance)
       errors.push(`Rule group ${expectedId} has invalid extension provenance.`)
   }
   if (groupValues) validateValues(expectedId, groupValues, errors)

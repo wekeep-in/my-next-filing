@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { cn } from 'cn'
 import { Outlet, createBrowserRouter, useLocation } from 'react-router-dom'
-import { ExternalLink } from './components/external-link.tsx'
-import { WORKSPACE_KEY, loadSavedWorkspace } from './workspace/index.ts'
-import type { LoadSavedWorkspaceResult } from './workspace/index.ts'
-import { CheckRoute } from './routes/check'
-import { LandingRoute } from './routes/landing'
-import { NotFoundRoute } from './routes/not-found'
-import { PlanRoute } from './routes/plan'
+import { ExternalLink } from '@/components/external-link'
+import { WORKSPACE_KEY, loadSavedWorkspace } from '@/workspace'
+import type { LoadSavedWorkspaceResult } from '@/workspace'
+import { CheckRoute } from '@/routes/check'
+import { LandingRoute } from '@/routes/landing'
+import { NotFoundRoute } from '@/routes/not-found'
+import { PlanRoute } from '@/routes/plan'
 
 export type AppOutletContext = {
   readonly savedWorkspace: LoadSavedWorkspaceResult

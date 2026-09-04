@@ -5,8 +5,8 @@ import { currentRules, validateRules } from '../src/rules/index.ts'
 import type { RuleDataset } from '../src/rules/index.ts'
 import {
   WORKSPACE_KEY,
-  deriveWorkspaceView,
   deleteSavedWorkspace,
+  deriveWorkspaceView,
   loadSavedWorkspace,
   saveSavedWorkspace,
 } from '../src/workspace/index.ts'
@@ -530,8 +530,8 @@ const provenanceResult = validateRules(missingAnnualProvenance, now)
 assert.equal(provenanceResult.valid, true)
 if (provenanceResult.valid)
   assert.equal(provenanceResult.groups['annual-return'].valid, false)
-const missingAnnualGroupValues = { ...currentRules.groups }
-delete missingAnnualGroupValues.annualReturn
+const { annualReturn: _annualReturn, ...missingAnnualGroupValues } =
+  currentRules.groups
 const missingAnnualGroup = {
   ...currentRules,
   groups: missingAnnualGroupValues,
@@ -580,34 +580,34 @@ class MemoryStorage implements Storage {
 }
 
 class UnavailableStorage implements Storage {
-  get length() {
+  get length(): number {
     throw new Error('unavailable')
   }
   clear() {
     throw new Error('unavailable')
   }
-  getItem() {
+  getItem(_key: string): string | null {
     throw new Error('unavailable')
   }
-  key() {
+  key(_index: number): string | null {
     throw new Error('unavailable')
   }
-  removeItem() {
+  removeItem(_key: string) {
     throw new Error('unavailable')
   }
-  setItem() {
+  setItem(_key: string, _value: string) {
     throw new Error('unavailable')
   }
 }
 
 class FailingWriteStorage extends MemoryStorage {
-  setItem() {
+  override setItem(_key: string, _value: string) {
     throw new Error('quota')
   }
 }
 
 class FailingRemoveStorage extends MemoryStorage {
-  removeItem() {}
+  override removeItem(_key: string) {}
 }
 
 const storage = new MemoryStorage()

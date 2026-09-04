@@ -1,5 +1,5 @@
-import { CheckHeading, MoneyField } from './fields.tsx'
-import type { Draft, DraftAmountKey } from './model.ts'
+import { CheckHeading, MoneyField } from '@/routes/check/fields'
+import type { Draft, DraftAmountKey } from '@/routes/check/model'
 
 export function ReceiptsStep({
   className,

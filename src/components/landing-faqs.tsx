@@ -1,6 +1,6 @@
-import { ExternalLink } from './external-link.tsx'
-import { formatDate } from '../lib/format.ts'
-import { currentRules } from '../rules/index.ts'
+import { ExternalLink } from '@/components/external-link'
+import { formatDate } from '@/lib/format'
+import { currentRules } from '@/rules'
 
 const openSourceUrl = 'https://github.com/wekeep-in/my-next-filing'
 

@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { Select as SelectPrimitive } from '@base-ui/react/select'
 import { cn } from 'cn'
-import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from 'lucide-react'
+import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react'
 
 const Select = SelectPrimitive.Root
 
@@ -77,19 +77,19 @@ function SelectContent({
         align={align}
         alignOffset={alignOffset}
         alignItemWithTrigger={alignItemWithTrigger}
-        className="isolate z-[140]"
+        className="isolate z-140"
       >
         <SelectPrimitive.Popup
           data-slot="select-content"
           data-align-trigger={alignItemWithTrigger}
           className={cn(
-            'relative isolate z-[140] w-(--anchor-width) min-w-36 origin-(--transform-origin) overflow-hidden rounded-control border border-border bg-popover p-[.35rem] text-popover-foreground shadow-panel duration-[160ms] ease-app-out data-[align-trigger=true]:animate-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-[.97] data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-[.97] motion-reduce:animate-none',
+            'relative isolate z-140 w-(--anchor-width) min-w-36 origin-(--transform-origin) overflow-hidden rounded-control border border-border bg-popover p-[.35rem] text-popover-foreground shadow-panel duration-160 ease-app-out data-[align-trigger=true]:animate-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-[.97] data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-[.97] motion-reduce:animate-none',
             className,
           )}
           {...props}
         >
           <SelectScrollUpButton />
-          <SelectPrimitive.List className="max-h-[min(18rem,calc(var(--available-height)-.7rem))] overflow-y-auto overscroll-contain [scrollbar-color:var(--border)_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-[.6rem] [&::-webkit-scrollbar-corner]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-[.15rem] [&::-webkit-scrollbar-thumb]:border-solid [&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:bg-clip-padding [&::-webkit-scrollbar-track]:my-[.3rem] [&::-webkit-scrollbar-track]:bg-transparent">
+          <SelectPrimitive.List className="max-h-[min(18rem,calc(var(--available-height)-.7rem))] scrollbar-thin [scrollbar-color:var(--border)_transparent] overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:w-[.6rem] [&::-webkit-scrollbar-corner]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-[.15rem] [&::-webkit-scrollbar-thumb]:border-solid [&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:bg-clip-padding [&::-webkit-scrollbar-track]:my-[.3rem] [&::-webkit-scrollbar-track]:bg-transparent">
             {children}
           </SelectPrimitive.List>
           <SelectScrollDownButton />

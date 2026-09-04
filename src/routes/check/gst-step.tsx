@@ -1,20 +1,20 @@
-import type { TriState } from '../../evaluation/index.ts'
-import { DatePicker } from '../../components/date-picker.tsx'
+import type { TriState } from '@/evaluation'
+import { DatePicker } from '@/components/date-picker'
 import {
   CheckHeading,
   ChoiceField,
   FieldError,
   MoneyField,
   SelectField,
-} from './fields.tsx'
+} from '@/routes/check/fields'
 import type {
   Draft,
   DraftAmountKey,
   DraftGstKind,
   DraftGstStatus,
   PatchDraft,
-} from './model.ts'
-import { statesAndUnionTerritories } from './model.ts'
+} from '@/routes/check/model'
+import { statesAndUnionTerritories } from '@/routes/check/model'
 
 export function GstStep({
   className,

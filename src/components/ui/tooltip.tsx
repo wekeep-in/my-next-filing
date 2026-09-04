@@ -44,12 +44,12 @@ function TooltipContent({
         alignOffset={alignOffset}
         side={side}
         sideOffset={sideOffset}
-        className="isolate z-[140]"
+        className="isolate z-140"
       >
         <TooltipPrimitive.Popup
           data-slot="tooltip-content"
           className={cn(
-            'z-[140] inline-flex w-max max-w-[min(20rem,calc(100vw-3rem))] rounded-tooltip bg-foreground px-[.7rem] py-[.55rem] text-xs font-semibold leading-[1.4] text-primary-foreground',
+            'z-140 inline-flex w-max max-w-[min(20rem,calc(100vw-3rem))] rounded-tooltip bg-foreground px-[.7rem] py-[.55rem] text-xs font-semibold leading-[1.4] text-primary-foreground',
             className,
           )}
           {...props}

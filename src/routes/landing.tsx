@@ -2,15 +2,12 @@ import type { MouseEvent } from 'react'
 import MuxPlayer from '@mux/mux-player-react/lazy'
 import { cn } from 'cn'
 import { Link, useNavigate, useOutletContext } from 'react-router-dom'
-import type { AppOutletContext } from '../app.tsx'
-import { Badge } from '../components/ui/badge.tsx'
-import { buttonVariants } from '../components/ui/button.tsx'
-import {
-  JourneySidebar,
-  calculationStep,
-} from '../components/journey-sidebar.tsx'
-import { LandingFaqs } from '../components/landing-faqs.tsx'
-import { ShareLink } from '../components/share-link.tsx'
+import type { AppOutletContext } from '@/app'
+import { Badge } from '@/components/ui/badge'
+import { buttonVariants } from '@/components/ui/button'
+import { JourneySidebar, calculationStep } from '@/components/journey-sidebar'
+import { LandingFaqs } from '@/components/landing-faqs'
+import { ShareLink } from '@/components/share-link'
 
 export function LandingRoute() {
   const navigate = useNavigate()
@@ -32,7 +29,7 @@ export function LandingRoute() {
     )
       return
     event.preventDefault()
-    navigate('/check', { state: { ...state, animate: true } })
+    void navigate('/check', { state: { ...state, animate: true } })
   }
 
   return (

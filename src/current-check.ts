@@ -1,4 +1,4 @@
-import type { Profile } from './evaluation'
+import type { Profile } from '@/evaluation'
 
 type CurrentCheck = {
   readonly profile: Profile

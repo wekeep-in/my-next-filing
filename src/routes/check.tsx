@@ -1,22 +1,22 @@
 import { useEffect, useState } from 'react'
 import type { MouseEvent } from 'react'
 import { useLocation, useNavigate, useOutletContext } from 'react-router-dom'
-import { parseProfile } from '../evaluation/index.ts'
-import type { AppOutletContext } from '../app.tsx'
+import { parseProfile } from '@/evaluation'
+import type { AppOutletContext } from '@/app'
 import {
   clearCurrentCheck,
   getCurrentCheck,
   setCurrentCheck,
-} from '../current-check.ts'
+} from '@/current-check'
 import {
   JourneySidebar,
   calculationStep,
   questionnaireSteps,
-} from '../components/journey-sidebar.tsx'
-import { ActivityStep } from './check/activity-step.tsx'
-import { ClientsStep } from './check/clients-step.tsx'
-import { GstStep } from './check/gst-step.tsx'
-import type { Draft, DraftAmountKey } from './check/model.ts'
+} from '@/components/journey-sidebar'
+import { ActivityStep } from '@/routes/check/activity-step'
+import { ClientsStep } from '@/routes/check/clients-step'
+import { GstStep } from '@/routes/check/gst-step'
+import type { Draft, DraftAmountKey } from '@/routes/check/model'
 import {
   blankDraft,
   candidateFromDraft,
@@ -27,13 +27,13 @@ import {
   profileErrorKey,
   todayInIndia,
   validateDraftStep,
-} from './check/model.ts'
-import { OtherIncomeStep } from './check/other-income-step.tsx'
-import { ReceiptsStep } from './check/receipts-step.tsx'
-import { ReviewStep } from './check/review.tsx'
-import { SituationStep } from './check/situation-step.tsx'
-import { Alert } from '../components/ui/alert.tsx'
-import { Button } from '../components/ui/button.tsx'
+} from '@/routes/check/model'
+import { OtherIncomeStep } from '@/routes/check/other-income-step'
+import { ReceiptsStep } from '@/routes/check/receipts-step'
+import { ReviewStep } from '@/routes/check/review'
+import { SituationStep } from '@/routes/check/situation-step'
+import { Alert } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
 
 export function CheckRoute() {
   const location = useLocation()
@@ -92,7 +92,7 @@ export function CheckRoute() {
   useEffect(() => {
     if (routeState?.example || routeState?.personal) clearCurrentCheck()
     if (routeState?.example || routeState?.personal || routeState?.editSaved)
-      navigate('/check', { replace: true, state: null })
+      void navigate('/check', { replace: true, state: null })
   }, [
     navigate,
     routeState?.editSaved,
@@ -165,7 +165,7 @@ export function CheckRoute() {
     }
     setCurrentCheck(parsed.profile, usingExample, true, editingSaved)
     const button = event.currentTarget.getBoundingClientRect()
-    navigate('/plan', {
+    void navigate('/plan', {
       state: animate
         ? {
             animate: true,
@@ -179,7 +179,7 @@ export function CheckRoute() {
   }
 
   const selectJourneyStep = (journeyStep: number, animate: boolean) => {
-    if (journeyStep === 0) navigate('/', { state: { animate } })
+    if (journeyStep === 0) void navigate('/', { state: { animate } })
     else if (
       journeyStep <= questionnaireSteps.length &&
       journeyStep - 1 <= highestStep
@@ -290,7 +290,7 @@ export function CheckRoute() {
         activeStep={step + 1}
         backAction={
           <Button
-            className="w-full min-w-0 px-[.65rem] !font-extrabold !leading-[1.1]"
+            className="w-full min-w-0 px-[.65rem] leading-[1.1]! font-extrabold!"
             variant="outline"
             type="button"
             onClick={() => (step === 0 ? navigate('/') : go(step - 1, true))}
@@ -300,7 +300,7 @@ export function CheckRoute() {
         }
         action={
           <Button
-            className="w-full min-w-0 px-[.65rem] !font-extrabold !leading-[1.1]"
+            className="w-full min-w-0 px-[.65rem] leading-[1.1]! font-extrabold!"
             type="button"
             onClick={onNext}
           >

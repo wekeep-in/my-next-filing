@@ -31,51 +31,51 @@ colors:
   mediaBackground: "#020617"
 typography:
   display:
-    fontFamily: Fraunces, Georgia, serif
+    fontFamily: Fraunces Variable, Georgia, serif
     fontSize: 5.16rem
     fontWeight: 700
     lineHeight: 1.04
     letterSpacing: -0.035em
   displayCompact:
-    fontFamily: Fraunces, Georgia, serif
+    fontFamily: Fraunces Variable, Georgia, serif
     fontSize: 2.488rem
     fontWeight: 700
     lineHeight: 1.04
     letterSpacing: -0.035em
   heading2:
-    fontFamily: Fraunces, Georgia, serif
+    fontFamily: Fraunces Variable, Georgia, serif
     fontSize: 1.728rem
     fontWeight: 700
     lineHeight: 1.04
     letterSpacing: -0.035em
   heading3:
-    fontFamily: Fraunces, Georgia, serif
+    fontFamily: Fraunces Variable, Georgia, serif
     fontSize: 1.44rem
     fontWeight: 700
     lineHeight: 1.04
     letterSpacing: -0.035em
   bodyLarge:
-    fontFamily: Inter, ui-sans-serif, system-ui, sans-serif
+    fontFamily: Inter Variable, ui-sans-serif, system-ui, sans-serif
     fontSize: 1.6rem
     fontWeight: 400
     lineHeight: 1.6
   body:
-    fontFamily: Inter, ui-sans-serif, system-ui, sans-serif
+    fontFamily: Inter Variable, ui-sans-serif, system-ui, sans-serif
     fontSize: 1rem
     fontWeight: 400
     lineHeight: 1.6
   label:
-    fontFamily: Inter, ui-sans-serif, system-ui, sans-serif
+    fontFamily: Inter Variable, ui-sans-serif, system-ui, sans-serif
     fontSize: 1rem
     fontWeight: 750
     lineHeight: 1.3
   action:
-    fontFamily: Inter, ui-sans-serif, system-ui, sans-serif
+    fontFamily: Inter Variable, ui-sans-serif, system-ui, sans-serif
     fontSize: 1rem
     fontWeight: 800
     lineHeight: 1.1
   caption:
-    fontFamily: Inter, ui-sans-serif, system-ui, sans-serif
+    fontFamily: Inter Variable, ui-sans-serif, system-ui, sans-serif
     fontSize: 0.75rem
     fontWeight: 800
     lineHeight: 1.3
@@ -210,7 +210,7 @@ The live theme color and SVG favicon use `primary`. Existing authored raster art
 
 ## Typography
 
-Fraunces is the editorial voice for headings. Inter is the functional voice for body copy, labels, controls, dates, and amounts. Both fonts are self-hosted under `public/fonts`; no remote font request is allowed.
+Fraunces is the editorial voice for headings. Inter is the functional voice for body copy, labels, controls, dates, and amounts. Both fonts come from pinned Fontsource packages and Vite emits them as same-origin assets; no remote font request is allowed.
 
 Headings use weight 700, `-0.035em` tracking, and `1.04` line height. The global display heading is fluid from `2.488rem` to `5.16rem`; the landing display is fluid from `3rem` to `4.8rem`. Body copy defaults to `1rem/1.6`. Labels and actions are bold enough to scan but remain sentence case. Do not replace Fraunces with a sans serif or introduce another typeface.
 

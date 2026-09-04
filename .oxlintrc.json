@@ -2,33 +2,89 @@
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["react", "typescript", "unicorn", "oxc", "import"],
   "categories": { "correctness": "error" },
+  "jsPlugins": ["eslint-plugin-better-tailwindcss"],
   "env": {
     "browser": true,
     "es2024": true
   },
-  "options": { "reportUnusedDisableDirectives": "warn" },
+  "options": {
+    "typeAware": true,
+    "reportUnusedDisableDirectives": "warn"
+  },
+  "settings": {
+    "react": {
+      "linkComponents": [{ "name": "Link", "attribute": "to" }]
+    },
+    "better-tailwindcss": {
+      "entryPoint": "src/styles.css"
+    }
+  },
   "ignorePatterns": ["dist/**", "node_modules/**", ".agents/**"],
   "rules": {
     "no-console": ["error", { "allow": ["warn", "error"] }],
     "no-shadow": "warn",
+    "no-var": "error",
+    "prefer-const": "error",
+    "eqeqeq": ["error", "smart"],
+    "sort-imports": ["error", { "ignoreDeclarationSort": true }],
     "no-unused-vars": "off",
     "typescript/consistent-type-imports": [
       "error",
       { "prefer": "type-imports" }
     ],
     "typescript/no-explicit-any": "error",
+    "typescript/no-floating-promises": "error",
+    "typescript/no-deprecated": "error",
+    "typescript/no-unnecessary-type-assertion": "error",
+    "typescript/no-unsafe-assignment": "error",
+    "typescript/no-unsafe-call": "error",
+    "typescript/no-unsafe-member-access": "error",
+    "typescript/no-unsafe-return": "error",
+    "typescript/no-unsafe-argument": "error",
+    "typescript/restrict-template-expressions": "error",
+    "typescript/restrict-plus-operands": "error",
+    "typescript/no-base-to-string": "error",
+    "typescript/no-unsafe-enum-comparison": "error",
+    "typescript/use-unknown-in-catch-callback-variable": "warn",
+    "typescript/prefer-optional-chain": "warn",
+    "typescript/switch-exhaustiveness-check": "warn",
     "typescript/no-unused-vars": [
       "warn",
       { "varsIgnorePattern": "^_", "argsIgnorePattern": "^_" }
     ],
     "import/consistent-type-specifier-style": ["error", "prefer-top-level"],
     "import/first": "error",
+    "import/no-commonjs": "error",
     "import/no-duplicates": "error",
+    "import/no-cycle": ["error", { "maxDepth": 3 }],
     "react/rules-of-hooks": "error",
     "react/exhaustive-deps": "warn",
     "react/jsx-key": "error",
     "react/jsx-no-duplicate-props": "error",
     "react/jsx-no-target-blank": "warn",
-    "react/no-direct-mutation-state": "error"
+    "react/no-direct-mutation-state": "error",
+    "react/no-children-prop": "warn",
+    "react/no-danger-with-children": "error",
+    "react/no-find-dom-node": "error",
+    "react/no-render-return-value": "error",
+    "react/no-string-refs": "error",
+    "react/void-dom-elements-no-children": "error",
+    "react/no-unstable-nested-components": "error",
+    "react/no-object-type-as-default-prop": "warn",
+    "react/no-unsafe": ["error", { "checkAliases": true }],
+    "oxc/missing-throw": "error",
+    "oxc/bad-comparison-sequence": "error",
+    "oxc/bad-min-max-func": "error",
+    "oxc/erasing-op": "error",
+    "oxc/misrefactored-assign-op": "error",
+    "oxc/number-arg-out-of-range": "error",
+    "better-tailwindcss/enforce-consistent-class-order": "off",
+    "better-tailwindcss/enforce-consistent-line-wrapping": "off",
+    "better-tailwindcss/no-deprecated-classes": "warn",
+    "better-tailwindcss/no-duplicate-classes": "warn",
+    "better-tailwindcss/no-unnecessary-whitespace": "off",
+    "better-tailwindcss/enforce-canonical-classes": "off",
+    "better-tailwindcss/no-conflicting-classes": "error",
+    "better-tailwindcss/no-unknown-classes": "off"
   }
 }

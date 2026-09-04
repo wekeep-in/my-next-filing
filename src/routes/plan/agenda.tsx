@@ -1,13 +1,13 @@
-import { formatDate } from '../../lib/format.ts'
-import { Button } from '../../components/ui/button.tsx'
-import { Card } from '../../components/ui/card.tsx'
-import type {
-  Obligation,
-  ProfileGroup,
-  SupportedResult,
-} from '../../evaluation/index.ts'
-import type { CompletionRecord, WorkspaceView } from '../../workspace/index.ts'
-import { CompletionStatus, SourceReferences, StatusPill } from './cards.tsx'
+import { formatDate } from '@/lib/format'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import type { Obligation, ProfileGroup, SupportedResult } from '@/evaluation'
+import type { CompletionRecord, WorkspaceView } from '@/workspace'
+import {
+  CompletionStatus,
+  SourceReferences,
+  StatusPill,
+} from '@/routes/plan/cards'
 
 export function reviewLabel(group: ProfileGroup) {
   return {

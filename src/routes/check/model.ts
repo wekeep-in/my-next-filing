@@ -5,9 +5,9 @@ import type {
   ProfileInputError,
   TriState,
   UnsupportedFact,
-} from '../../evaluation/index.ts'
-import { parseProfile } from '../../evaluation/index.ts'
-import { TAX_YEAR } from '../../rules/index.ts'
+} from '@/evaluation'
+import { parseProfile } from '@/evaluation'
+import { TAX_YEAR } from '@/rules'
 
 type DraftChoice = '' | TriState
 export type DraftPath = '' | 'specified-profession' | 'eligible-business'
