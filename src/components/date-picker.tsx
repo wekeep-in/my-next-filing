@@ -155,7 +155,7 @@ export function DatePicker({
         <div className="grid grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center text-center">
           <Button
             aria-label="Previous month"
-            className="size-11 min-h-11 rounded-[.55rem] p-0"
+            className="size-11 min-h-11 rounded-3xl p-0"
             disabled={!canGoPrevious}
             size="icon"
             type="button"
@@ -169,7 +169,7 @@ export function DatePicker({
           </strong>
           <Button
             aria-label="Next month"
-            className="size-11 min-h-11 rounded-[.55rem] p-0"
+            className="size-11 min-h-11 rounded-3xl p-0"
             disabled={!canGoNext}
             size="icon"
             type="button"

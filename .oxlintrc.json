@@ -83,7 +83,7 @@
     "better-tailwindcss/no-deprecated-classes": "warn",
     "better-tailwindcss/no-duplicate-classes": "warn",
     "better-tailwindcss/no-unnecessary-whitespace": "off",
-    "better-tailwindcss/enforce-canonical-classes": "off",
+    "better-tailwindcss/enforce-canonical-classes": "error",
     "better-tailwindcss/no-conflicting-classes": "error",
     "better-tailwindcss/no-unknown-classes": "off"
   }

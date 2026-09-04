@@ -51,7 +51,7 @@
   --media-background: var(--color-slate-950);
   --input: var(--color-slate-200);
   --ring: var(--color-blue-600);
-  --radius: 0.7rem;
+  --radius: 0.25rem;
   --content-max: var(--container-content);
   --content-width: min(68vw, var(--content-max));
   --sidebar-width: clamp(17.25rem, 20vw, 24rem);
@@ -267,6 +267,10 @@ main {
 .landing-example {
   margin-bottom: 0;
   font-size: var(--text-intro);
+}
+
+.landing-example button {
+  font-size: inherit;
 }
 
 .landing-example a,
@@ -1145,7 +1149,7 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   min-height: 2.9rem;
   align-items: center;
   gap: 0.5rem;
-  border: 1px solid var(--border);
+  border: 1px solid var(--input);
   border-radius: var(--radius-control);
   padding: 0.55rem 0.7rem;
   color: var(--foreground);

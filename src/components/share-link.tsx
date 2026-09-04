@@ -36,7 +36,7 @@ export function ShareLink() {
   return (
     <>
       <Button
-        className="[font-size:inherit] font-extrabold!"
+        className="font-extrabold!"
         variant="link"
         type="button"
         onClick={share}
