@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { MouseEvent, ReactNode } from 'react'
+import { flushSync } from 'react-dom'
 import { useLocation, useNavigate, useOutletContext } from 'react-router-dom'
 import type {
   Activity,
@@ -181,7 +182,8 @@ const unsupportedFactLabels: Record<UnsupportedFact, string> = {
   goodsSales: 'Goods sales',
   agencyCommissionBrokerage: 'Agency, commission, or brokerage income',
   royaltyOrLicensing: 'Royalty or licensing income',
-  otherUnsupportedFacts: 'Another unsupported fact',
+  otherUnsupportedFacts: 'Another income or tax situation not listed here',
+  unsupportedFactsNotSure: 'Not sure whether any situation applies',
 }
 
 const blankAmounts = (): Record<DraftAmountKey, string> =>
@@ -342,8 +344,16 @@ function draftFromProfile(profile: Profile): Draft {
     otherAnnualReturnTrigger: choice(
       profile.otherIncome.otherAnnualReturnTrigger,
     ),
-    unsupportedCertainty: profile.unsupportedFacts.length ? 'selected' : 'none',
-    unsupportedFacts: profile.unsupportedFacts,
+    unsupportedCertainty: profile.unsupportedFacts.includes(
+      'unsupportedFactsNotSure',
+    )
+      ? 'not-sure'
+      : profile.unsupportedFacts.length
+        ? 'selected'
+        : 'none',
+    unsupportedFacts: profile.unsupportedFacts.filter(
+      (fact) => fact !== 'unsupportedFactsNotSure',
+    ),
     gstKind: profile.gst.kind,
     gstStatus: profile.gst.kind === 'registered' ? profile.gst.status : '',
     gstState:
@@ -816,7 +826,7 @@ function candidateFromDraft(draft: Draft) {
             },
     unsupportedFacts:
       draft.unsupportedCertainty === 'not-sure'
-        ? [...new Set([...draft.unsupportedFacts, 'otherUnsupportedFacts'])]
+        ? ['unsupportedFactsNotSure']
         : draft.unsupportedFacts,
   }
   for (const key of requiredKeys) {
@@ -951,51 +961,113 @@ function UnsupportedFactsField({
   readonly setDraft: (patch: Partial<Draft>) => void
   readonly error?: string
 }) {
-  const options = Object.entries(unsupportedFactLabels) as [
-    UnsupportedFact,
-    string,
-  ][]
+  const options = (
+    Object.entries(unsupportedFactLabels) as [UnsupportedFact, string][]
+  ).filter(([value]) => value !== 'unsupportedFactsNotSure')
+  const warningId = 'unsupportedCertainty-warning'
+  const pointerSelection = useRef(false)
+  const updateDraft = (patch: Partial<Draft>) => {
+    const apply = () => setDraft(patch)
+    const animate = pointerSelection.current
+    pointerSelection.current = false
+    if (
+      !animate ||
+      !document.startViewTransition ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ) {
+      apply()
+      return
+    }
+    document.startViewTransition(() => flushSync(apply))
+  }
   return (
-    <fieldset className="field unsupported-facts" aria-invalid={Boolean(error)}>
-      <legend>Do any of these facts apply?</legend>
-      <p className="field-help">
-        Select every fact that applies. This version stops rather than
-        estimating around it.
+    <fieldset
+      id="unsupportedCertainty"
+      tabIndex={-1}
+      className="field choice-field unsupported-facts"
+      aria-invalid={Boolean(error)}
+      aria-describedby={`unsupportedCertainty-help${error ? ' unsupportedCertainty-error' : ''}`}
+      onPointerDown={() => {
+        pointerSelection.current = true
+      }}
+      onKeyDown={() => {
+        pointerSelection.current = false
+      }}
+    >
+      <legend>Do any of these situations apply to you?</legend>
+      <p className="field-help" id="unsupportedCertainty-help">
+        Select every situation that applies. If none apply, choose None of
+        these. Choose Not sure if you cannot confirm.
       </p>
-      <ChoiceField
-        id="unsupportedCertainty"
-        label="Your answer"
-        help="Choose Not sure if you cannot confirm the list."
-        options={['none', 'selected', 'not-sure']}
-        value={draft.unsupportedCertainty}
-        unsupportedOptions={['selected']}
-        onChange={(value) =>
-          setDraft({
-            unsupportedCertainty: value as Draft['unsupportedCertainty'],
-          })
-        }
-      />
-      {draft.unsupportedCertainty === 'selected' && (
-        <div className="check-list">
-          {options.map(([value, label]) => (
-            <label key={value}>
+      <div className="choice-grid unsupported-options">
+        {options.map(([value, label]) => {
+          const checked = draft.unsupportedFacts.includes(value)
+          return (
+            <label
+              className={`choice-card unsupported-option${checked ? ' choice-card--unsupported' : ''}`}
+              key={value}
+              style={{ viewTransitionName: `unsupported-${value}` }}
+            >
               <input
+                className="visually-hidden"
                 type="checkbox"
-                checked={draft.unsupportedFacts.includes(value)}
-                onChange={(event) =>
-                  setDraft({
-                    unsupportedFacts: event.target.checked
-                      ? [...draft.unsupportedFacts, value]
-                      : draft.unsupportedFacts.filter((fact) => fact !== value),
+                name="unsupportedFacts"
+                value={value}
+                checked={checked}
+                aria-describedby={checked ? warningId : undefined}
+                onChange={(event) => {
+                  const unsupportedFacts = event.target.checked
+                    ? [...draft.unsupportedFacts, value]
+                    : draft.unsupportedFacts.filter((fact) => fact !== value)
+                  updateDraft({
+                    unsupportedFacts,
+                    unsupportedCertainty: unsupportedFacts.length
+                      ? 'selected'
+                      : '',
                   })
-                }
-              />{' '}
-              {label}
+                }}
+              />
+              <span>{label}</span>
             </label>
-          ))}
-        </div>
+          )
+        })}
+      </div>
+      <div className="choice-grid unsupported-alternatives">
+        {[
+          ['none', 'None of these'],
+          ['not-sure', 'Not sure'],
+        ].map(([value, label]) => (
+          <label className="choice-card" key={value}>
+            <input
+              type="radio"
+              name="unsupportedCertainty"
+              value={value}
+              checked={draft.unsupportedCertainty === value}
+              aria-describedby={value === 'not-sure' ? warningId : undefined}
+              onChange={() =>
+                updateDraft({
+                  unsupportedCertainty: value as Draft['unsupportedCertainty'],
+                  unsupportedFacts: [],
+                })
+              }
+            />
+            <span>{label}</span>
+          </label>
+        ))}
+      </div>
+      {draft.unsupportedCertainty === 'selected' && (
+        <p className="choice-warning" id={warningId} role="alert">
+          <strong>Not supported.</strong> This version cannot calculate a
+          reliable plan when one of these situations applies.
+        </p>
       )}
-      <FieldError id="unsupported-facts-error" error={error} />
+      {draft.unsupportedCertainty === 'not-sure' && (
+        <p className="choice-warning" id={warningId} role="alert">
+          <strong>Cannot calculate yet.</strong> Confirm whether any of these
+          situations apply before calculating your plan.
+        </p>
+      )}
+      <FieldError id="unsupportedCertainty-error" error={error} />
     </fieldset>
   )
 }
@@ -1294,10 +1366,10 @@ export function CheckRoute() {
           'Choose an age band for the return trigger.'
       if (!draft.otherAnnualReturnTrigger)
         nextErrors.otherAnnualReturnTrigger =
-          'Choose whether another prescribed return trigger applies.'
+          'Choose whether another income-tax return trigger applies.'
       if (!draft.unsupportedCertainty)
         nextErrors.unsupportedCertainty =
-          'Choose whether any unsupported fact applies.'
+          'Select any situations that apply, or choose None of these or Not sure.'
     }
     if (step === 5) {
       if (!draft.gstKind) nextErrors.gstKind = 'Choose a GST branch.'
@@ -2039,29 +2111,29 @@ export function CheckRoute() {
       return (
         <div className={questionGroupClassName} key={step}>
           <CheckHeading
-            title="Add supported other income and credits"
-            description="Enter only actual Indian amounts for this Tax Year. Leave nothing blank."
+            title="Other income and tax paid"
+            description="Enter your Indian amounts for 2026-27. Use 0 if you have none."
           />
           <MoneyField
             id="taxableBankInterest"
             label="Taxable bank or deposit interest"
-            help="Enter interest before TDS."
+            help="Enter interest before any TDS."
             value={draft.amounts.taxableBankInterest}
             error={errors.taxableBankInterest}
             onChange={(value) => setAmount('taxableBankInterest', value)}
           />
           <MoneyField
             id="tds"
-            label="Actual Indian TDS"
-            help="Enter TDS credit for the included income."
+            label="Indian TDS credit"
+            help="Enter actual Indian TDS for the income included in this estimate."
             value={draft.amounts.tds}
             error={errors.tds}
             onChange={(value) => setAmount('tds', value)}
           />
           <MoneyField
             id="tcs"
-            label="Actual Indian TCS"
-            help="Enter TCS credit available for this Tax Year."
+            label="Indian TCS credit"
+            help="Enter the TCS credit available for 2026-27."
             value={draft.amounts.tcs}
             error={errors.tcs}
             onChange={(value) => setAmount('tcs', value)}
@@ -2069,7 +2141,7 @@ export function CheckRoute() {
           <MoneyField
             id="advanceTaxPaid"
             label="Advance tax already paid"
-            help="Enter total advance tax paid for this Tax Year, not self-assessment tax for another period."
+            help="Enter only advance tax paid for 2026-27. Do not include self-assessment tax."
             value={draft.amounts.advanceTaxPaid}
             error={errors.advanceTaxPaid}
             onChange={(value) => setAmount('advanceTaxPaid', value)}
@@ -2077,8 +2149,8 @@ export function CheckRoute() {
           {creditTriggerMayApply(draft) && (
             <ChoiceField
               id="ageSixtyOrOlder"
-              label="Were you sixty or older during this Tax Year?"
-              help="This changes the TDS and TCS annual-return trigger."
+              label="Were you 60 or older at any time during 2026-27?"
+              help="If you were 60 or older, this income-tax return trigger starts at ₹50,000 of combined TDS and TCS instead of ₹25,000."
               value={draft.ageSixtyOrOlder}
               error={errors.ageSixtyOrOlder}
               onChange={(value) =>
@@ -2088,7 +2160,7 @@ export function CheckRoute() {
           )}
           <ChoiceField
             id="otherAnnualReturnTrigger"
-            label="Do you know that another prescribed annual-return trigger applies?"
+            label="Does another condition require you to file an income-tax return?"
             help="Choose Not sure if you need to review the banking, travel, electricity, or foreign-asset conditions."
             value={draft.otherAnnualReturnTrigger}
             error={errors.otherAnnualReturnTrigger}

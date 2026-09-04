@@ -49,7 +49,8 @@ const unsupportedFactLabels = {
   goodsSales: 'Goods sales',
   agencyCommissionBrokerage: 'Agency, commission, or brokerage income',
   royaltyOrLicensing: 'Royalty or licensing income',
-  otherUnsupportedFacts: 'Another unsupported fact',
+  otherUnsupportedFacts: 'Another income or tax situation not listed',
+  unsupportedFactsNotSure: 'Unsupported situations not confirmed',
 } as const
 
 export type UnsupportedFact = keyof typeof unsupportedFactLabels
@@ -2220,7 +2221,9 @@ export function evaluate(
         'income-tax',
         'review',
         unsupportedFactLabels[fact],
-        'This fact needs Rules that this version does not calculate.',
+        fact === 'unsupportedFactsNotSure'
+          ? 'Confirm whether any listed situation applies before calculating your plan.'
+          : 'This fact needs Rules that this version does not calculate.',
         sourceIds,
       ),
     )

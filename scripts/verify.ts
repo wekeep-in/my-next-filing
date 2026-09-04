@@ -193,6 +193,32 @@ if (clientWorkSubcontractor.kind === 'unsupported')
     ['client-work-subcontractor'],
   )
 
+const uncertainUnsupportedSituation = evaluate(
+  profileFrom({
+    ...baseCandidate,
+    unsupportedFacts: ['unsupportedFactsNotSure'],
+  }),
+  now,
+  currentRules,
+)
+assert.equal(uncertainUnsupportedSituation.kind, 'unsupported')
+if (uncertainUnsupportedSituation.kind === 'unsupported')
+  assert.deepEqual(
+    uncertainUnsupportedSituation.facts.map(({ code, label, reason }) => ({
+      code,
+      label,
+      reason,
+    })),
+    [
+      {
+        code: 'unsupportedFactsNotSure',
+        label: 'Unsupported situations not confirmed',
+        reason:
+          'Confirm whether any listed situation applies before calculating your plan.',
+      },
+    ],
+  )
+
 const professionAtFive = profileFrom({
   ...baseCandidate,
   incomePath: {
@@ -613,7 +639,7 @@ const saved = saveSavedWorkspace(storage, null, workspaceDraft)
 assert.equal(saved.kind, 'saved')
 if (saved.kind === 'saved') {
   assert.equal(saved.workspace.revision, 0)
-  assert.equal(loadSavedWorkspace(storage, now).kind, 'ready')
+  assert.equal(loadSavedWorkspace(storage).kind, 'ready')
   assert.equal(
     saveSavedWorkspace(storage, null, workspaceDraft).kind,
     'conflict',

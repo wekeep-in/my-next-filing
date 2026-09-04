@@ -64,6 +64,18 @@ body {
 
 html {
   scrollbar-gutter: stable;
+  view-transition-name: none;
+}
+
+::view-transition-group(*) {
+  animation-duration: 180ms;
+  animation-timing-function: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+::view-transition-old(*),
+::view-transition-new(*) {
+  animation-duration: 160ms;
+  animation-timing-function: var(--ease-out);
 }
 
 body {
@@ -1195,8 +1207,7 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   }
 }
 
-.field-stack > .field,
-.unsupported-facts > .field {
+.field-stack > .field {
   margin: 0;
 }
 
@@ -1255,8 +1266,7 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
 }
 
 .choice-card input,
-.check-row input,
-.check-list input {
+.check-row input {
   accent-color: var(--accent);
 }
 
@@ -1266,6 +1276,42 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
 
 .choice-card input {
   cursor: pointer;
+}
+
+.unsupported-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 0.55rem;
+  margin-top: 0.8rem;
+}
+
+.choice-card.unsupported-option {
+  max-width: 100%;
+  border-radius: 999px;
+  padding-inline: 0.8rem;
+  transition:
+    border-color 160ms var(--ease-out),
+    background-color 160ms var(--ease-out),
+    color 160ms var(--ease-out),
+    transform 160ms var(--ease-out);
+}
+
+.unsupported-option:has(input:focus-visible) {
+  outline: 0.2rem solid var(--focus);
+  outline-offset: 0.2rem;
+}
+
+.unsupported-option.choice-card--unsupported,
+.unsupported-option.choice-card--unsupported:has(input:checked) {
+  border-color: var(--warning-text);
+  color: var(--paper);
+  background: var(--warning-text);
+}
+
+.unsupported-alternatives {
+  border-top: 1px solid var(--line);
+  margin-top: 1rem;
+  padding-top: 1rem;
 }
 
 .choice-card:active,
@@ -1280,13 +1326,6 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   margin: 0.75rem 0 0;
 }
 
-.check-list {
-  display: grid;
-  gap: 0.55rem;
-  margin-top: 0.8rem;
-}
-
-.check-list label,
 .check-row {
   display: flex;
   align-items: flex-start;
@@ -1296,7 +1335,6 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   line-height: 1.45;
 }
 
-.check-list input,
 .check-row input {
   flex: 0 0 auto;
   width: 1.1rem;
