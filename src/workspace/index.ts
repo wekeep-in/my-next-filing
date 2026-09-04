@@ -471,8 +471,8 @@ function currentYearView(
         record: completion,
         reason:
           evaluation?.kind === 'stale-rules'
-            ? 'Current Rules need review before this record can be matched.'
-            : 'The current result cannot reproduce this Completion record.',
+            ? 'The current tax rules must be reviewed before this date can be matched to an action.'
+            : 'Your current plan no longer includes an action that matches this date.',
         obligation: null,
       })),
     }
@@ -513,7 +513,7 @@ function currentYearView(
       kind: 'needs-review' as const,
       record: completion,
       reason:
-        'The current Obligation or its payment reconciliation no longer matches this declaration.',
+        'Your current plan no longer matches this completion date or the amount paid.',
       obligation:
         obligations.find(
           (obligation) => obligation.id === completion.obligationId,

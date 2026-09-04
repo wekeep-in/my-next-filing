@@ -1938,8 +1938,8 @@ function calculateAnnualReturn(
         profile.otherIncome.otherAnnualReturnTrigger === 'not-sure'
           ? 'annual-return-trigger-uncertain'
           : 'annual-return-age-uncertain',
-        'The application cannot establish every annual-return trigger from these answers.',
-        'Review the prescribed triggers and current return guidance before relying on this area.',
+        'My Next Filing cannot determine every annual-return trigger from these answers.',
+        'Check the prescribed triggers and current return guidance before relying on this part of your plan.',
         sourceIds,
       ),
       review: [
@@ -1979,7 +1979,7 @@ function calculateAnnualReturn(
           deadlineStatus: deadlineStatus(today, dueDate),
           reasons: triggers,
           consequence:
-            'A filing fee or other effect can apply after the deadline. This application does not calculate those amounts.',
+            'A filing fee or other effect can apply after the deadline. My Next Filing does not calculate those amounts.',
           amountDue: null,
           ruleIds: [
             'annual-return-income-threshold',
@@ -2073,7 +2073,7 @@ function calculateGst(
         'gst',
         'gst-liability-date-uncertain',
         'Turnover is above the starting threshold but the liability date is not an established past date.',
-        'Review the date when liability arose. The application does not invent a registration deadline.',
+        'Review the date when liability arose. My Next Filing does not invent a registration deadline.',
         sourceIds,
       ),
       review: [
@@ -2118,7 +2118,7 @@ function calculateGst(
           'Your declared GST aggregate turnover is above the starting threshold and the liability date is known.',
         ],
         consequence:
-          'This application does not calculate GST payable, late fee, interest, or filing steps.',
+          'My Next Filing does not calculate GST payable, late fees, interest, or filing steps.',
         amountDue: null,
         ruleIds: [
           'gst-aggregate-turnover',
@@ -2289,10 +2289,10 @@ export function evaluate(
     reviewActions.push(
       reviewAction(
         'advance-tax-rules',
-        'Review advance-tax Rules',
+        'Check the advance-tax rules',
         'advance-tax',
         'other-income',
-        'Advance-tax Rules are unavailable, so no dated advance-tax action is shown.',
+        'The advance-tax rules are unavailable, so no advance-tax date is shown.',
         sourceIdsForGroup(data, 'advanceTax'),
       ),
     )
@@ -2314,7 +2314,7 @@ export function evaluate(
       deadlineStatus: deadlineStatus(today, dueDate),
       reasons: ['Estimated tax after Indian TDS and TCS is at least ₹10,000.'],
       consequence:
-        'Interest can apply after this date. This application does not calculate interest or a government demand.',
+        'Interest can apply after this date. My Next Filing does not calculate interest or a government demand.',
       amountDue: tax.outcome === 'payable' ? tax.finalAmount : 0,
       ruleIds: ['advance-tax-threshold', 'advance-tax-date'],
       statutorySourceIds: sourceIdsForGroup(data, 'advanceTax'),
@@ -2331,17 +2331,17 @@ export function evaluate(
       coverage: coverageUnavailable(
         'annual-return',
         'annual-return-rules-stale',
-        'Annual-return Rules need review before this area can be shown.',
-        'The income-tax estimate remains available. Review current official return guidance.',
+        'The annual-return rules must be reviewed before this check can be shown.',
+        'Your income-tax estimate remains available. Check the current official return guidance.',
         sources,
       ),
       review: [
         reviewAction(
           'annual-return-rules',
-          'Review annual-return Rules',
+          'Check the annual-return rules',
           'annual-return',
           'other-income',
-          'Annual-return dates and triggers are unavailable until their Rules are reviewed.',
+          'Annual-return dates and triggers are unavailable until the tax rules are reviewed.',
           sources,
         ),
       ],
@@ -2367,17 +2367,17 @@ export function evaluate(
       coverage: coverageUnavailable(
         'gst',
         'gst-rules-stale',
-        'GST-registration Rules need review before this area can be shown.',
-        'The income-tax estimate remains available. Review current GST registration guidance.',
+        'The GST registration rules must be reviewed before this check can be shown.',
+        'Your income-tax estimate remains available. Check the current GST registration guidance.',
         sources,
       ),
       review: [
         reviewAction(
           'gst-rules',
-          'Review GST-registration Rules',
+          'Check the GST registration rules',
           'gst',
           'gst',
-          'GST-registration Rules are unavailable until their values and sources are reviewed.',
+          'GST registration guidance is unavailable until its rules and sources are reviewed.',
           sources,
         ),
       ],
@@ -2479,8 +2479,8 @@ export function evaluate(
     obligations,
     reviewActions,
     assumptions: [
-      'The Profile is for one adult resident and ordinarily resident individual practice.',
-      'Amounts are complete non-negative whole-rupee values from the user’s tax records.',
+      'This estimate is for one adult who is resident and ordinarily resident in India and runs one individual practice.',
+      'The amounts you entered are complete, non-negative whole-rupee values from your tax records.',
       'This is a best-effort estimate. It does not calculate surcharge, deductions, losses, special-rate tax, foreign-tax relief, interest, fees, or penalties.',
     ],
     explanations: [

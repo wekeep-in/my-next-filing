@@ -190,9 +190,9 @@ export function LandingRoute() {
               choose to save after getting a supported result.
             </p>
             <p>
-              If you save, this browser keeps the answers needed to run the run
-              your estimate again and the dates you mark actions complete. It
-              does not save drafts, examples, calculated results, or tax rules.
+              If you save, this browser keeps the answers needed to run your
+              estimate again and the dates you mark actions complete. It does
+              not save drafts, examples, calculated results, or tax rules.
               Saving is available only if you confirm that you are 18 or older.
             </p>
             <p>
@@ -205,8 +205,8 @@ export function LandingRoute() {
           <article>
             <h3>Where does saved information stay?</h3>
             <p>
-              Your saved workspace stays in this browser profile. My Next Filing
-              does not upload it or put it in URLs, page titles, logs, external
+              Your saved data stays in this browser profile. My Next Filing does
+              not upload it or put it in URLs, page titles, logs, external
               links, or sharing.
             </p>
             <p>
@@ -225,9 +225,9 @@ export function LandingRoute() {
           <article>
             <h3>How do I stop saving and delete my data?</h3>
             <p>
-              On the last step, Your plan, choose <em>Stop saving</em>. This
-              removes My Next Filing's saved profile and completion dates from
-              this browser. You can continue without saving.
+              On the last step, Your plan, choose <em>Delete saved data</em>.
+              This removes My Next Filing's saved answers and completion dates
+              from this browser. You can continue without saving.
             </p>
           </article>
 

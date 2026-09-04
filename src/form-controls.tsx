@@ -193,6 +193,7 @@ export function SelectControl({
 
 export function DatePicker({
   id,
+  label,
   value,
   min,
   max,
@@ -202,6 +203,7 @@ export function DatePicker({
   onChange,
 }: {
   readonly id: string
+  readonly label?: string
   readonly value: string
   readonly min?: string
   readonly max?: string
@@ -287,12 +289,22 @@ export function DatePicker({
         aria-controls={calendarId}
         aria-expanded={open}
         aria-haspopup="dialog"
+        aria-label={label ? `${label}: ${formatDateValue(value)}` : undefined}
         aria-describedby={describedBy}
         aria-invalid={invalid || undefined}
         onClick={() => setOpen((current) => !current)}
         onKeyDown={onTriggerKeyDown}
       >
-        {formatDateValue(value)}
+        {label ? (
+          <span className="date-picker-trigger-copy">
+            <span className="date-picker-trigger-label">{label}</span>
+            <span className="date-picker-trigger-value">
+              {formatDateValue(value)}
+            </span>
+          </span>
+        ) : (
+          formatDateValue(value)
+        )}
       </button>
       {open && (
         <div

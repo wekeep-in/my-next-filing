@@ -1,5 +1,5 @@
 import Confetti from 'react-confetti-boom'
-import { useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import {
   Link,
   Navigate,
@@ -12,13 +12,11 @@ import { ExternalLink, formatDate, formatMoney } from '../app.tsx'
 import {
   clearCurrentCheck,
   getCurrentCheck,
-  markSaveDismissed,
   setCurrentCheck,
 } from '../current-check.ts'
 import { evaluate, parseProfile } from '../evaluation/index.ts'
 import { DatePicker } from '../form-controls.tsx'
 import type {
-  Coverage,
   Obligation,
   Profile,
   ProfileGroup,
@@ -45,6 +43,8 @@ import type {
 } from '../workspace/index.ts'
 
 const confettiColors = ['#008a30', '#10283c', '#155eef', '#fbbf24']
+const deletedWorkspaceMessage =
+  'Your saved answers and completion dates were removed from this browser.'
 
 function todayInIndia(): DateOnly {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -59,23 +59,35 @@ function todayInIndia(): DateOnly {
 }
 
 function formatDeadline(date: DateOnly) {
-  return `On ${formatDate(date)}`
+  return `Due ${formatDate(date)}`
 }
 
-function SourceReferences({ ids }: { readonly ids: readonly string[] }) {
+function SourceLinks({ ids }: { readonly ids: readonly string[] }) {
+  if (ids.length === 0) return null
   return (
-    <div className="source-list">
+    <div>
       {ids.map((id) => {
         const source = sourceRegistry.find((candidate) => candidate.id === id)
         if (!source) return null
         return (
           <p className="source-reference" key={id}>
-            <strong>Source</strong>{' '}
             <ExternalLink href={source.url}>{source.title}</ExternalLink>
           </p>
         )
       })}
     </div>
+  )
+}
+
+function SourceReferences({ ids }: { readonly ids: readonly string[] }) {
+  if (ids.length === 0) return null
+  return (
+    <details className="source-list">
+      <summary>
+        Official source{ids.length === 1 ? '' : 's'} ({ids.length})
+      </summary>
+      <SourceLinks ids={ids} />
+    </details>
   )
 }
 
@@ -92,14 +104,47 @@ function StatusPill({
   return <span className={`status status--${status}`}>{labels[status]}</span>
 }
 
+function CompletionStatus({ completedOn }: { readonly completedOn: DateOnly }) {
+  const tooltipId = useId()
+  return (
+    <span className="completion-status">
+      <span
+        className="status status--completed"
+        tabIndex={0}
+        aria-describedby={tooltipId}
+      >
+        Completed
+      </span>
+      <span className="completion-tooltip" id={tooltipId} role="tooltip">
+        You marked this complete on {formatDate(completedOn)}. My Next Filing
+        cannot verify government acceptance.
+      </span>
+    </span>
+  )
+}
+
+type PlanEditor =
+  | { readonly kind: 'completion'; readonly obligation: Obligation }
+  | { readonly kind: 'payment'; readonly obligation: Obligation }
+
 function TaxSummary({ tax }: { readonly tax: TaxEstimate }) {
+  const label =
+    tax.outcome === 'payable'
+      ? 'Estimated tax left to pay'
+      : tax.outcome === 'refund'
+        ? 'Estimated refund'
+        : 'No estimated tax left to pay'
+  const note =
+    tax.outcome === 'refund'
+      ? 'Based on your answers. This is an estimate, not a confirmed refund.'
+      : 'Based on your answers. This is an estimate, not a government demand.'
   return (
     <article className="result-card tax-summary">
-      <p className="card-kicker">Income-tax estimate</p>
+      <p className="card-kicker">{label}</p>
       <h2>{formatMoney(tax.finalAmount)}</h2>
-      <p>This is a best-effort estimate, not a government demand.</p>
-      <details>
-        <summary>See calculation detail</summary>
+      <p>{note}</p>
+      <details className="calculation-details">
+        <summary>How this estimate was calculated</summary>
         <dl className="calculation-list">
           <div>
             <dt>Path</dt>
@@ -130,7 +175,7 @@ function TaxSummary({ tax }: { readonly tax: TaxEstimate }) {
             <dd>{formatMoney(tax.presumptive.minimumIncome)}</dd>
           </div>
           <div>
-            <dt>Income used</dt>
+            <dt>Presumptive income used</dt>
             <dd>{formatMoney(tax.presumptive.usedIncome)}</dd>
           </div>
           <div>
@@ -183,23 +228,20 @@ function GstCard({
 }: {
   readonly coverage: SupportedResult['coverage']['gst']
 }) {
-  if (coverage.kind === 'unavailable')
-    return (
-      <CoverageCard title="GST coverage needs review" coverage={coverage} />
-    )
+  if (coverage.kind === 'unavailable') return null
   const gst = coverage.value
   const title =
     gst.status === 'below'
-      ? 'Below GST threshold'
+      ? 'Your turnover is below the GST registration threshold'
       : gst.status === 'at'
-        ? 'At the GST threshold'
-        : 'Above the GST threshold'
+        ? 'Your turnover is at the GST registration threshold'
+        : 'Your turnover is above the GST registration threshold'
   const message =
     gst.status === 'below'
-      ? `The declared amount is ${formatMoney(gst.difference)} below the ${formatMoney(gst.threshold)} starting threshold for ${gst.state}.`
+      ? `Your declared GST turnover is ${formatMoney(gst.difference)} below the ${formatMoney(gst.threshold)} starting threshold for ${gst.state}.`
       : gst.status === 'at'
-        ? `The declared amount is exactly ${formatMoney(gst.threshold)} for ${gst.state}. Registration begins after the threshold is exceeded.`
-        : `The declared amount is ${formatMoney(gst.difference)} above the ${formatMoney(gst.threshold)} starting threshold for ${gst.state}.`
+        ? `Your declared GST turnover is exactly ${formatMoney(gst.threshold)} for ${gst.state}. Registration begins after the threshold is exceeded.`
+        : `Your declared GST turnover is ${formatMoney(gst.difference)} above the ${formatMoney(gst.threshold)} starting threshold for ${gst.state}.`
   return (
     <article className="result-card coverage-card">
       <p className="card-kicker">GST registration</p>
@@ -207,29 +249,10 @@ function GstCard({
       <p>{message}</p>
       {gst.registrationRequired && (
         <p className="coverage-note">
-          The agenda shows the registration action only when the liability date
-          is known.
+          Your agenda includes registration only when you provide the date on
+          which liability arose.
         </p>
       )}
-      <SourceReferences ids={coverage.sourceIds} />
-    </article>
-  )
-}
-
-function CoverageCard<T>({
-  title,
-  coverage,
-}: {
-  readonly title: string
-  readonly coverage: Coverage<T>
-}) {
-  if (coverage.kind === 'available') return null
-  return (
-    <article className="result-card coverage-card coverage-card--unavailable">
-      <p className="card-kicker">Review area</p>
-      <h2>{title}</h2>
-      <p>{coverage.reason}</p>
-      <p>{coverage.guidance}</p>
       <SourceReferences ids={coverage.sourceIds} />
     </article>
   )
@@ -239,7 +262,16 @@ function AttentionCard({
   next,
   completions,
   saved,
-  onMark,
+  isExample,
+  advanceTaxPaid,
+  onSave,
+  savePrompt,
+  onSaveConfirm,
+  onSaveCancel,
+  editor,
+  onPaymentSubmit,
+  onCompletionSubmit,
+  onEditorCancel,
   onUpdatePayment,
   onChangeDate,
   onUndo,
@@ -247,7 +279,16 @@ function AttentionCard({
   readonly next: Obligation | null
   readonly completions: readonly CompletionRecord[]
   readonly saved: boolean
-  readonly onMark: (obligation: Obligation) => void
+  readonly isExample: boolean
+  readonly advanceTaxPaid: number
+  readonly onSave?: () => void
+  readonly savePrompt: boolean
+  readonly onSaveConfirm: () => void
+  readonly onSaveCancel: () => void
+  readonly editor: PlanEditor | null
+  readonly onPaymentSubmit: (value: string) => void
+  readonly onCompletionSubmit: (obligation: Obligation, date: DateOnly) => void
+  readonly onEditorCancel: () => void
   readonly onUpdatePayment: () => void
   readonly onChangeDate: (obligation: Obligation) => void
   readonly onUndo: (obligation: Obligation) => void
@@ -258,11 +299,11 @@ function AttentionCard({
   if (!next)
     return (
       <section className="attention-card result-card">
-        <p className="card-kicker">Your next step</p>
-        <h1>No supported action remains</h1>
+        <p className="card-kicker">Next action</p>
+        <h2>No dated actions in your plan</h2>
         <p>
-          There is no open dated Obligation for the evaluated scope. Review the
-          separate Review areas below.
+          This plan does not show any open filing or payment dates. Check any
+          items below before relying on it.
         </p>
       </section>
     )
@@ -272,27 +313,26 @@ function AttentionCard({
       className="attention-card result-card"
       aria-labelledby="attention-title"
     >
-      <p className="card-kicker">Your next step</p>
-      <h1 id="attention-title">{next.title}</h1>
-      <div className="attention-meta">
-        <span className="deadline-date">{formatDeadline(next.dueDate)}</span>
-        <StatusPill status={next.deadlineStatus} />
-      </div>
+      <p className="card-kicker">Next action</p>
+      <h2 id="attention-title">{next.title}</h2>
       <p>{next.reasons[0]}</p>
-      {next.kind === 'advance-tax' && (
-        <p className="amount-callout">
-          {next.amountDue === 0
-            ? 'The estimate shows no amount remaining.'
-            : `${formatMoney(next.amountDue ?? 0)} is the estimated amount remaining.`}
-        </p>
-      )}
-      {completion && !needsPayment ? (
+      <div className="attention-meta">
+        {next.kind === 'advance-tax' && (
+          <span className="amount-callout">
+            {next.amountDue === 0
+              ? 'No estimated amount left to pay'
+              : `${formatMoney(next.amountDue ?? 0)} estimated left to pay`}
+          </span>
+        )}
+        <span className="deadline-date">{formatDeadline(next.dueDate)}</span>
+      </div>
+      {completion && !needsPayment && !editor ? (
         <div className="completion-state">
           <p>
             <strong>
-              Marked complete by you on {formatDate(completion.completedOn)}.
+              You marked this complete on {formatDate(completion.completedOn)}.
             </strong>{' '}
-            My Next Filing has not verified government acceptance.
+            My Next Filing cannot verify government acceptance.
           </p>
           <div className="button-row">
             <button
@@ -307,24 +347,75 @@ function AttentionCard({
               type="button"
               onClick={() => onUndo(next)}
             >
-              Undo
+              Remove completion
             </button>
           </div>
         </div>
-      ) : saved ? (
-        <button
-          className="button button--primary"
-          type="button"
-          onClick={needsPayment ? onUpdatePayment : () => onMark(next)}
-        >
-          {needsPayment ? 'Update payment' : 'Mark complete'}
-        </button>
-      ) : (
+      ) : !saved && isExample ? (
         <p className="notice">
-          Save this workspace on the current device to mark actions complete.
+          This fictional example cannot be saved or marked complete.
         </p>
-      )}
+      ) : null}
       <SourceReferences ids={next.statutorySourceIds} />
+      {(editor ||
+        (!completion && saved) ||
+        (!saved && !isExample && (savePrompt || onSave))) && (
+        <div className="attention-action">
+          {editor?.kind === 'payment' && (
+            <PaymentEditor
+              current={advanceTaxPaid}
+              onSubmit={onPaymentSubmit}
+              onCancel={onEditorCancel}
+              embedded={editor.obligation.id === next.id}
+            />
+          )}
+          {editor?.kind === 'completion' && (
+            <CompletionEditor
+              obligation={editor.obligation}
+              initialDate={
+                completions.find(
+                  (record) => record.obligationId === editor.obligation.id,
+                )?.completedOn ?? todayInIndia()
+              }
+              onSubmit={(date) => onCompletionSubmit(editor.obligation, date)}
+              onCancel={onEditorCancel}
+              embedded={editor.obligation.id === next.id}
+            />
+          )}
+          {!editor && saved && !completion && needsPayment && (
+            <button
+              className="button button--secondary"
+              type="button"
+              onClick={onUpdatePayment}
+            >
+              Update amount paid
+            </button>
+          )}
+          {!editor && saved && !completion && !needsPayment && (
+            <CompletionEditor
+              obligation={next}
+              initialDate={todayInIndia()}
+              onSubmit={(date) => onCompletionSubmit(next, date)}
+              embedded
+            />
+          )}
+          {!editor &&
+            !saved &&
+            !isExample &&
+            (savePrompt || onSave) &&
+            (savePrompt ? (
+              <SaveNotice onSave={onSaveConfirm} onContinue={onSaveCancel} />
+            ) : (
+              <button
+                className="button button--secondary"
+                type="button"
+                onClick={onSave}
+              >
+                Save data in this browser
+              </button>
+            ))}
+        </div>
+      )}
     </section>
   )
 }
@@ -332,6 +423,7 @@ function AttentionCard({
 function Agenda({
   evaluation,
   workspaceView,
+  nextId,
   completions,
   saved,
   onMark,
@@ -341,6 +433,7 @@ function Agenda({
 }: {
   readonly evaluation: SupportedResult
   readonly workspaceView: WorkspaceView | null
+  readonly nextId: string | null
   readonly completions: readonly CompletionRecord[]
   readonly saved: boolean
   readonly onMark: (obligation: Obligation) => void
@@ -370,12 +463,13 @@ function Agenda({
         <p>
           {saved
             ? `${workspaceView?.openCount ?? ordered.length} open action${(workspaceView?.openCount ?? ordered.length) === 1 ? '' : 's'}`
-            : `${ordered.length} supported action${ordered.length === 1 ? '' : 's'}`}
+            : `${ordered.length} action${ordered.length === 1 ? '' : 's'}`}
         </p>
       </div>
       <div className="agenda-list">
         {ordered.map((obligation) => {
           const completion = completionFor(obligation)
+          const isNext = obligation.id === nextId
           const needsPayment =
             obligation.kind === 'advance-tax' && (obligation.amountDue ?? 0) > 0
           return (
@@ -400,17 +494,14 @@ function Agenda({
               <div className="agenda-content">
                 <div className="agenda-heading">
                   <h3>{obligation.title}</h3>
-                  <StatusPill status={obligation.deadlineStatus} />
+                  {completion && !needsPayment ? (
+                    <CompletionStatus completedOn={completion.completedOn} />
+                  ) : (
+                    <StatusPill status={obligation.deadlineStatus} />
+                  )}
                 </div>
                 <p>{obligation.reasons[0]}</p>
-                {completion && !needsPayment && (
-                  <p className="completion-note">
-                    Marked complete by you on{' '}
-                    {formatDate(completion.completedOn)}. Government acceptance
-                    is not verified.
-                  </p>
-                )}
-                {saved && !completion && (
+                {saved && !completion && !isNext && (
                   <button
                     className="text-button"
                     type="button"
@@ -418,7 +509,9 @@ function Agenda({
                       needsPayment ? onUpdatePayment() : onMark(obligation)
                     }
                   >
-                    {needsPayment ? 'Update payment' : 'Mark complete'}
+                    {needsPayment
+                      ? 'Update amount paid'
+                      : 'Add completion date'}
                   </button>
                 )}
                 {saved && completion && !needsPayment && (
@@ -435,12 +528,12 @@ function Agenda({
                       type="button"
                       onClick={() => onUndo(obligation)}
                     >
-                      Undo
+                      Remove completion
                     </button>
                   </>
                 )}
                 <details className="consequence">
-                  <summary>If the date passes</summary>
+                  <summary>What may happen after this date</summary>
                   <p>{obligation.consequence}</p>
                 </details>
                 <SourceReferences ids={obligation.statutorySourceIds} />
@@ -461,18 +554,30 @@ function ReviewAreas({
   readonly onReview: (group: ProfileGroup) => void
 }) {
   const areas = [
-    ['annualReturn', 'Annual-return coverage', 'other-income'],
-    ['gst', 'GST coverage', 'gst'],
-    ['foreignGuidance', 'Foreign-receipt guidance', 'clients'],
+    ['annualReturn', 'Annual-return check', 'other-income'],
+    ['gst', 'GST registration check', 'gst'],
+    ['foreignGuidance', 'Foreign-receipt check', 'clients'],
   ] as const
+  const unavailable = areas.filter(
+    ([key]) => evaluation.coverage[key].kind === 'unavailable',
+  )
+  const standaloneActions = evaluation.reviewActions.filter(
+    (action) =>
+      !unavailable.some(([key]) => {
+        const coverage = evaluation.coverage[key]
+        return coverage.kind === 'unavailable' && coverage.area === action.area
+      }),
+  )
+  if (unavailable.length === 0 && standaloneActions.length === 0) return null
   return (
     <section className="review-areas" aria-labelledby="review-areas-title">
-      <h2 id="review-areas-title">Coverage and review</h2>
-      <p>These areas sit outside the open and completed action counts.</p>
-      <div className="review-area-list">
-        {areas.map(([key, title, group]) => {
-          const coverage = evaluation.coverage[key]
-          if (coverage.kind === 'unavailable')
+      <h2 id="review-areas-title">Check before relying on this plan</h2>
+      <p>These checks do not count as dated actions.</p>
+      {unavailable.length > 0 && (
+        <div className="review-area-list">
+          {unavailable.map(([key, title, group]) => {
+            const coverage = evaluation.coverage[key]
+            if (coverage.kind === 'available') return null
             return (
               <article
                 className="review-area review-area--unavailable"
@@ -486,35 +591,17 @@ function ReviewAreas({
                   type="button"
                   onClick={() => onReview(group)}
                 >
-                  Review answers
+                  {reviewLabel(group)}
                 </button>
                 <SourceReferences ids={coverage.sourceIds} />
               </article>
             )
-          const value = coverage.value
-          const text =
-            'required' in value
-              ? value.required
-                ? 'A return trigger is established.'
-                : 'No supported trigger is established from the covered facts.'
-              : 'registrationRequired' in value
-                ? value.registrationRequired
-                  ? 'Registration is indicated.'
-                  : 'No turnover-based registration action is indicated.'
-                : value.message
-          return (
-            <article className="review-area" key={key}>
-              <h3>{title}</h3>
-              <p>{text}</p>
-              <SourceReferences ids={coverage.sourceIds} />
-            </article>
-          )
-        })}
-      </div>
-      {evaluation.reviewActions.length > 0 && (
+          })}
+        </div>
+      )}
+      {standaloneActions.length > 0 && (
         <div className="review-actions">
-          <h3>Review actions</h3>
-          {evaluation.reviewActions.map((action) => (
+          {standaloneActions.map((action) => (
             <article key={action.id}>
               <p>
                 <strong>{action.title}</strong>. {action.reason}
@@ -524,7 +611,7 @@ function ReviewAreas({
                 type="button"
                 onClick={() => onReview(action.correctionGroup)}
               >
-                Review answers
+                {reviewLabel(action.correctionGroup)}
               </button>
               <SourceReferences ids={action.sourceIds} />
             </article>
@@ -549,10 +636,10 @@ function NeedsReview({
   if (records.length === 0) return null
   return (
     <section className="needs-review" aria-labelledby="needs-review-title">
-      <h2 id="needs-review-title">Needs review</h2>
+      <h2 id="needs-review-title">Completion dates to check</h2>
       <p>
-        These Completion records are kept, but the current result cannot safely
-        match them. Delete a record if it no longer applies.
+        These saved dates no longer match an action in your current plan. Remove
+        a date if it no longer applies.
       </p>
       <div className="needs-review-list">
         {records.map((item) => (
@@ -575,7 +662,7 @@ function NeedsReview({
               type="button"
               onClick={() => onDelete(item.record)}
             >
-              Delete completion
+              Remove completion date
             </button>
           </article>
         ))}
@@ -591,47 +678,36 @@ function SaveNotice({
   readonly onSave: () => void
   readonly onContinue: () => void
 }) {
-  const [adultConfirmed, setAdultConfirmed] = useState(false)
   return (
-    <section className="save-notice result-card" aria-labelledby="save-title">
-      <p className="card-kicker">Optional current-device saving</p>
-      <h2 id="save-title">Keep your place in this browser</h2>
+    <section className="save-notice result-card" aria-label="Save data">
       <p>
-        Save this profile and the filing completions you mark in this browser.
-        Anyone using this browser profile may be able to see them. There is no
-        account, sync, backup, or recovery. Private browsing or clearing site
-        data may remove them.
+        Save your answers and any completion dates you add in this browser.
+        Anyone using this browser profile may be able to see them, so don't save
+        on a shared browser.
       </p>
       <p>
-        <strong>Do not save on a shared or public browser.</strong>
+        There is no account, sync, backup, or recovery. Private browsing or
+        clearing site data may remove them. Read more{' '}
+        <Link className="text-button" to="/#faqs">
+          here
+        </Link>
+        .
       </p>
-      <label className="check-row">
-        <input
-          type="checkbox"
-          checked={adultConfirmed}
-          onChange={(event) => setAdultConfirmed(event.target.checked)}
-        />{' '}
-        I am eighteen or older and want to save on this device.
-      </label>
       <div className="button-row">
         <button
           className="button button--primary"
           type="button"
-          disabled={!adultConfirmed}
           onClick={onSave}
         >
-          Save on this device
+          Save data
         </button>
         <button
           className="button button--secondary"
           type="button"
           onClick={onContinue}
         >
-          Continue without saving
+          Cancel
         </button>
-        <Link className="text-button" to="/#faqs">
-          Read the saved-data FAQ
-        </Link>
       </div>
     </section>
   )
@@ -641,19 +717,21 @@ function PaymentEditor({
   onSubmit,
   onCancel,
   current,
+  embedded = false,
 }: {
   readonly onSubmit: (value: string) => void
   readonly onCancel: () => void
   readonly current: number
+  readonly embedded?: boolean
 }) {
   const [value, setValue] = useState(current.toLocaleString('en-IN'))
   const [error, setError] = useState('')
   return (
     <div className="inline-editor">
-      <h3>Update advance tax paid</h3>
+      {!embedded && <h3>How much advance tax have you paid?</h3>}
       <p>
-        Enter the total advance tax already paid for this Tax Year. The estimate
-        will run again.
+        Enter the total advance tax already paid for this Tax Year. Your plan
+        will be recalculated.
       </p>
       <label htmlFor="advance-tax-update">Total advance tax already paid</label>
       <div className="money-input">
@@ -675,7 +753,7 @@ function PaymentEditor({
       )}
       <div className="button-row">
         <button
-          className="button button--primary"
+          className="button button--secondary"
           type="button"
           onClick={() => {
             const trimmed = value.trim()
@@ -683,17 +761,13 @@ function PaymentEditor({
               ? Number(trimmed.replace(/^₹\s?/, '').replaceAll(',', ''))
               : Number.NaN
             if (!Number.isSafeInteger(parsed) || parsed < 0)
-              setError('Use a non-negative whole-rupee amount.')
+              setError('Enter a whole-rupee amount of ₹0 or more.')
             else onSubmit(String(parsed))
           }}
         >
-          Update payment
+          Save and recalculate
         </button>
-        <button
-          className="button button--secondary"
-          type="button"
-          onClick={onCancel}
-        >
+        <button className="text-button" type="button" onClick={onCancel}>
           Cancel
         </button>
       </div>
@@ -706,61 +780,98 @@ function CompletionEditor({
   initialDate,
   onSubmit,
   onCancel,
+  embedded = false,
 }: {
   readonly obligation: Obligation
   readonly initialDate: DateOnly
   readonly onSubmit: (date: DateOnly) => void
-  readonly onCancel: () => void
+  readonly onCancel?: () => void
+  readonly embedded?: boolean
 }) {
   const [date, setDate] = useState(initialDate)
   const [error, setError] = useState('')
+  const inputId = `completion-date-${obligation.id.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`
   return (
-    <div className="inline-editor">
-      <h3>
-        {obligation.kind === 'gst-registration'
-          ? 'Mark registration action complete'
-          : 'Mark this action complete'}
-      </h3>
+    <div
+      className={`inline-editor${embedded ? ' inline-editor--embedded' : ''}`}
+    >
+      <p>Choose the date you completed this action. Your plan will update.</p>
+      <div className="completion-controls">
+        <div className="completion-field">
+          <label htmlFor={inputId}>Completion date</label>
+          <DatePicker
+            id={inputId}
+            value={date}
+            max={todayInIndia()}
+            onChange={(value) => {
+              setDate(value as DateOnly)
+              setError('')
+            }}
+          />
+          {error && (
+            <p className="field-error" role="alert">
+              {error}
+            </p>
+          )}
+        </div>
+        <div className="button-row">
+          <button
+            className="button button--secondary"
+            type="button"
+            onClick={() => {
+              if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date > todayInIndia())
+                setError('Choose a valid date no later than today.')
+              else onSubmit(date)
+            }}
+          >
+            Mark completed
+          </button>
+          {onCancel && (
+            <button className="text-button" type="button" onClick={onCancel}>
+              Cancel
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function DeleteNotice({
+  onDelete,
+  onCancel,
+}: {
+  readonly onDelete: () => void
+  readonly onCancel: () => void
+}) {
+  return (
+    <section
+      className="delete-notice result-card"
+      aria-labelledby="delete-title"
+      aria-live="polite"
+    >
+      <h2 id="delete-title">Delete saved data?</h2>
       <p>
-        Marked complete by you. My Next Filing has not verified government
-        acceptance.
+        This removes your saved answers and completion dates from this browser.
+        You can continue with an unsaved estimate. This cannot be undone.
       </p>
-      <label htmlFor="completion-date">Date you completed it</label>
-      <DatePicker
-        id="completion-date"
-        value={date}
-        max={todayInIndia()}
-        onChange={(value) => {
-          setDate(value as DateOnly)
-          setError('')
-        }}
-      />
-      {error && (
-        <p className="field-error" role="alert">
-          {error}
-        </p>
-      )}
       <div className="button-row">
         <button
-          className="button button--primary"
+          className="button button--danger"
           type="button"
-          onClick={() => {
-            if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date > todayInIndia())
-              setError('Choose a valid date no later than today.')
-            else onSubmit(date)
-          }}
+          onClick={onDelete}
         >
-          Confirm completion
+          Delete saved data
         </button>
         <button
           className="button button--secondary"
           type="button"
           onClick={onCancel}
         >
-          Cancel
+          Keep saved data
         </button>
       </div>
-    </div>
+    </section>
   )
 }
 
@@ -777,13 +888,11 @@ function SavedDataState({
         className="stop-state result-card"
         aria-labelledby="saved-invalid-title"
       >
-        <p className="period">Saved data needs attention</p>
-        <h1 id="saved-invalid-title">
-          We could not restore this browser workspace.
-        </h1>
+        <p className="period">Saved data unavailable</p>
+        <h1 id="saved-invalid-title">We couldn't restore your saved data</h1>
         <p>
-          No calculation was produced from the saved value. You can start a
-          separate unsaved estimate, or delete the saved value and start again.
+          No estimate was calculated from it. Start an unsaved estimate, or
+          delete the saved data and start again.
         </p>
         <div className="button-row">
           <Link className="button button--primary" to="/check">
@@ -805,13 +914,11 @@ function SavedDataState({
         className="stop-state result-card"
         aria-labelledby="saved-unavailable-title"
       >
-        <p className="period">Browser storage unavailable</p>
-        <h1 id="saved-unavailable-title">
-          Your current tab can still continue.
-        </h1>
+        <p className="period">Saving unavailable</p>
+        <h1 id="saved-unavailable-title">You can continue in this tab</h1>
         <p>
-          This browser did not make saved data available. Nothing was changed or
-          deleted.
+          This browser did not make saved storage available. Nothing was changed
+          or deleted.
         </p>
         <div className="button-row">
           <Link className="button button--primary" to="/check">
@@ -850,6 +957,18 @@ function groupStep(group: ProfileGroup) {
   }[group]
 }
 
+function reviewLabel(group: ProfileGroup) {
+  return {
+    'tax-year': 'Review personal and Tax Year answers',
+    activity: 'Review work and tax method',
+    receipts: 'Review receipts and profit',
+    clients: 'Review client and payment answers',
+    'other-income': 'Review income and tax paid',
+    gst: 'Review GST answers',
+    review: 'Review all answers',
+  }[group]
+}
+
 export function PlanRoute() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -858,11 +977,11 @@ export function PlanRoute() {
   const [, setRefresh] = useState(0)
   const currentCheck = getCurrentCheck()
   const [savePrompt, setSavePrompt] = useState(false)
-  const [saveDismissed, setSaveDismissed] = useState(
-    Boolean(currentCheck?.saveDismissed),
-  )
   const [saveMessage, setSaveMessage] = useState('')
+  const [deletionToastVisible, setDeletionToastVisible] = useState(false)
   const [storageConflict, setStorageConflict] = useState(false)
+  const [deletePrompt, setDeletePrompt] = useState(false)
+  const [deletedWorkspace, setDeletedWorkspace] = useState(false)
   const [editor, setEditor] = useState<{
     kind: 'completion' | 'payment'
     obligation: Obligation
@@ -908,7 +1027,17 @@ export function PlanRoute() {
         )
       : null
   const supported = evaluation?.kind === 'supported' ? evaluation : null
-  const next = workspaceView?.next?.obligation ?? null
+  const canOfferSave = Boolean(
+    supported &&
+    !isExample &&
+    savedWorkspace.kind === 'absent' &&
+    !saved &&
+    !savePrompt &&
+    !saveMessage,
+  )
+  const next = workspaceView
+    ? (workspaceView.next?.obligation ?? null)
+    : (supported?.obligations[0] ?? null)
   const routeState = location.state as {
     readonly animate?: boolean
     readonly confettiOrigin?: { readonly x: number; readonly y: number }
@@ -918,8 +1047,19 @@ export function PlanRoute() {
     Boolean(supported && confettiOrigin) &&
     !window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
+  useEffect(() => {
+    if (saveMessage !== deletedWorkspaceMessage) return
+    const hide = window.setTimeout(() => setDeletionToastVisible(false), 3800)
+    const remove = window.setTimeout(() => setSaveMessage(''), 4000)
+    return () => {
+      window.clearTimeout(hide)
+      window.clearTimeout(remove)
+    }
+  }, [saveMessage])
+
   if (
     !profile &&
+    !deletedWorkspace &&
     savedWorkspace.kind !== 'invalid' &&
     savedWorkspace.kind !== 'unavailable'
   ) {
@@ -962,19 +1102,17 @@ export function PlanRoute() {
       clearCurrentCheck()
       refreshSavedWorkspace()
       setSavePrompt(false)
-      setEditorMessage('Saved on this device.')
+      setEditorMessage('')
       setRefresh((value) => value + 1)
       return true
     } else if (result.kind === 'conflict') {
       setStorageConflict(true)
       setEditorMessage(
-        'This workspace changed in another tab. Reload the saved workspace before writing again.',
+        'This saved data changed in another tab. Reload it before trying again.',
       )
     } else if (result.kind === 'invalid') {
       setStorageConflict(false)
-      setEditorMessage(
-        'The existing saved value needs deliberate deletion before it can be replaced.',
-      )
+      setEditorMessage('This saved data cannot be updated until you delete it.')
     } else {
       setStorageConflict(false)
       setEditorMessage(
@@ -1017,18 +1155,10 @@ export function PlanRoute() {
       if (persist(parsed.profile, currentSaved.active?.completions ?? []))
         setEditor(null)
     } else {
-      setCurrentCheck(
-        parsed.profile,
-        false,
-        true,
-        false,
-        currentCheck?.saveDismissed ?? false,
-      )
+      setCurrentCheck(parsed.profile, false, true, false)
       setRefresh((value) => value + 1)
       setEditor(null)
-      setEditorMessage(
-        'Payment updated for this tab. The estimate is refreshed.',
-      )
+      setEditorMessage('')
     }
   }
 
@@ -1080,12 +1210,6 @@ export function PlanRoute() {
   }
 
   const deleteSaved = () => {
-    if (
-      !window.confirm(
-        'Delete the saved profile and completion records from this browser?',
-      )
-    )
-      return
     const storage = sourceStorage()
     if (!storage) {
       setSaveMessage(
@@ -1097,27 +1221,30 @@ export function PlanRoute() {
       savedWorkspace.kind === 'ready' ? savedWorkspace.workspace.revision : null
     const result = deleteSavedWorkspace(storage, expected)
     if (result.kind === 'deleted' || result.kind === 'absent') {
-      clearCurrentCheck()
+      if (profile) {
+        setCurrentCheck(profile, false, true, false)
+      } else {
+        clearCurrentCheck()
+        setDeletedWorkspace(true)
+      }
       refreshSavedWorkspace()
-      navigate('/#faqs')
+      setDeletePrompt(false)
+      setEditor(null)
+      setEditorMessage('')
+      setDeletionToastVisible(true)
+      setSaveMessage(deletedWorkspaceMessage)
       return
     }
     setSaveMessage(
       result.kind === 'conflict'
-        ? 'The saved workspace changed in another tab. Reload before deleting it.'
+        ? 'The saved data changed in another tab. Reload before deleting it.'
         : 'Saved data was not removed.',
     )
   }
 
   const review = (group: ProfileGroup, animate = false) => {
     if (!profile) return
-    setCurrentCheck(
-      profile,
-      isExample,
-      true,
-      saved,
-      currentCheck?.saveDismissed ?? false,
-    )
+    setCurrentCheck(profile, isExample, true, saved)
     navigate('/check', {
       state: animate
         ? { step: groupStep(group), animate: true }
@@ -1130,158 +1257,170 @@ export function PlanRoute() {
     navigate('/check', { state: { personal: true } })
   }
 
-  const content =
-    evaluation?.kind === 'stale-rules' ? (
-      <section className="stop-state result-card" aria-labelledby="stale-title">
-        <p className="period">Rules need review</p>
-        <h1 id="stale-title">We cannot calculate a current result.</h1>
+  const content = deletedWorkspace ? (
+    <section className="stop-state result-card" aria-labelledby="deleted-title">
+      <p className="period">Saved data deleted</p>
+      <h1 id="deleted-title">Your saved data was removed</h1>
+      <p>
+        My Next Filing no longer has saved data in this browser. You can start a
+        new unsaved estimate.
+      </p>
+      <Link className="button button--primary" to="/check">
+        Start an unsaved estimate
+      </Link>
+    </section>
+  ) : evaluation?.kind === 'stale-rules' ? (
+    <section className="stop-state result-card" aria-labelledby="stale-title">
+      <p className="period">Plan unavailable</p>
+      <h1 id="stale-title">
+        We can't calculate this plan with the current tax rules
+      </h1>
+      <p>
+        The tax rules built into this version are missing, invalid, or past
+        their review date. No estimate was calculated. Check the official
+        sources below or return after the rules are updated.
+      </p>
+      {evaluation.expiresOn && (
         <p>
-          The local Rules for this period are invalid, missing, or outside their
-          review window. Calculation is disabled until they are reviewed.
+          These tax rules were due for review on{' '}
+          {formatDate(evaluation.expiresOn)}.
         </p>
-        {evaluation.expiresOn && (
+      )}
+      <SourceReferences ids={evaluation.sourceIds} />
+    </section>
+  ) : evaluation?.kind === 'unsupported' ? (
+    <section
+      className="stop-state result-card"
+      aria-labelledby="unsupported-title"
+    >
+      <p className="period">This version does not cover your situation</p>
+      <h1 id="unsupported-title">
+        We can't calculate a reliable plan from these answers
+      </h1>
+      <p>
+        If an answer is incorrect, review it below. Otherwise, use the linked
+        official sources or ask a qualified tax adviser.
+      </p>
+      <ul className="fact-list">
+        {evaluation.facts.map((fact) => (
+          <li key={`${fact.code}-${fact.correctionGroup}`}>
+            <strong>{fact.label}.</strong> {fact.reason}{' '}
+            <button
+              className="text-button"
+              type="button"
+              onClick={() => review(fact.correctionGroup)}
+            >
+              {reviewLabel(fact.correctionGroup)}
+            </button>
+          </li>
+        ))}
+      </ul>
+      <SourceReferences ids={evaluation.sourceIds} />
+    </section>
+  ) : (
+    supported && (
+      <>
+        <header className="question-heading">
+          <span className="period-pill">{profile?.taxYear}</span>
+          <h1>Your plan</h1>
           <p>
-            The dataset review window ended on{' '}
-            {formatDate(evaluation.expiresOn)}.
+            Based on the answers you reviewed. My Next Filing does not file,
+            pay, or verify completion.
           </p>
-        )}
-        <SourceReferences ids={evaluation.sourceIds} />
-      </section>
-    ) : evaluation?.kind === 'unsupported' ? (
-      <section
-        className="stop-state result-card"
-        aria-labelledby="unsupported-title"
-      >
-        <p className="period">Profile outside this version</p>
-        <h1 id="unsupported-title">
-          This version cannot calculate a reliable plan for these answers.
-        </h1>
-        <p>
-          Change an answer if it was accidental. Otherwise, use a fixed official
-          source or qualified adviser outside this application.
-        </p>
-        <ul className="fact-list">
-          {evaluation.facts.map((fact) => (
-            <li key={`${fact.code}-${fact.correctionGroup}`}>
-              <strong>{fact.label}.</strong> {fact.reason}{' '}
+        </header>
+        <AttentionCard
+          next={next}
+          completions={activeCompletions}
+          saved={saved}
+          isExample={isExample}
+          advanceTaxPaid={profile?.otherIncome.advanceTaxPaid ?? 0}
+          onSave={canOfferSave ? () => setSavePrompt(true) : undefined}
+          savePrompt={savePrompt}
+          onSaveConfirm={saveCurrent}
+          onSaveCancel={() => setSavePrompt(false)}
+          editor={editor}
+          onPaymentSubmit={updatePayment}
+          onCompletionSubmit={saveCompletion}
+          onEditorCancel={() => setEditor(null)}
+          onUpdatePayment={() => {
+            if (next) setEditor({ kind: 'payment', obligation: next })
+          }}
+          onChangeDate={(obligation) =>
+            setEditor({ kind: 'completion', obligation })
+          }
+          onUndo={removeCompletion}
+        />
+        {editorMessage && (
+          <div className="notice" role="status">
+            <p>{editorMessage}</p>
+            {storageConflict && (
               <button
                 className="text-button"
                 type="button"
-                onClick={() => review(fact.correctionGroup)}
+                onClick={() => {
+                  clearCurrentCheck()
+                  refreshSavedWorkspace()
+                  setStorageConflict(false)
+                  setEditorMessage('')
+                  setEditor(null)
+                  setRefresh((value) => value + 1)
+                }}
               >
-                Review answers
+                Reload saved data
               </button>
-            </li>
-          ))}
-        </ul>
-        <SourceReferences ids={evaluation.sourceIds} />
-      </section>
-    ) : (
-      supported && (
-        <>
-          <AttentionCard
-            next={next}
-            completions={activeCompletions}
-            saved={saved}
-            onMark={(obligation) =>
-              setEditor({ kind: 'completion', obligation })
-            }
-            onUpdatePayment={() => {
-              if (next) setEditor({ kind: 'payment', obligation: next })
-            }}
-            onChangeDate={(obligation) =>
-              setEditor({ kind: 'completion', obligation })
-            }
-            onUndo={removeCompletion}
-          />
-          {editor?.kind === 'payment' && profile && (
-            <PaymentEditor
-              current={profile.otherIncome.advanceTaxPaid}
-              onSubmit={updatePayment}
-              onCancel={() => setEditor(null)}
-            />
-          )}
-          {editor?.kind === 'completion' && (
-            <CompletionEditor
-              obligation={editor.obligation}
-              initialDate={
-                activeCompletions.find(
-                  (record) => record.obligationId === editor.obligation.id,
-                )?.completedOn ?? todayInIndia()
-              }
-              onSubmit={(date) => saveCompletion(editor.obligation, date)}
-              onCancel={() => setEditor(null)}
-            />
-          )}
-          {editorMessage && (
-            <div className="notice" role="status">
-              <p>{editorMessage}</p>
-              {storageConflict && (
-                <button
-                  className="text-button"
-                  type="button"
-                  onClick={() => {
-                    clearCurrentCheck()
-                    refreshSavedWorkspace()
-                    setStorageConflict(false)
-                    setEditorMessage('Reloaded the saved workspace.')
-                    setEditor(null)
-                    setRefresh((value) => value + 1)
-                  }}
-                >
-                  Reload saved workspace
-                </button>
-              )}
-            </div>
-          )}
-          <div className="plan-summary">
-            <TaxSummary tax={supported.tax} />
-            <GstCard coverage={supported.coverage.gst} />
+            )}
           </div>
-          <Agenda
-            evaluation={supported}
-            workspaceView={workspaceView}
-            completions={activeCompletions}
-            saved={saved}
-            onMark={(obligation) =>
-              setEditor({ kind: 'completion', obligation })
-            }
-            onUpdatePayment={() => {
-              const obligation = supported.obligations.find(
-                (item) => item.kind === 'advance-tax',
-              )
-              if (obligation) setEditor({ kind: 'payment', obligation })
-            }}
-            onChangeDate={(obligation) =>
-              setEditor({ kind: 'completion', obligation })
-            }
-            onUndo={removeCompletion}
-          />
-          <ReviewAreas evaluation={supported} onReview={review} />
-          <NeedsReview
-            workspaceView={workspaceView}
-            onDelete={removeCompletionRecord}
-          />
-          <details className="assumptions result-card">
-            <summary>Assumptions and sources</summary>
-            <ul>
-              {supported.assumptions.map((assumption) => (
-                <li key={assumption}>{assumption}</li>
-              ))}
-            </ul>
-            <ul>
-              {supported.explanations.map((explanation) => (
-                <li key={explanation}>{explanation}</li>
-              ))}
-            </ul>
-            <SourceReferences ids={supported.sourceIds} />
-          </details>
-        </>
-      )
+        )}
+        <div className="plan-summary">
+          <TaxSummary tax={supported.tax} />
+          <GstCard coverage={supported.coverage.gst} />
+        </div>
+        <Agenda
+          evaluation={supported}
+          workspaceView={workspaceView}
+          nextId={next?.id ?? null}
+          completions={activeCompletions}
+          saved={saved}
+          onMark={(obligation) => setEditor({ kind: 'completion', obligation })}
+          onUpdatePayment={() => {
+            const obligation = supported.obligations.find(
+              (item) => item.kind === 'advance-tax',
+            )
+            if (obligation) setEditor({ kind: 'payment', obligation })
+          }}
+          onChangeDate={(obligation) =>
+            setEditor({ kind: 'completion', obligation })
+          }
+          onUndo={removeCompletion}
+        />
+        <ReviewAreas evaluation={supported} onReview={review} />
+        <NeedsReview
+          workspaceView={workspaceView}
+          onDelete={removeCompletionRecord}
+        />
+        <details className="assumptions result-card">
+          <summary>Assumptions and limits</summary>
+          <ul>
+            {supported.assumptions.map((assumption) => (
+              <li key={assumption}>{assumption}</li>
+            ))}
+          </ul>
+          <ul>
+            {supported.explanations.map((explanation) => (
+              <li key={explanation}>{explanation}</li>
+            ))}
+          </ul>
+        </details>
+        <details className="assumptions result-card">
+          <summary>Official sources ({supported.sourceIds.length})</summary>
+          <SourceLinks ids={supported.sourceIds} />
+        </details>
+      </>
     )
+  )
 
   return (
-    <section className="plan journey-layout" aria-label="Filing workspace">
+    <section className="plan journey-layout" aria-label="Your plan">
       {celebrate && (
         <Confetti
           colors={confettiColors}
@@ -1300,84 +1439,66 @@ export function PlanRoute() {
           demonstration only.
         </div>
       )}
+      {saveMessage && (
+        <div
+          className={`notice notice--top${saveMessage === deletedWorkspaceMessage ? ' notice--toast' : ''}`}
+          data-visible={
+            saveMessage === deletedWorkspaceMessage
+              ? deletionToastVisible
+              : undefined
+          }
+          role="status"
+        >
+          {saveMessage}
+        </div>
+      )}
       <div
         className={`plan-main${routeState?.animate ? ' journey-view--enter' : ''}`}
       >
-        {saveMessage && (
-          <p className="notice notice--top" role="alert">
-            {saveMessage}
-          </p>
-        )}
         {(savedWorkspace.kind === 'invalid' ||
           savedWorkspace.kind === 'unavailable') &&
         !transient ? (
           <SavedDataState
             savedWorkspace={savedWorkspace}
-            onDelete={deleteSaved}
+            onDelete={() => setDeletePrompt(true)}
           />
         ) : (
           content
         )}
-        {supported &&
-          !isExample &&
-          savedWorkspace.kind === 'absent' &&
-          !saved &&
-          !savePrompt &&
-          !saveDismissed &&
-          !saveMessage && (
-            <button
-              className="text-button save-link"
-              type="button"
-              onClick={() => setSavePrompt(true)}
-            >
-              Save this workspace on this device
-            </button>
-          )}
-        {supported &&
-          !isExample &&
-          savedWorkspace.kind === 'absent' &&
-          !saved &&
-          savePrompt && (
-            <SaveNotice
-              onSave={saveCurrent}
-              onContinue={() => {
-                markSaveDismissed()
-                setSavePrompt(false)
-                setSaveDismissed(true)
-              }}
-            />
-          )}
         {saved && (
           <div className="workspace-controls">
-            <p className="saved-state" role="status">
-              Saved on this device. Re-evaluated against current Rules.
-            </p>
-            <div className="button-row">
-              {supported && hasUnsavedSavedProfile && (
+            {deletePrompt ? (
+              <DeleteNotice
+                onDelete={deleteSaved}
+                onCancel={() => setDeletePrompt(false)}
+              />
+            ) : (
+              <div className="button-row">
+                {supported && hasUnsavedSavedProfile && (
+                  <button
+                    className="button button--primary"
+                    type="button"
+                    onClick={saveCurrent}
+                  >
+                    Save changes
+                  </button>
+                )}
                 <button
-                  className="button button--primary"
+                  className="button button--danger"
                   type="button"
-                  onClick={saveCurrent}
+                  onClick={() => setDeletePrompt(true)}
                 >
-                  Save changes
+                  Delete saved data
                 </button>
-              )}
-              <button
-                className="button button--secondary"
-                type="button"
-                onClick={() => review('review')}
-              >
-                Review answers
-              </button>
-              <button
-                className="text-button"
-                type="button"
-                onClick={deleteSaved}
-              >
-                Stop saving
-              </button>
-            </div>
+              </div>
+            )}
           </div>
+        )}
+        {deletePrompt && !saved && (
+          <DeleteNotice
+            onDelete={deleteSaved}
+            onCancel={() => setDeletePrompt(false)}
+          />
         )}
         {!supported && saved && (
           <NeedsReview
@@ -1403,7 +1524,7 @@ export function PlanRoute() {
             type="button"
             onClick={startOver}
           >
-            Start a new estimate
+            Start over
           </button>
         }
         disabledSteps={[]}

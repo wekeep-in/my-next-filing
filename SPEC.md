@@ -34,7 +34,7 @@ The first successor release must ship one complete loop:
 
 1. A supported Solo freelancer enters or revises a Profile.
 2. Evaluation returns the supported income-tax estimate, area Coverage, Review actions, and dated Obligations.
-3. The user can continue without saving or explicitly save on the current device.
+3. The user can continue without saving or explicitly save in the current browser.
 4. A later visit restores the saved Profile, revalidates it, re-runs Evaluation against current Rules, and shows what remains.
 5. The user can create, change, and undo a Completion record.
 6. The user can delete saved data and return to the new-user state.
@@ -293,9 +293,9 @@ Saving is optional and starts off. Offer it only after a complete Profile parses
 
 Before the first write, show this standalone notice, subject to qualified privacy review:
 
-> Save this profile and the filing completions you mark in this browser. Anyone using this browser profile may be able to see them. There is no account, sync, backup, or recovery. Private browsing or clearing site data may remove them.
+> Save your answers and the completion dates you add. Anyone using this browser profile may be able to see them. There is no account, sync, backup, or recovery. Private browsing or clearing site data may remove them.
 
-Actions are `Save on this device` and `Continue without saving`. The landing-page FAQ explains saved-data behavior. The user must confirm they are eighteen or older. Rejection does not impair the journey and does not trigger another prompt in the same unsaved session.
+Actions are `Save data` and `Cancel`. The landing-page FAQ explains saved-data behavior. The questionnaire confirms the user is eighteen or older before a supported result can be saved. Canceling the notice leaves the save action available in the same unsaved session.
 
 The one stable key is `my-next-filing:workspace`. Its version-1 envelope contains only:
 
@@ -328,25 +328,25 @@ A quota, security, private-mode, serialization, write, or removal failure preser
 
 The user may start a separate unsaved estimate while invalid saved data remains. That estimate cannot overwrite the invalid value.
 
-Retain the workspace until the user deletes it or the browser clears or evicts it. State that this is best effort, not a statutory record-keeping system. `Stop saving` withdraws the storage choice by deleting the complete workspace because the Application has no second purpose for retaining it.
+Retain the workspace until the user deletes it or the browser clears or evicts it. State that this is best effort, not a statutory record-keeping system. `Delete saved data` withdraws the storage choice by deleting the complete workspace because the Application has no second purpose for retaining it.
 
 Deletion removes only `my-next-filing:workspace`. It never calls `localStorage.clear()`. On confirmed success, show:
 
-> Removed My Next Filing's saved profile and completion records from this browser.
+> Your saved answers and completion dates were removed from this browser.
 
 ## Completion records
 
 A Completion record stores exactly one composite Obligation identity and one valid `completedOn` India date no later than today. Absence means not marked complete. It stores no note, amount, acknowledgement, portal status, document, URL, evidence, or payment reference.
 
-Only a current Obligation can create a record. The confirmation shows a calendar date selector defaulted to today's India date. Display:
+Only a current Obligation can create a record. When the next action can be completed, its main card shows a calendar date selector defaulted to today's India date and a secondary `Mark completed` action. Other agenda items use `Add completion date` to open the same controls. After saving, the `Completed` status exposes on hover and keyboard focus:
 
-> Marked complete by you. My Next Filing has not verified government acceptance.
+> You marked this complete on [date]. My Next Filing cannot verify government acceptance.
 
 The later conditional QRMP payment-review action uses `Marked reviewed by you` with the same non-verification statement.
 
-Changing the date replaces the record. Undo deletes it. Neither action changes the Profile, tax arithmetic, applicability, amount, due date, or Source.
+Changing the date replaces the record. `Remove completion` deletes it. Neither action changes the Profile, tax arithmetic, applicability, amount, due date, or Source.
 
-Advance tax cannot be marked complete while its estimated remaining amount is positive. The primary action is `Update payment`. The user updates total advance tax already paid, Evaluation runs again, and completion becomes available only when the remaining estimate is zero.
+Advance tax cannot be marked complete while its estimated remaining amount is positive. The primary action is `Update amount paid`. The user updates total advance tax already paid, Evaluation runs again, and completion becomes available only when the remaining estimate is zero.
 
 A record matches by composite identity, never title, order, date, or copy. A changed due date or Source retains the match. Changed applicability, period, cadence, or a positive advance-tax balance preserves the record as Needs review and returns the current Obligation to what remains. Needs review is derived, not stored.
 
@@ -407,9 +407,9 @@ The selected workspace design is the focused timeline:
 - desktop uses a compact Tax Year rail; and
 - mobile puts a one-line Tax Year control near the header and the main action before full year management.
 
-`Review answers` opens the grouped summary. Contextual Coverage and Needs-review links open the affected group. Unsupported keeps in-memory answers and identifies the correction group. It offers no save action or approximate result.
+`Back` opens the grouped summary. Contextual Coverage and Needs-review links open the affected group. Unsupported keeps in-memory answers and identifies the correction group. It offers no save action or approximate result.
 
-Stale core Rules preserve saved data, replace the main card with `Rules need review`, withhold affected calculation and dated agenda items, link fixed official Sources, and keep the saved-data FAQ and deletion controls reachable.
+Stale core Rules preserve saved data, replace the main card with `Plan unavailable`, withhold affected calculation and dated agenda items, link fixed official Sources, and keep the saved-data FAQ and deletion controls reachable.
 
 ## Routes and presentation
 

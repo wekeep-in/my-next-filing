@@ -5,7 +5,6 @@ type CurrentCheck = {
   readonly example: boolean
   readonly complete: boolean
   readonly saved: boolean
-  readonly saveDismissed: boolean
 }
 
 let currentCheck: CurrentCheck | null = null
@@ -19,13 +18,8 @@ export function setCurrentCheck(
   example: boolean,
   complete: boolean,
   saved = false,
-  saveDismissed = false,
 ) {
-  currentCheck = { profile, example, complete, saved, saveDismissed }
-}
-
-export function markSaveDismissed() {
-  if (currentCheck) currentCheck = { ...currentCheck, saveDismissed: true }
+  currentCheck = { profile, example, complete, saved }
 }
 
 export function clearCurrentCheck() {

@@ -1771,13 +1771,7 @@ export function CheckRoute() {
       setMotion(animate ? 'error' : 'none')
       return
     }
-    setCurrentCheck(
-      parsed.profile,
-      usingExample,
-      true,
-      editingSaved,
-      currentCheck?.saveDismissed ?? false,
-    )
+    setCurrentCheck(parsed.profile, usingExample, true, editingSaved)
     const button = event.currentTarget.getBoundingClientRect()
     navigate('/plan', {
       state: animate

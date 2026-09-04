@@ -506,6 +506,11 @@ main {
   color: var(--ink);
 }
 
+.button--danger {
+  background: var(--danger);
+  color: var(--paper);
+}
+
 @media (hover: hover) and (pointer: fine) {
   .button--primary:hover {
     background: var(--accent-hover);
@@ -514,6 +519,10 @@ main {
   .button--secondary:hover {
     border-color: #aba69d;
     background: #fdfcfb;
+  }
+
+  .button--danger:hover {
+    background: #912018;
   }
 
   .journey-step-link:not(:disabled):hover {
@@ -526,6 +535,10 @@ main {
   background: var(--paper);
   border: 1px solid var(--line);
   border-radius: var(--radius);
+}
+
+.result-card :is(h1, h2, h3) {
+  line-height: 1.25;
 }
 
 .journey-layout {
@@ -559,6 +572,10 @@ main {
   min-width: 0;
 }
 
+.plan-main {
+  --plan-section-gap: 2.8rem;
+}
+
 :is(.questionnaire-main, .plan-main) :is(p, li) {
   font-size: var(--journey-copy-size);
 }
@@ -584,7 +601,8 @@ main {
   }
 }
 
-.question-group h1 {
+.question-group h1,
+.plan-main .question-heading h1 {
   font-size: clamp(2rem, 3vw, 3.5rem);
 }
 
@@ -758,9 +776,11 @@ legend {
 }
 
 .notice {
-  border-left: 0.3rem solid #8c8272;
+  border: 1px solid var(--warning-line);
+  border-radius: var(--control-radius);
   padding: 0.75rem 0.9rem;
-  background: #eeeae2;
+  color: var(--warning-text);
+  background: var(--warning-surface);
   font-size: 0.9rem;
 }
 
@@ -781,11 +801,45 @@ legend {
   position: relative;
 }
 
+.journey-layout > .notice--top.notice--toast {
+  position: fixed;
+  z-index: 300;
+  inset: 0 0 auto;
+  width: 100%;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  padding-top: calc(0.7rem + env(safe-area-inset-top));
+  color: var(--paper);
+  background: var(--warning-text);
+  opacity: 0;
+  transform: translateY(-100%);
+  transition:
+    transform 180ms var(--ease-out),
+    opacity 140ms var(--ease-out);
+}
+
+.journey-layout > .notice--top.notice--toast[data-visible='true'] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@starting-style {
+  .journey-layout > .notice--top.notice--toast[data-visible='true'] {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+}
+
 .notice--example {
   border-color: var(--accent);
   color: var(--paper);
   background: var(--accent);
   font-weight: 700;
+}
+
+.plan-main > .notice:not(.notice--top) {
+  margin-top: 1rem;
 }
 
 .result-card {
@@ -838,6 +892,43 @@ legend {
 .status--deadline-passed {
   color: #9b1c1c;
   background: #fee4e2;
+}
+
+.status--completed {
+  color: var(--paper);
+  background: var(--accent);
+  cursor: help;
+}
+
+.completion-status {
+  position: relative;
+  display: inline-flex;
+}
+
+.completion-tooltip {
+  position: absolute;
+  z-index: 2;
+  bottom: calc(100% + 0.5rem);
+  left: 50%;
+  width: max-content;
+  max-width: min(20rem, calc(100vw - 3rem));
+  border-radius: 0.5rem;
+  padding: 0.55rem 0.7rem;
+  color: var(--paper);
+  background: var(--ink);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%);
+  visibility: hidden;
+}
+
+.completion-status:hover .completion-tooltip,
+.completion-status:focus-within .completion-tooltip {
+  opacity: 1;
+  visibility: visible;
 }
 
 details {
@@ -898,17 +989,18 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   font-weight: 750;
 }
 
+.source-list,
+.calculation-details {
+  font-size: 0.875rem;
+}
+
 .source-reference {
-  margin: 1rem 0 0;
+  margin: 0.7rem 0 0;
   font-size: 0.8rem;
 }
 
-.source-reference strong {
-  color: var(--ink);
-}
-
 .agenda {
-  margin-top: 2.8rem;
+  margin-top: var(--plan-section-gap);
 }
 
 .agenda h2 {
@@ -922,6 +1014,10 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   border-top: 0;
   border-bottom: 1px solid var(--line);
   padding: 1.25rem 0;
+}
+
+.agenda-item:last-child {
+  border-bottom: 0;
 }
 
 .agenda-date {
@@ -956,6 +1052,10 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
 
 .assumptions {
   margin-top: 2rem;
+}
+
+.assumptions + .assumptions {
+  margin-top: 0.75rem;
 }
 
 .assumptions > ul {
@@ -1189,8 +1289,7 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   gap: 0.7rem;
 }
 
-.share-result,
-.saved-state {
+.share-result {
   color: var(--accent-text);
   font-weight: 800;
 }
@@ -1204,6 +1303,14 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
 
 .question-heading {
   max-width: 46rem;
+}
+
+.plan-main > .question-heading {
+  margin-bottom: 2rem;
+}
+
+.plan-main > .question-heading > :last-child {
+  margin-bottom: 0;
 }
 
 .question-heading h1 {
@@ -1390,6 +1497,27 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   gap: 1rem;
   line-height: 1.1;
   text-align: left;
+}
+
+.date-picker-trigger-copy {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 0.65rem;
+}
+
+.date-picker-trigger-label {
+  flex: 0 0 auto;
+  color: var(--ink);
+  font-size: inherit;
+  font-weight: 800;
+}
+
+.date-picker-trigger-value {
+  overflow: hidden;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .custom-select-trigger::after,
@@ -1604,9 +1732,8 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   box-shadow: 0 1rem 2.5rem rgb(var(--ink-rgb) / 0.08);
 }
 
-.attention-card h1 {
-  margin-bottom: 0.25rem;
-  font-size: clamp(1.7rem, 3vw, 2.5rem);
+.attention-card h2 {
+  margin: 0 0 0.25rem;
 }
 
 .card-kicker,
@@ -1623,6 +1750,15 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   margin-bottom: 0.8rem;
 }
 
+.attention-card .attention-meta {
+  justify-content: space-between;
+  margin-top: 1rem;
+}
+
+.attention-card > .button {
+  margin-top: 1rem;
+}
+
 .amount-callout {
   color: var(--ink);
   font-size: 1.1rem;
@@ -1634,20 +1770,23 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   padding-left: 0.8rem;
 }
 
-.completion-state p,
-.completion-note {
+.completion-state p {
   color: var(--accent-text);
 }
 
 .plan-summary {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-  margin-top: 1rem;
+  gap: 1.25rem;
+  margin-top: 1.25rem;
 }
 
 .plan-summary .result-card {
   min-width: 0;
+}
+
+.plan-summary:has(> :only-child) {
+  grid-template-columns: 1fr;
 }
 
 .tax-summary h2 {
@@ -1655,8 +1794,9 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   font-size: 1.728rem;
 }
 
-.tax-summary details {
-  border-top: 0;
+.tax-summary .calculation-details + .source-list {
+  margin-top: 0.7rem;
+  padding-top: 0.7rem;
 }
 
 .coverage-card h2 {
@@ -1687,14 +1827,6 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
 
 .agenda-list {
   border-top: 1px solid var(--line);
-}
-
-.agenda-item--complete {
-  background: linear-gradient(
-    90deg,
-    rgb(var(--accent-rgb) / 0.055),
-    transparent 45%
-  );
 }
 
 .agenda-heading h3 {
@@ -1798,11 +1930,58 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
 }
 
 .save-notice {
-  margin-top: 1.5rem;
-  border-color: var(--success-line);
+  margin-top: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 180ms var(--ease-out),
+    transform 180ms var(--ease-out);
+
+  @starting-style {
+    opacity: 0;
+    transform: translateY(0.35rem);
+  }
 }
 
-.save-notice h2 {
+.attention-action {
+  margin-top: 1rem;
+  border-top: 1px solid var(--line);
+  padding: 1rem 0 0;
+}
+
+.attention-action .inline-editor {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.delete-notice {
+  margin-top: 1.5rem;
+  border-color: #f3b5af;
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 180ms var(--ease-out),
+    transform 180ms var(--ease-out);
+
+  @starting-style {
+    opacity: 0;
+    transform: translateY(0.35rem);
+  }
+}
+
+.delete-notice h2 {
+  margin-top: 0;
+}
+
+.workspace-controls > .delete-notice {
+  width: 100%;
   margin-top: 0;
 }
 
@@ -1810,20 +1989,14 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   margin-top: 1rem;
 }
 
-.save-link {
-  display: inline-block;
-  margin-top: 1.3rem;
+.save-notice .text-button {
+  font-size: inherit;
 }
 
 .workspace-controls {
-  justify-content: space-between;
-  margin-top: 1.4rem;
-  border-top: 1px solid var(--line);
-  padding-top: 1rem;
-}
-
-.workspace-controls p {
-  margin: 0;
+  align-items: flex-start;
+  flex-direction: column;
+  margin-top: var(--plan-section-gap);
 }
 
 .inline-editor {
@@ -1836,6 +2009,24 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   margin: 1rem 0 0.45rem;
 }
 
+.completion-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 24rem);
+  gap: 1rem;
+}
+
+.completion-controls :is(.date-picker-trigger, .button) {
+  height: 3rem;
+}
+
+.inline-editor .completion-field label {
+  margin-top: 0;
+}
+
+.inline-editor .completion-controls .button-row {
+  margin: 0;
+}
+
 .inline-editor .money-input,
 .inline-editor .date-picker {
   max-width: 24rem;
@@ -1843,6 +2034,15 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
 
 .inline-editor .button-row {
   margin-top: 1rem;
+}
+
+.inline-editor--embedded {
+  margin-top: 1rem;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  padding: 1rem 0 0;
+  background: transparent;
 }
 
 @media (max-width: 860px) {
@@ -1931,6 +2131,10 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
     flex-direction: column;
   }
 
+  .completion-controls {
+    grid-template-columns: 1fr;
+  }
+
   .needs-review-item {
     display: block;
   }
@@ -1981,6 +2185,28 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   .choice-card:active,
   .text-button:active:not(:focus-visible) {
     transform: none;
+  }
+
+  .save-notice,
+  .delete-notice {
+    transform: none;
+    transition-property: opacity;
+  }
+
+  .journey-layout > .notice--top.notice--toast {
+    transform: none;
+    transition-property: opacity;
+  }
+
+  @starting-style {
+    .save-notice,
+    .delete-notice {
+      transform: none;
+    }
+
+    .journey-layout > .notice--top.notice--toast[data-visible='true'] {
+      transform: none;
+    }
   }
 }
 

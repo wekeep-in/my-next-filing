@@ -65,7 +65,7 @@ export function JourneySidebar({
   return (
     <aside
       className={`journey-sidebar ${className}`.trim()}
-      aria-label="Questionnaire overview"
+      aria-label="Journey overview"
     >
       <div className="journey-panel">
         <nav className="journey-nav" aria-label="Journey steps">
