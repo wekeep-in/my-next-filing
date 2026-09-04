@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import type { ReactNode } from 'react'
+import { cn } from 'cn'
 import { Outlet, createBrowserRouter, useLocation } from 'react-router-dom'
+import { ExternalLink } from './components/external-link.tsx'
 import { WORKSPACE_KEY, loadSavedWorkspace } from './workspace/index.ts'
 import type { LoadSavedWorkspaceResult } from './workspace/index.ts'
 import { CheckRoute } from './routes/check'
@@ -26,39 +27,6 @@ function loadBrowserWorkspace(): LoadSavedWorkspaceResult {
   return storage
     ? loadSavedWorkspace(storage)
     : { kind: 'unavailable', reason: 'storage-unavailable' }
-}
-
-export function formatMoney(amount: number) {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
-
-export function formatDate(date: string) {
-  return new Intl.DateTimeFormat('en-IN', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    timeZone: 'Asia/Kolkata',
-  }).format(new Date(`${date}T00:00:00+05:30`))
-}
-
-export function ExternalLink({
-  href,
-  children,
-}: {
-  readonly href: string
-  readonly children: ReactNode
-}) {
-  return (
-    <a href={href} target="_blank" rel="noopener noreferrer">
-      {children}
-      <span aria-hidden="true"> ↗</span>
-      <span className="visually-hidden"> opens in a new tab</span>
-    </a>
-  )
 }
 
 function AppFrame() {
@@ -97,7 +65,11 @@ function AppFrame() {
 
   return (
     <div
-      className={`app${isJourney ? ' app--journey' : ''}${isLanding ? ' app--landing' : ''}`}
+      className={cn(
+        'flex min-h-svh flex-col',
+        isJourney && 'app--journey',
+        isLanding && 'app--landing',
+      )}
     >
       <main>
         <Outlet context={{ savedWorkspace, refreshSavedWorkspace }} />

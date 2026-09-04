@@ -422,7 +422,7 @@ Keep these routes:
 
 Selected Tax Year, Profile values, amounts, Evaluation state, Completion state, and save state remain in memory or the one workspace value. They do not enter routes, queries, fragments, titles, logs, clipboard content, Analytics, or external links.
 
-Preserve the current visual language: Fraunces headings, Inter body text, warm neutral ground, dark ink, green accent, compact rounded cards, one primary action, and chronological information. Reuse the current components and CSS. Do not add shadcn/ui or another component system.
+Preserve the current visual language: Fraunces headings, Inter body text, warm neutral ground, dark ink, green accent, compact rounded cards, one primary action, and chronological information. Follow `DESIGN.md`; use its semantic Tailwind tokens and the source-owned shadcn components backed by Base UI where applicable. Generated defaults must be curated to this visual language before use.
 
 Use restrained CSS transitions for press, hover, disclosure, and short content entry. Respect reduced motion. A successful plan transition may show brief confetti feedback, but do not animate money, urgency, or Deadline status.
 

@@ -1,5 +1,8 @@
 import type { ReactNode } from 'react'
+import { cn } from 'cn'
 import { Link } from 'react-router-dom'
+import { Button } from './ui/button.tsx'
+import { Card } from './ui/card.tsx'
 
 export const questionnaireSteps = [
   'You and your practice',
@@ -27,12 +30,17 @@ function JourneySteps({
     <ol className="journey-list">
       {journeySteps.map((label, index) => (
         <li
-          className={`journey-step${index === activeStep ? ' is-current' : ''}${index < activeStep ? ' is-complete' : ''}`}
+          className={cn(
+            'journey-step',
+            index === activeStep && 'is-current',
+            index < activeStep && 'is-complete',
+          )}
           key={label}
           aria-current={index === activeStep ? 'step' : undefined}
         >
-          <button
-            className="journey-step-link"
+          <Button
+            className="journey-step-link whitespace-normal active:not-focus-visible:scale-100"
+            variant="ghost"
             type="button"
             disabled={disabledSteps.includes(index)}
             aria-label={`${index + 1}. ${label}`}
@@ -40,7 +48,7 @@ function JourneySteps({
           >
             <span className="journey-number">{index + 1}</span>
             <span className="journey-label">{label}</span>
-          </button>
+          </Button>
         </li>
       ))}
     </ol>
@@ -64,10 +72,10 @@ export function JourneySidebar({
 }) {
   return (
     <aside
-      className={`journey-sidebar ${className}`.trim()}
+      className={cn('journey-sidebar', className)}
       aria-label="Journey overview"
     >
-      <div className="journey-panel">
+      <Card className="journey-panel">
         <nav className="journey-nav" aria-label="Journey steps">
           <JourneySteps
             activeStep={activeStep}
@@ -79,9 +87,10 @@ export function JourneySidebar({
           {backAction}
           {action}
         </div>
-      </div>
+      </Card>
       <p className="journey-note">
-        Questions? <Link to="/#faqs">Read the FAQs</Link>.
+        Questions? <Link to="/#faqs">Read the FAQs</Link>
+        {'.'}
       </p>
     </aside>
   )

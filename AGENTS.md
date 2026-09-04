@@ -4,6 +4,8 @@ My Next Filing is a static React application for supported resident-individual S
 
 `SPEC.md` defines the product behavior and scope. It includes the optional current-browser Saved workspace and user-declared Completion records. Read the relevant section before changing behavior.
 
+`DESIGN.md` defines the visual system. Read it before changing interface layout, styling, typography, color, motion, or components.
+
 Keep Profile and money values in the browser. Do not put them in URLs, titles, logs, Analytics events, sharing, or external links. Keep statutory Rules local, typed, sourced, and expiry-bound. An invalid or stale dataset must stop calculation or withhold only its independent area.
 
 ## Agent skills

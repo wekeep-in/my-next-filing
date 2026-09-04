@@ -1,0 +1,114 @@
+import type { Activity, TriState } from '../../evaluation/index.ts'
+import { CheckHeading, ChoiceField, SelectField } from './fields.tsx'
+import type { Draft, DraftPath, PatchDraft } from './model.ts'
+import { activityOptions } from './model.ts'
+
+export function ActivityStep({
+  className,
+  draft,
+  errors,
+  patchDraft,
+}: {
+  readonly className: string
+  readonly draft: Draft
+  readonly errors: Record<string, string>
+  readonly patchDraft: PatchDraft
+}) {
+  return (
+    <div className={className}>
+      <CheckHeading
+        title="Tell us about your work"
+        description="Choose the option that best describes your work. Then tell us which tax method you use."
+      />
+      <SelectField
+        id="activity"
+        label="Which option best describes your work?"
+        value={draft.activity}
+        error={errors.activity}
+        onChange={(value) => patchDraft({ activity: value as Activity })}
+        options={activityOptions}
+      />
+      {draft.activity === 'not-sure' && (
+        <p className="field-help" role="status">
+          Not sure stops the estimate. Choose a specific option if you can
+          confirm one.
+        </p>
+      )}
+      <ChoiceField
+        id="path"
+        label="Which tax method do you use for this work?"
+        help="Choose the method in your records or the one confirmed by your tax adviser. We cannot estimate your tax without a confirmed method."
+        options={['specified-profession', 'eligible-business']}
+        value={draft.path}
+        error={errors.path}
+        onChange={(value) =>
+          patchDraft({ path: value as DraftPath, pathConfirmed: '' })
+        }
+      />
+      {draft.path && (
+        <ChoiceField
+          id="pathConfirmed"
+          label={
+            draft.path === 'eligible-business'
+              ? 'Is your whole practice an eligible business?'
+              : 'Is your whole practice a specified profession?'
+          }
+          help="Choose Yes only if this matches your records or professional advice."
+          value={draft.pathConfirmed}
+          error={errors.pathConfirmed}
+          onChange={(value) => patchDraft({ pathConfirmed: value as TriState })}
+        />
+      )}
+      {draft.path === 'eligible-business' && (
+        <div className="field-stack path-follow-up">
+          <ChoiceField
+            id="notGoodsCarriage"
+            label="Does your practice provide services rather than transport goods?"
+            value={draft.notGoodsCarriage}
+            unsupportedOptions={['no']}
+            error={errors.notGoodsCarriage}
+            onChange={(value) =>
+              patchDraft({ notGoodsCarriage: value as TriState })
+            }
+          />
+          <ChoiceField
+            id="notAgencyCommissionBrokerage"
+            label="Do you provide services on your own account, rather than as an agent, commission earner, or broker?"
+            value={draft.notAgencyCommissionBrokerage}
+            unsupportedOptions={['no']}
+            error={errors.notAgencyCommissionBrokerage}
+            onChange={(value) =>
+              patchDraft({
+                notAgencyCommissionBrokerage: value as TriState,
+              })
+            }
+          />
+          <ChoiceField
+            id="noChapterViiiCDeduction"
+            label="Are you claiming no Chapter VIII-C deduction?"
+            value={draft.noChapterViiiCDeduction}
+            unsupportedOptions={['no']}
+            error={errors.noChapterViiiCDeduction}
+            onChange={(value) =>
+              patchDraft({ noChapterViiiCDeduction: value as TriState })
+            }
+          />
+          <ChoiceField
+            id="fiveYearExclusion"
+            label="Does the five-year exclusion apply to this method?"
+            help="This checks whether an earlier use of this method affects you now. Choose Not sure if you need to review earlier years."
+            options={['none', 'applies', 'not-sure']}
+            value={draft.fiveYearExclusion}
+            unsupportedOptions={['applies']}
+            error={errors.fiveYearExclusion}
+            onChange={(value) =>
+              patchDraft({
+                fiveYearExclusion: value as Draft['fiveYearExclusion'],
+              })
+            }
+          />
+        </div>
+      )}
+    </div>
+  )
+}

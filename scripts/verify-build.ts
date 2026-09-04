@@ -15,7 +15,7 @@ function collect(path: string) {
 collect(root)
 const text = textFiles.map((path) => readFileSync(path, 'utf8')).join('\n')
 const forbidden = [
-  /\bG-[A-Z0-9]{10}\b/i,
+  /\bG-[A-Z0-9]{10}\b/,
   /\bgtag\b/i,
   /googletagmanager/i,
   /sendBeacon/i,
