@@ -162,6 +162,51 @@ const statesAndUnionTerritories = [
   'West Bengal',
 ] as const
 
+const activityOptions = [
+  { value: 'software-development', label: 'Software development or IT' },
+  { value: 'technical-consultancy', label: 'Technical consultancy' },
+  { value: 'design', label: 'Design' },
+  { value: 'writing-content', label: 'Writing or content' },
+  { value: 'marketing-advertising', label: 'Marketing or advertising' },
+  { value: 'other-digital-service', label: 'Another digital service' },
+  { value: 'not-sure', label: 'Not sure' },
+] as const
+
+const optionLabels: Readonly<Record<string, string>> = {
+  yes: 'Yes',
+  no: 'No',
+  'not-sure': 'Not sure',
+  individual: 'Individual',
+  'not-individual': 'Not an individual',
+  'resident-ordinarily-resident': 'Resident and ordinarily resident',
+  'resident-not-ordinarily-resident': 'Resident but not ordinarily resident',
+  'non-resident': 'Non-resident',
+  none: 'None / does not apply',
+  possible: 'Possible exposure',
+  'one-normal': 'One active GSTIN as a normal taxpayer',
+  other: 'Something else',
+  selected: 'Yes, I selected them',
+  'not-applicable': 'Not applicable',
+  known: 'Known',
+  incidental: 'Incidental domestic contractor',
+  'incidental-domestic': 'Incidental domestic contractor',
+  'convertible-foreign-exchange': 'Convertible foreign exchange',
+  'rbi-permitted-rupee': 'RBI-permitted rupee route',
+  new: 'New tax regime',
+  old: 'Old tax regime',
+  domestic: 'Domestic clients only',
+  foreign: 'Foreign clients only',
+  mixed: 'Domestic and foreign clients',
+  direct: 'Direct clients',
+  platform: 'Platform-mediated work',
+  unregistered: 'No',
+  registered: 'Yes',
+  applies: 'It applies',
+  'specified-profession': 'Specified professional path',
+  'eligible-business': 'Eligible business path',
+  'other-digital-service': 'Another digital service',
+}
+
 const unsupportedFactLabels: Record<UnsupportedFact, string> = {
   salary: 'Salary income',
   houseProperty: 'House-property income',
@@ -500,40 +545,6 @@ function ChoiceField({
   readonly error?: string
   readonly onChange: (value: string) => void
 }) {
-  const optionLabels: Record<string, string> = {
-    yes: 'Yes',
-    no: 'No',
-    'not-sure': 'Not sure',
-    individual: 'Individual',
-    'not-individual': 'Not an individual',
-    'resident-ordinarily-resident': 'Resident and ordinarily resident',
-    'resident-not-ordinarily-resident': 'Resident but not ordinarily resident',
-    'non-resident': 'Non-resident',
-    none: 'None / does not apply',
-    possible: 'Possible exposure',
-    'one-normal': 'One active GSTIN as a normal taxpayer',
-    other: 'Something else',
-    selected: 'Yes, I selected them',
-    'not-applicable': 'Not applicable',
-    known: 'Known',
-    incidental: 'Incidental domestic contractor',
-    'incidental-domestic': 'Incidental domestic contractor',
-    'convertible-foreign-exchange': 'Convertible foreign exchange',
-    'rbi-permitted-rupee': 'RBI-permitted rupee route',
-    new: 'New tax regime',
-    old: 'Old tax regime',
-    domestic: 'Domestic clients only',
-    foreign: 'Foreign clients only',
-    mixed: 'Domestic and foreign clients',
-    direct: 'Direct clients',
-    platform: 'Platform-mediated work',
-    unregistered: 'No',
-    registered: 'Yes',
-    applies: 'It applies',
-    'specified-profession': 'Specified professional path',
-    'eligible-business': 'Eligible business path',
-    'other-digital-service': 'Another digital service',
-  }
   const describedBy = [help ? `${id}-help` : '', error ? `${id}-error` : '']
     .filter(Boolean)
     .join(' ')
@@ -1094,78 +1105,353 @@ function GroupSummary({
   readonly draft: Draft
   readonly onEdit: (step: number) => void
 }) {
-  const pathLabel =
-    draft.path === 'eligible-business'
-      ? 'Eligible business'
-      : draft.path === 'specified-profession'
-        ? 'Specified profession'
-        : 'Not selected'
-  const clientLabel = {
-    '': 'Client location not selected',
-    domestic: 'Domestic clients only',
-    foreign: 'Foreign clients only',
-    mixed: 'Domestic and foreign clients',
-    'not-sure': 'Client location not confirmed',
-  }[draft.clientKind]
-  const deliveryLabel = {
-    '': 'Work arrangement not selected',
-    direct: 'Directly',
-    platform: 'Through a platform',
-    both: 'Directly and through a platform',
-    'not-sure': 'Work arrangement not confirmed',
-  }[draft.delivery]
-  const gstLabel =
-    draft.gstKind === 'unregistered'
-      ? 'Never had a GSTIN'
-      : draft.gstKind === 'registered'
-        ? draft.gstStatus === 'one-normal'
-          ? 'One active GSTIN as a normal taxpayer'
-          : draft.gstStatus === 'other'
-            ? 'Another GST registration situation'
-            : 'GST registration not confirmed'
-        : 'GST registration not confirmed'
+  const answer = (
+    value: string,
+    labels: Readonly<Record<string, string>> = {},
+  ) => labels[value] ?? optionLabels[value] ?? (value || 'Not answered')
+  const money = (value: string) => {
+    const parsed = parseMoney(value)
+    return 'value' in parsed
+      ? `₹${parsed.value.toLocaleString('en-IN')}`
+      : 'Not entered'
+  }
+  const date = (value: string) =>
+    value
+      ? new Intl.DateTimeFormat('en-IN', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+          timeZone: 'Asia/Kolkata',
+        }).format(new Date(`${value}T00:00:00+05:30`))
+      : 'Not entered'
+  const groups = [
+    {
+      title: 'You and your practice',
+      editLabel: 'Edit answers about you and your practice',
+      step: 0,
+      answers: [
+        { label: 'Person', value: answer(draft.personKind) },
+        { label: '18 or older', value: answer(draft.adult) },
+        { label: 'Residence status', value: answer(draft.residence) },
+        { label: 'Tax regime', value: answer(draft.taxRegime) },
+        {
+          label: 'One self-employed service practice',
+          value: answer(draft.onePractice),
+        },
+        {
+          label: 'Practice set up and managed in India',
+          value: answer(draft.setupInIndia),
+        },
+        {
+          label: 'All work performed in India',
+          value: answer(draft.workInIndia),
+        },
+        { label: 'Business partner', value: answer(draft.hasPartner) },
+        { label: 'Employees', value: answer(draft.hasEmployee) },
+        {
+          label: 'Business operation outside India',
+          value: answer(draft.hasForeignOperation),
+        },
+        {
+          label: 'Client-work subcontractor',
+          value: answer(draft.hasClientWorkSubcontractor),
+        },
+        ...(draft.hasClientWorkSubcontractor === 'no'
+          ? [
+              {
+                label: 'Support-only contractor in India',
+                value: answer(draft.contractorBoundary, {
+                  none: 'No',
+                  'incidental-domestic': 'Yes',
+                }),
+              },
+            ]
+          : []),
+      ],
+    },
+    {
+      title: 'Your work and tax method',
+      editLabel: 'Edit your work and tax method',
+      step: 1,
+      answers: [
+        {
+          label: 'Work type',
+          value:
+            activityOptions.find(({ value }) => value === draft.activity)
+              ?.label ?? 'Not answered',
+        },
+        { label: 'Tax method', value: answer(draft.path) },
+        { label: 'Method confirmed', value: answer(draft.pathConfirmed) },
+        ...(draft.path === 'eligible-business'
+          ? [
+              {
+                label: 'Services rather than goods transport',
+                value: answer(draft.notGoodsCarriage),
+              },
+              {
+                label: 'Working on your own account',
+                value: answer(draft.notAgencyCommissionBrokerage),
+              },
+              {
+                label: 'No Chapter VIII-C deduction',
+                value: answer(draft.noChapterViiiCDeduction),
+              },
+              {
+                label: 'Five-year exclusion',
+                value: answer(draft.fiveYearExclusion),
+              },
+            ]
+          : []),
+      ],
+    },
+    {
+      title: 'Receipts and profit',
+      editLabel: 'Edit receipts and profit',
+      step: 2,
+      answers: [
+        {
+          label:
+            draft.path === 'eligible-business'
+              ? 'Gross business receipts'
+              : 'Gross professional receipts',
+          value: money(draft.amounts.grossReceipts),
+        },
+        ...(draft.path === 'eligible-business'
+          ? [
+              {
+                label: 'Qualifying bank or online receipts',
+                value: money(draft.amounts.qualifyingReceipts),
+              },
+              {
+                label: 'All other business receipts',
+                value: money(draft.amounts.otherReceipts),
+              },
+            ]
+          : []),
+        {
+          label: 'Receipts paid in cash',
+          value: money(draft.amounts.cashReceipts),
+        },
+        {
+          label: 'Declared profit',
+          value: money(draft.amounts.declaredProfit),
+        },
+      ],
+    },
+    {
+      title: 'Clients and payments',
+      editLabel: 'Edit clients and payments',
+      step: 3,
+      answers: [
+        { label: 'Client location', value: answer(draft.clientKind) },
+        {
+          label: 'How you work with clients',
+          value: answer(draft.delivery, {
+            direct: 'Directly',
+            platform: 'Through a platform',
+            both: 'Directly and through a platform',
+          }),
+        },
+        ...(draft.delivery === 'platform' || draft.delivery === 'both'
+          ? [
+              {
+                label: 'Main service provided by you',
+                value: answer(draft.platformOwnAccount),
+              },
+              {
+                label: 'Contracting party identified',
+                value: answer(draft.platformRecipientIdentifiable),
+              },
+              {
+                label: 'Full client payment shown in records',
+                value: answer(draft.platformGrossBeforeFees),
+              },
+              {
+                label: 'Service-income character confirmed',
+                value: answer(draft.platformIncomeCharacter),
+              },
+              {
+                label: 'Foreign platform fee',
+                value: answer(draft.platformForeignFeeGstTreatment, {
+                  'not-applicable': 'No foreign platform fee',
+                  known: 'Yes, and its GST treatment is known',
+                }),
+              },
+              {
+                label: 'No reverse-charge GST on platform fee',
+                value: answer(draft.platformNoRecipientReverseCharge),
+              },
+            ]
+          : []),
+        ...(draft.clientKind === 'foreign' || draft.clientKind === 'mixed'
+          ? [
+              {
+                label: 'Foreign-client work performed from India',
+                value: answer(draft.foreignWorkInIndia),
+              },
+              {
+                label: 'Overseas contracting party identified',
+                value: answer(draft.foreignRecipientIdentifiable),
+              },
+              {
+                label: 'Main overseas service provided by you',
+                value: answer(draft.foreignOwnAccount),
+              },
+              {
+                label: 'Cross-border place-of-supply rule confirmed',
+                value: answer(draft.foreignPlaceOfSupply),
+              },
+              {
+                label: 'Same business or legal entity as overseas client',
+                value: answer(draft.foreignSameEstablishment),
+              },
+              {
+                label: 'Payment route',
+                value: answer(draft.foreignPaymentRoute),
+              },
+              {
+                label: 'Payments settle in your Indian bank account',
+                value: answer(draft.foreignSettledToIndianBank),
+              },
+              {
+                label: 'Foreign account or wallet exposure',
+                value: answer(draft.foreignAccountExposure, {
+                  none: 'No',
+                  possible: 'Yes or possibly',
+                }),
+              },
+              {
+                label: 'Business operation outside India',
+                value: answer(draft.foreignOperation),
+              },
+              {
+                label: 'Tax withheld outside India',
+                value: answer(draft.foreignTax),
+              },
+              {
+                label: 'Foreign-tax or treaty relief claimed',
+                value: answer(draft.foreignTreatyRelief),
+              },
+              {
+                label: 'Complete annual total in rupees',
+                value: answer(draft.foreignReceiptsResolved),
+              },
+              {
+                label:
+                  'Currency conversions and exchange-rate effects included',
+                value: answer(draft.foreignCurrencyResolved),
+              },
+            ]
+          : []),
+      ],
+    },
+    {
+      title: 'Other income and tax paid',
+      editLabel: 'Edit other income and tax paid',
+      step: 4,
+      answers: [
+        {
+          label: 'Taxable bank or deposit interest',
+          value: money(draft.amounts.taxableBankInterest),
+        },
+        { label: 'Indian TDS credit', value: money(draft.amounts.tds) },
+        { label: 'Indian TCS credit', value: money(draft.amounts.tcs) },
+        {
+          label: 'Advance tax already paid',
+          value: money(draft.amounts.advanceTaxPaid),
+        },
+        ...(creditTriggerMayApply(draft)
+          ? [
+              {
+                label: '60 or older during 2026-27',
+                value: answer(draft.ageSixtyOrOlder),
+              },
+            ]
+          : []),
+        {
+          label: 'Another income-tax return condition',
+          value: answer(draft.otherAnnualReturnTrigger),
+        },
+        {
+          label: 'Situations outside this version',
+          value:
+            draft.unsupportedCertainty === 'selected'
+              ? draft.unsupportedFacts
+                  .map((fact) => unsupportedFactLabels[fact])
+                  .join(', ')
+              : answer(draft.unsupportedCertainty, {
+                  none: 'None of these',
+                }),
+        },
+      ],
+    },
+    {
+      title: 'GST registration',
+      editLabel: 'Edit GST registration answers',
+      step: 5,
+      answers: [
+        { label: 'Ever had a GSTIN', value: answer(draft.gstKind) },
+        ...(draft.gstKind === 'registered'
+          ? [
+              {
+                label: 'GST registration',
+                value: answer(draft.gstStatus),
+              },
+              ...(draft.gstStatus === 'one-normal'
+                ? [{ label: 'GSTIN registered in', value: draft.gstState }]
+                : []),
+            ]
+          : []),
+        ...(draft.gstKind === 'unregistered'
+          ? [
+              {
+                label: 'Taxable supplies made from',
+                value: draft.gstState || 'Not answered',
+              },
+              {
+                label: 'GST aggregate turnover',
+                value: money(draft.amounts.aggregateTurnover),
+              },
+              {
+                label: 'Complete aggregate turnover',
+                value: answer(draft.turnoverComplete),
+              },
+              {
+                label: 'Another reason to register for GST',
+                value: answer(draft.compulsoryRegistration),
+              },
+              {
+                label: 'GST registration liability date',
+                value: date(draft.thresholdLiabilityDate),
+              },
+            ]
+          : []),
+      ],
+    },
+  ]
   return (
     <div className="review-list">
-      {[
-        [
-          'You and your practice',
-          `${draft.personKind || 'Person not selected'}; ${draft.residence || 'residence not selected'}; ${draft.taxRegime || 'tax regime not selected'}.`,
-          0,
-        ],
-        [
-          'Your work and tax method',
-          `${draft.activity || 'Activity not selected'}; ${pathLabel}.`,
-          1,
-        ],
-        [
-          'Receipts and profit',
-          `${draft.amounts.grossReceipts || 'No gross receipts'} gross receipts; ${draft.amounts.declaredProfit || 'no declared profit'} declared profit.`,
-          2,
-        ],
-        ['Clients and payments', `${clientLabel}; ${deliveryLabel}.`, 3],
-        [
-          'Other income and tax paid',
-          `${draft.amounts.taxableBankInterest || '0'} interest; ${draft.amounts.tds || '0'} TDS; ${draft.amounts.advanceTaxPaid || '0'} advance tax paid.`,
-          4,
-        ],
-        [
-          'GST registration',
-          `${gstLabel}${draft.gstState ? `; ${draft.gstState}` : ''}.`,
-          5,
-        ],
-      ].map(([title, text, step]) => (
-        <article key={title as string}>
-          <div>
+      {groups.map(({ title, editLabel, step, answers }) => (
+        <article key={title}>
+          <div className="review-card-header">
             <h2>{title}</h2>
-            <p>{text}</p>
+            <button
+              className="text-button"
+              type="button"
+              aria-label={editLabel}
+              onClick={() => onEdit(step)}
+            >
+              Edit
+            </button>
           </div>
-          <button
-            className="text-button"
-            type="button"
-            onClick={() => onEdit(step as number)}
-          >
-            Edit
-          </button>
+          <dl className="review-answers">
+            {answers.map(({ label, value }) => (
+              <div className="review-answer" key={label}>
+                <dt>{label}</dt>
+                <dd>{value}</dd>
+              </div>
+            ))}
+          </dl>
         </article>
       ))}
     </div>
@@ -1716,27 +2002,7 @@ export function CheckRoute() {
             value={draft.activity}
             error={errors.activity}
             onChange={(value) => patchDraft({ activity: value as Activity })}
-            options={[
-              {
-                value: 'software-development',
-                label: 'Software development or IT',
-              },
-              {
-                value: 'technical-consultancy',
-                label: 'Technical consultancy',
-              },
-              { value: 'design', label: 'Design' },
-              { value: 'writing-content', label: 'Writing or content' },
-              {
-                value: 'marketing-advertising',
-                label: 'Marketing or advertising',
-              },
-              {
-                value: 'other-digital-service',
-                label: 'Another digital service',
-              },
-              { value: 'not-sure', label: 'Not sure' },
-            ]}
+            options={activityOptions}
           />
           {draft.activity === 'not-sure' && (
             <p className="field-help" role="status">
@@ -2393,15 +2659,16 @@ export function CheckRoute() {
     return (
       <div className={questionGroupClassName} key={step}>
         <CheckHeading
-          title="Review before calculating"
-          description="Your answers stay in this tab until you choose what to do with the result."
+          title="Check your answers before calculating"
+          description="We'll use these answers to calculate your estimate and plan. Edit any section that isn't right."
         />
         <GroupSummary draft={draft} onEdit={(nextStep) => go(nextStep, true)} />
         <div className="review-boundary">
-          <h2>What My Next Filing does not collect</h2>
+          <h2>Details you haven't entered</h2>
           <p>
-            No name, client or platform identity, country, account number,
-            invoice, document, foreign-currency amount, or free text.
+            Your answers don't include your name, client or platform names,
+            countries, account numbers, invoices, documents, foreign-currency
+            amounts, or free text.
           </p>
         </div>
         <ErrorSummary errors={errors} />
