@@ -1405,7 +1405,7 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
 }
 
 .choice-card--unsupported input {
-  accent-color: var(--warning-text);
+  accent-color: var(--accent);
 }
 
 .choice-card input {
