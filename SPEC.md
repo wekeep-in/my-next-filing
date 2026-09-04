@@ -84,7 +84,7 @@ Every calculable Profile must confirm that the user:
 
 An incidental domestic contractor is allowed only when that contractor does not deliver the client work and creates no payroll, deductor, agency, second-business, or foreign-operation duty. Uncertainty about this boundary stops the calculation.
 
-The Profile supports domestic-only, foreign-only, and mixed clients. It supports direct and platform-mediated work only when the applicable client branch below succeeds.
+The Profile supports domestic-only, foreign-only, and mixed clients. It supports direct work, platform-mediated work, and a mix of both only when every applicable client branch below succeeds.
 
 ### Specified professional path
 
@@ -176,7 +176,7 @@ The groups are:
 1. Tax Year, adult/residence/new-regime facts, and one-practice boundary.
 2. Activity choice and explicit income-path confirmation.
 3. Gross receipts, declared profit, and the payment split required by that path.
-4. Domestic, foreign, or mixed clients, with platform and foreign follow-ups only when applicable.
+4. Domestic, foreign, or mixed clients; direct, platform-mediated, or both kinds of work; and platform and foreign follow-ups only when applicable.
 5. Supported other income and Indian credits.
 6. GST facts and the consolidated annual-return trigger confirmation.
 7. Review.

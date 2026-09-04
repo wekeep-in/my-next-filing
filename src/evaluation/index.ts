@@ -110,7 +110,7 @@ export type ForeignFacts = {
 
 export type ClientProfile = {
   readonly kind: 'domestic' | 'foreign' | 'mixed' | 'not-sure'
-  readonly delivery: 'direct' | 'platform' | 'not-sure'
+  readonly delivery: 'direct' | 'platform' | 'both' | 'not-sure'
   readonly platform: PlatformFacts | null
   readonly foreign: ForeignFacts | null
 }
@@ -980,7 +980,7 @@ export function parseProfile(value: unknown): ParseProfileResult {
     ? readText(
         clientsRecord,
         'delivery',
-        ['direct', 'platform', 'not-sure'],
+        ['direct', 'platform', 'both', 'not-sure'],
         'clients',
         'clients',
         errors,
@@ -1253,15 +1253,17 @@ export function parseProfile(value: unknown): ParseProfileResult {
       'receipts',
       'Cash receipts cannot exceed gross receipts.',
     )
-  if (clients.delivery === 'platform' && clients.platform === null)
+  const usesPlatform =
+    clients.delivery === 'platform' || clients.delivery === 'both'
+  if (usesPlatform && clients.platform === null)
     addError(
       errors,
       'inconsistent',
       'clients.platform',
       'clients',
-      'Platform facts are required for platform work.',
+      'Platform facts are required when any work uses a platform.',
     )
-  if (clients.delivery !== 'platform' && clients.platform !== null)
+  if (!usesPlatform && clients.platform !== null)
     addError(
       errors,
       'inconsistent',
@@ -1719,13 +1721,16 @@ function factForClients(profile: Profile, sourceIds: readonly string[]) {
         'income-tax',
         'clients',
         'Client branch',
-        'Choose whether clients are domestic, foreign, or mixed and whether work is direct or platform-mediated.',
+        'Choose whether clients are domestic, foreign, or mixed and whether work is direct, platform-mediated, or both.',
         sourceIds,
       ),
     )
     return facts
   }
-  if (clients.delivery === 'platform' && clients.platform) {
+  if (
+    (clients.delivery === 'platform' || clients.delivery === 'both') &&
+    clients.platform
+  ) {
     const platformConditions: readonly [boolean, string, string, string][] = [
       [
         clients.platform.ownAccount === 'yes',
@@ -1759,9 +1764,7 @@ function factForClients(profile: Profile, sourceIds: readonly string[]) {
         'The platform fee must not create an unsupported recipient-side reverse-charge duty.',
       ],
       [
-        clients.kind === 'domestic'
-          ? clients.platform.foreignFeeGstTreatment === 'not-applicable'
-          : clients.platform.foreignFeeGstTreatment === 'known',
+        clients.platform.foreignFeeGstTreatment !== 'not-sure',
         'platform-fee-gst',
         'Foreign platform fee treatment',
         'Confirm the GST treatment of a foreign platform fee before using this result.',

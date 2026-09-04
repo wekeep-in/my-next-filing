@@ -28,7 +28,7 @@ import { TAX_YEAR } from '../rules/index.ts'
 type DraftChoice = '' | TriState
 type DraftPath = '' | 'specified-profession' | 'eligible-business'
 type DraftClientKind = '' | 'domestic' | 'foreign' | 'mixed' | 'not-sure'
-type DraftDelivery = '' | 'direct' | 'platform' | 'not-sure'
+type DraftDelivery = '' | 'direct' | 'platform' | 'both' | 'not-sure'
 type DraftGstKind = '' | 'unregistered' | 'registered' | 'not-sure'
 type DraftGstStatus = '' | 'one-normal' | 'other' | 'not-sure'
 type DraftAmountKey =
@@ -564,8 +564,9 @@ function ChoiceField({
       </div>
       {selectedUnsupported && (
         <p className="choice-warning" id={unsupportedId} role="alert">
-          <strong>Not supported.</strong> Review what My Next Filing{' '}
-          <a href="/#faq-tax-support">supports</a>.
+          <strong>Outside this version.</strong> My Next Filing cannot calculate
+          your plan for this situation.{' '}
+          <a href="/#faq-tax-support">See what this version supports</a>.
         </p>
       )}
       <FieldError id={`${id}-error`} error={error} />
@@ -739,7 +740,8 @@ function candidateFromDraft(draft: Draft) {
         }
   const foreignSelected =
     draft.clientKind === 'foreign' || draft.clientKind === 'mixed'
-  const platformSelected = draft.delivery === 'platform'
+  const platformSelected =
+    draft.delivery === 'platform' || draft.delivery === 'both'
   const value = {
     taxYear: TAX_YEAR,
     person: {
@@ -1085,7 +1087,20 @@ function GroupSummary({
       : draft.path === 'specified-profession'
         ? 'Specified profession'
         : 'Not selected'
-  const clientLabel = draft.clientKind || 'Not selected'
+  const clientLabel = {
+    '': 'Client location not selected',
+    domestic: 'Domestic clients only',
+    foreign: 'Foreign clients only',
+    mixed: 'Domestic and foreign clients',
+    'not-sure': 'Client location not confirmed',
+  }[draft.clientKind]
+  const deliveryLabel = {
+    '': 'Work arrangement not selected',
+    direct: 'Directly',
+    platform: 'Through a platform',
+    both: 'Directly and through a platform',
+    'not-sure': 'Work arrangement not confirmed',
+  }[draft.delivery]
   return (
     <div className="review-list">
       {[
@@ -1104,11 +1119,7 @@ function GroupSummary({
           `${draft.amounts.grossReceipts || 'No gross receipts'} gross receipts; ${draft.amounts.declaredProfit || 'no declared profit'} declared profit.`,
           2,
         ],
-        [
-          'Clients and payments',
-          `${clientLabel}; ${draft.delivery || 'delivery method not selected'}.`,
-          3,
-        ],
+        ['Clients and payments', `${clientLabel}; ${deliveryLabel}.`, 3],
         [
           'Other income and tax paid',
           `${draft.amounts.taxableBankInterest || '0'} interest; ${draft.amounts.tds || '0'} TDS; ${draft.amounts.advanceTaxPaid || '0'} advance tax paid.`,
@@ -1329,34 +1340,50 @@ export function CheckRoute() {
         nextErrors.clientKind =
           'Choose whether clients are domestic, foreign, or mixed.'
       if (!draft.delivery)
-        nextErrors.delivery = 'Choose direct or platform-mediated work.'
-      if (draft.delivery === 'platform')
-        for (const [key, label] of [
-          ['platformOwnAccount', 'own-account supply'],
-          ['platformRecipientIdentifiable', 'contractual recipient'],
-          ['platformGrossBeforeFees', 'gross consideration'],
-          ['platformIncomeCharacter', 'income character'],
-          ['platformForeignFeeGstTreatment', 'platform fee treatment'],
-          ['platformNoRecipientReverseCharge', 'reverse-charge treatment'],
+        nextErrors.delivery =
+          'Choose direct work, platform work, both, or Not sure.'
+      if (draft.delivery === 'platform' || draft.delivery === 'both')
+        for (const key of [
+          'platformOwnAccount',
+          'platformRecipientIdentifiable',
+          'platformGrossBeforeFees',
+          'platformIncomeCharacter',
+          'platformNoRecipientReverseCharge',
         ] as const)
-          if (!draft[key]) nextErrors[key] = `Choose an answer for ${label}.`
+          if (!draft[key]) nextErrors[key] = 'Choose Yes, No, or Not sure.'
+      if (
+        (draft.delivery === 'platform' || draft.delivery === 'both') &&
+        !draft.platformForeignFeeGstTreatment
+      )
+        nextErrors.platformForeignFeeGstTreatment =
+          'Choose whether a foreign platform fee applies.'
       if (draft.clientKind === 'foreign' || draft.clientKind === 'mixed')
-        for (const [key, label] of [
-          ['foreignWorkInIndia', 'work location'],
-          ['foreignRecipientIdentifiable', 'foreign recipient'],
-          ['foreignOwnAccount', 'own-account supply'],
-          ['foreignPlaceOfSupply', 'place of supply'],
-          ['foreignSameEstablishment', 'establishment relationship'],
-          ['foreignPaymentRoute', 'payment route'],
-          ['foreignSettledToIndianBank', 'Indian settlement'],
-          ['foreignAccountExposure', 'foreign account exposure'],
-          ['foreignOperation', 'foreign operation'],
-          ['foreignTax', 'foreign tax'],
-          ['foreignTreatyRelief', 'treaty relief'],
-          ['foreignReceiptsResolved', 'receipt resolution'],
-          ['foreignCurrencyResolved', 'currency resolution'],
+        for (const key of [
+          'foreignWorkInIndia',
+          'foreignRecipientIdentifiable',
+          'foreignOwnAccount',
+          'foreignPlaceOfSupply',
+          'foreignSameEstablishment',
+          'foreignSettledToIndianBank',
+          'foreignOperation',
+          'foreignTax',
+          'foreignTreatyRelief',
+          'foreignReceiptsResolved',
+          'foreignCurrencyResolved',
         ] as const)
-          if (!draft[key]) nextErrors[key] = `Choose an answer for ${label}.`
+          if (!draft[key]) nextErrors[key] = 'Choose Yes, No, or Not sure.'
+      if (
+        (draft.clientKind === 'foreign' || draft.clientKind === 'mixed') &&
+        !draft.foreignPaymentRoute
+      )
+        nextErrors.foreignPaymentRoute =
+          'Choose a payment route, or choose Not sure.'
+      if (
+        (draft.clientKind === 'foreign' || draft.clientKind === 'mixed') &&
+        !draft.foreignAccountExposure
+      )
+        nextErrors.foreignAccountExposure =
+          'Choose whether these payments involve a foreign account or similar arrangement.'
     }
     if (step === 4) {
       for (const key of amountKeys.slice(5, 9))
@@ -1843,268 +1870,291 @@ export function CheckRoute() {
       return (
         <div className={questionGroupClassName} key={step}>
           <CheckHeading
-            title="Tell us how you work"
-            description="A few questions about where your clients are based and how you deliver your service."
+            title="Clients and payments"
+            description="Tell us where your clients are based and whether you work with them directly or through a platform. We'll only ask follow-up questions that apply."
           />
-          <ChoiceField
-            id="clientKind"
-            label="Where are your clients based?"
-            options={['domestic', 'foreign', 'mixed', 'not-sure']}
-            labels={{ mixed: 'Both domestic and foreign clients' }}
-            value={draft.clientKind}
-            error={errors.clientKind}
-            onChange={(value) =>
-              patchDraft({ clientKind: value as DraftClientKind })
-            }
-          />
-          <ChoiceField
-            id="delivery"
-            label="How do you deliver the service?"
-            options={['direct', 'platform', 'not-sure']}
-            labels={{
-              direct: 'Directly to your clients',
-              platform: 'Through a platform',
-            }}
-            value={draft.delivery}
-            error={errors.delivery}
-            onChange={(value) =>
-              patchDraft({ delivery: value as DraftDelivery })
-            }
-          />
-          {draft.delivery === 'platform' && (
-            <div className="field-stack">
-              <ChoiceField
-                id="platformOwnAccount"
-                label="Are you providing the main service on your own account?"
-                value={draft.platformOwnAccount}
-                unsupportedOptions={['no']}
-                error={errors.platformOwnAccount}
-                onChange={(value) =>
-                  patchDraft({ platformOwnAccount: value as TriState })
-                }
-              />
-              <ChoiceField
-                id="platformRecipientIdentifiable"
-                label="Do your records identify who the contract is with?"
-                value={draft.platformRecipientIdentifiable}
-                unsupportedOptions={['no']}
-                error={errors.platformRecipientIdentifiable}
-                onChange={(value) =>
-                  patchDraft({
-                    platformRecipientIdentifiable: value as TriState,
-                  })
-                }
-              />
-              <ChoiceField
-                id="platformGrossBeforeFees"
-                label="Do your records show the customer's full payment before platform fees and withholding?"
-                value={draft.platformGrossBeforeFees}
-                unsupportedOptions={['no']}
-                error={errors.platformGrossBeforeFees}
-                onChange={(value) =>
-                  patchDraft({ platformGrossBeforeFees: value as TriState })
-                }
-              />
-              <ChoiceField
-                id="platformIncomeCharacter"
-                label="Is this payment for your own service, not employment, commission, brokerage, royalty, licensing, or agency work?"
-                value={draft.platformIncomeCharacter}
-                unsupportedOptions={['no']}
-                error={errors.platformIncomeCharacter}
-                onChange={(value) =>
-                  patchDraft({ platformIncomeCharacter: value as TriState })
-                }
-              />
-              <ChoiceField
-                id="platformForeignFeeGstTreatment"
-                label="Does a foreign platform fee apply, and do you know its GST treatment?"
-                options={['not-applicable', 'known', 'not-sure']}
-                labels={{
-                  'not-applicable': 'No foreign platform fee',
-                  known: 'Yes, and I know its GST treatment',
-                }}
-                value={draft.platformForeignFeeGstTreatment}
-                unsupportedOptions={
-                  draft.clientKind === 'domestic'
-                    ? ['known']
-                    : draft.clientKind === 'foreign' ||
-                        draft.clientKind === 'mixed'
-                      ? ['not-applicable']
-                      : []
-                }
-                error={errors.platformForeignFeeGstTreatment}
-                onChange={(value) =>
-                  patchDraft({
-                    platformForeignFeeGstTreatment:
-                      value as Draft['platformForeignFeeGstTreatment'],
-                  })
-                }
-              />
-              <ChoiceField
-                id="platformNoRecipientReverseCharge"
-                label="Does the platform fee leave you with no extra GST responsibility?"
-                value={draft.platformNoRecipientReverseCharge}
-                unsupportedOptions={['no']}
-                error={errors.platformNoRecipientReverseCharge}
-                onChange={(value) =>
-                  patchDraft({
-                    platformNoRecipientReverseCharge: value as TriState,
-                  })
-                }
-              />
-            </div>
-          )}
-          {(draft.clientKind === 'foreign' || draft.clientKind === 'mixed') && (
-            <div className="field-stack foreign-follow-up">
-              <ChoiceField
-                id="foreignWorkInIndia"
-                label="Do you do all the work for these clients from India?"
-                value={draft.foreignWorkInIndia}
-                unsupportedOptions={['no']}
-                error={errors.foreignWorkInIndia}
-                onChange={(value) =>
-                  patchDraft({ foreignWorkInIndia: value as TriState })
-                }
-              />
-              <ChoiceField
-                id="foreignRecipientIdentifiable"
-                label="Do your records identify the overseas client in the contract?"
-                value={draft.foreignRecipientIdentifiable}
-                unsupportedOptions={['no']}
-                error={errors.foreignRecipientIdentifiable}
-                onChange={(value) =>
-                  patchDraft({
-                    foreignRecipientIdentifiable: value as TriState,
-                  })
-                }
-              />
-              <ChoiceField
-                id="foreignOwnAccount"
-                label="Are you providing the main service on your own account?"
-                value={draft.foreignOwnAccount}
-                unsupportedOptions={['no']}
-                error={errors.foreignOwnAccount}
-                onChange={(value) =>
-                  patchDraft({ foreignOwnAccount: value as TriState })
-                }
-              />
-              <ChoiceField
-                id="foreignPlaceOfSupply"
-                label="Does the normal cross-border GST rule apply to this work?"
-                help="Choose Not sure if you need to confirm the place-of-supply rule."
-                value={draft.foreignPlaceOfSupply}
-                unsupportedOptions={['no']}
-                error={errors.foreignPlaceOfSupply}
-                onChange={(value) =>
-                  patchDraft({ foreignPlaceOfSupply: value as TriState })
-                }
-              />
-              <ChoiceField
-                id="foreignSameEstablishment"
-                label="Are you and the overseas client part of the same business or legal entity?"
-                help="Choose No if you and the client are separate businesses."
-                value={draft.foreignSameEstablishment}
-                unsupportedOptions={['yes']}
-                error={errors.foreignSameEstablishment}
-                onChange={(value) =>
-                  patchDraft({ foreignSameEstablishment: value as TriState })
-                }
-              />
-              <ChoiceField
-                id="foreignPaymentRoute"
-                label="How do you receive payment?"
-                options={[
-                  'convertible-foreign-exchange',
-                  'rbi-permitted-rupee',
-                  'not-sure',
-                ]}
-                value={draft.foreignPaymentRoute}
-                error={errors.foreignPaymentRoute}
-                onChange={(value) =>
-                  patchDraft({
-                    foreignPaymentRoute: value as Draft['foreignPaymentRoute'],
-                  })
-                }
-              />
-              <ChoiceField
-                id="foreignSettledToIndianBank"
-                label="Do these payments reach your own Indian bank account through an authorised route?"
-                value={draft.foreignSettledToIndianBank}
-                unsupportedOptions={['no']}
-                error={errors.foreignSettledToIndianBank}
-                onChange={(value) =>
-                  patchDraft({
-                    foreignSettledToIndianBank: value as TriState,
-                  })
-                }
-              />
-              <ChoiceField
-                id="foreignAccountExposure"
-                label="Could these receipts involve a foreign account, wallet, provider-held balance, or signing authority?"
-                options={['none', 'possible', 'not-sure']}
-                labels={{ none: 'No' }}
-                value={draft.foreignAccountExposure}
-                error={errors.foreignAccountExposure}
-                onChange={(value) =>
-                  patchDraft({
-                    foreignAccountExposure:
-                      value as Draft['foreignAccountExposure'],
-                  })
-                }
-              />
-              <ChoiceField
-                id="foreignOperation"
-                label="Does this work involve a business operation outside India?"
-                value={draft.foreignOperation}
-                unsupportedOptions={['yes']}
-                error={errors.foreignOperation}
-                onChange={(value) =>
-                  patchDraft({ foreignOperation: value as TriState })
-                }
-              />
-              <ChoiceField
-                id="foreignTax"
-                label="Was tax withheld outside India?"
-                value={draft.foreignTax}
-                unsupportedOptions={['yes']}
-                error={errors.foreignTax}
-                onChange={(value) =>
-                  patchDraft({ foreignTax: value as TriState })
-                }
-              />
-              <ChoiceField
-                id="foreignTreatyRelief"
-                label="Are you claiming foreign-tax or tax-treaty relief?"
-                value={draft.foreignTreatyRelief}
-                unsupportedOptions={['yes']}
-                error={errors.foreignTreatyRelief}
-                onChange={(value) =>
-                  patchDraft({ foreignTreatyRelief: value as TriState })
-                }
-              />
-              <ChoiceField
-                id="foreignReceiptsResolved"
-                label="Can you report these foreign receipts as one complete annual rupee amount?"
-                help="This amount should already account for fees, withholding, refunds, chargebacks, receivables, and your accounting method."
-                value={draft.foreignReceiptsResolved}
-                unsupportedOptions={['no']}
-                error={errors.foreignReceiptsResolved}
-                onChange={(value) =>
-                  patchDraft({ foreignReceiptsResolved: value as TriState })
-                }
-              />
-              <ChoiceField
-                id="foreignCurrencyResolved"
-                label="Does that annual rupee amount already include all currency effects?"
-                value={draft.foreignCurrencyResolved}
-                unsupportedOptions={['no']}
-                error={errors.foreignCurrencyResolved}
-                onChange={(value) =>
-                  patchDraft({ foreignCurrencyResolved: value as TriState })
-                }
-              />
-            </div>
-          )}
+          <div className="question-sections">
+            <section
+              className="question-section"
+              aria-labelledby="client-arrangement"
+            >
+              <h2 id="client-arrangement">Your clients</h2>
+              <div className="field-stack">
+                <ChoiceField
+                  id="clientKind"
+                  label="Where are your clients based?"
+                  options={['domestic', 'foreign', 'mixed', 'not-sure']}
+                  labels={{ mixed: 'Both domestic and foreign clients' }}
+                  value={draft.clientKind}
+                  error={errors.clientKind}
+                  onChange={(value) =>
+                    patchDraft({ clientKind: value as DraftClientKind })
+                  }
+                />
+                <ChoiceField
+                  id="delivery"
+                  label="How do you work with these clients?"
+                  options={['direct', 'platform', 'both', 'not-sure']}
+                  labels={{
+                    direct: 'Directly',
+                    platform: 'Through a platform',
+                    both: 'Directly and through a platform',
+                  }}
+                  value={draft.delivery}
+                  error={errors.delivery}
+                  onChange={(value) =>
+                    patchDraft({ delivery: value as DraftDelivery })
+                  }
+                />
+              </div>
+            </section>
+
+            {(draft.delivery === 'platform' || draft.delivery === 'both') && (
+              <section
+                className="question-section"
+                aria-labelledby="platform-work"
+              >
+                <h2 id="platform-work">Platform work</h2>
+                <div className="field-stack">
+                  <ChoiceField
+                    id="platformOwnAccount"
+                    label="Do you provide the main service yourself, rather than act as an agent or intermediary?"
+                    value={draft.platformOwnAccount}
+                    unsupportedOptions={['no']}
+                    error={errors.platformOwnAccount}
+                    onChange={(value) =>
+                      patchDraft({ platformOwnAccount: value as TriState })
+                    }
+                  />
+                  <ChoiceField
+                    id="platformRecipientIdentifiable"
+                    label="Do your records identify the person or business you contract with?"
+                    value={draft.platformRecipientIdentifiable}
+                    unsupportedOptions={['no']}
+                    error={errors.platformRecipientIdentifiable}
+                    onChange={(value) =>
+                      patchDraft({
+                        platformRecipientIdentifiable: value as TriState,
+                      })
+                    }
+                  />
+                  <ChoiceField
+                    id="platformGrossBeforeFees"
+                    label="Do your records show the client's full payment before platform fees and withholding?"
+                    value={draft.platformGrossBeforeFees}
+                    unsupportedOptions={['no']}
+                    error={errors.platformGrossBeforeFees}
+                    onChange={(value) =>
+                      patchDraft({ platformGrossBeforeFees: value as TriState })
+                    }
+                  />
+                  <ChoiceField
+                    id="platformIncomeCharacter"
+                    label="Is this income from services you provide, rather than employment, commission, brokerage, royalties, licensing, or agency work?"
+                    value={draft.platformIncomeCharacter}
+                    unsupportedOptions={['no']}
+                    error={errors.platformIncomeCharacter}
+                    onChange={(value) =>
+                      patchDraft({ platformIncomeCharacter: value as TriState })
+                    }
+                  />
+                  <ChoiceField
+                    id="platformForeignFeeGstTreatment"
+                    label="Is there a fee from a foreign platform?"
+                    options={['not-applicable', 'known', 'not-sure']}
+                    labels={{
+                      'not-applicable': 'No foreign platform fee',
+                      known: 'Yes, and I know its GST treatment',
+                    }}
+                    value={draft.platformForeignFeeGstTreatment}
+                    error={errors.platformForeignFeeGstTreatment}
+                    onChange={(value) =>
+                      patchDraft({
+                        platformForeignFeeGstTreatment:
+                          value as Draft['platformForeignFeeGstTreatment'],
+                      })
+                    }
+                  />
+                  <ChoiceField
+                    id="platformNoRecipientReverseCharge"
+                    label="Have you confirmed that the platform fee does not require you to pay GST under reverse charge?"
+                    help="Under reverse charge, you pay the GST instead of the platform."
+                    value={draft.platformNoRecipientReverseCharge}
+                    unsupportedOptions={['no']}
+                    error={errors.platformNoRecipientReverseCharge}
+                    onChange={(value) =>
+                      patchDraft({
+                        platformNoRecipientReverseCharge: value as TriState,
+                      })
+                    }
+                  />
+                </div>
+              </section>
+            )}
+
+            {(draft.clientKind === 'foreign' ||
+              draft.clientKind === 'mixed') && (
+              <section
+                className="question-section"
+                aria-labelledby="foreign-clients"
+              >
+                <h2 id="foreign-clients">Foreign clients</h2>
+                <div className="field-stack">
+                  <ChoiceField
+                    id="foreignWorkInIndia"
+                    label="Do you perform all the work for these clients from India?"
+                    value={draft.foreignWorkInIndia}
+                    unsupportedOptions={['no']}
+                    error={errors.foreignWorkInIndia}
+                    onChange={(value) =>
+                      patchDraft({ foreignWorkInIndia: value as TriState })
+                    }
+                  />
+                  <ChoiceField
+                    id="foreignRecipientIdentifiable"
+                    label="Do your records identify the overseas person or business you contract with?"
+                    value={draft.foreignRecipientIdentifiable}
+                    unsupportedOptions={['no']}
+                    error={errors.foreignRecipientIdentifiable}
+                    onChange={(value) =>
+                      patchDraft({
+                        foreignRecipientIdentifiable: value as TriState,
+                      })
+                    }
+                  />
+                  <ChoiceField
+                    id="foreignOwnAccount"
+                    label="For these overseas contracts, do you provide the main service yourself rather than act as an agent or intermediary?"
+                    value={draft.foreignOwnAccount}
+                    unsupportedOptions={['no']}
+                    error={errors.foreignOwnAccount}
+                    onChange={(value) =>
+                      patchDraft({ foreignOwnAccount: value as TriState })
+                    }
+                  />
+                  <ChoiceField
+                    id="foreignPlaceOfSupply"
+                    label="Have you confirmed that the ordinary cross-border place-of-supply rule applies?"
+                    help="Choose Not sure unless your records or adviser confirm this."
+                    value={draft.foreignPlaceOfSupply}
+                    unsupportedOptions={['no']}
+                    error={errors.foreignPlaceOfSupply}
+                    onChange={(value) =>
+                      patchDraft({ foreignPlaceOfSupply: value as TriState })
+                    }
+                  />
+                  <ChoiceField
+                    id="foreignSameEstablishment"
+                    label="Are you and the overseas client part of the same business or legal entity?"
+                    help="Choose No if you and the client are separate businesses."
+                    value={draft.foreignSameEstablishment}
+                    unsupportedOptions={['yes']}
+                    error={errors.foreignSameEstablishment}
+                    onChange={(value) =>
+                      patchDraft({
+                        foreignSameEstablishment: value as TriState,
+                      })
+                    }
+                  />
+                  <ChoiceField
+                    id="foreignPaymentRoute"
+                    label="Which payment route do your records confirm?"
+                    help="Choose Not sure if your bank or payment records do not state the route."
+                    options={[
+                      'convertible-foreign-exchange',
+                      'rbi-permitted-rupee',
+                      'not-sure',
+                    ]}
+                    value={draft.foreignPaymentRoute}
+                    error={errors.foreignPaymentRoute}
+                    onChange={(value) =>
+                      patchDraft({
+                        foreignPaymentRoute:
+                          value as Draft['foreignPaymentRoute'],
+                      })
+                    }
+                  />
+                  <ChoiceField
+                    id="foreignSettledToIndianBank"
+                    label="Do these payments settle in your own Indian bank account through an authorised route?"
+                    value={draft.foreignSettledToIndianBank}
+                    unsupportedOptions={['no']}
+                    error={errors.foreignSettledToIndianBank}
+                    onChange={(value) =>
+                      patchDraft({
+                        foreignSettledToIndianBank: value as TriState,
+                      })
+                    }
+                  />
+                  <ChoiceField
+                    id="foreignAccountExposure"
+                    label="Do these payments involve a foreign account, wallet, provider-held balance, or signing authority?"
+                    options={['none', 'possible', 'not-sure']}
+                    labels={{ none: 'No', possible: 'Yes or possibly' }}
+                    value={draft.foreignAccountExposure}
+                    error={errors.foreignAccountExposure}
+                    onChange={(value) =>
+                      patchDraft({
+                        foreignAccountExposure:
+                          value as Draft['foreignAccountExposure'],
+                      })
+                    }
+                  />
+                  <ChoiceField
+                    id="foreignOperation"
+                    label="Apart from having overseas clients, does this work involve a business operation outside India?"
+                    value={draft.foreignOperation}
+                    unsupportedOptions={['yes']}
+                    error={errors.foreignOperation}
+                    onChange={(value) =>
+                      patchDraft({ foreignOperation: value as TriState })
+                    }
+                  />
+                  <ChoiceField
+                    id="foreignTax"
+                    label="Was tax withheld outside India?"
+                    value={draft.foreignTax}
+                    unsupportedOptions={['yes']}
+                    error={errors.foreignTax}
+                    onChange={(value) =>
+                      patchDraft({ foreignTax: value as TriState })
+                    }
+                  />
+                  <ChoiceField
+                    id="foreignTreatyRelief"
+                    label="Are you claiming relief for foreign tax or under a tax treaty?"
+                    value={draft.foreignTreatyRelief}
+                    unsupportedOptions={['yes']}
+                    error={errors.foreignTreatyRelief}
+                    onChange={(value) =>
+                      patchDraft({ foreignTreatyRelief: value as TriState })
+                    }
+                  />
+                  <ChoiceField
+                    id="foreignReceiptsResolved"
+                    label="Do your records show one complete annual total in rupees for these receipts?"
+                    help="This amount should already account for fees, withholding, refunds, chargebacks, receivables, and your accounting method."
+                    value={draft.foreignReceiptsResolved}
+                    unsupportedOptions={['no']}
+                    error={errors.foreignReceiptsResolved}
+                    onChange={(value) =>
+                      patchDraft({ foreignReceiptsResolved: value as TriState })
+                    }
+                  />
+                  <ChoiceField
+                    id="foreignCurrencyResolved"
+                    label="Does that total include all currency conversions and exchange-rate effects?"
+                    value={draft.foreignCurrencyResolved}
+                    unsupportedOptions={['no']}
+                    error={errors.foreignCurrencyResolved}
+                    onChange={(value) =>
+                      patchDraft({ foreignCurrencyResolved: value as TriState })
+                    }
+                  />
+                </div>
+              </section>
+            )}
+          </div>
         </div>
       )
     if (step === 4)

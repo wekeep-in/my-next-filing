@@ -74,6 +74,42 @@ function profileFrom(candidate: unknown): Profile {
 
 const profile = profileFrom(baseCandidate)
 
+const platformFacts = {
+  ownAccount: 'yes',
+  recipientIdentifiable: 'yes',
+  grossBeforeFees: 'yes',
+  notEmploymentCommissionBrokerageRoyaltyLicensingAgency: 'yes',
+  foreignFeeGstTreatment: 'known',
+  noRecipientReverseCharge: 'yes',
+} as const
+
+const bothDelivery = evaluate(
+  profileFrom({
+    ...baseCandidate,
+    clients: {
+      kind: 'domestic',
+      delivery: 'both',
+      platform: platformFacts,
+      foreign: null,
+    },
+  }),
+  now,
+  currentRules,
+)
+assert.equal(bothDelivery.kind, 'supported')
+assert.equal(
+  parseProfile({
+    ...baseCandidate,
+    clients: {
+      kind: 'domestic',
+      delivery: 'both',
+      platform: null,
+      foreign: null,
+    },
+  }).valid,
+  false,
+)
+
 assert.equal(validateRules(currentRules, now).valid, true)
 assert.equal(
   validateRules({ ...currentRules, expiresOn: '2028-01-01' }, now).valid,
@@ -436,8 +472,11 @@ const foreign = evaluate(
     ...baseCandidate,
     clients: {
       kind: 'foreign',
-      delivery: 'direct',
-      platform: null,
+      delivery: 'platform',
+      platform: {
+        ...platformFacts,
+        foreignFeeGstTreatment: 'not-applicable',
+      },
       foreign: {
         workPerformedInIndia: 'yes',
         recipientIdentifiable: 'yes',
