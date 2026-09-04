@@ -453,6 +453,18 @@ function parseMoney(value: string): { value: number } | { error: string } {
     : { error: 'Use an amount within the supported whole-rupee range.' }
 }
 
+function todayInIndia() {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date())
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((item) => item.type === type)?.value ?? ''
+  return `${part('year')}-${part('month')}-${part('day')}`
+}
+
 function FieldError({
   id,
   error,
@@ -499,8 +511,8 @@ function ChoiceField({
     'non-resident': 'Non-resident',
     none: 'None / does not apply',
     possible: 'Possible exposure',
-    'one-normal': 'One active normal-taxpayer GSTIN',
-    other: 'Another or uncertain GST state',
+    'one-normal': 'One active GSTIN as a normal taxpayer',
+    other: 'Something else',
     selected: 'Yes, I selected them',
     'not-applicable': 'Not applicable',
     known: 'Known',
@@ -515,8 +527,8 @@ function ChoiceField({
     mixed: 'Domestic and foreign clients',
     direct: 'Direct clients',
     platform: 'Platform-mediated work',
-    unregistered: 'No active GSTIN',
-    registered: 'An active GSTIN',
+    unregistered: 'No',
+    registered: 'Yes',
     applies: 'It applies',
     'specified-profession': 'Specified professional path',
     'eligible-business': 'Eligible business path',
@@ -837,7 +849,8 @@ function candidateFromDraft(draft: Draft) {
   }
   if (!draft.path) errors.path = 'Choose the income path used in your records.'
   if (!draft.clientKind) errors.clientKind = 'Choose a client branch.'
-  if (!draft.gstKind) errors.gstKind = 'Choose a GST branch.'
+  if (!draft.gstKind)
+    errors.gstKind = 'Choose whether you have ever had a GSTIN.'
   return { value, errors }
 }
 
@@ -1101,6 +1114,16 @@ function GroupSummary({
     both: 'Directly and through a platform',
     'not-sure': 'Work arrangement not confirmed',
   }[draft.delivery]
+  const gstLabel =
+    draft.gstKind === 'unregistered'
+      ? 'Never had a GSTIN'
+      : draft.gstKind === 'registered'
+        ? draft.gstStatus === 'one-normal'
+          ? 'One active GSTIN as a normal taxpayer'
+          : draft.gstStatus === 'other'
+            ? 'Another GST registration situation'
+            : 'GST registration not confirmed'
+        : 'GST registration not confirmed'
   return (
     <div className="review-list">
       {[
@@ -1126,8 +1149,8 @@ function GroupSummary({
           4,
         ],
         [
-          'GST and filing',
-          `${draft.gstKind || 'GST branch not selected'}${draft.gstState ? `; ${draft.gstState}` : ''}.`,
+          'GST registration',
+          `${gstLabel}${draft.gstState ? `; ${draft.gstState}` : ''}.`,
           5,
         ],
       ].map(([title, text, step]) => (
@@ -1200,6 +1223,8 @@ export function CheckRoute() {
   const [motion, setMotion] = useState<'none' | 'step' | 'error'>(
     routeState?.animate ? 'step' : 'none',
   )
+  const today = todayInIndia()
+  const latestThresholdDate = today < '2027-03-31' ? today : '2027-03-31'
 
   useEffect(() => {
     if (routeState?.example || routeState?.personal) clearCurrentCheck()
@@ -1399,20 +1424,32 @@ export function CheckRoute() {
           'Select any situations that apply, or choose None of these or Not sure.'
     }
     if (step === 5) {
-      if (!draft.gstKind) nextErrors.gstKind = 'Choose a GST branch.'
+      if (!draft.gstKind)
+        nextErrors.gstKind = 'Choose whether you have ever had a GSTIN.'
       if (draft.gstKind === 'unregistered') {
         if (!draft.gstState)
           nextErrors.gstState = 'Choose a state or Union territory.'
         requiredAmount(nextErrors, draft, 'aggregateTurnover')
         if (!draft.turnoverComplete)
           nextErrors.turnoverComplete =
-            'Confirm that aggregate turnover is complete.'
+            'Choose whether this is your complete GST aggregate turnover.'
         if (!draft.compulsoryRegistration)
           nextErrors.compulsoryRegistration =
-            'Confirm compulsory-registration facts.'
+            'Choose whether another reason could require GST registration.'
+        if (
+          draft.thresholdLiabilityDate &&
+          (draft.thresholdLiabilityDate < '2026-04-01' ||
+            draft.thresholdLiabilityDate > latestThresholdDate)
+        )
+          nextErrors.thresholdLiabilityDate =
+            'Choose a past or present date in 2026-27.'
       }
-      if (draft.gstKind === 'registered' && !draft.gstStatus)
-        nextErrors.gstStatus = 'Choose the registered GST state.'
+      if (draft.gstKind === 'registered') {
+        if (!draft.gstStatus)
+          nextErrors.gstStatus = 'Choose what describes your GST registration.'
+        if (draft.gstStatus === 'one-normal' && !draft.gstState)
+          nextErrors.gstState = 'Choose where your active GSTIN is registered.'
+      }
     }
     setErrors(nextErrors)
     return Object.keys(nextErrors).length === 0
@@ -2229,12 +2266,12 @@ export function CheckRoute() {
       return (
         <div className={questionGroupClassName} key={step}>
           <CheckHeading
-            title="Finish with GST and return facts"
-            description="GST aggregate turnover is the all-India amount for this PAN. It is not copied from your professional receipts."
+            title="Your GST registration"
+            description="Tell us whether you've ever had a GSTIN. If not, we'll check whether your turnover may require registration."
           />
           <ChoiceField
             id="gstKind"
-            label="Which GST state describes you?"
+            label="Have you ever had a GSTIN for this practice?"
             options={['unregistered', 'registered', 'not-sure']}
             value={draft.gstKind}
             error={errors.gstKind}
@@ -2250,7 +2287,8 @@ export function CheckRoute() {
             <>
               <ChoiceField
                 id="gstStatus"
-                label="What is the registered state?"
+                label="Which describes your GST registration?"
+                help="Choose Something else if you have more than one GSTIN, use the composition scheme, or have a suspended or cancelled GSTIN."
                 options={['one-normal', 'other', 'not-sure']}
                 value={draft.gstStatus}
                 error={errors.gstStatus}
@@ -2261,7 +2299,7 @@ export function CheckRoute() {
               {draft.gstStatus === 'one-normal' && (
                 <SelectField
                   id="gstState"
-                  label="State or Union territory"
+                  label="Where is your active GSTIN registered?"
                   value={draft.gstState}
                   error={errors.gstState}
                   onChange={(value) => patchDraft({ gstState: value })}
@@ -2271,14 +2309,17 @@ export function CheckRoute() {
                   }))}
                 />
               )}
+              <p className="section-note">
+                This version doesn't calculate GST returns or show GST return
+                dates. You can still get your income-tax estimate.
+              </p>
             </>
           )}
           {draft.gstKind === 'unregistered' && (
             <>
               <SelectField
                 id="gstState"
-                label="State or Union territory"
-                help="Choose the state from which the practice makes taxable supplies."
+                label="Which state or Union territory do you make taxable supplies from?"
                 value={draft.gstState}
                 error={errors.gstState}
                 onChange={(value) => patchDraft({ gstState: value })}
@@ -2290,14 +2331,18 @@ export function CheckRoute() {
               <MoneyField
                 id="aggregateTurnover"
                 label="GST aggregate turnover for this PAN"
-                help="Include taxable, exempt, export, and inter-State supplies. Exclude GST, cess, and inward supplies taxed under reverse charge."
+                help="Enter your all-India total for 2026-27. Include taxable, exempt, export, and inter-State supplies. Exclude GST, cess, and inward supplies taxed under reverse charge. This may differ from the receipts entered earlier."
                 value={draft.amounts.aggregateTurnover}
                 error={errors.aggregateTurnover}
                 onChange={(value) => setAmount('aggregateTurnover', value)}
               />
               <ChoiceField
                 id="turnoverComplete"
-                label="Is that aggregate-turnover amount complete?"
+                label="Is this your complete GST aggregate turnover?"
+                labels={{
+                  yes: "Yes, it's complete",
+                  no: "No, it's incomplete",
+                }}
                 value={draft.turnoverComplete}
                 error={errors.turnoverComplete}
                 onChange={(value) =>
@@ -2306,8 +2351,8 @@ export function CheckRoute() {
               />
               <ChoiceField
                 id="compulsoryRegistration"
-                label="Is there a compulsory-registration fact separate from turnover?"
-                help="Choose Not sure when a fact may require earlier registration."
+                label="Could you need to register for GST for a reason other than turnover?"
+                help="Choose Not sure if you haven't confirmed this."
                 value={draft.compulsoryRegistration}
                 error={errors.compulsoryRegistration}
                 onChange={(value) =>
@@ -2316,31 +2361,33 @@ export function CheckRoute() {
               />
               <div className="field">
                 <label htmlFor="thresholdLiabilityDate">
-                  If turnover is above the threshold, when did liability arise?
+                  If your turnover is above the threshold, when did you become
+                  liable to register?
                 </label>
                 <p className="field-help" id="threshold-date-help">
-                  Leave blank when turnover is below or at the threshold, or
-                  when you do not know the date.
+                  Choose a past or present date in 2026-27. Leave this blank if
+                  your turnover is at or below the threshold or you don't know
+                  the date.
                 </p>
                 <DatePicker
                   id="thresholdLiabilityDate"
                   value={draft.thresholdLiabilityDate}
                   min="2026-04-01"
-                  max="2027-03-31"
+                  max={latestThresholdDate}
                   clearable
-                  describedBy="threshold-date-help"
+                  describedBy={`threshold-date-help${errors.thresholdLiabilityDate ? ' thresholdLiabilityDate-error' : ''}`}
+                  invalid={Boolean(errors.thresholdLiabilityDate)}
                   onChange={(value) =>
                     patchDraft({ thresholdLiabilityDate: value })
                   }
                 />
+                <FieldError
+                  id="thresholdLiabilityDate-error"
+                  error={errors.thresholdLiabilityDate}
+                />
               </div>
             </>
           )}
-          <p className="section-note">
-            Return-form guidance remains outside this first release. A supported
-            result can still show an annual-return action when a trigger is
-            established.
-          </p>
         </div>
       )
     return (

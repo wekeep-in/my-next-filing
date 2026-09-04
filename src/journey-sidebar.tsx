@@ -7,7 +7,7 @@ export const questionnaireSteps = [
   'Receipts and profit',
   'Clients and payments',
   'Other income and tax paid',
-  'GST and filing',
+  'GST registration',
   'Review your answers',
 ] as const
 
