@@ -1,3 +1,13 @@
+import { TAX_YEAR } from '../src/rules/index.ts'
+import {
+  RECOVERY_KEY,
+  canSynchronizeRecovery,
+  deleteRecoveryDraft,
+  loadRecoveryDraft,
+  parseRecoveryDraft,
+  recoveryFromSession,
+  saveRecoveryDraft,
+} from '../src/recovery-draft/index.ts'
 import type {
   QuestionnaireEvent,
   QuestionnaireSession,
@@ -321,5 +331,178 @@ assert.equal(
 assert.deepEqual(
   clearInactiveDraft(clearInactiveDraft(withHidden)),
   clearInactiveDraft(withHidden),
+)
+
+class TestStorage implements Storage {
+  private readonly values = new Map<string, string>()
+  readsFail = false
+  writesFail = false
+  removal: 'normal' | 'fail' | 'throw-after' | 'unverified' = 'normal'
+  writes = 0
+  get length() {
+    return this.values.size
+  }
+  clear() {
+    assert.fail('Storage must never be cleared')
+  }
+  key(index: number) {
+    return [...this.values.keys()][index] ?? null
+  }
+  getItem(key: string) {
+    if (this.readsFail) throw new Error('unavailable')
+    return this.values.get(key) ?? null
+  }
+  setItem(key: string, value: string) {
+    if (this.writesFail) throw new Error('quota')
+    this.writes++
+    this.values.set(key, value)
+  }
+  removeItem(key: string) {
+    if (this.removal === 'fail') throw new Error('denied')
+    this.values.delete(key)
+    if (this.removal === 'unverified') this.readsFail = true
+    if (this.removal === 'throw-after') throw new Error('removed')
+  }
+}
+const recovery = recoveryFromSession(personal, TAX_YEAR)
+assert.ok(recovery)
+assert.deepEqual(parseRecoveryDraft(recovery, TAX_YEAR), recovery)
+const recoveryStore = new TestStorage()
+recoveryStore.setItem('unrelated', 'keep')
+assert.equal(loadRecoveryDraft(recoveryStore, TAX_YEAR).kind, 'absent')
+assert.equal(saveRecoveryDraft(recoveryStore, recovery).kind, 'saved')
+const writes = recoveryStore.writes
+assert.equal(saveRecoveryDraft(recoveryStore, recovery).kind, 'unchanged')
+assert.equal(recoveryStore.writes, writes)
+assert.deepEqual(loadRecoveryDraft(recoveryStore, TAX_YEAR), {
+  kind: 'ready',
+  value: recovery,
+})
+assert.equal(deleteRecoveryDraft(recoveryStore).kind, 'deleted')
+assert.equal(deleteRecoveryDraft(recoveryStore).kind, 'absent')
+assert.equal(recoveryStore.getItem('unrelated'), 'keep')
+for (const invalid of [
+  null,
+  [],
+  {},
+  { ...recovery, route: '/plan' },
+  { ...recovery, schemaVersion: 2 },
+  { ...recovery, taxYear: 'Tax Year 2025-26' },
+  { ...recovery, origin: 'example' },
+  { ...recovery, baseWorkspaceRevision: 0 },
+  { ...recovery, origin: 'saved-edit', baseWorkspaceRevision: -1 },
+  {
+    ...recovery,
+    origin: 'saved-edit',
+    baseWorkspaceRevision: Number.MAX_SAFE_INTEGER + 1,
+  },
+  { ...recovery, draft: { ...exampleDraft, extra: true } },
+  { ...recovery, draft: { ...exampleDraft, adult: 'maybe' } },
+  { ...recovery, draft: { ...exampleDraft, platformOwnAccount: 'yes' } },
+  {
+    ...recovery,
+    draft: { ...exampleDraft, thresholdLiabilityDate: 'tomorrow' },
+  },
+  {
+    ...recovery,
+    draft: {
+      ...exampleDraft,
+      amounts: { ...exampleDraft.amounts, tds: '0'.repeat(33) },
+    },
+  },
+  {
+    ...recovery,
+    draft: {
+      ...exampleDraft,
+      unsupportedCertainty: 'selected',
+      unsupportedFacts: ['salary', 'salary'],
+    },
+  },
+  {
+    ...recovery,
+    draft: {
+      ...exampleDraft,
+      unsupportedCertainty: 'selected',
+      unsupportedFacts: ['unknown'],
+    },
+  },
+])
+  assert.equal(parseRecoveryDraft(invalid, TAX_YEAR), null)
+assert.equal(
+  parseRecoveryDraft(
+    {
+      get schemaVersion() {
+        throw new Error('getter')
+      },
+    },
+    TAX_YEAR,
+  ),
+  null,
+)
+assert.ok(
+  parseRecoveryDraft(
+    { ...recovery, origin: 'saved-edit', baseWorkspaceRevision: 0 },
+    TAX_YEAR,
+  ),
+)
+const blankRecovery = recoveryFromSession(started, TAX_YEAR)
+assert.ok(blankRecovery)
+assert.ok(parseRecoveryDraft(blankRecovery, TAX_YEAR))
+for (const raw of ['{', JSON.stringify({ ...recovery, schemaVersion: 99 })]) {
+  recoveryStore.setItem(RECOVERY_KEY, raw)
+  assert.equal(
+    loadRecoveryDraft(recoveryStore, TAX_YEAR).kind,
+    'invalid-removed',
+  )
+  assert.equal(recoveryStore.getItem(RECOVERY_KEY), null)
+}
+recoveryStore.setItem(RECOVERY_KEY, '{')
+recoveryStore.removal = 'fail'
+assert.equal(
+  loadRecoveryDraft(recoveryStore, TAX_YEAR).kind,
+  'invalid-removal-failed',
+)
+assert.equal(deleteRecoveryDraft(recoveryStore).kind, 'deletion-failed')
+assert.equal(saveRecoveryDraft(recoveryStore, recovery).kind, 'invalid')
+recoveryStore.removal = 'unverified'
+assert.equal(deleteRecoveryDraft(recoveryStore).kind, 'deletion-unverified')
+assert.equal(loadRecoveryDraft(recoveryStore, TAX_YEAR).kind, 'unavailable')
+assert.equal(deleteRecoveryDraft(recoveryStore).kind, 'unavailable')
+assert.equal(saveRecoveryDraft(recoveryStore, recovery).kind, 'unavailable')
+recoveryStore.readsFail = false
+assert.equal(deleteRecoveryDraft(recoveryStore).kind, 'absent')
+recoveryStore.writesFail = true
+assert.equal(saveRecoveryDraft(recoveryStore, recovery).kind, 'unavailable')
+recoveryStore.writesFail = false
+assert.equal(saveRecoveryDraft(recoveryStore, recovery).kind, 'saved')
+recoveryStore.removal = 'throw-after'
+assert.equal(deleteRecoveryDraft(recoveryStore).kind, 'deleted')
+assert.equal(
+  recoveryFromSession(
+    sessionFromProfile(exampleProfile, { kind: 'example' }, today),
+    TAX_YEAR,
+  ),
+  null,
+)
+assert.equal(recoveryFromSession(null, TAX_YEAR), null)
+assert.equal(canSynchronizeRecovery(personal, true, false, false), true)
+for (const [initialized, selected, pending] of [
+  [false, false, false],
+  [true, true, false],
+  [true, false, true],
+])
+  assert.equal(
+    canSynchronizeRecovery(personal, initialized, selected, pending),
+    false,
+  )
+assert.equal(canSynchronizeRecovery(null, true, false, false), false)
+assert.equal(
+  canSynchronizeRecovery(
+    sessionFromProfile(exampleProfile, { kind: 'example' }, today),
+    true,
+    false,
+    false,
+  ),
+  false,
 )
 process.stdout.write('Frontend verification passed.\n')

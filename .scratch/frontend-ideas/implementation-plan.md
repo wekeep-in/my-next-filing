@@ -124,7 +124,7 @@ Status: complete; intent events replace route patches and reducer assertions pas
 
 ## Work item 3: implement Recovery-draft storage
 
-Status: pending
+Status: complete; strict Recovery codec, verified storage operations, and synchronization eligibility assertions pass; Effect wiring follows in item 5
 
 ### Changes
 
