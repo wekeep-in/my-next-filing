@@ -1,4 +1,12 @@
-import { TAX_YEAR } from '../src/rules/index.ts'
+import {
+  WORKSPACE_KEY,
+  deleteLegacyWorkspace,
+  deleteSavedWorkspace,
+  loadSavedWorkspace,
+  saveSavedWorkspace,
+} from '../src/workspace/index.ts'
+import type { SavedWorkspaceDraft } from '../src/workspace/index.ts'
+import { currentRules, TAX_YEAR } from '../src/rules/index.ts'
 import {
   RECOVERY_KEY,
   canSynchronizeRecovery,
@@ -505,4 +513,82 @@ assert.equal(
   ),
   false,
 )
+
+const workspaceStore = new TestStorage()
+const workspaceInput: SavedWorkspaceDraft = {
+  noticeVersion: 2,
+  consentDecidedAt: '2026-09-01T00:00:00.000Z',
+  activeTaxYear: TAX_YEAR,
+  active: {
+    profile: exampleProfile,
+    completions: [],
+    ruleDatasetId: currentRules.id,
+  },
+  priorYears: [],
+}
+const legacyRaw = JSON.stringify({
+  schemaVersion: 1,
+  revision: 0,
+  noticeVersion: 1,
+  consentDecidedAt: '2026-09-01T00:00:00.000Z',
+  activeTaxYear: TAX_YEAR,
+  active: {
+    profile: exampleProfile,
+    completions: [
+      {
+        obligationId: 'annual-return:Tax Year 2026-27',
+        completedOn: '2026-09-03',
+      },
+    ],
+    ruleDatasetId: currentRules.id,
+  },
+  priorYears: [],
+  updatedAt: '2026-09-03T06:30:00.000Z',
+})
+workspaceStore.setItem('unrelated', 'keep')
+workspaceStore.setItem(WORKSPACE_KEY, legacyRaw)
+assert.equal(loadSavedWorkspace(workspaceStore).kind, 'legacy')
+assert.equal(
+  saveSavedWorkspace(workspaceStore, 0, workspaceInput).kind,
+  'invalid',
+)
+workspaceStore.removal = 'fail'
+assert.equal(
+  deleteLegacyWorkspace(workspaceStore).kind,
+  'legacy-removal-failed',
+)
+assert.equal(workspaceStore.getItem(WORKSPACE_KEY), legacyRaw)
+workspaceStore.removal = 'unverified'
+assert.equal(
+  deleteLegacyWorkspace(workspaceStore).kind,
+  'legacy-removal-unverified',
+)
+workspaceStore.readsFail = false
+assert.equal(deleteLegacyWorkspace(workspaceStore).kind, 'absent')
+workspaceStore.removal = 'normal'
+for (let encounter = 0; encounter < 2; encounter++) {
+  workspaceStore.setItem(WORKSPACE_KEY, legacyRaw)
+  assert.equal(deleteLegacyWorkspace(workspaceStore).kind, 'legacy-deleted')
+}
+const savedV2 = saveSavedWorkspace(workspaceStore, null, workspaceInput)
+assert.ok(savedV2.kind === 'saved')
+assert.equal(savedV2.workspace.schemaVersion, 2)
+assert.equal(savedV2.workspace.noticeVersion, 2)
+assert.equal(deleteLegacyWorkspace(workspaceStore).kind, 'conflict')
+assert.equal(loadSavedWorkspace(workspaceStore).kind, 'ready')
+assert.equal(
+  saveSavedWorkspace(workspaceStore, null, workspaceInput).kind,
+  'conflict',
+)
+workspaceStore.removal = 'unverified'
+assert.equal(
+  deleteSavedWorkspace(workspaceStore, savedV2.workspace.revision).kind,
+  'deletion-unverified',
+)
+workspaceStore.readsFail = false
+assert.equal(deleteSavedWorkspace(workspaceStore, null).kind, 'absent')
+assert.equal(workspaceStore.getItem('unrelated'), 'keep')
+workspaceStore.setItem(WORKSPACE_KEY, JSON.stringify({ schemaVersion: 99 }))
+assert.equal(loadSavedWorkspace(workspaceStore).kind, 'invalid')
+assert.equal(deleteLegacyWorkspace(workspaceStore).kind, 'conflict')
 process.stdout.write('Frontend verification passed.\n')

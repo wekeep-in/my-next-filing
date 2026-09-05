@@ -150,7 +150,7 @@ Status: complete; strict Recovery codec, verified storage operations, and synchr
 
 ## Work item 4: replace Saved-workspace schema 1 with schema 2
 
-Status: pending
+Status: complete; schema-2 persistence, explicit legacy deletion, and the smaller workspace derivation interface pass lint, typecheck, and tests; encounter handling follows in item 5
 
 ### Changes
 

@@ -614,7 +614,7 @@ const storage = new MemoryStorage()
 storage.setItem('unrelated', 'keep')
 assert.deepEqual(loadSavedWorkspace(storage, now), { kind: 'absent' })
 const workspaceDraft: SavedWorkspaceDraft = {
-  noticeVersion: 1,
+  noticeVersion: 2,
   consentDecidedAt: '2026-09-01T00:00:00.000Z',
   activeTaxYear: 'Tax Year 2026-27',
   active: { ruleDatasetId: currentRules.id, profile, completions: [] },
@@ -668,12 +668,12 @@ failedRemove.setItem(
   WORKSPACE_KEY,
   JSON.stringify({
     ...workspaceDraft,
-    schemaVersion: 1,
+    schemaVersion: 2,
     revision: 0,
     updatedAt: '2026-09-03T06:30:00.000Z',
   }),
 )
-assert.equal(deleteSavedWorkspace(failedRemove, 0).kind, 'unavailable')
+assert.equal(deleteSavedWorkspace(failedRemove, 0).kind, 'deletion-failed')
 const saved = saveSavedWorkspace(storage, null, workspaceDraft)
 assert.equal(saved.kind, 'saved')
 if (saved.kind === 'saved') {
@@ -684,11 +684,7 @@ if (saved.kind === 'saved') {
     'conflict',
   )
   const plan = evaluate(profile, now, currentRules)
-  const view = deriveWorkspaceView(
-    saved.workspace,
-    { [profile.taxYear]: plan },
-    '2026-09-03',
-  )
+  const view = deriveWorkspaceView(saved.workspace, { [profile.taxYear]: plan })
   assert.equal(view.openCount, 2)
   assert.equal(view.next?.obligation.kind, 'advance-tax')
   const completionDraft: SavedWorkspaceDraft = {
@@ -710,11 +706,9 @@ if (saved.kind === 'saved') {
   )
   assert.equal(savedAgain.kind, 'saved')
   if (savedAgain.kind === 'saved') {
-    const completedView = deriveWorkspaceView(
-      savedAgain.workspace,
-      { [profile.taxYear]: plan },
-      '2026-09-03',
-    )
+    const completedView = deriveWorkspaceView(savedAgain.workspace, {
+      [profile.taxYear]: plan,
+    })
     assert.equal(completedView.completedCount, 1)
     assert.equal(completedView.openCount, 1)
     const noActions = evaluate(
@@ -736,11 +730,9 @@ if (saved.kind === 'saved') {
       now,
       currentRules,
     )
-    const mismatchView = deriveWorkspaceView(
-      savedAgain.workspace,
-      { [profile.taxYear]: noActions },
-      '2026-09-03',
-    )
+    const mismatchView = deriveWorkspaceView(savedAgain.workspace, {
+      [profile.taxYear]: noActions,
+    })
     assert.equal(mismatchView.completedCount, 0)
     assert.equal(mismatchView.years[0]?.needsReview.length, 1)
     assert.equal(

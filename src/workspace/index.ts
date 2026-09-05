@@ -5,7 +5,7 @@ import { TAX_YEAR } from '@/rules'
 import type { DateOnly, TaxYear } from '@/rules'
 
 export const WORKSPACE_KEY = 'my-next-filing:workspace'
-export const STORAGE_NOTICE_VERSION = 1 as const
+export const STORAGE_NOTICE_VERSION = 2 as const
 
 export type CompletionRecord = {
   readonly obligationId: string
@@ -38,9 +38,9 @@ export type ArchivedPriorYearRecord = {
 export type PriorYearRecord = OpenPriorYearRecord | ArchivedPriorYearRecord
 
 export type SavedWorkspace = {
-  readonly schemaVersion: 1
+  readonly schemaVersion: 2
   readonly revision: number
-  readonly noticeVersion: 1
+  readonly noticeVersion: 2
   readonly consentDecidedAt: string
   readonly activeTaxYear: TaxYear
   readonly active: ActiveSavedRecord | null
@@ -54,6 +54,12 @@ export type SavedWorkspaceDraft = Omit<
 >
 
 export type LoadSavedWorkspaceResult =
+  | {
+      readonly kind:
+        | 'legacy'
+        | 'legacy-removal-failed'
+        | 'legacy-removal-unverified'
+    }
   | { readonly kind: 'absent' }
   | { readonly kind: 'ready'; readonly workspace: SavedWorkspace }
   | { readonly kind: 'invalid'; readonly reason: 'saved-data-invalid' }
@@ -66,15 +72,11 @@ export type StorageWriteResult =
   | { readonly kind: 'unavailable'; readonly reason: 'storage-unavailable' }
 
 export type StorageDeleteResult =
+  | { readonly kind: 'deletion-failed' | 'deletion-unverified' }
   | { readonly kind: 'deleted' }
   | { readonly kind: 'absent' }
   | { readonly kind: 'conflict'; readonly reason: 'stored-value-changed' }
   | { readonly kind: 'unavailable'; readonly reason: 'storage-unavailable' }
-
-export type EvaluatedYear = {
-  readonly taxYear: TaxYear
-  readonly evaluation: EvaluationResult
-}
 
 export type CompletionMatch = {
   readonly kind: 'complete'
@@ -251,7 +253,7 @@ function decodeWorkspace(
       'priorYears',
       'updatedAt',
     ]) ||
-    value.schemaVersion !== 1 ||
+    value.schemaVersion !== 2 ||
     !isSafeInteger(value.revision) ||
     value.noticeVersion !== STORAGE_NOTICE_VERSION ||
     !isIsoTimestamp(value.consentDecidedAt) ||
@@ -289,7 +291,10 @@ function readWorkspace(storage: Storage, today: DateOnly) {
   const raw = storage.getItem(WORKSPACE_KEY)
   if (raw === null) return { kind: 'absent' as const }
   try {
-    const workspace = decodeWorkspace(JSON.parse(raw) as unknown, today)
+    const parsed: unknown = JSON.parse(raw)
+    if (isRecord(parsed) && parsed.schemaVersion === 1)
+      return { kind: 'legacy' as const }
+    const workspace = decodeWorkspace(parsed, today)
     return workspace
       ? { kind: 'ready' as const, workspace }
       : { kind: 'invalid' as const }
@@ -304,7 +309,7 @@ export function loadSavedWorkspace(
 ): LoadSavedWorkspaceResult {
   try {
     const result = readWorkspace(storage, indiaDate(now))
-    return result.kind === 'ready'
+    return result.kind === 'ready' || result.kind === 'legacy'
       ? result
       : result.kind === 'invalid'
         ? { kind: 'invalid', reason: 'saved-data-invalid' }
@@ -320,7 +325,7 @@ function withRevision(
   now: Date,
 ): SavedWorkspace {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     revision,
     noticeVersion: STORAGE_NOTICE_VERSION,
     consentDecidedAt: draft.consentDecidedAt,
@@ -351,7 +356,7 @@ export function saveSavedWorkspace(
       return { kind: 'invalid', reason: 'workspace-invalid' }
     const today = indiaDate(now)
     const current = readWorkspace(storage, today)
-    if (current.kind === 'invalid')
+    if (current.kind === 'invalid' || current.kind === 'legacy')
       return { kind: 'invalid', reason: 'workspace-invalid' }
     if (
       current.kind === 'absent'
@@ -367,7 +372,7 @@ export function saveSavedWorkspace(
     if (!decodeWorkspace(next, today))
       return { kind: 'invalid', reason: 'workspace-invalid' }
     const latest = readWorkspace(storage, today)
-    if (latest.kind === 'invalid')
+    if (latest.kind === 'invalid' || latest.kind === 'legacy')
       return { kind: 'invalid', reason: 'workspace-invalid' }
     if (
       latest.kind === 'absent'
@@ -405,33 +410,76 @@ export function deleteSavedWorkspace(
     const latestRaw = storage.getItem(WORKSPACE_KEY)
     if (latestRaw !== raw)
       return { kind: 'conflict', reason: 'stored-value-changed' }
-    storage.removeItem(WORKSPACE_KEY)
-    if (storage.getItem(WORKSPACE_KEY) !== null)
-      return { kind: 'unavailable', reason: 'storage-unavailable' }
-    return { kind: 'deleted' }
+    return removeWorkspaceValue(storage, raw)
   } catch {
     return { kind: 'unavailable', reason: 'storage-unavailable' }
   }
 }
 
-function isEvaluatedYearList(
-  value: readonly EvaluatedYear[] | Readonly<Record<string, EvaluationResult>>,
-): value is readonly EvaluatedYear[] {
-  return Array.isArray(value)
+function removeWorkspaceValue(
+  storage: Storage,
+  raw: string,
+): StorageDeleteResult {
+  try {
+    storage.removeItem(WORKSPACE_KEY)
+  } catch {
+    /* Inspect the actual removal outcome. */
+  }
+  try {
+    const remaining = storage.getItem(WORKSPACE_KEY)
+    if (remaining === null) return { kind: 'deleted' }
+    return remaining === raw
+      ? { kind: 'deletion-failed' }
+      : { kind: 'conflict', reason: 'stored-value-changed' }
+  } catch {
+    return { kind: 'deletion-unverified' }
+  }
 }
 
-function evaluationFor(
-  year: TaxYear,
-  evaluations:
-    | readonly EvaluatedYear[]
-    | Readonly<Record<string, EvaluationResult>>,
-) {
-  if (isEvaluatedYearList(evaluations))
-    return (
-      evaluations.find((candidate) => candidate.taxYear === year)?.evaluation ??
-      null
+export type LegacyDeleteResult = {
+  readonly kind:
+    | 'legacy-deleted'
+    | 'absent'
+    | 'legacy-removal-failed'
+    | 'legacy-removal-unverified'
+    | 'conflict'
+    | 'unavailable'
+}
+
+export function deleteLegacyWorkspace(storage: Storage): LegacyDeleteResult {
+  try {
+    const raw = storage.getItem(WORKSPACE_KEY)
+    if (raw === null) return { kind: 'absent' }
+    let value: unknown
+    try {
+      value = JSON.parse(raw) as unknown
+    } catch {
+      return { kind: 'conflict' }
+    }
+    if (
+      !isRecord(value) ||
+      value.schemaVersion !== 1 ||
+      storage.getItem(WORKSPACE_KEY) !== raw
     )
-  return evaluations[year] ?? null
+      return { kind: 'conflict' }
+    const result = removeWorkspaceValue(storage, raw)
+    switch (result.kind) {
+      case 'deleted':
+        return { kind: 'legacy-deleted' }
+      case 'absent':
+        return { kind: 'absent' }
+      case 'deletion-failed':
+        return { kind: 'legacy-removal-failed' }
+      case 'deletion-unverified':
+        return { kind: 'legacy-removal-unverified' }
+      case 'conflict':
+        return { kind: 'conflict' }
+      case 'unavailable':
+        return { kind: 'unavailable' }
+    }
+  } catch {
+    return { kind: 'unavailable' }
+  }
 }
 
 function catalogOrder(kind: Obligation['kind']) {
@@ -532,16 +580,12 @@ function sortOpen(a: WorkspaceOpenObligation, b: WorkspaceOpenObligation) {
 
 export function deriveWorkspaceView(
   savedWorkspace: SavedWorkspace | null,
-  evaluations:
-    | readonly EvaluatedYear[]
-    | Readonly<Record<string, EvaluationResult>>,
-  currentIndiaDate: DateOnly,
+  evaluations: Readonly<Record<string, EvaluationResult>>,
 ): WorkspaceView {
-  void currentIndiaDate
   const yearViews: WorkspaceYearView[] = []
   if (savedWorkspace) {
     const activeEvaluation = savedWorkspace.active
-      ? evaluationFor(savedWorkspace.active.profile.taxYear, evaluations)
+      ? (evaluations[savedWorkspace.active.profile.taxYear] ?? null)
       : null
     if (savedWorkspace.active)
       yearViews.push(
@@ -549,19 +593,15 @@ export function deriveWorkspaceView(
       )
     for (const prior of savedWorkspace.priorYears)
       yearViews.push(
-        currentYearView(
-          prior,
-          prior.state,
-          evaluationFor(prior.taxYear, evaluations),
-        ),
+        currentYearView(prior, prior.state, evaluations[prior.taxYear] ?? null),
       )
   } else {
-    const evaluatedYears = isEvaluatedYearList(evaluations)
-      ? evaluations
-      : Object.entries(evaluations).map(([taxYear, evaluation]) => ({
-          taxYear: taxYear as TaxYear,
-          evaluation,
-        }))
+    const evaluatedYears = Object.entries(evaluations).map(
+      ([taxYear, evaluation]) => ({
+        taxYear: taxYear as TaxYear,
+        evaluation,
+      }),
+    )
     for (const evaluated of evaluatedYears)
       yearViews.push({
         taxYear: evaluated.taxYear,

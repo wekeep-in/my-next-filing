@@ -1,5 +1,4 @@
 import { groupStep } from '@/routes/check/model'
-import { indiaDate } from '@/lib/india-date'
 import Confetti from 'react-confetti-boom'
 import { useEffect, useState } from 'react'
 import {
@@ -110,11 +109,9 @@ export function PlanRoute() {
       )
   const workspaceView =
     evaluation && !isExample
-      ? deriveWorkspaceView(
-          saved ? savedWorkspace.workspace : null,
-          { [profile?.taxYear ?? currentRules.taxPeriod]: evaluation },
-          indiaDate(now),
-        )
+      ? deriveWorkspaceView(saved ? savedWorkspace.workspace : null, {
+          [profile?.taxYear ?? currentRules.taxPeriod]: evaluation,
+        })
       : null
   const supported = evaluation?.kind === 'supported' ? evaluation : null
   const canOfferSave = Boolean(
@@ -172,7 +169,7 @@ export function PlanRoute() {
     const currentSaved =
       savedWorkspace.kind === 'ready' ? savedWorkspace.workspace : null
     const draft: SavedWorkspaceDraft = {
-      noticeVersion: 1,
+      noticeVersion: 2,
       consentDecidedAt:
         currentSaved?.consentDecidedAt ?? actionDate.toISOString(),
       activeTaxYear: nextProfile.taxYear,
