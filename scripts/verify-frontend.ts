@@ -30,7 +30,6 @@ import type {
 } from '../src/routes/check/session.ts'
 import {
   clearInactiveDraft,
-  questionnaireErrors,
   questionnaireReducer,
   restoreSession,
   sessionFromProfile,
@@ -45,10 +44,9 @@ import {
 import { indiaDate } from '../src/lib/india-date.ts'
 import { shouldAnimatePage } from '../src/lib/page-transition.ts'
 import {
+  assessQuestionnaire,
   blankDraft,
-  canOpenGroup,
   completeDraft,
-  draftFeedback,
   draftFromProfile,
   exampleProfile,
   firstIncompleteGroup,
@@ -59,7 +57,6 @@ import {
   isUnregisteredGst,
   questionnaireGroupFromPath,
   questionnaireGroups,
-  validateDraftGroup,
 } from '../src/routes/check/model.ts'
 
 const today = '2026-09-05'
@@ -159,14 +156,38 @@ assert.equal(indiaDate(new Date('2026-09-04T18:30:00Z')), today)
 assert.equal(indiaDate(new Date('2026-12-31T18:30:00Z')), '2027-01-01')
 assert.equal(isBlankDraft(blankDraft()), true)
 assert.equal(firstIncompleteGroup(blankDraft(), today), 'tax-year')
-assert.equal(canOpenGroup(blankDraft(), 'review', today), false)
+const blankAssessment = assessQuestionnaire(
+  { draft: blankDraft() },
+  'tax-year',
+  today,
+)
+assert.deepEqual(blankAssessment.errors, {})
+assert.deepEqual(blankAssessment.warnings, {})
+assert.deepEqual(blankAssessment.coverage, {})
+assert.deepEqual(blankAssessment.availableGroups, ['tax-year'])
+assert.equal(blankAssessment.resumeGroup, 'tax-year')
+assert.equal(blankAssessment.redirectGroup, null)
+assert.equal(blankAssessment.progression.kind, 'blocked')
+assert.equal(
+  assessQuestionnaire({ draft: blankDraft() }, 'review', today).redirectGroup,
+  'tax-year',
+)
 const exampleDraft = draftFromProfile(exampleProfile)
 assert.equal(isBlankDraft(exampleDraft), false)
 assert.equal(firstIncompleteGroup(exampleDraft, today), null)
-assert.equal(canOpenGroup(exampleDraft, 'review', today), true)
-assert.deepEqual(draftFeedback(blankDraft(), today).warnings, [])
-assert.deepEqual(draftFeedback(blankDraft(), today).coverage, [])
-assert.deepEqual(draftFeedback(exampleDraft, today).warnings, [])
+const readyAssessment = assessQuestionnaire(
+  { draft: exampleDraft },
+  'review',
+  today,
+)
+assert.deepEqual(readyAssessment.errors, {})
+assert.deepEqual(readyAssessment.warnings, {})
+assert.deepEqual(
+  readyAssessment.availableGroups,
+  questionnaireGroups.map(({ id }) => id),
+)
+assert.equal(readyAssessment.resumeGroup, 'review')
+assert.deepEqual(readyAssessment.progression, { kind: 'complete' })
 for (const [field, value] of [
   ['personKind', 'not-individual'],
   ['adult', 'no'],
@@ -186,76 +207,157 @@ for (const [field, value] of [
   ['delivery', 'not-sure'],
   ['unsupportedCertainty', 'not-sure'],
 ] as const) {
-  const changed = { ...exampleDraft, [field]: value }
-  assert.ok(
-    draftFeedback(changed, today).warnings.some((item) => item.field === field),
-    field,
+  const assessment = assessQuestionnaire(
+    { draft: { ...exampleDraft, [field]: value } },
+    'review',
+    today,
   )
-  assert.equal(canOpenGroup(changed, 'review', today), false, field)
+  assert.ok(assessment.warnings[field], field)
+  assert.equal(assessment.availableGroups.includes('review'), false, field)
+  assert.equal(assessment.progression.kind, 'blocked', field)
+  assert.ok(assessment.redirectGroup, field)
 }
 assert.ok(
-  draftFeedback(
-    { ...blankDraft(), clientKind: 'not-sure' },
+  assessQuestionnaire(
+    { draft: { ...blankDraft(), clientKind: 'not-sure' } },
+    'clients',
     today,
-  ).warnings.some((item) => item.field === 'clientKind'),
+  ).warnings.clientKind,
 )
-assert.ok(
-  draftFeedback(
-    {
+const emptyProfit = {
+  ...exampleDraft,
+  amounts: { ...exampleDraft.amounts, declaredProfit: '' },
+}
+const hiddenProfit = assessQuestionnaire(
+  { draft: emptyProfit },
+  'receipts',
+  today,
+)
+const touchedProfit = assessQuestionnaire(
+  { draft: emptyProfit },
+  'receipts',
+  today,
+  new Set(['declaredProfit']),
+)
+assert.equal(hiddenProfit.errors.declaredProfit, undefined)
+assert.ok(touchedProfit.errors.declaredProfit)
+assert.deepEqual(touchedProfit.progression, hiddenProfit.progression)
+assert.deepEqual(hiddenProfit.availableGroups, [
+  'tax-year',
+  'activity',
+  'receipts',
+])
+assert.equal(hiddenProfit.redirectGroup, null)
+assert.equal(
+  assessQuestionnaire({ draft: emptyProfit }, 'review', today).redirectGroup,
+  'receipts',
+)
+const invalidProfit = assessQuestionnaire(
+  {
+    draft: {
+      ...emptyProfit,
+      amounts: { ...emptyProfit.amounts, declaredProfit: 'abc' },
+    },
+  },
+  'receipts',
+  today,
+)
+assert.ok(invalidProfit.errors.declaredProfit)
+assert.equal(invalidProfit.progression.kind, 'blocked')
+const lowProfit = assessQuestionnaire(
+  {
+    draft: {
       ...exampleDraft,
       amounts: { ...exampleDraft.amounts, declaredProfit: '100' },
     },
-    today,
-  ).warnings.some((item) => item.field === 'declaredProfit'),
+  },
+  'receipts',
+  today,
 )
+assert.ok(lowProfit.warnings.declaredProfit)
+assert.equal(lowProfit.progression.kind, 'blocked')
+assert.deepEqual(
+  assessQuestionnaire({ draft: exampleDraft }, 'receipts', today).progression,
+  { kind: 'next', group: 'clients' },
+)
+const receiptsErrors = assessQuestionnaire(
+  {
+    draft: {
+      ...emptyProfit,
+      amounts: { ...emptyProfit.amounts, cashReceipts: '2000000' },
+    },
+  },
+  'receipts',
+  today,
+)
+assert.ok(receiptsErrors.errors.cashReceipts)
+assert.equal(receiptsErrors.progression.kind, 'blocked')
+if (receiptsErrors.progression.kind === 'blocked')
+  assert.equal(receiptsErrors.progression.issue?.field, 'declaredProfit')
 assert.ok(
-  draftFeedback(
+  assessQuestionnaire(
     {
-      ...exampleDraft,
-      amounts: {
-        ...exampleDraft.amounts,
-        cashReceipts: '2000000',
-        declaredProfit: '',
+      draft: {
+        ...exampleDraft,
+        amounts: { ...exampleDraft.amounts, taxableBankInterest: '6000000' },
       },
     },
+    'other-income',
     today,
-  ).errors.some((item) => item.field === 'cashReceipts'),
-)
-assert.ok(
-  draftFeedback(
-    {
-      ...exampleDraft,
-      amounts: { ...exampleDraft.amounts, taxableBankInterest: '6000000' },
-    },
-    today,
-  ).warnings.some((item) => item.field === 'taxableBankInterest'),
+  ).warnings.taxableBankInterest,
 )
 const gstUncertain = {
   ...exampleDraft,
   compulsoryRegistration: 'not-sure' as const,
 }
-assert.equal(draftFeedback(gstUncertain, today).warnings.length, 0)
-assert.ok(
-  draftFeedback(gstUncertain, today).coverage.some(
-    (item) => item.field === 'compulsoryRegistration',
-  ),
+const coverageAssessment = assessQuestionnaire(
+  { draft: gstUncertain },
+  'gst',
+  today,
 )
-assert.equal(canOpenGroup(gstUncertain, 'review', today), true)
+assert.deepEqual(coverageAssessment.warnings, {})
+assert.ok(coverageAssessment.coverage.compulsoryRegistration)
+assert.equal(coverageAssessment.availableGroups.includes('review'), true)
+assert.deepEqual(coverageAssessment.progression, {
+  kind: 'next',
+  group: 'review',
+})
+assert.deepEqual(
+  assessQuestionnaire({ draft: gstUncertain }, 'review', today).progression,
+  { kind: 'complete' },
+)
 assert.ok(
-  draftFeedback(
+  assessQuestionnaire(
     {
-      ...exampleDraft,
-      amounts: { ...exampleDraft.amounts, aggregateTurnover: '2100000' },
+      draft: {
+        ...exampleDraft,
+        amounts: { ...exampleDraft.amounts, aggregateTurnover: '2100000' },
+      },
     },
+    'gst',
     today,
-  ).coverage.some((item) => item.field === 'thresholdLiabilityDate'),
+  ).coverage.thresholdLiabilityDate,
 )
-assert.ok(
-  draftFeedback(
-    { ...exampleDraft, thresholdLiabilityDate: '2026-02-30' },
-    today,
-  ).errors.some((item) => item.field === 'thresholdLiabilityDate'),
+const invalidDate = assessQuestionnaire(
+  { draft: { ...exampleDraft, thresholdLiabilityDate: '2026-04-31' } },
+  'review',
+  today,
 )
+assert.ok(invalidDate.errors.thresholdLiabilityDate)
+assert.equal(invalidDate.redirectGroup, 'gst')
+assert.equal(invalidDate.progression.kind, 'blocked')
+const staleAssessment = assessQuestionnaire(
+  { draft: exampleDraft },
+  'review',
+  '2030-01-01',
+)
+assert.equal(staleAssessment.stale, true)
+assert.deepEqual(staleAssessment.progression, { kind: 'blocked', issue: null })
+assert.deepEqual(
+  staleAssessment.availableGroups,
+  readyAssessment.availableGroups,
+)
+assert.equal(completeDraft(exampleDraft, '2030-01-01').valid, true)
 for (const raw of ['', '0', '123456', '1,23,456', '₹ 123456'])
   assert.equal(acceptsAmountEdit(raw), true, raw)
 for (const raw of [
@@ -274,13 +376,12 @@ assert.ok(completedExample.valid)
 assert.deepEqual(completedExample.profile, exampleProfile)
 assert.equal(completeDraft(blankDraft(), today).valid, false)
 for (const { id } of questionnaireGroups) {
-  assert.deepEqual(validateDraftGroup(exampleDraft, id, today), [])
-  if (id !== 'review')
-    assert.ok(
-      validateDraftGroup(blankDraft(), id, today).every(
-        (error) => error.group === id,
-      ),
-    )
+  const assessment = assessQuestionnaire({ draft: exampleDraft }, id, today)
+  assert.deepEqual(assessment.errors, {})
+  assert.equal(
+    assessment.progression.kind,
+    id === 'review' ? 'complete' : 'next',
+  )
 }
 assert.equal(
   completeDraft(
@@ -478,18 +579,20 @@ const started = questionnaireReducer(null, {
 })
 assert.ok(started)
 assert.equal(isBlankDraft(started.draft), true)
-assert.deepEqual(questionnaireErrors(started, today), [])
+assert.deepEqual(assessQuestionnaire(started, 'tax-year', today).errors, {})
 const exposed = questionnaireReducer(started, {
   type: 'expose-validation',
   group: 'tax-year',
 })
-assert.ok(questionnaireErrors(exposed, today).length)
+assert.ok(exposed)
+assert.ok(assessQuestionnaire(exposed, 'tax-year', today).errors.personKind)
+const clearedValidation = questionnaireReducer(exposed, {
+  type: 'clear-validation',
+})
+assert.ok(clearedValidation)
 assert.deepEqual(
-  questionnaireErrors(
-    questionnaireReducer(exposed, { type: 'clear-validation' }),
-    today,
-  ),
-  [],
+  assessQuestionnaire(clearedValidation, 'tax-year', today).errors,
+  {},
 )
 assert.equal(
   questionnaireReducer(started, {

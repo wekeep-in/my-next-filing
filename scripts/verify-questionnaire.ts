@@ -18,6 +18,8 @@ export async function verifyQuestionnaire() {
     [...document.querySelectorAll<HTMLButtonElement>('button')].find(
       (item) => item.textContent === label,
     )!
+  const step = (label: string) =>
+    document.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!
   const edit = async (value: string) => {
     Object.getOwnPropertyDescriptor(
       HTMLInputElement.prototype,
@@ -38,6 +40,10 @@ export async function verifyQuestionnaire() {
     'Show the profit warning before Continue',
   )
   check(button('Continue').disabled, 'Block an unsupported plan at receipts')
+  check(
+    step('8. Review your answers').disabled,
+    'The sidebar must also block review for unsupported answers',
+  )
   for (const invalid of ['abc', '1e6', '-100', '12.5']) {
     await edit(invalid)
     check(
@@ -55,6 +61,53 @@ export async function verifyQuestionnaire() {
   )
   await edit(original)
   check(!button('Continue').disabled, 'Allow a corrected amount')
+  check(
+    !step('8. Review your answers').disabled,
+    'Corrected answers must reopen review in the sidebar',
+  )
+  button('Continue').click()
+  await wait()
+  check(
+    location.pathname === '/check/clients',
+    'Continue must use the assessed next group',
+  )
+  step('7. GST registration').click()
+  await wait()
+  const uncertainGst = [
+    ...document.querySelectorAll<HTMLLabelElement>(
+      '#compulsoryRegistration label',
+    ),
+  ].find((label) => label.textContent?.trim() === 'Not sure')!
+  check(
+    Boolean(uncertainGst),
+    'Show the compulsory-registration uncertainty choice',
+  )
+  uncertainGst.click()
+  await wait()
+  check(
+    Boolean(document.getElementById('compulsoryRegistration-coverage')),
+    'Show the independent GST Coverage limitation',
+  )
+  check(
+    !button('Continue').disabled,
+    'An independent GST Coverage limitation must allow progression',
+  )
+  check(
+    !step('8. Review your answers').disabled,
+    'Coverage-only guidance must keep review accessible',
+  )
+  button('Continue').click()
+  await wait()
+  check(
+    location.pathname === '/check/review',
+    'GST progression must lead to review',
+  )
+  button('Calculate my plan').click()
+  await wait()
+  check(
+    location.pathname === '/plan' && location.search === '?example=1',
+    'Fresh review parsing must reach the fictional plan',
+  )
   button('Start over').click()
   await wait()
   check(location.search === '?example=1', 'Start over must stay fictional')

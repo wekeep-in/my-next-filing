@@ -1,5 +1,5 @@
 import type { Profile, ProfileGroup, UnsupportedFact } from '@/evaluation'
-import type { Draft, DraftAmountKey, DraftError } from '@/routes/check/model'
+import type { Draft, DraftAmountKey } from '@/routes/check/model'
 import {
   amountKeys,
   blankDraft,
@@ -10,7 +10,6 @@ import {
   hasPlatformWork,
   isBusinessPath,
   isUnregisteredGst,
-  validateDraftGroup,
 } from '@/routes/check/model'
 
 export type DraftOrigin =
@@ -142,23 +141,6 @@ export function restoreSession(
   return completed.valid
     ? { kind: 'complete', origin, draft: cleaned, profile: completed.profile }
     : { kind: 'editing', origin, draft: cleaned, validationGroup: null }
-}
-
-export function questionnaireErrors(
-  state: QuestionnaireState,
-  latestThresholdDate: string,
-): readonly DraftError[] {
-  if (state?.kind !== 'editing' || !state.validationGroup) return []
-  const errors = validateDraftGroup(
-    state.draft,
-    state.validationGroup,
-    latestThresholdDate,
-  )
-  if (errors.length) return errors
-  const completed = completeDraft(state.draft, latestThresholdDate)
-  return completed.valid
-    ? []
-    : completed.errors.filter(({ group }) => group === state.validationGroup)
 }
 
 export function questionnaireReducer(

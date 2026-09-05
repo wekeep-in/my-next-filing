@@ -22,76 +22,52 @@ import { ReceiptsStep } from '@/routes/check/receipts-step'
 import { ReviewStep } from '@/routes/check/review'
 import { SituationStep } from '@/routes/check/situation-step'
 import {
-  canOpenGroup,
-  completeDraft,
-  draftFeedback,
-  firstBlockedGroup,
-  firstIncompleteGroup,
+  assessQuestionnaire,
   groupStep,
   questionnaireGroupFromPath,
   questionnaireGroups,
-  validateDraftGroup,
 } from '@/routes/check/model'
 import type { DraftAmountKey } from '@/routes/check/model'
 import { CoverageWarnings, FieldWarnings } from '@/routes/check/fields'
-import { questionnaireErrors } from '@/routes/check/session'
 import { sessionMatchesWorkspace } from '@/routes/plan/model'
 
 type CheckContext = {
   readonly app: AppOutletContext
-  readonly feedback: ReturnType<typeof draftFeedback> | null
-  readonly blockedGroup: ProfileGroup | null
-  readonly touched: ReadonlySet<string>
+  readonly assessment: ReturnType<typeof assessQuestionnaire> | null
   readonly latestDate: string
   readonly go: (group: ProfileGroup, replace?: boolean) => void
 }
 
 export function CheckIndex() {
-  const { app, latestDate } = useOutletContext<CheckContext>()
-  if (!app.session) return null
+  const { app, assessment } = useOutletContext<CheckContext>()
+  if (!app.session || !assessment) return null
   return (
     <Navigate
       replace
       to={
         app.session.kind === 'complete'
           ? `/plan${app.session.origin.kind === 'example' ? '?example=1' : ''}`
-          : `/check/${firstIncompleteGroup(app.session.draft, latestDate) ?? 'review'}${app.session.origin.kind === 'example' ? '?example=1' : ''}`
+          : `/check/${assessment.resumeGroup}${app.session.origin.kind === 'example' ? '?example=1' : ''}`
       }
     />
   )
 }
 
 export function CheckGroup({ group }: { readonly group: ProfileGroup }) {
-  const { app, latestDate, go, touched, feedback, blockedGroup } =
-    useOutletContext<CheckContext>()
+  const { app, latestDate, go, assessment } = useOutletContext<CheckContext>()
   const session = app.session
-  if (!session) return null
-  if (!canOpenGroup(session.draft, group, latestDate, blockedGroup))
+  if (!session || !assessment) return null
+  if (assessment.redirectGroup)
     return (
       <Navigate
         replace
-        to={`/check/${blockedGroup}${session.origin.kind === 'example' ? '?example=1' : ''}`}
+        to={`/check/${assessment.redirectGroup}${session.origin.kind === 'example' ? '?example=1' : ''}`}
       />
     )
-  const errors = Object.fromEntries(
-    [
-      ...questionnaireErrors(session, latestDate),
-      ...validateDraftGroup(session.draft, group, latestDate).filter(
-        ({ field }) =>
-          touched.has(field) ||
-          Boolean(
-            field in session.draft.amounts
-              ? session.draft.amounts[field as DraftAmountKey]
-              : session.draft[field as keyof typeof session.draft],
-          ),
-      ),
-      ...(feedback?.errors ?? []),
-    ].map(({ field, message }) => [field, message]),
-  )
   const props = {
     className: 'question-group',
     draft: session.draft,
-    errors,
+    errors: assessment.errors,
     dispatch: app.dispatch,
   }
   const setAmount = (field: DraftAmountKey, value: string) =>
@@ -120,7 +96,7 @@ export function CheckGroup({ group }: { readonly group: ProfileGroup }) {
         <ReviewStep
           className="question-group"
           draft={session.draft}
-          errors={errors}
+          errors={assessment.errors}
           onEdit={(step) => go(questionnaireGroups[step].id)}
         />
       )
@@ -137,14 +113,13 @@ export function CheckRoute() {
     location.pathname === '/check' || location.pathname === '/check/'
   const latestDate = latestQuestionnaireDate(new Date())
   const { session, dispatch } = app
-  const feedback = useMemo(
-    () => (session ? draftFeedback(session.draft, latestDate) : null),
-    [session, latestDate],
+  const assessment = useMemo(
+    () =>
+      session
+        ? assessQuestionnaire(session, group ?? 'tax-year', latestDate, touched)
+        : null,
+    [session, group, latestDate, touched],
   )
-  const blockedGroup =
-    session && feedback
-      ? firstBlockedGroup(session.draft, latestDate, feedback)
-      : null
   useEffect(() => {
     if (
       session?.kind === 'editing' &&
@@ -176,20 +151,15 @@ export function CheckRoute() {
   }
   const context: CheckContext = {
     app,
-    feedback,
-    blockedGroup,
-    touched,
+    assessment,
     latestDate,
     go,
   }
   if (!group && !isIndex) return <Outlet context={context} />
   if (app.deleted) return <Navigate to="/plan" replace />
   if (app.workspaceSelected) return <Navigate to="/plan" replace />
-  if (!session || !feedback) return null
+  if (!session || !assessment) return null
   if (isIndex) return <Outlet context={context} />
-  const blocking = [...feedback.errors, ...feedback.warnings].filter(
-    (item) => item.group === group,
-  )
   const step = groupStep(group!)
   const focusError = (field: string | undefined) => {
     if (!field) return
@@ -203,27 +173,26 @@ export function CheckRoute() {
   const next = (event: MouseEvent<HTMLButtonElement>) => {
     const now = new Date()
     const latest = latestQuestionnaireDate(now)
-    const errors = [
-      ...validateDraftGroup(session.draft, group!, latest),
-      ...blocking,
-    ]
-    if (errors.length) {
-      dispatch({ type: 'expose-validation', group: group! })
-      focusError(errors[0]?.field)
+    const { progression } = assessQuestionnaire(
+      session,
+      group!,
+      latest,
+      touched,
+    )
+    if (progression.kind === 'blocked') {
+      if (progression.issue) {
+        const issue = progression.issue
+        dispatch({ type: 'expose-validation', group: issue.group })
+        if (issue.group !== group)
+          void navigate(
+            `/check/${issue.group}${session.origin.kind === 'example' ? '?example=1' : ''}`,
+          )
+        focusError(issue.field)
+      }
       return
     }
-    if (group !== 'review') {
-      go(questionnaireGroups[step + 1].id)
-      return
-    }
-    const completed = completeDraft(session.draft, latest)
-    if (!completed.valid) {
-      dispatch({
-        type: 'expose-validation',
-        group: completed.errors[0]?.group ?? 'review',
-      })
-      void navigate(`/check/${completed.errors[0]?.group ?? 'review'}`)
-      focusError(completed.errors[0]?.field)
+    if (progression.kind === 'next') {
+      go(progression.group)
       return
     }
     dispatch({ type: 'complete', latestThresholdDate: latest })
@@ -267,20 +236,12 @@ export function CheckRoute() {
       )}
       <div className="questionnaire-main">
         <AutoSize>
-          <FieldWarnings
-            value={Object.fromEntries(
-              feedback.warnings.map((item) => [item.field, item.message]),
-            )}
-          >
-            <CoverageWarnings
-              value={Object.fromEntries(
-                feedback.coverage.map((item) => [item.field, item.message]),
-              )}
-            >
+          <FieldWarnings value={assessment.warnings}>
+            <CoverageWarnings value={assessment.coverage}>
               <Outlet context={context} />
             </CoverageWarnings>
           </FieldWarnings>
-          {feedback.stale && (
+          {assessment.stale && (
             <p className="choice-warning" role="alert">
               The rules need an update before this version can calculate your
               plan.
@@ -318,11 +279,7 @@ export function CheckRoute() {
           <Button
             className="w-full min-w-0 px-[.65rem] leading-[1.1]! font-extrabold!"
             onClick={next}
-            disabled={
-              blocking.length > 0 ||
-              feedback.stale ||
-              validateDraftGroup(session.draft, group!, latestDate).length > 0
-            }
+            disabled={assessment.progression.kind === 'blocked'}
           >
             {group === 'review' ? 'Calculate my plan' : 'Continue'}
           </Button>
@@ -330,9 +287,7 @@ export function CheckRoute() {
         disabledSteps={[
           calculationStep,
           ...questionnaireGroups.flatMap(({ id }, index) =>
-            canOpenGroup(session.draft, id, latestDate, blockedGroup)
-              ? []
-              : [index + 1],
+            assessment.availableGroups.includes(id) ? [] : [index + 1],
           ),
         ]}
         onStepSelect={(selected) =>

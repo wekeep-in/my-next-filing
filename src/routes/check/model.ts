@@ -500,7 +500,7 @@ export function creditTriggerMayApply(draft: Draft) {
   return 'value' in tds && 'value' in tcs && tds.value + tcs.value >= 25_000
 }
 
-export function candidateFromDraft(draft: Draft) {
+function candidateFromDraft(draft: Draft) {
   const errors: Record<string, string> = {}
   const amountValues = Object.fromEntries(
     amountKeys.map((key) => [key, 0]),
@@ -702,15 +702,6 @@ export function firstIncompleteGroup(
   )
 }
 
-export function canOpenGroup(
-  draft: Draft,
-  group: ProfileGroup,
-  latestThresholdDate: string,
-  incomplete = firstBlockedGroup(draft, latestThresholdDate),
-) {
-  return incomplete === null || groupStep(group) <= groupStep(incomplete)
-}
-
 export function completeDraft(
   draft: Draft,
   latestThresholdDate: string,
@@ -744,7 +735,7 @@ export function completeDraft(
       }
 }
 
-export function errorStep(key: string) {
+function errorStep(key: string) {
   if (
     [
       'personKind',
@@ -805,7 +796,7 @@ export function errorStep(key: string) {
   return groupStep('gst')
 }
 
-export function profileErrorKey(error: ProfileInputError) {
+function profileErrorKey(error: ProfileInputError) {
   const aliases: Record<string, string> = {
     kind:
       error.path === 'person.kind'
@@ -829,7 +820,7 @@ export function profileErrorKey(error: ProfileInputError) {
   const last = error.path.split('.').at(-1) ?? error.group
   return aliases[last] ?? last
 }
-export function validateDraftGroup(
+function validateDraftGroup(
   draft: Draft,
   group: ProfileGroup,
   latestThresholdDate: string,
@@ -1014,7 +1005,7 @@ export function validateDraftGroup(
 }
 
 // Dependencies name the answers needed for a reason, not a second set of tax rules.
-export function draftFeedback(draft: Draft, latestDate: string) {
+function draftFeedback(draft: Draft, latestDate: string) {
   const screening = screenProfile(
     candidateFromDraft(draft).value,
     new Date(`${latestDate}T12:00:00+05:30`),
@@ -1176,19 +1167,91 @@ export function draftFeedback(draft: Draft, latestDate: string) {
   return { warnings, errors, coverage, stale: screening.stale }
 }
 
-export function firstBlockedGroup(
-  draft: Draft,
+type QuestionnaireProgression =
+  | { readonly kind: 'blocked'; readonly issue: DraftError | null }
+  | { readonly kind: 'next'; readonly group: ProfileGroup }
+  | { readonly kind: 'complete' }
+
+const fieldMessages = (items: readonly DraftError[]) =>
+  Object.fromEntries(items.map(({ field, message }) => [field, message]))
+
+export function assessQuestionnaire(
+  {
+    draft,
+    validationGroup,
+  }: {
+    readonly draft: Draft
+    readonly validationGroup?: ProfileGroup | null
+  },
+  group: ProfileGroup,
   latestDate: string,
-  feedback = draftFeedback(draft, latestDate),
-): ProfileGroup | null {
-  return (
-    questionnaireGroups.find(
-      ({ id }) =>
-        id !== 'review' &&
-        (validateDraftGroup(draft, id, latestDate).length > 0 ||
-          [...feedback.errors, ...feedback.warnings].some(
-            (item) => item.group === id,
-          )),
-    )?.id ?? null
+  touched: ReadonlySet<string> = new Set(),
+) {
+  const feedback = draftFeedback(draft, latestDate)
+  const groups = questionnaireGroups.map(({ id }) => {
+    const required = validateDraftGroup(draft, id, latestDate)
+    return {
+      id,
+      required,
+      blocking: [
+        ...required,
+        ...feedback.errors.filter((item) => item.group === id),
+        ...feedback.warnings.filter((item) => item.group === id),
+      ],
+    }
+  })
+  const current = groups[groupStep(group)]
+  const blocked = groups.find(
+    ({ id, blocking }) => id !== 'review' && blocking.length > 0,
   )
+  const availableGroups = groups
+    .filter(({ id }) => !blocked || groupStep(id) <= groupStep(blocked.id))
+    .map(({ id }) => id)
+  const accessible = availableGroups.includes(group)
+  const exposed = validationGroup ? groups[groupStep(validationGroup)] : null
+  // Completion remains independent of supported scope, including during restoration.
+  const completed =
+    group === 'review' || (exposed && !exposed.required.length)
+      ? completeDraft(draft, latestDate)
+      : null
+  const exposedErrors = exposed?.required.length
+    ? exposed.required
+    : completed && !completed.valid
+      ? completed.errors.filter((item) => item.group === validationGroup)
+      : []
+  const errors = fieldMessages([
+    ...exposedErrors,
+    ...current.required.filter(
+      ({ field }) =>
+        touched.has(field) ||
+        Boolean(
+          field in draft.amounts
+            ? draft.amounts[field as DraftAmountKey]
+            : draft[field as keyof Draft],
+        ),
+    ),
+    ...feedback.errors,
+  ])
+  const issue = (accessible ? current : blocked)?.blocking[0] ?? null
+  let progression: QuestionnaireProgression = { kind: 'blocked', issue }
+  if (accessible && !issue && !feedback.stale) {
+    if (group !== 'review')
+      progression = {
+        kind: 'next',
+        group: questionnaireGroups[groupStep(group) + 1].id,
+      }
+    else if (completed?.valid) progression = { kind: 'complete' }
+    else progression = { kind: 'blocked', issue: completed?.errors[0] ?? null }
+  }
+  return {
+    errors,
+    warnings: fieldMessages(feedback.warnings),
+    coverage: fieldMessages(feedback.coverage),
+    stale: feedback.stale,
+    availableGroups,
+    redirectGroup: accessible ? null : (blocked?.id ?? null),
+    resumeGroup:
+      groups.find(({ required }) => required.length > 0)?.id ?? 'review',
+    progression,
+  }
 }
