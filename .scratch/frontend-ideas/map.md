@@ -1,9 +1,10 @@
 # Frontend ideas
 
-Status: approved for implementation
+Status: core implementation complete on `frontend-recovery`; release gates pending
 
 - [Implementation specification](spec.md)
 - [Implementation plan](implementation-plan.md)
+- [Implementation verification and remaining release gates](../my-next-filing-solo-freelancer/release-verification.md#frontend-implementation-checkpoint)
 
 ## Accepted ideas
 

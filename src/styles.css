@@ -1758,3 +1758,22 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   --ease-app-out: cubic-bezier(0.23, 1, 0.32, 1);
   --shadow-panel: 0 1rem 2.5rem rgb(15 23 42 / 0.09);
 }
+
+.app-notices .notice--top {
+  width: 100%;
+  margin: 0;
+}
+
+.app-confirmation {
+  width: min(calc(100% - 2rem), 36rem);
+  margin: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 1.5rem;
+  color: var(--foreground);
+  background: var(--card);
+}
+
+.app-confirmation::backdrop {
+  background: rgb(15 23 42 / 0.4);
+}

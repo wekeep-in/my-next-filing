@@ -254,6 +254,7 @@ export function AttentionCard({
   editor,
   onPaymentSubmit,
   onCompletionSubmit,
+  workspaceRevision,
   onEditorCancel,
   onUpdatePayment,
   onChangeDate,
@@ -270,7 +271,12 @@ export function AttentionCard({
   readonly onSaveCancel: () => void
   readonly editor: PlanEditor | null
   readonly onPaymentSubmit: (value: string) => void
-  readonly onCompletionSubmit: (obligation: Obligation, date: DateOnly) => void
+  readonly onCompletionSubmit: (
+    obligation: Obligation,
+    date: DateOnly,
+    revision?: number | null,
+  ) => void
+  readonly workspaceRevision: number | null
   readonly onEditorCancel: () => void
   readonly onUpdatePayment: () => void
   readonly onChangeDate: (obligation: Obligation) => void
@@ -279,6 +285,84 @@ export function AttentionCard({
   const completion = next
     ? completions.find((record) => record.obligationId === next.id)
     : undefined
+  const today = indiaDate(new Date())
+  const needsPayment = next?.kind === 'advance-tax' && (next.amountDue ?? 0) > 0
+  const actions = (editor ||
+    (!completion && saved && next) ||
+    (!saved &&
+      !isExample &&
+      (savePrompt || onSave || next?.kind === 'advance-tax'))) && (
+    <div className="attention-action">
+      {!editor && !saved && !isExample && next?.kind === 'advance-tax' && (
+        <Button variant="link" onClick={onUpdatePayment}>
+          Update amount paid
+        </Button>
+      )}
+      {editor?.kind === 'payment' && (
+        <PaymentEditor
+          current={advanceTaxPaid}
+          onSubmit={onPaymentSubmit}
+          onCancel={onEditorCancel}
+          embedded={editor.obligation.id === next?.id}
+        />
+      )}
+      {editor?.kind === 'completion' && (
+        <CompletionEditor
+          workspaceRevision={workspaceRevision}
+          key={editor.obligation.id}
+          obligation={editor.obligation}
+          initialDate={
+            completions.find(
+              (record) => record.obligationId === editor.obligation.id,
+            )?.completedOn ?? today
+          }
+          onSubmit={(date, revision) =>
+            onCompletionSubmit(editor.obligation, date, revision)
+          }
+          onCancel={onEditorCancel}
+          embedded={editor.obligation.id === next?.id}
+        />
+      )}
+      {!editor && saved && !completion && needsPayment && (
+        <Button
+          className="max-[520px]:w-full"
+          variant="outline"
+          type="button"
+          onClick={onUpdatePayment}
+        >
+          Update amount paid
+        </Button>
+      )}
+      {!editor && saved && next && !completion && !needsPayment && (
+        <CompletionEditor
+          workspaceRevision={workspaceRevision}
+          key={next.id}
+          obligation={next}
+          initialDate={today}
+          onSubmit={(date, revision) =>
+            onCompletionSubmit(next, date, revision)
+          }
+          embedded
+        />
+      )}
+      {!editor &&
+        !saved &&
+        !isExample &&
+        (savePrompt || onSave) &&
+        (savePrompt ? (
+          <SaveNotice onSave={onSaveConfirm} onContinue={onSaveCancel} />
+        ) : (
+          <Button
+            className="max-[520px]:w-full"
+            variant="outline"
+            type="button"
+            onClick={onSave}
+          >
+            Save data in this browser
+          </Button>
+        ))}
+    </div>
+  )
   if (!next)
     return (
       <Card as="section" className="attention-card" variant="result">
@@ -290,9 +374,9 @@ export function AttentionCard({
           This plan does not show any open filing or payment dates. Check any
           items below before relying on it.
         </p>
+        {actions}
       </Card>
     )
-  const needsPayment = next.kind === 'advance-tax' && (next.amountDue ?? 0) > 0
   return (
     <Card
       as="section"
@@ -348,67 +432,7 @@ export function AttentionCard({
         </Alert>
       ) : null}
       <SourceReferences ids={next.statutorySourceIds} />
-      {(editor ||
-        (!completion && saved) ||
-        (!saved && !isExample && (savePrompt || onSave))) && (
-        <div className="attention-action">
-          {editor?.kind === 'payment' && (
-            <PaymentEditor
-              current={advanceTaxPaid}
-              onSubmit={onPaymentSubmit}
-              onCancel={onEditorCancel}
-              embedded={editor.obligation.id === next.id}
-            />
-          )}
-          {editor?.kind === 'completion' && (
-            <CompletionEditor
-              obligation={editor.obligation}
-              initialDate={
-                completions.find(
-                  (record) => record.obligationId === editor.obligation.id,
-                )?.completedOn ?? indiaDate(new Date())
-              }
-              onSubmit={(date) => onCompletionSubmit(editor.obligation, date)}
-              onCancel={onEditorCancel}
-              embedded={editor.obligation.id === next.id}
-            />
-          )}
-          {!editor && saved && !completion && needsPayment && (
-            <Button
-              className="max-[520px]:w-full"
-              variant="outline"
-              type="button"
-              onClick={onUpdatePayment}
-            >
-              Update amount paid
-            </Button>
-          )}
-          {!editor && saved && !completion && !needsPayment && (
-            <CompletionEditor
-              obligation={next}
-              initialDate={indiaDate(new Date())}
-              onSubmit={(date) => onCompletionSubmit(next, date)}
-              embedded
-            />
-          )}
-          {!editor &&
-            !saved &&
-            !isExample &&
-            (savePrompt || onSave) &&
-            (savePrompt ? (
-              <SaveNotice onSave={onSaveConfirm} onContinue={onSaveCancel} />
-            ) : (
-              <Button
-                className="max-[520px]:w-full"
-                variant="outline"
-                type="button"
-                onClick={onSave}
-              >
-                Save data in this browser
-              </Button>
-            ))}
-        </div>
-      )}
+      {actions}
     </Card>
   )
 }

@@ -652,6 +652,14 @@ export const questionnaireGroups = [
   readonly label: string
 }[]
 
+export function questionnaireGroupFromPath(path: string): ProfileGroup | null {
+  const canonical = path.replace(/\/$/, '')
+  return (
+    questionnaireGroups.find(({ id }) => canonical === `/check/${id}`)?.id ??
+    null
+  )
+}
+
 export function groupStep(group: ProfileGroup) {
   return questionnaireGroups.findIndex(({ id }) => id === group)
 }

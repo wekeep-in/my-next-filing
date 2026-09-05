@@ -134,16 +134,19 @@ export function PaymentEditor({
 export function CompletionEditor({
   obligation,
   initialDate,
+  workspaceRevision,
   onSubmit,
   onCancel,
   embedded = false,
 }: {
   readonly obligation: Obligation
   readonly initialDate: DateOnly
-  readonly onSubmit: (date: DateOnly) => void
+  readonly workspaceRevision: number | null
+  readonly onSubmit: (date: DateOnly, revision: number | null) => void
   readonly onCancel?: () => void
   readonly embedded?: boolean
 }) {
+  const [baseRevision] = useState(workspaceRevision)
   const [date, setDate] = useState(initialDate)
   const [error, setError] = useState('')
   const inputId = `completion-date-${obligation.id.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`
@@ -153,6 +156,12 @@ export function CompletionEditor({
       className={`inline-editor${embedded ? ' inline-editor--embedded' : ''}`}
     >
       <p>Choose the date you completed this action. Your plan will update.</p>
+      {baseRevision !== workspaceRevision && (
+        <p role="status">
+          Your saved workspace changed while this date editor was open. Reload
+          the saved data before saving this date.
+        </p>
+      )}
       <div className="completion-controls">
         <div className="completion-field">
           <label htmlFor={inputId}>Completion date</label>
@@ -184,7 +193,7 @@ export function CompletionEditor({
                 date > indiaDate(new Date())
               )
                 setError('Choose a valid date no later than today.')
-              else onSubmit(date)
+              else onSubmit(date, baseRevision)
             }}
           >
             Mark completed
@@ -217,8 +226,9 @@ export function DeleteNotice({
     >
       <h2 id="delete-title">Delete saved data?</h2>
       <p>
-        This removes your saved answers and completion dates from this browser.
-        You can continue with an unsaved estimate. This cannot be undone.
+        This removes your saved answers and completion dates from this browser,
+        and your in-progress answers from this tab. Other tabs may retain their
+        in-progress answers. This cannot be undone.
       </p>
       <div className="button-row">
         <Button
@@ -249,7 +259,12 @@ export function SavedDataState({
   readonly savedWorkspace: LoadSavedWorkspaceResult
   readonly onDelete: () => void
 }) {
-  if (savedWorkspace.kind === 'invalid')
+  if (
+    savedWorkspace.kind === 'invalid' ||
+    savedWorkspace.kind === 'legacy' ||
+    savedWorkspace.kind === 'legacy-removal-failed' ||
+    savedWorkspace.kind === 'legacy-removal-unverified'
+  )
     return (
       <Card
         as="section"
@@ -292,8 +307,8 @@ export function SavedDataState({
         <Badge variant="state">Saving unavailable</Badge>
         <h1 id="saved-unavailable-title">You can continue in this tab</h1>
         <p>
-          This browser did not make saved storage available. Nothing was changed
-          or deleted.
+          This browser did not make saved storage available. Your current work
+          remains in this tab.
         </p>
         <div className="button-row">
           <Link

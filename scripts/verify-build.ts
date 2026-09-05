@@ -19,7 +19,7 @@ const forbidden = [
   /\bgtag\b/i,
   /googletagmanager/i,
   /sendBeacon/i,
-  /localStorage\.clear/i,
+  /(?:localStorage|sessionStorage)\.clear/i,
 ]
 
 if (forbidden.some((pattern) => pattern.test(text))) {

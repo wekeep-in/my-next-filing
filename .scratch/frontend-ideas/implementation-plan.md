@@ -1,6 +1,6 @@
 # Frontend state, routing, and recovery implementation plan
 
-Status: implementation in progress on `frontend-recovery`
+Status: core implementation complete on `frontend-recovery`; release gates pending
 
 Source specification: [Frontend state, routing, and recovery specification](spec.md)
 
@@ -40,6 +40,7 @@ Before changing TypeScript, apply `.agents/skills/code-conventions`. Apply `.age
 | `src/routes/plan/coordinator.ts` | Add the route-scoped Plan coordinator |
 | `src/routes/plan.tsx` | Render the derived Plan model and interaction union |
 | `src/app.tsx` | Own shared session, example return snapshot, storage lifecycle, source selection, temporary Notices, and derived persistent warnings |
+| `src/app-context.ts` | Define the typed outlet contract and browser/date helpers without importing route components |
 | `src/workspace/index.ts` | Add schema 2, legacy deletion, and the smaller derivation interface |
 | `src/components/journey-sidebar.tsx` | Use canonical group metadata and route navigation |
 | `src/components/landing-faqs.tsx` | Explain automatic Recovery and revised deletion behavior |
@@ -175,7 +176,7 @@ Status: complete; schema-2 persistence, explicit legacy deletion, and the smalle
 
 ## Work item 5: install application ownership and nested routes
 
-Status: pending
+Status: complete; shared ownership, nested routes, source switching, example return, and refresh checks pass
 
 ### Changes
 
@@ -205,7 +206,7 @@ Status: pending
 
 ## Work item 6: derive the Plan model and coordinator
 
-Status: pending
+Status: complete; pure Plan derivation and revision-checked mutations pass assertions and browser checks
 
 ### Changes
 
@@ -232,7 +233,7 @@ Status: pending
 
 ## Work item 7: complete notices, source selection, and destructive flows
 
-Status: pending
+Status: implementation complete; notices, confirmed deletion, partial/unverified retry, and mobile confirmation checks pass; qualified privacy approval remains pending
 
 ### Changes
 
@@ -263,7 +264,7 @@ Status: pending
 
 ## Work item 8: verify the combined release
 
-Status: pending
+Status: local implementation checks completed; release blocked by the pre-existing media-bundle marker and outstanding human/deployed-preview evidence
 
 ### Automated checks
 
@@ -299,6 +300,10 @@ Status: pending
 - No intermediate commit reached production.
 - Root `SPEC.md`, scratch specification, ADRs, source behavior, and release record agree.
 - The prior Cloudflare deployment remains available for code rollback, with the documented deleted-data limitation.
+
+## Verification record
+
+See the [frontend implementation checkpoint](../my-next-filing-solo-freelancer/release-verification.md#frontend-implementation-checkpoint) for checks performed, the reproduced baseline bundle-gate failure, and remaining release evidence. Items 5 through 7 form one integrated checkpoint because replacing the cross-route singleton requires the new Plan source and cleanup lifecycle together.
 
 ## Completion
 

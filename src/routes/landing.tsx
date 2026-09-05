@@ -1,8 +1,8 @@
 import type { MouseEvent } from 'react'
 import MuxPlayer from '@mux/mux-player-react/lazy'
 import { cn } from 'cn'
-import { Link, useNavigate, useOutletContext } from 'react-router-dom'
-import type { AppOutletContext } from '@/app'
+import { Link } from 'react-router-dom'
+import { useApp } from '@/app-context'
 import { Badge } from '@/components/ui/badge'
 import { buttonVariants } from '@/components/ui/button'
 import { JourneySidebar, calculationStep } from '@/components/journey-sidebar'
@@ -10,18 +10,28 @@ import { LandingFaqs } from '@/components/landing-faqs'
 import { ShareLink } from '@/components/share-link'
 
 export function LandingRoute() {
-  const navigate = useNavigate()
-  const { savedWorkspace } = useOutletContext<AppOutletContext>()
+  const app = useApp()
+  const { savedWorkspace, personalSession } = app
   const hasSaved =
     savedWorkspace.kind === 'ready' && Boolean(savedWorkspace.workspace.active)
 
-  const navigateToCheckFromPointer = (
+  const entryLabel = personalSession
+    ? personalSession.kind === 'complete'
+      ? 'Continue your plan'
+      : 'Continue your estimate'
+    : hasSaved
+      ? 'Continue your saved workspace'
+      : 'Start your estimate'
+  const entryPath =
+    personalSession?.kind === 'complete' || (!personalSession && hasSaved)
+      ? '/plan'
+      : '/check'
+  const enter = (
     event: MouseEvent<HTMLAnchorElement>,
-    state: { readonly example?: true; readonly personal?: true },
+    action: (animate: boolean) => void,
   ) => {
     if (
       event.button !== 0 ||
-      event.detail === 0 ||
       event.altKey ||
       event.ctrlKey ||
       event.metaKey ||
@@ -29,8 +39,14 @@ export function LandingRoute() {
     )
       return
     event.preventDefault()
-    void navigate('/check', { state: { ...state, animate: true } })
+    action(event.detail > 0)
   }
+  const continueEntry = (animate: boolean) =>
+    personalSession
+      ? app.returnPersonal()
+      : hasSaved
+        ? app.openWorkspace()
+        : app.startPersonal(animate)
 
   return (
     <section className="landing" aria-labelledby="landing-title">
@@ -45,13 +61,7 @@ export function LandingRoute() {
         </p>
         <p className="landing-example">
           Try a{' '}
-          <Link
-            to="/check"
-            state={{ example: true }}
-            onClick={(event) =>
-              navigateToCheckFromPointer(event, { example: true })
-            }
-          >
+          <Link to="/check" onClick={(event) => enter(event, app.startExample)}>
             fictional example
           </Link>
           {' or '}
@@ -62,30 +72,42 @@ export function LandingRoute() {
       <JourneySidebar
         className="landing-sidebar"
         activeStep={0}
-        backAction={null}
+        backAction={
+          hasSaved ? (
+            <Link
+              className={buttonVariants({
+                variant: 'outline',
+                className: 'w-full',
+              })}
+              to={personalSession ? '/plan' : '/check'}
+              onClick={(event) =>
+                enter(
+                  event,
+                  personalSession ? app.openWorkspace : app.startPersonal,
+                )
+              }
+            >
+              {personalSession
+                ? 'Open saved workspace'
+                : 'Start a separate estimate'}
+            </Link>
+          ) : null
+        }
         action={
           <Link
             className={cn(
               buttonVariants(),
               'landing-start w-full min-w-0 px-[.65rem] text-primary-foreground!',
             )}
-            to={hasSaved ? '/plan' : '/check'}
-            state={hasSaved ? undefined : { personal: true }}
-            onClick={(event) => {
-              if (!hasSaved)
-                navigateToCheckFromPointer(event, { personal: true })
-            }}
+            to={entryPath}
+            onClick={(event) => enter(event, continueEntry)}
           >
-            {hasSaved ? 'Continue your saved workspace' : 'Start your estimate'}
+            {entryLabel}
           </Link>
         }
         disabledSteps={[2, 3, 4, 5, 6, 7, calculationStep]}
         onStepSelect={(step, animate) =>
-          step === 0
-            ? window.scrollTo(0, 0)
-            : navigate('/check', {
-                state: { personal: true, step: step - 1, animate },
-              })
+          step === 0 ? window.scrollTo(0, 0) : continueEntry(animate)
         }
       />
 

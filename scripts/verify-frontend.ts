@@ -1,4 +1,20 @@
 import {
+  RECOVERY_KEY,
+  canSynchronizeRecovery,
+  deleteBrowserData,
+  deleteRecoveryDraft,
+  loadRecoveryDraft,
+  parseRecoveryDraft,
+  recoveryFromSession,
+  saveRecoveryDraft,
+} from '../src/recovery-draft/index.ts'
+import {
+  derivePlanModel,
+  preparePayment,
+  selectPlanSource,
+  updateCompletionRecords,
+} from '../src/routes/plan/model.ts'
+import {
   WORKSPACE_KEY,
   deleteLegacyWorkspace,
   deleteSavedWorkspace,
@@ -6,16 +22,7 @@ import {
   saveSavedWorkspace,
 } from '../src/workspace/index.ts'
 import type { SavedWorkspaceDraft } from '../src/workspace/index.ts'
-import { currentRules, TAX_YEAR } from '../src/rules/index.ts'
-import {
-  RECOVERY_KEY,
-  canSynchronizeRecovery,
-  deleteRecoveryDraft,
-  loadRecoveryDraft,
-  parseRecoveryDraft,
-  recoveryFromSession,
-  saveRecoveryDraft,
-} from '../src/recovery-draft/index.ts'
+import { TAX_YEAR, currentRules } from '../src/rules/index.ts'
 import type {
   QuestionnaireEvent,
   QuestionnaireSession,
@@ -41,6 +48,7 @@ import {
   isBlankDraft,
   isBusinessPath,
   isUnregisteredGst,
+  questionnaireGroupFromPath,
   questionnaireGroups,
   validateDraftGroup,
 } from '../src/routes/check/model.ts'
@@ -591,4 +599,236 @@ assert.equal(workspaceStore.getItem('unrelated'), 'keep')
 workspaceStore.setItem(WORKSPACE_KEY, JSON.stringify({ schemaVersion: 99 }))
 assert.equal(loadSavedWorkspace(workspaceStore).kind, 'invalid')
 assert.equal(deleteLegacyWorkspace(workspaceStore).kind, 'conflict')
+
+const planDate = new Date('2026-09-05T12:00:00+05:30')
+const readyWorkspace = { kind: 'ready' as const, workspace: savedV2.workspace }
+const planSession = sessionFromProfile(
+  exampleProfile,
+  { kind: 'personal' },
+  today,
+)
+assert.ok(planSession.kind === 'complete')
+const transientSource = { kind: 'transient' as const, session: planSession }
+assert.equal(
+  selectPlanSource(planSession, readyWorkspace, false, false).kind,
+  'transient',
+)
+assert.equal(
+  selectPlanSource(planSession, readyWorkspace, true, false).kind,
+  'workspace',
+)
+assert.equal(
+  selectPlanSource(started, readyWorkspace, false, false).kind,
+  'missing',
+)
+assert.equal(
+  selectPlanSource(null, readyWorkspace, false, false).kind,
+  'workspace',
+)
+assert.equal(
+  selectPlanSource(null, { kind: 'absent' }, false, false).kind,
+  'missing',
+)
+assert.equal(
+  selectPlanSource(null, { kind: 'absent' }, false, true).kind,
+  'deleted',
+)
+assert.equal(
+  selectPlanSource(
+    planSession,
+    { kind: 'unavailable', reason: 'storage-unavailable' },
+    false,
+    false,
+  ).kind,
+  'transient',
+)
+for (const reason of [
+  'invalid',
+  'unavailable',
+  'legacy',
+  'legacy-removal-failed',
+  'legacy-removal-unverified',
+] as const)
+  assert.equal(
+    derivePlanModel(
+      { kind: 'saved-data-unavailable', reason },
+      planDate,
+      currentRules,
+      { kind: 'absent' },
+    ).kind,
+    'saved-data-unavailable',
+  )
+assert.equal(
+  derivePlanModel({ kind: 'missing' }, planDate, currentRules, {
+    kind: 'absent',
+  }).kind,
+  'missing',
+)
+assert.equal(
+  derivePlanModel({ kind: 'deleted' }, planDate, currentRules, {
+    kind: 'absent',
+  }).kind,
+  'deleted',
+)
+const transientModel = derivePlanModel(
+  transientSource,
+  planDate,
+  currentRules,
+  { kind: 'absent' },
+)
+assert.ok(transientModel.kind === 'supported')
+assert.equal(transientModel.canSave, true)
+assert.equal(transientModel.saved, false)
+assert.deepEqual(transientModel.completions, [])
+const savedModel = derivePlanModel(
+  { kind: 'workspace', workspace: savedV2.workspace },
+  planDate,
+  currentRules,
+  readyWorkspace,
+)
+assert.ok(savedModel.kind === 'supported')
+assert.equal(savedModel.saved, true)
+assert.equal(savedModel.canSave, false)
+const exampleSession = sessionFromProfile(
+  exampleProfile,
+  { kind: 'example' },
+  today,
+)
+assert.ok(exampleSession.kind === 'complete')
+assert.equal(
+  selectPlanSource(exampleSession, readyWorkspace, true, false).kind,
+  'transient',
+)
+const exampleModel = derivePlanModel(
+  { kind: 'transient', session: exampleSession },
+  planDate,
+  currentRules,
+  { kind: 'absent' },
+)
+assert.ok(exampleModel.kind === 'supported')
+assert.equal(exampleModel.canSave, false)
+assert.equal(exampleModel.example, true)
+const editSession = sessionFromProfile(
+  exampleProfile,
+  { kind: 'saved-edit', baseWorkspaceRevision: 0 },
+  today,
+)
+assert.ok(editSession.kind === 'complete')
+const editModel = derivePlanModel(
+  { kind: 'transient', session: editSession },
+  planDate,
+  currentRules,
+  readyWorkspace,
+)
+assert.ok(editModel.kind === 'supported')
+assert.equal(editModel.canSaveChanges, true)
+const conflictModel = derivePlanModel(
+  { kind: 'transient', session: editSession },
+  planDate,
+  currentRules,
+  { kind: 'ready', workspace: { ...savedV2.workspace, revision: 1 } },
+)
+assert.ok(conflictModel.kind === 'supported')
+assert.equal(conflictModel.canSaveChanges, false)
+const unsupportedSession = sessionFromProfile(
+  { ...exampleProfile, person: { ...exampleProfile.person, adult: 'no' } },
+  { kind: 'personal' },
+  today,
+)
+assert.ok(unsupportedSession.kind === 'complete')
+assert.equal(
+  derivePlanModel(
+    { kind: 'transient', session: unsupportedSession },
+    planDate,
+    currentRules,
+    { kind: 'absent' },
+  ).kind,
+  'unsupported',
+)
+assert.equal(
+  derivePlanModel(transientSource, new Date('2030-01-01'), currentRules, {
+    kind: 'absent',
+  }).kind,
+  'stale',
+)
+assert.equal(
+  preparePayment(exampleProfile, '', planDate, currentRules).kind,
+  'invalid',
+)
+assert.equal(
+  preparePayment(exampleProfile, '1.5', planDate, currentRules).kind,
+  'invalid',
+)
+assert.equal(
+  preparePayment(exampleProfile, '1,000', planDate, currentRules).kind,
+  'valid',
+)
+assert.equal(
+  preparePayment(unsupportedSession.profile, '0', planDate, currentRules).kind,
+  'unsupported',
+)
+assert.equal(
+  preparePayment(exampleProfile, '0', new Date('2030-01-01'), currentRules)
+    .kind,
+  'stale',
+)
+const completionId = 'annual-return:Tax Year 2026-27'
+const addedRecord = updateCompletionRecords([], completionId, '2026-09-05')
+const replacedRecord = updateCompletionRecords(
+  addedRecord,
+  completionId,
+  '2026-09-04',
+)
+assert.deepEqual(replacedRecord, [
+  { obligationId: completionId, completedOn: '2026-09-04' },
+])
+assert.deepEqual(
+  updateCompletionRecords(replacedRecord, completionId, null),
+  [],
+)
+for (const { id } of questionnaireGroups) {
+  assert.equal(questionnaireGroupFromPath(`/check/${id}`), id)
+  assert.equal(questionnaireGroupFromPath(`/check/${id}/`), id)
+}
+assert.equal(questionnaireGroupFromPath('/check/unknown'), null)
+assert.equal(questionnaireGroupFromPath('/check'), null)
+const deleteLocal = new TestStorage()
+const deleteSession = new TestStorage()
+deleteLocal.setItem(WORKSPACE_KEY, JSON.stringify(savedV2.workspace))
+deleteSession.setItem(RECOVERY_KEY, JSON.stringify(recovery))
+deleteSession.setItem('unrelated', 'keep')
+deleteLocal.removal = 'fail'
+assert.equal(
+  deleteBrowserData(deleteLocal, deleteSession, 0, planDate).kind,
+  'failed',
+)
+assert.ok(deleteSession.getItem(RECOVERY_KEY))
+deleteLocal.removal = 'unverified'
+assert.equal(
+  deleteBrowserData(deleteLocal, deleteSession, 0, planDate).kind,
+  'unverified',
+)
+assert.ok(deleteSession.getItem(RECOVERY_KEY))
+deleteLocal.readsFail = false
+deleteSession.removal = 'fail'
+assert.equal(
+  deleteBrowserData(deleteLocal, deleteSession, null, planDate).kind,
+  'partial',
+)
+assert.equal(deleteLocal.getItem(WORKSPACE_KEY), null)
+assert.ok(deleteSession.getItem(RECOVERY_KEY))
+deleteSession.removal = 'normal'
+assert.equal(
+  deleteBrowserData(deleteLocal, deleteSession, null, planDate).kind,
+  'complete',
+)
+assert.equal(deleteSession.getItem('unrelated'), 'keep')
+assert.equal(
+  deleteBrowserData(null, deleteSession, null, planDate).kind,
+  'failed',
+)
+assert.equal(
+  deleteBrowserData(deleteLocal, null, null, planDate).kind,
+  'partial',
+)
 process.stdout.write('Frontend verification passed.\n')

@@ -1,3 +1,5 @@
+import { deleteSavedWorkspace } from '@/workspace'
+import type { StorageDeleteResult } from '@/workspace'
 import { TAX_YEAR } from '@/rules'
 import type { TaxYear } from '@/rules'
 import type { Draft } from '@/routes/check/model'
@@ -321,4 +323,44 @@ export function canSynchronizeRecovery(
     session !== null &&
     session.origin.kind !== 'example'
   )
+}
+
+export type BrowserDeleteResult =
+  | {
+      readonly kind: 'complete' | 'partial'
+      readonly workspace: StorageDeleteResult
+      readonly recovery: RecoveryDeleteResult
+    }
+  | {
+      readonly kind: 'failed' | 'unverified'
+      readonly workspace: StorageDeleteResult
+      readonly recovery: null
+    }
+
+export function deleteBrowserData(
+  local: Storage | null,
+  session: Storage | null,
+  expectedRevision: number | null,
+  now: Date,
+): BrowserDeleteResult {
+  const workspace: StorageDeleteResult = local
+    ? deleteSavedWorkspace(local, expectedRevision, now)
+    : { kind: 'unavailable', reason: 'storage-unavailable' }
+  if (workspace.kind !== 'deleted' && workspace.kind !== 'absent')
+    return {
+      kind: workspace.kind === 'deletion-unverified' ? 'unverified' : 'failed',
+      workspace,
+      recovery: null,
+    }
+  const recovery: RecoveryDeleteResult = session
+    ? deleteRecoveryDraft(session)
+    : { kind: 'unavailable' }
+  return {
+    kind:
+      recovery.kind === 'deleted' || recovery.kind === 'absent'
+        ? 'complete'
+        : 'partial',
+    workspace,
+    recovery,
+  }
 }

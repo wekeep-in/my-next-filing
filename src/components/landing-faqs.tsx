@@ -27,15 +27,20 @@ export function LandingFaqs() {
         <article>
           <h3>What happens to my answers?</h3>
           <p>
-            While you answer the questions, your answers and estimate stay in
-            this tab. If you close or refresh it, they are lost unless you
-            choose to save after getting a supported result.
+            When you open the questionnaire, this tab automatically keeps a
+            recovery draft of your answers. You can refresh and continue your
+            estimate or unsaved plan. Closing the tab may remove this draft. If
+            this browser cannot keep the draft, a warning explains that
+            refreshing may lose your answers. You can still calculate in this
+            tab.
           </p>
           <p>
-            If you save, this browser keeps the answers needed to run your
+            After a supported result, you can choose to save a workspace for
+            later visits. This browser then keeps the answers needed to run your
             estimate again and the dates you mark actions complete. It does not
-            save drafts, examples, calculated results, or tax rules. Saving is
-            available only if you confirm that you are 18 or older.
+            put drafts, examples, calculated results, or tax rules in the saved
+            workspace. Saving a workspace is available only if you confirm that
+            you are 18 or older.
           </p>
           <p>
             My Next Filing does not ask for or save your name, PAN, Aadhaar
@@ -47,9 +52,10 @@ export function LandingFaqs() {
         <article>
           <h3>Where does saved information stay?</h3>
           <p>
-            Your saved data stays in this browser profile. My Next Filing does
-            not upload it or put it in URLs, page titles, logs, external links,
-            or sharing.
+            Your in-progress answers stay in this tab's browser storage. Your
+            saved workspace stays in this browser profile. My Next Filing does
+            not upload either copy or put your answers in URLs, page titles,
+            logs, external links, or sharing.
           </p>
           <p>
             Other people using the same browser profile, and code running on
@@ -57,19 +63,32 @@ export function LandingFaqs() {
             shared or public browser.
           </p>
           <p>
-            There is no account, sync, backup, or recovery. Private browsing,
-            clearing site data, browser cleanup, or device failure may remove
-            saved information. A browser or device backup may also retain a copy
-            outside My Next Filing's control.
+            There is no account, sync, backup, or way to recover deleted data.
+            Private browsing, clearing site data, browser cleanup, or device
+            failure may remove saved information. A browser or device backup may
+            also retain a copy outside My Next Filing's control.
           </p>
         </article>
 
         <article>
           <h3>How do I stop saving and delete my data?</h3>
           <p>
-            On the last step, Your plan, choose <em>Delete saved data</em>. This
-            removes My Next Filing's saved answers and completion dates from
-            this browser. You can continue without saving.
+            Choose <em>Start over</em> to remove in-progress answers from this
+            tab and start blank. Your saved workspace and completion dates stay
+            as they are. If you have entered answers, you will be asked to
+            confirm first.
+          </p>
+          <p>
+            On Your plan, choose <em>Delete saved data</em> to remove your saved
+            answers and completion dates from this browser, then your
+            in-progress answers from this tab. Other tabs may retain their own
+            in-progress answers. A partial or unverified deletion explains what
+            remains or could not be checked and gives you a retry action.
+          </p>
+          <p>
+            This version removes previously saved answers and completion dates
+            that use the old workspace format. Those removed values cannot be
+            restored, including by returning to an older version of the site.
           </p>
         </article>
 
