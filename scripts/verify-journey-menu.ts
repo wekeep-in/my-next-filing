@@ -33,6 +33,28 @@ export async function verifyJourneyMenu() {
       'Navigation must sit directly below the visible alerts, including when empty',
     )
   checkSpacing()
+  const initialScrollY = window.scrollY
+  try {
+    for (const top of [document.documentElement.scrollHeight, 0]) {
+      window.scrollTo({ top, behavior: 'instant' })
+      checkSpacing()
+      await wait()
+    }
+    const heading = document.querySelector<HTMLElement>(
+      '.question-group > :first-child, .plan-main > :first-child',
+    )!
+    check(
+      Math.abs(
+        heading.getBoundingClientRect().top -
+          nav.getBoundingClientRect().bottom -
+          2 * parseFloat(getComputedStyle(document.documentElement).fontSize),
+      ) < 1,
+      'Questionnaire and plan content must start 2rem below the navigation bar',
+    )
+  } finally {
+    window.scrollTo({ top: initialScrollY, behavior: 'instant' })
+    await wait()
+  }
   const notice = document.createElement('div')
   notice.className = 'top-bar'
   try {
@@ -98,6 +120,27 @@ export async function verifyJourneyMenu() {
         getComputedStyle(popup()).transitionDuration === '0s',
       'Keyboard opening must not animate',
     )
+    const scrollY = window.scrollY
+    const spacer = document.createElement('div')
+    spacer.style.height = '100vh'
+    document.body.append(spacer)
+    try {
+      for (const top of [scrollY + 80, scrollY]) {
+        window.scrollTo({ top, behavior: 'instant' })
+        check(
+          Math.abs(
+            popup().getBoundingClientRect().top -
+              nav.getBoundingClientRect().bottom,
+          ) < 1,
+          'Scrolling must not move the panel away from the navigation bar',
+        )
+        await wait()
+      }
+    } finally {
+      spacer.remove()
+      window.scrollTo({ top: scrollY, behavior: 'instant' })
+      await wait()
+    }
     const path = window.location.pathname
     for (const step of steps.filter((button) => button.disabled)) step.click()
     await wait()

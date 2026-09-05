@@ -831,7 +831,7 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   }
 
   .app--journey main {
-    padding-top: var(--top-bar-height, 0px);
+    padding-top: calc(var(--top-bar-height, 0px) + 3.5rem + 1px);
   }
 
   .app--journey .journey-sidebar,
@@ -844,11 +844,11 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   }
 
   .app--journey .journey-nav {
-    position: sticky;
+    position: fixed;
     z-index: 120;
     top: var(--top-bar-height, 0px);
+    left: 0;
     display: block;
-    grid-row: 1;
     width: 100%;
     margin: 0;
     border: 0;
@@ -878,8 +878,10 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
     white-space: normal;
   }
 
-  .journey-menu-trigger .journey-number {
+  .journey-menu-trigger .journey-number,
+  .journey-menu-content .journey-number {
     font-size: 0.75rem;
+    font-weight: 800;
   }
 
   .journey-menu-trigger[aria-expanded='true'] svg {
@@ -920,9 +922,9 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   }
 
   .journey-menu-content .journey-step {
-    --journey-marker-size: 2rem;
+    --journey-marker-size: 1.5rem;
     min-height: 3.5rem;
-    font-size: 1rem;
+    font-size: 0.9375rem;
   }
 
   .journey-menu-content .journey-step:not(:last-child) {
@@ -940,10 +942,6 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
     display: none;
   }
 
-  .journey-menu-content .journey-number {
-    font-size: 0.875rem;
-  }
-
   .journey-menu-content .journey-step-link:disabled {
     opacity: 0.55;
   }
@@ -957,6 +955,10 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
     grid-row: 2;
     width: min(calc(100% - 2rem), 44rem);
     margin-inline: auto;
+  }
+
+  .plan-main {
+    padding-top: 2rem;
   }
 
   .app--journey .journey-actions {

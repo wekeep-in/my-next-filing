@@ -104,6 +104,7 @@ export function JourneySidebar({
             </PopoverTrigger>
             <PopoverContent
               ref={menuRef}
+              positionMethod="fixed"
               align="start"
               sideOffset={1}
               collisionPadding={0}
