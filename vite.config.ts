@@ -8,6 +8,10 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(import.meta.dirname, './src'),
+      'mux-embed': path.resolve(
+        import.meta.dirname,
+        './src/lib/mux-data-disabled.ts',
+      ),
     },
   },
 })
