@@ -1,6 +1,6 @@
+import { TestStorage } from './test-storage'
 import {
   RECOVERY_KEY,
-  canSynchronizeRecovery,
   deleteBrowserData,
   deleteRecoveryDraft,
   loadRecoveryDraft,
@@ -554,37 +554,6 @@ assert.deepEqual(
   clearInactiveDraft(withHidden),
 )
 
-class TestStorage implements Storage {
-  private readonly values = new Map<string, string>()
-  readsFail = false
-  writesFail = false
-  removal: 'normal' | 'fail' | 'throw-after' | 'unverified' = 'normal'
-  writes = 0
-  get length() {
-    return this.values.size
-  }
-  clear() {
-    assert.fail('Storage must never be cleared')
-  }
-  key(index: number) {
-    return [...this.values.keys()][index] ?? null
-  }
-  getItem(key: string) {
-    if (this.readsFail) throw new Error('unavailable')
-    return this.values.get(key) ?? null
-  }
-  setItem(key: string, value: string) {
-    if (this.writesFail) throw new Error('quota')
-    this.writes++
-    this.values.set(key, value)
-  }
-  removeItem(key: string) {
-    if (this.removal === 'fail') throw new Error('denied')
-    this.values.delete(key)
-    if (this.removal === 'unverified') this.readsFail = true
-    if (this.removal === 'throw-after') throw new Error('removed')
-  }
-}
 const recovery = recoveryFromSession(personal, TAX_YEAR)
 assert.ok(recovery)
 assert.deepEqual(parseRecoveryDraft(recovery, TAX_YEAR), recovery)
@@ -706,27 +675,6 @@ assert.equal(
   null,
 )
 assert.equal(recoveryFromSession(null, TAX_YEAR), null)
-assert.equal(canSynchronizeRecovery(personal, true, false, false), true)
-for (const [initialized, selected, pending] of [
-  [false, false, false],
-  [true, true, false],
-  [true, false, true],
-])
-  assert.equal(
-    canSynchronizeRecovery(personal, initialized, selected, pending),
-    false,
-  )
-assert.equal(canSynchronizeRecovery(null, true, false, false), false)
-assert.equal(
-  canSynchronizeRecovery(
-    sessionFromProfile(exampleProfile, { kind: 'example' }, today),
-    true,
-    false,
-    false,
-  ),
-  false,
-)
-
 const workspaceStore = new TestStorage()
 const workspaceInput: SavedWorkspaceDraft = {
   noticeVersion: 2,

@@ -19,26 +19,14 @@ import {
 import { ExternalLink } from '@/components/external-link'
 import { TopBar } from '@/components/top-bar'
 import { Button } from '@/components/ui/button'
-import { TAX_YEAR } from '@/rules'
 import type { ProfileGroup } from '@/evaluation'
 import {
   WORKSPACE_KEY,
   deleteLegacyWorkspace,
   loadSavedWorkspace,
 } from '@/workspace'
-import type { LoadSavedWorkspaceResult, SavedWorkspace } from '@/workspace'
-import {
-  canSynchronizeRecovery,
-  deleteBrowserData,
-  deleteRecoveryDraft,
-  loadRecoveryDraft,
-  recoveryFromSession,
-  saveRecoveryDraft,
-} from '@/recovery-draft'
-import type {
-  LoadRecoveryDraftResult,
-  RecoveryDeleteResult,
-} from '@/recovery-draft'
+import type { LoadSavedWorkspaceResult } from '@/workspace'
+import { useRecoveryLifecycle } from '@/recovery-draft/lifecycle'
 import {
   blankDraft,
   exampleProfile,
@@ -48,14 +36,9 @@ import {
 } from '@/routes/check/model'
 import {
   questionnaireReducer,
-  restoreSession,
   sessionFromProfile,
 } from '@/routes/check/session'
-import type {
-  QuestionnaireDispatch,
-  QuestionnaireSession,
-  QuestionnaireState,
-} from '@/routes/check/session'
+import type { QuestionnaireSession } from '@/routes/check/session'
 import { CheckGroup, CheckIndex, CheckRoute } from '@/routes/check'
 import { LandingRoute } from '@/routes/landing'
 import { NotFoundRoute } from '@/routes/not-found'
@@ -77,23 +60,6 @@ const noticeCopy: Record<Notice, string> = {
   'all-deleted':
     'Your saved answers and completion dates were removed from this browser. Your in-progress answers were removed from this tab.',
 }
-type RecoveryState = LoadRecoveryDraftResult | { readonly kind: 'write-failed' }
-type Removal =
-  | {
-      readonly kind: 'saved-edit'
-      readonly group: ProfileGroup
-      readonly result: RecoveryDeleteResult
-    }
-  | {
-      readonly kind: 'start-over' | 'cleanup' | 'discard-newer'
-      readonly result: RecoveryDeleteResult
-    }
-  | {
-      readonly kind: 'delete-all'
-      readonly expectedRevision: number | null
-      readonly workspaceRemoved: boolean
-      readonly message: string
-    }
 type Confirmation =
   | { readonly kind: 'start-over' }
   | {
@@ -110,36 +76,15 @@ function AppFrame() {
   const [session, rawDispatch] = useReducer(questionnaireReducer, null)
   const [savedWorkspace, setSavedWorkspace] =
     useState<LoadSavedWorkspaceResult>({ kind: 'absent' })
-  const [recovery, setRecovery] = useState<RecoveryState>({ kind: 'absent' })
   const [workspaceSelected, rawSelectWorkspace] = useState(false)
   const [initialized, setInitialized] = useState(false)
   const [deleted, setDeleted] = useState(false)
   const [notice, setNotice] = useState<Notice | null>(null)
-  const [removal, setRemoval] = useState<Removal | null>(null)
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null)
   const [exampleReturn, setExampleReturn] =
     useState<QuestionnaireSession | null>(null)
   const initializedOnce = useRef(false)
-  const recoveryNoticeShown = useRef(false)
   const legacyNoticeShown = useRef(false)
-  const synchronizationPaused = useRef(false)
-  const sessionVersion = useRef(0)
-  const renderVersion = sessionVersion.current
-  const dispatch = useCallback<QuestionnaireDispatch>((event) => {
-    // Only session replacement cancels pending Recovery Effects; field no-ops need no render.
-    if (
-      event.type === 'clear' ||
-      event.type === 'start' ||
-      event.type === 'start-over' ||
-      event.type === 'restore'
-    )
-      sessionVersion.current++
-    rawDispatch(event)
-  }, [])
-  const setWorkspaceSelected = useCallback((selected: boolean) => {
-    sessionVersion.current++
-    rawSelectWorkspace(selected)
-  }, [])
   const dialog = useRef<HTMLDialogElement>(null)
   const confirmationTrigger = useRef<HTMLElement | null>(null)
   const showConfirmation = (next: Confirmation, trigger?: HTMLElement) => {
@@ -174,76 +119,102 @@ function AppFrame() {
     return loaded
   }, [])
 
-  const cleanupRecovery = useCallback(
-    (kind: 'start-over' | 'cleanup' | 'discard-newer'): boolean => {
-      sessionVersion.current++
-      synchronizationPaused.current = true
-      const storage = browserStorage('sessionStorage')
-      const result: RecoveryDeleteResult = storage
-        ? deleteRecoveryDraft(storage)
-        : { kind: 'unavailable' }
-      if (result.kind !== 'deleted' && result.kind !== 'absent') {
-        setRemoval({ kind, result })
-        return false
+  const {
+    state: recovery,
+    removal,
+    writesPaused,
+    dispatch,
+    selectWorkspace: setWorkspaceSelected,
+    restore: restoreRecovery,
+    retry: retryRecovery,
+    remove: removeRecovery,
+    workspaceSaved,
+    deleteAll,
+    retryRemoval,
+    cancelRemoval,
+  } = useRecoveryLifecycle({
+    session,
+    exampleReturn,
+    exampleMode,
+    workspaceSelected,
+    initialized,
+    dispatch: rawDispatch,
+    selectWorkspace: rawSelectWorkspace,
+    onNotice: setNotice,
+    onChange: (change) => {
+      switch (change.kind) {
+        case 'restored':
+          if (session?.origin.kind === 'example')
+            setExampleReturn(change.session)
+          else dispatch({ type: 'restore', session: change.session })
+          break
+        case 'workspace-saved':
+          setSavedWorkspace({ kind: 'ready', workspace: change.workspace })
+          break
+        case 'session-committed':
+          setSavedWorkspace({ kind: 'ready', workspace: change.workspace })
+          dispatch({ type: 'clear' })
+          setWorkspaceSelected(true)
+          setExampleReturn(null)
+          break
+        case 'workspace-removed':
+          setSavedWorkspace({ kind: 'absent' })
+          setWorkspaceSelected(false)
+          break
+        case 'removal-cancelled':
+          refreshSavedWorkspace()
+          break
+        case 'removed':
+          switch (change.intent.kind) {
+            case 'cleanup':
+              break
+            case 'saved-edit':
+              beginSavedEdit(change.intent.group)
+              break
+            case 'discard-newer':
+              setExampleReturn(null)
+              dispatch({ type: 'clear' })
+              setWorkspaceSelected(true)
+              refreshSavedWorkspace()
+              void navigate('/plan', { replace: true })
+              break
+            case 'start-over':
+              setExampleReturn(null)
+              setWorkspaceSelected(false)
+              setDeleted(false)
+              dispatch({ type: 'start-over' })
+              void navigate('/check/tax-year', { replace: true })
+              break
+            case 'delete-all':
+              setExampleReturn(null)
+              dispatch({ type: 'clear' })
+              setWorkspaceSelected(false)
+              setDeleted(true)
+              setNotice('all-deleted')
+              void navigate('/plan', { replace: true })
+              break
+          }
+          break
       }
-      setRecovery({ kind: 'absent' })
-      setRemoval(null)
-      synchronizationPaused.current = false
-      if (kind === 'discard-newer') {
-        setExampleReturn(null)
-        dispatch({ type: 'clear' })
-        setWorkspaceSelected(true)
-        refreshSavedWorkspace()
-        void navigate('/plan', { replace: true })
-      }
-      if (kind === 'start-over') {
-        setExampleReturn(null)
-        setWorkspaceSelected(false)
-        setDeleted(false)
-        dispatch({ type: 'start-over' })
-        synchronizationPaused.current = false
-        void navigate('/check/tax-year', { replace: true })
-      }
-      return true
     },
-    [dispatch, navigate, refreshSavedWorkspace, setWorkspaceSelected],
-  )
+  })
 
   useLayoutEffect(() => {
     if (initializedOnce.current) return
     initializedOnce.current = true
     const now = new Date()
     const workspace = refreshSavedWorkspace()
-    const storage = browserStorage('sessionStorage')
-    const loaded: LoadRecoveryDraftResult = storage
-      ? loadRecoveryDraft(storage, TAX_YEAR)
-      : { kind: 'unavailable' }
-    setRecovery(loaded)
-    let restored: QuestionnaireState = null
-    if (loaded.kind === 'ready') {
-      restored = restoreSession(
-        loaded.value.draft,
-        loaded.value.origin === 'personal'
-          ? { kind: 'personal' }
-          : {
-              kind: 'saved-edit',
-              baseWorkspaceRevision: loaded.value.baseWorkspaceRevision!,
-            },
-        latestQuestionnaireDate(now),
-      )
-      if (
-        !exampleMode &&
-        restored.kind === 'complete' &&
-        workspace.kind === 'ready' &&
-        JSON.stringify(restored.profile) ===
-          JSON.stringify(workspace.workspace.active?.profile)
-      ) {
-        restored = null
-        // oxlint-disable-next-line react/set-state-in-effect -- Restoration reports verified storage cleanup before the first paint.
-        cleanupRecovery('cleanup')
-      }
-    } else if (loaded.kind === 'invalid-removed')
-      setNotice('invalid-recovery-removed')
+    let restored = restoreRecovery(now)
+    if (
+      !exampleMode &&
+      restored?.kind === 'complete' &&
+      workspace.kind === 'ready' &&
+      JSON.stringify(restored.profile) ===
+        JSON.stringify(workspace.workspace.active?.profile)
+    ) {
+      restored = null
+      removeRecovery({ kind: 'cleanup' })
+    }
     if (
       !exampleMode &&
       !restored &&
@@ -268,7 +239,8 @@ function AppFrame() {
     dispatch({ type: 'restore', session: restored })
     setInitialized(true)
   }, [
-    cleanupRecovery,
+    restoreRecovery,
+    removeRecovery,
     dispatch,
     exampleMode,
     location.pathname,
@@ -302,102 +274,6 @@ function AppFrame() {
     session,
     setWorkspaceSelected,
   ])
-
-  const synchronizeRecovery = useCallback(() => {
-    if (
-      renderVersion !== sessionVersion.current ||
-      exampleMode ||
-      synchronizationPaused.current ||
-      !canSynchronizeRecovery(
-        session,
-        initialized,
-        workspaceSelected,
-        removal !== null,
-      )
-    )
-      return
-    const storage = browserStorage('sessionStorage')
-    if (!storage) {
-      // oxlint-disable-next-line react/set-state-in-effect -- Report an unavailable browser store from its synchronization Effect.
-      setRecovery({ kind: 'unavailable' })
-      return
-    }
-    const loaded = loadRecoveryDraft(storage, TAX_YEAR)
-    if (
-      loaded.kind === 'invalid-removal-failed' ||
-      loaded.kind === 'deletion-unverified' ||
-      loaded.kind === 'unavailable'
-    ) {
-      setRecovery(loaded)
-      return
-    }
-    if (loaded.kind === 'invalid-removed') setNotice('invalid-recovery-removed')
-    const envelope = recoveryFromSession(session, TAX_YEAR)
-    if (!envelope) return
-    const result = saveRecoveryDraft(storage, envelope)
-    if (result.kind === 'saved' || result.kind === 'unchanged') {
-      setRecovery({ kind: 'ready', value: result.value })
-      if (result.kind === 'saved' && !recoveryNoticeShown.current) {
-        recoveryNoticeShown.current = true
-        setNotice('recovery-saved')
-      }
-    } else setRecovery({ kind: 'write-failed' })
-  }, [
-    exampleMode,
-    initialized,
-    removal,
-    renderVersion,
-    session,
-    workspaceSelected,
-  ])
-  const retryRecovery = () => {
-    const storage = browserStorage('sessionStorage')
-    const loaded: LoadRecoveryDraftResult = storage
-      ? loadRecoveryDraft(storage, TAX_YEAR)
-      : { kind: 'unavailable' }
-    setRecovery(loaded)
-    if (loaded.kind === 'invalid-removed') setNotice('invalid-recovery-removed')
-    if (
-      loaded.kind === 'ready' &&
-      (!session || (session.origin.kind === 'example' && !exampleReturn))
-    ) {
-      const restored = restoreSession(
-        loaded.value.draft,
-        loaded.value.origin === 'personal'
-          ? { kind: 'personal' }
-          : {
-              kind: 'saved-edit',
-              baseWorkspaceRevision: loaded.value.baseWorkspaceRevision!,
-            },
-        latestQuestionnaireDate(new Date()),
-      )
-      if (session?.origin.kind === 'example') setExampleReturn(restored)
-      else dispatch({ type: 'restore', session: restored })
-    }
-    const personal =
-      session?.origin.kind === 'example' ? exampleReturn : session
-    if (
-      personal &&
-      !canSynchronizeRecovery(
-        session,
-        initialized,
-        workspaceSelected,
-        removal !== null,
-      )
-    ) {
-      const expected = recoveryFromSession(personal, TAX_YEAR)
-      if (
-        (loaded.kind === 'ready' ||
-          loaded.kind === 'absent' ||
-          loaded.kind === 'invalid-removed') &&
-        (loaded.kind !== 'ready' ||
-          JSON.stringify(loaded.value) !== JSON.stringify(expected))
-      )
-        setRecovery({ kind: 'write-failed' })
-    }
-    synchronizeRecovery()
-  }
-  useEffect(synchronizeRecovery, [synchronizeRecovery])
 
   useEffect(() => {
     if (!notice) return
@@ -442,7 +318,6 @@ function AppFrame() {
       showConfirmation({ kind: 'start-over' })
       return
     }
-    synchronizationPaused.current = removal !== null
     setExampleReturn(null)
     setDeleted(false)
     setWorkspaceSelected(false)
@@ -470,7 +345,6 @@ function AppFrame() {
     setWorkspaceSelected(false)
     setDeleted(false)
     if (!returned) {
-      synchronizationPaused.current = false
       dispatch({ type: 'start-over' })
       void navigate('/check/tax-year')
       return
@@ -491,14 +365,9 @@ function AppFrame() {
     setDeleted(false)
     void navigate('/plan')
   }
-  const beginSavedEdit = (group: ProfileGroup, discardVerified = false) => {
-    if (
-      savedWorkspace.kind !== 'ready' ||
-      !savedWorkspace.workspace.active ||
-      (removal && !discardVerified)
-    )
+  const beginSavedEdit = (group: ProfileGroup) => {
+    if (savedWorkspace.kind !== 'ready' || !savedWorkspace.workspace.active)
       return
-    synchronizationPaused.current = false
     setExampleReturn(null)
     setWorkspaceSelected(false)
     const workspace = savedWorkspace.workspace
@@ -512,28 +381,13 @@ function AppFrame() {
     })
     void navigate(`/check/${group}`)
   }
-  const discardForSavedEdit = (group: ProfileGroup) => {
-    sessionVersion.current++
-    synchronizationPaused.current = true
-    const storage = browserStorage('sessionStorage')
-    const result: RecoveryDeleteResult = storage
-      ? deleteRecoveryDraft(storage)
-      : { kind: 'unavailable' }
-    if (result.kind !== 'deleted' && result.kind !== 'absent') {
-      setRemoval({ kind: 'saved-edit', group, result })
-      return
-    }
-    setRecovery({ kind: 'absent' })
-    setRemoval(null)
-    beginSavedEdit(group, true)
-  }
   const editGroup = (group: ProfileGroup) => {
     if (workspaceSelected || !session) {
       if (session && !isBlankDraft(session.draft)) {
         showConfirmation({ kind: 'saved-edit', group })
         return
       }
-      beginSavedEdit(group)
+      if (!removal) beginSavedEdit(group)
     } else {
       dispatch({ type: 'clear-validation' })
       void navigate(
@@ -548,84 +402,13 @@ function AppFrame() {
     }
     if (session && !isBlankDraft(session.draft))
       showConfirmation({ kind: 'start-over' }, event?.currentTarget)
-    else cleanupRecovery('start-over')
-  }
-  const workspaceSaved = (
-    workspace: SavedWorkspace,
-    commitSession: boolean,
-  ) => {
-    setSavedWorkspace({ kind: 'ready', workspace })
-    if (commitSession) {
-      synchronizationPaused.current = true
-      dispatch({ type: 'clear' })
-      setWorkspaceSelected(true)
-      setExampleReturn(null)
-      cleanupRecovery('cleanup')
-    }
-  }
-  const deleteAll = (expectedRevision: number | null): boolean => {
-    sessionVersion.current++
-    synchronizationPaused.current = true
-    const result = deleteBrowserData(
-      browserStorage('localStorage'),
-      browserStorage('sessionStorage'),
-      expectedRevision,
-      new Date(),
-    )
-    const workspaceResult = result.workspace
-    if (result.kind === 'failed' || result.kind === 'unverified') {
-      setRemoval({
-        kind: 'delete-all',
-        expectedRevision,
-        workspaceRemoved: false,
-        message:
-          workspaceResult.kind === 'deletion-unverified'
-            ? "We couldn't check whether your saved answers and completion dates were removed. Your current work is still available in this tab. Try checking again."
-            : workspaceResult.kind === 'conflict'
-              ? 'Your saved data changed in another tab. Keep the remaining answers and review the saved workspace before deleting it.'
-              : 'Saved data could not be removed. Your current answers are still here.',
-      })
-      return false
-    }
-    setSavedWorkspace({ kind: 'absent' })
-    setWorkspaceSelected(false)
-    const recoveryResult = result.recovery
-    if (result.kind === 'partial' && recoveryResult) {
-      setRemoval({
-        kind: 'delete-all',
-        expectedRevision: null,
-        workspaceRemoved: true,
-        message:
-          recoveryResult.kind === 'deletion-unverified'
-            ? "Your saved workspace was removed. We couldn't check whether your in-progress answers were removed from this tab's storage. Your current answers are still here."
-            : 'Your saved workspace was removed. Your in-progress answers could not be removed from this tab. Try deleting them again.',
-      })
-      return false
-    }
-    setRemoval(null)
-    setRecovery({ kind: 'absent' })
-    setExampleReturn(null)
-    dispatch({ type: 'clear' })
-    setWorkspaceSelected(false)
-    setDeleted(true)
-    setNotice('all-deleted')
-    void navigate('/plan', { replace: true })
-    return true
-  }
-  const retryRemoval = () => {
-    if (removal?.kind === 'delete-all') deleteAll(removal.expectedRevision)
-    else if (removal?.kind === 'saved-edit') discardForSavedEdit(removal.group)
-    else if (removal) cleanupRecovery(removal.kind)
-  }
-  const cancelRemoval = () => {
-    setRemoval(null)
-    synchronizationPaused.current = false
-    refreshSavedWorkspace()
+    else removeRecovery({ kind: 'start-over' })
   }
   const confirm = () => {
-    if (confirmation?.kind === 'start-over') cleanupRecovery('start-over')
+    if (confirmation?.kind === 'start-over')
+      removeRecovery({ kind: 'start-over' })
     else if (confirmation?.kind === 'saved-edit')
-      discardForSavedEdit(confirmation.group)
+      removeRecovery({ kind: 'saved-edit', group: confirmation.group })
     setConfirmation(null)
   }
   const context: AppOutletContext = {
@@ -636,7 +419,7 @@ function AppFrame() {
     savedWorkspace,
     workspaceSelected,
     deleted,
-    writesPaused: removal?.kind === 'delete-all',
+    writesPaused,
     refreshSavedWorkspace,
     startPersonal,
     startExample,
@@ -644,7 +427,9 @@ function AppFrame() {
     openWorkspace,
     editGroup,
     startOver,
-    discardSavedEdit: () => cleanupRecovery('discard-newer'),
+    discardSavedEdit: () => {
+      removeRecovery({ kind: 'discard-newer' })
+    },
     workspaceSaved,
     deleteAll,
   }

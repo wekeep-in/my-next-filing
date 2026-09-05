@@ -310,21 +310,6 @@ export function recoveryFromSession(
   }
 }
 
-export function canSynchronizeRecovery(
-  session: QuestionnaireState,
-  initialized: boolean,
-  workspaceSelected: boolean,
-  deletionPending: boolean,
-) {
-  return (
-    initialized &&
-    !workspaceSelected &&
-    !deletionPending &&
-    session !== null &&
-    session.origin.kind !== 'example'
-  )
-}
-
 export type BrowserDeleteResult =
   | {
       readonly kind: 'complete' | 'partial'
