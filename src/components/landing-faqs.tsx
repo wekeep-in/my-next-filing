@@ -165,8 +165,8 @@ export function LandingFaqs() {
             <li>Adds taxable bank or deposit interest.</li>
             <li>Rounds total income to the nearest ₹10.</li>
             <li>
-              Applies the Tax Year 2026-27 new-regime slabs, rebate or marginal
-              relief, and 4% Health and Education Cess.
+              Applies the {currentRules.taxPeriod} new-regime slabs, rebate or
+              marginal relief, and 4% Health and Education Cess.
             </li>
             <li>
               Subtracts TDS, TCS, and advance tax already paid, then rounds the

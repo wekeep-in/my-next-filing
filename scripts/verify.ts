@@ -74,6 +74,22 @@ function profileFrom(candidate: unknown): Profile {
 
 const profile = profileFrom(baseCandidate)
 
+for (const [thresholdLiabilityDate, valid] of [
+  ['2026-03-31', false],
+  ['2026-04-01', true],
+  ['2027-03-31', true],
+  ['2027-04-01', false],
+] as const) {
+  assert.equal(
+    parseProfile({
+      ...baseCandidate,
+      gst: { ...baseCandidate.gst, thresholdLiabilityDate },
+    }).valid,
+    valid,
+    `GST date boundary: ${thresholdLiabilityDate}`,
+  )
+}
+
 const platformFacts = {
   ownAccount: 'yes',
   recipientIdentifiable: 'yes',

@@ -1,3 +1,4 @@
+import { currentRules } from '@/rules'
 import { useOutletContext } from 'react-router-dom'
 import { indiaDate } from '@/lib/india-date'
 import type { ProfileGroup } from '@/evaluation'
@@ -18,7 +19,7 @@ export function browserStorage(
 }
 export const latestQuestionnaireDate = (now: Date) => {
   const today = indiaDate(now)
-  return today < '2027-03-31' ? today : '2027-03-31'
+  return today < currentRules.effectiveEnd ? today : currentRules.effectiveEnd
 }
 
 export type AppOutletContext = {

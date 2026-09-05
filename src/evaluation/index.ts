@@ -1,5 +1,5 @@
 import { indiaDate } from '@/lib/india-date'
-import { validateRules } from '@/rules'
+import { TAX_YEAR, currentRules, validateRules } from '@/rules'
 import type {
   AnnualReturnRules,
   CommonIncomeTaxRules,
@@ -671,9 +671,7 @@ export function parseProfile(value: unknown): ParseProfileResult {
     errors,
   )
   if (!root) return { valid: false, kind: 'invalid', errors }
-  const taxYear = isTaxYear(root.taxYear)
-    ? root.taxYear
-    : ('Tax Year 2026-27' as TaxYear)
+  const taxYear = isTaxYear(root.taxYear) ? root.taxYear : TAX_YEAR
   if (taxYear !== root.taxYear)
     addError(
       errors,
@@ -1168,14 +1166,15 @@ export function parseProfile(value: unknown): ParseProfileResult {
       )
     if (
       thresholdDate !== null &&
-      (thresholdDate < '2026-04-01' || thresholdDate > '2027-03-31')
+      (thresholdDate < currentRules.effectiveStart ||
+        thresholdDate > currentRules.effectiveEnd)
     )
       addError(
         errors,
         'invalid',
         'gst.thresholdLiabilityDate',
         'gst',
-        'Use a date within Tax Year 2026-27.',
+        `Use a date within ${TAX_YEAR}.`,
       )
     gst = {
       kind: 'unregistered',
@@ -1470,11 +1469,11 @@ function factForSharedProfile(profile: Profile, sourceIds: readonly string[]) {
   const facts: UnsupportedResult['facts'][number][] = []
   const shared: readonly [boolean, string, ProfileGroup, string, string][] = [
     [
-      profile.taxYear === 'Tax Year 2026-27',
+      profile.taxYear === TAX_YEAR,
       'tax-year',
       'tax-year',
       'Tax Year',
-      'This version evaluates Tax Year 2026-27 only.',
+      `This version evaluates ${TAX_YEAR} only.`,
     ],
     [
       profile.person.kind === 'individual',

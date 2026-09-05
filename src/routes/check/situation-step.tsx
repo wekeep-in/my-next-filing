@@ -1,7 +1,10 @@
+import { taxYearShort } from '@/lib/tax-period'
 import type { QuestionnaireDispatch } from '@/routes/check/session'
 import type { TriState } from '@/evaluation'
 import { CheckHeading, ChoiceField } from '@/routes/check/fields'
 import type { Draft } from '@/routes/check/model'
+import { ResidenceHelp } from '@/routes/check/residence-help'
+import { TaxRegimeHelp } from '@/routes/check/tax-regime-help'
 
 export function SituationStep({
   className,
@@ -58,8 +61,14 @@ export function SituationStep({
             />
             <ChoiceField
               id="residence"
-              label="What was your Indian tax residence status for 2026-27?"
-              help="Use the status in your tax records or confirmed by your tax adviser. Choose Not sure if you have not confirmed it."
+              label={`What was your Indian tax residence status for ${taxYearShort}?`}
+              help={
+                <>
+                  Use the status in your tax records or confirmed by your tax
+                  adviser. Choose Not sure if you have not confirmed it.{' '}
+                  <ResidenceHelp />
+                </>
+              }
               value={draft.residence}
               options={[
                 'resident-ordinarily-resident',
@@ -82,8 +91,13 @@ export function SituationStep({
             />
             <ChoiceField
               id="taxRegime"
-              label="Which tax regime are you using for 2026-27?"
-              help="This version only supports the new tax regime."
+              label={`Which tax regime are you using for ${taxYearShort}?`}
+              help={
+                <>
+                  This version only supports the new tax regime.{' '}
+                  <TaxRegimeHelp />
+                </>
+              }
               value={draft.taxRegime}
               options={['new', 'old', 'not-sure']}
               unsupportedOptions={['old']}

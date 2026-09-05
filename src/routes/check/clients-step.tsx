@@ -1,3 +1,10 @@
+import {
+  ForeignAccountHelp,
+  ForeignTaxReliefHelp,
+  PaymentRouteHelp,
+  PlaceOfSupplyHelp,
+  PlatformFeeHelp,
+} from '@/routes/check/clients-help'
 import type { QuestionnaireDispatch } from '@/routes/check/session'
 import { hasForeignClients, hasPlatformWork } from '@/routes/check/model'
 import type { TriState } from '@/evaluation'
@@ -23,7 +30,7 @@ export function ClientsStep({
     <div className={className}>
       <CheckHeading
         title="Clients and payments"
-        description="Tell us where your clients are based and whether you work with them directly or through a platform. We'll only ask follow-up questions that apply."
+        description="Tell us where your clients are and how you work with them. Use your contracts and payment records for the follow-up questions."
       />
       <div className="question-sections">
         <section
@@ -73,7 +80,8 @@ export function ClientsStep({
             <div className="field-stack">
               <ChoiceField
                 id="platformOwnAccount"
-                label="Do you provide the main service yourself, rather than act as an agent or intermediary?"
+                label="Do you deliver the main service yourself?"
+                help="Choose No if you arrange someone else's service as an agent or intermediary."
                 value={draft.platformOwnAccount}
                 unsupportedOptions={['no']}
                 error={errors.platformOwnAccount}
@@ -87,7 +95,8 @@ export function ClientsStep({
               />
               <ChoiceField
                 id="platformRecipientIdentifiable"
-                label="Do your records identify the person or business you contract with?"
+                label="Do your records identify who your service contract is with?"
+                help="This may be the client or the platform. A payer name alone is not enough."
                 value={draft.platformRecipientIdentifiable}
                 unsupportedOptions={['no']}
                 error={errors.platformRecipientIdentifiable}
@@ -101,7 +110,7 @@ export function ClientsStep({
               />
               <ChoiceField
                 id="platformGrossBeforeFees"
-                label="Do your records show the client's full payment before platform fees and withholding?"
+                label="Do your records show the full client payment before fees and tax deductions?"
                 value={draft.platformGrossBeforeFees}
                 unsupportedOptions={['no']}
                 error={errors.platformGrossBeforeFees}
@@ -115,7 +124,8 @@ export function ClientsStep({
               />
               <ChoiceField
                 id="platformIncomeCharacter"
-                label="Is this income from services you provide, rather than employment, commission, brokerage, royalties, licensing, or agency work?"
+                label="Is this payment for your own freelance services?"
+                help="Choose No for employment, commission, brokerage, royalties, licensing or agency income."
                 value={draft.platformIncomeCharacter}
                 unsupportedOptions={['no']}
                 error={errors.platformIncomeCharacter}
@@ -129,11 +139,11 @@ export function ClientsStep({
               />
               <ChoiceField
                 id="platformForeignFeeGstTreatment"
-                label="Is there a fee from a foreign platform?"
+                label="Does a platform outside India charge you a fee?"
                 options={['not-applicable', 'known', 'not-sure']}
                 labels={{
                   'not-applicable': 'No foreign platform fee',
-                  known: 'Yes, and I know its GST treatment',
+                  known: 'Yes, and I have confirmed how GST applies',
                 }}
                 value={draft.platformForeignFeeGstTreatment}
                 error={errors.platformForeignFeeGstTreatment}
@@ -147,8 +157,13 @@ export function ClientsStep({
               />
               <ChoiceField
                 id="platformNoRecipientReverseCharge"
-                label="Have you confirmed that the platform fee does not require you to pay GST under reverse charge?"
-                help="Under reverse charge, you pay the GST instead of the platform."
+                label="Have you confirmed that no reverse-charge GST is due on the platform fees?"
+                help={
+                  <>
+                    Confirm whether you must pay the GST yourself.{' '}
+                    <PlatformFeeHelp />
+                  </>
+                }
                 value={draft.platformNoRecipientReverseCharge}
                 unsupportedOptions={['no']}
                 error={errors.platformNoRecipientReverseCharge}
@@ -173,7 +188,7 @@ export function ClientsStep({
             <div className="field-stack">
               <ChoiceField
                 id="foreignWorkInIndia"
-                label="Do you perform all the work for these clients from India?"
+                label="Are you physically in India for all the work you do for these clients?"
                 value={draft.foreignWorkInIndia}
                 unsupportedOptions={['no']}
                 error={errors.foreignWorkInIndia}
@@ -187,7 +202,7 @@ export function ClientsStep({
               />
               <ChoiceField
                 id="foreignRecipientIdentifiable"
-                label="Do your records identify the overseas person or business you contract with?"
+                label="Do your records identify who your overseas service contract is with?"
                 value={draft.foreignRecipientIdentifiable}
                 unsupportedOptions={['no']}
                 error={errors.foreignRecipientIdentifiable}
@@ -201,7 +216,8 @@ export function ClientsStep({
               />
               <ChoiceField
                 id="foreignOwnAccount"
-                label="For these overseas contracts, do you provide the main service yourself rather than act as an agent or intermediary?"
+                label="Do you deliver the main service yourself for these overseas contracts?"
+                help="Choose No if you arrange someone else's service as an agent or intermediary."
                 value={draft.foreignOwnAccount}
                 unsupportedOptions={['no']}
                 error={errors.foreignOwnAccount}
@@ -215,8 +231,13 @@ export function ClientsStep({
               />
               <ChoiceField
                 id="foreignPlaceOfSupply"
-                label="Have you confirmed that the ordinary cross-border place-of-supply rule applies?"
-                help="Choose Not sure unless your records or adviser confirm this."
+                label="Have you confirmed that the general GST rule places the service at your overseas client's location?"
+                help={
+                  <>
+                    Choose Not sure unless your records or adviser confirm the
+                    rule. <PlaceOfSupplyHelp />
+                  </>
+                }
                 value={draft.foreignPlaceOfSupply}
                 unsupportedOptions={['no']}
                 error={errors.foreignPlaceOfSupply}
@@ -230,8 +251,8 @@ export function ClientsStep({
               />
               <ChoiceField
                 id="foreignSameEstablishment"
-                label="Are you and the overseas client part of the same business or legal entity?"
-                help="Choose No if you and the client are separate businesses."
+                label="Are you and the overseas client parts of the same legal entity?"
+                help="For example, an Indian office and an overseas branch of the same entity. Choose No for separate legal entities."
                 value={draft.foreignSameEstablishment}
                 unsupportedOptions={['yes']}
                 error={errors.foreignSameEstablishment}
@@ -245,8 +266,13 @@ export function ClientsStep({
               />
               <ChoiceField
                 id="foreignPaymentRoute"
-                label="Which payment route do your records confirm?"
-                help="Choose Not sure if your bank or payment records do not state the route."
+                label="How do your records say these overseas payments were received?"
+                help={
+                  <>
+                    Use the route confirmed by your bank or payment provider.{' '}
+                    <PaymentRouteHelp />
+                  </>
+                }
                 options={[
                   'convertible-foreign-exchange',
                   'rbi-permitted-rupee',
@@ -264,7 +290,8 @@ export function ClientsStep({
               />
               <ChoiceField
                 id="foreignSettledToIndianBank"
-                label="Do these payments settle in your own Indian bank account through an authorised route?"
+                label="Do these payments reach your own Indian bank account through an authorised route?"
+                help="Confirm the route with your bank or payment provider."
                 value={draft.foreignSettledToIndianBank}
                 unsupportedOptions={['no']}
                 error={errors.foreignSettledToIndianBank}
@@ -278,7 +305,14 @@ export function ClientsStep({
               />
               <ChoiceField
                 id="foreignAccountExposure"
-                label="Do these payments involve a foreign account, wallet, provider-held balance, or signing authority?"
+                label="Do these payments involve an overseas account or money held abroad?"
+                help={
+                  <>
+                    Include virtual accounts, wallets, provider-held balances,
+                    rights to money held by a foreign provider, and accounts you
+                    can sign on. <ForeignAccountHelp />
+                  </>
+                }
                 options={['none', 'possible', 'not-sure']}
                 labels={{ none: 'No', possible: 'Yes or possibly' }}
                 value={draft.foreignAccountExposure}
@@ -293,7 +327,8 @@ export function ClientsStep({
               />
               <ChoiceField
                 id="foreignOperation"
-                label="Apart from having overseas clients, does this work involve a business operation outside India?"
+                label="Does this work involve an office or other business operation outside India?"
+                help="Having overseas clients alone does not count."
                 value={draft.foreignOperation}
                 unsupportedOptions={['yes']}
                 error={errors.foreignOperation}
@@ -307,7 +342,7 @@ export function ClientsStep({
               />
               <ChoiceField
                 id="foreignTax"
-                label="Was tax withheld outside India?"
+                label="Was any foreign tax deducted from these payments?"
                 value={draft.foreignTax}
                 unsupportedOptions={['yes']}
                 error={errors.foreignTax}
@@ -321,7 +356,8 @@ export function ClientsStep({
               />
               <ChoiceField
                 id="foreignTreatyRelief"
-                label="Are you claiming relief for foreign tax or under a tax treaty?"
+                label="Are you claiming tax relief for foreign tax or under a tax treaty?"
+                help={<ForeignTaxReliefHelp />}
                 value={draft.foreignTreatyRelief}
                 unsupportedOptions={['yes']}
                 error={errors.foreignTreatyRelief}
@@ -335,8 +371,8 @@ export function ClientsStep({
               />
               <ChoiceField
                 id="foreignReceiptsResolved"
-                label="Do your records show one complete annual total in rupees for these receipts?"
-                help="This amount should already account for fees, withholding, refunds, chargebacks, receivables, and your accounting method."
+                label="Have you confirmed the full year's gross receipts from these clients in rupees?"
+                help="Keep fees and tax deductions in gross receipts. Reconcile refunds, reversed payments and amounts still owed using your accounting method."
                 value={draft.foreignReceiptsResolved}
                 unsupportedOptions={['no']}
                 error={errors.foreignReceiptsResolved}
@@ -350,7 +386,7 @@ export function ClientsStep({
               />
               <ChoiceField
                 id="foreignCurrencyResolved"
-                label="Does that total include all currency conversions and exchange-rate effects?"
+                label="Does that total include all currency conversions and exchange-rate gains or losses?"
                 value={draft.foreignCurrencyResolved}
                 unsupportedOptions={['no']}
                 error={errors.foreignCurrencyResolved}

@@ -1,3 +1,6 @@
+import { currentRules } from '@/rules'
+import { taxYearShort } from '@/lib/tax-period'
+import { GstLiabilityDateHelp } from '@/routes/check/gst-liability-date-help'
 import type { QuestionnaireDispatch } from '@/routes/check/session'
 import {
   isUnregisteredGst,
@@ -113,7 +116,7 @@ export function GstStep({
           <MoneyField
             id="aggregateTurnover"
             label="GST aggregate turnover for this PAN"
-            help="Enter your all-India total for 2026-27. Include taxable, exempt, export, and inter-State supplies. Exclude GST, cess, and inward supplies taxed under reverse charge. This may differ from the receipts entered earlier."
+            help={`Enter your all-India total for ${taxYearShort}. Include taxable, exempt, export, and inter-State supplies. Exclude GST, cess, and inward supplies taxed under reverse charge. This may differ from the receipts entered earlier.`}
             value={draft.amounts.aggregateTurnover}
             error={errors.aggregateTurnover}
             onChange={(value) => setAmount('aggregateTurnover', value)}
@@ -155,13 +158,14 @@ export function GstStep({
               liable to register?
             </label>
             <p className="field-help" id="threshold-date-help">
-              Choose a past or present date in 2026-27. Leave this blank if your
-              turnover is at or below the threshold or you don't know the date.
+              Choose a past or present date in {taxYearShort}. Leave this blank
+              if your turnover is at or below the threshold or you don't know
+              the date. <GstLiabilityDateHelp />
             </p>
             <DatePicker
               id="thresholdLiabilityDate"
               value={draft.thresholdLiabilityDate}
-              min="2026-04-01"
+              min={currentRules.effectiveStart}
               max={latestThresholdDate}
               clearable
               describedBy={`threshold-date-help${errors.thresholdLiabilityDate ? ' thresholdLiabilityDate-error' : ''}`}

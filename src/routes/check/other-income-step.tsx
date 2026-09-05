@@ -1,9 +1,15 @@
+import { taxYearShort } from '@/lib/tax-period'
 import type { QuestionnaireDispatch } from '@/routes/check/session'
 import type { TriState } from '@/evaluation'
 import { CheckHeading, ChoiceField, MoneyField } from '@/routes/check/fields'
 import type { Draft, DraftAmountKey } from '@/routes/check/model'
 import { creditTriggerMayApply } from '@/routes/check/model'
 import { UnsupportedFactsField } from '@/routes/check/review'
+import {
+  InterestHelp,
+  TcsHelp,
+  TdsHelp,
+} from '@/routes/check/other-income-help'
 
 export function OtherIncomeStep({
   className,
@@ -22,12 +28,16 @@ export function OtherIncomeStep({
     <div className={className}>
       <CheckHeading
         title="Other income and tax paid"
-        description="Enter your Indian amounts for 2026-27. Use 0 if you have none."
+        description={`Enter your Indian amounts for ${taxYearShort}. Use 0 if you have none.`}
       />
       <MoneyField
         id="taxableBankInterest"
         label="Taxable bank or deposit interest"
-        help="Enter interest before any TDS."
+        help={
+          <>
+            Enter interest before any TDS. <InterestHelp />
+          </>
+        }
         value={draft.amounts.taxableBankInterest}
         error={errors.taxableBankInterest}
         onChange={(value) => setAmount('taxableBankInterest', value)}
@@ -35,7 +45,12 @@ export function OtherIncomeStep({
       <MoneyField
         id="tds"
         label="Indian TDS credit"
-        help="Enter actual Indian TDS for the income included in this estimate."
+        help={
+          <>
+            Enter actual Indian TDS for the income included in this estimate.{' '}
+            <TdsHelp />
+          </>
+        }
         value={draft.amounts.tds}
         error={errors.tds}
         onChange={(value) => setAmount('tds', value)}
@@ -43,7 +58,11 @@ export function OtherIncomeStep({
       <MoneyField
         id="tcs"
         label="Indian TCS credit"
-        help="Enter the TCS credit available for 2026-27."
+        help={
+          <>
+            Enter the TCS credit available for {taxYearShort}. <TcsHelp />
+          </>
+        }
         value={draft.amounts.tcs}
         error={errors.tcs}
         onChange={(value) => setAmount('tcs', value)}
@@ -51,7 +70,7 @@ export function OtherIncomeStep({
       <MoneyField
         id="advanceTaxPaid"
         label="Advance tax already paid"
-        help="Enter only advance tax paid for 2026-27. Do not include self-assessment tax."
+        help={`Enter only advance tax paid for ${taxYearShort}. Do not include self-assessment tax.`}
         value={draft.amounts.advanceTaxPaid}
         error={errors.advanceTaxPaid}
         onChange={(value) => setAmount('advanceTaxPaid', value)}
@@ -59,7 +78,7 @@ export function OtherIncomeStep({
       {creditTriggerMayApply(draft) && (
         <ChoiceField
           id="ageSixtyOrOlder"
-          label="Were you 60 or older at any time during 2026-27?"
+          label={`Were you 60 or older at any time during ${taxYearShort}?`}
           help="If you were 60 or older, this income-tax return trigger starts at ₹50,000 of combined TDS and TCS instead of ₹25,000."
           value={draft.ageSixtyOrOlder}
           error={errors.ageSixtyOrOlder}

@@ -36,6 +36,7 @@ import {
   sessionFromProfile,
 } from '../src/routes/check/session.ts'
 import assert from 'node:assert/strict'
+import { latestQuestionnaireDate } from '../src/app-context.ts'
 import { createMemoryRouter } from 'react-router-dom'
 import { formatAmountEdit } from '../src/components/amount-input.tsx'
 import { indiaDate } from '../src/lib/india-date.ts'
@@ -58,6 +59,14 @@ import {
 } from '../src/routes/check/model.ts'
 
 const today = '2026-09-05'
+assert.equal(
+  latestQuestionnaireDate(new Date('2026-09-05T23:59:00+05:30')),
+  '2026-09-05',
+)
+assert.equal(
+  latestQuestionnaireDate(new Date('2027-04-01T00:00:00+05:30')),
+  '2027-03-31',
+)
 const navigationRouter = createMemoryRouter([{ path: '*' }])
 const initialLocation = navigationRouter.state.location
 assert.equal(

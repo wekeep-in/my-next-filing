@@ -1,6 +1,8 @@
+import { taxYearShort } from '@/lib/tax-period'
 import { isBusinessPath } from '@/routes/check/model'
 import { CheckHeading, MoneyField } from '@/routes/check/fields'
 import type { Draft, DraftAmountKey } from '@/routes/check/model'
+import { DeclaredProfitHelp } from '@/routes/check/declared-profit-help'
 
 export function ReceiptsStep({
   className,
@@ -32,7 +34,7 @@ export function ReceiptsStep({
           <MoneyField
             id="qualifyingReceipts"
             label="Qualifying bank or online receipts"
-            help="Use the amount your records classify as qualifying bank or online receipts. Include payments received during 2026-27 or by the return due date."
+            help={`Use the amount your records classify as qualifying bank or online receipts. Include payments received during ${taxYearShort} or by the return due date.`}
             value={draft.amounts.qualifyingReceipts}
             error={errors.qualifyingReceipts}
             onChange={(value) => setAmount('qualifyingReceipts', value)}
@@ -56,7 +58,12 @@ export function ReceiptsStep({
           <MoneyField
             id="declaredProfit"
             label="Declared profit"
-            help="Enter at least 6% of qualifying receipts plus 8% of other receipts."
+            help={
+              <>
+                Enter at least 6% of qualifying receipts plus 8% of other
+                receipts. <DeclaredProfitHelp />
+              </>
+            }
             value={draft.amounts.declaredProfit}
             error={errors.declaredProfit}
             onChange={(value) => setAmount('declaredProfit', value)}
@@ -83,7 +90,12 @@ export function ReceiptsStep({
           <MoneyField
             id="declaredProfit"
             label="Declared profit"
-            help="Enter at least 50% of gross professional receipts."
+            help={
+              <>
+                Enter at least 50% of gross professional receipts.{' '}
+                <DeclaredProfitHelp />
+              </>
+            }
             value={draft.amounts.declaredProfit}
             error={errors.declaredProfit}
             onChange={(value) => setAmount('declaredProfit', value)}

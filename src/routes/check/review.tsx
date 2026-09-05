@@ -1,3 +1,4 @@
+import { taxYearShort } from '@/lib/tax-period'
 import type {
   QuestionnaireDispatch,
   QuestionnaireEvent,
@@ -334,7 +335,7 @@ function GroupSummary({
                 value: answer(draft.platformOwnAccount),
               },
               {
-                label: 'Contracting party identified',
+                label: 'Who the service contract is with',
                 value: answer(draft.platformRecipientIdentifiable),
               },
               {
@@ -342,14 +343,14 @@ function GroupSummary({
                 value: answer(draft.platformGrossBeforeFees),
               },
               {
-                label: 'Service-income character confirmed',
+                label: 'Own freelance service income confirmed',
                 value: answer(draft.platformIncomeCharacter),
               },
               {
                 label: 'Foreign platform fee',
                 value: answer(draft.platformForeignFeeGstTreatment, {
                   'not-applicable': 'No foreign platform fee',
-                  known: 'Yes, and its GST treatment is known',
+                  known: 'Yes, and I have confirmed how GST applies',
                 }),
               },
               {
@@ -365,7 +366,7 @@ function GroupSummary({
                 value: answer(draft.foreignWorkInIndia),
               },
               {
-                label: 'Overseas contracting party identified',
+                label: 'Who the overseas service contract is with',
                 value: answer(draft.foreignRecipientIdentifiable),
               },
               {
@@ -373,11 +374,11 @@ function GroupSummary({
                 value: answer(draft.foreignOwnAccount),
               },
               {
-                label: 'Cross-border place-of-supply rule confirmed',
+                label: 'General GST place-of-supply rule confirmed',
                 value: answer(draft.foreignPlaceOfSupply),
               },
               {
-                label: 'Same business or legal entity as overseas client',
+                label: 'Same legal entity as overseas client',
                 value: answer(draft.foreignSameEstablishment),
               },
               {
@@ -385,11 +386,11 @@ function GroupSummary({
                 value: answer(draft.foreignPaymentRoute),
               },
               {
-                label: 'Payments settle in your Indian bank account',
+                label: 'Payments reach your own Indian bank account',
                 value: answer(draft.foreignSettledToIndianBank),
               },
               {
-                label: 'Foreign account or wallet exposure',
+                label: 'Overseas account or money held abroad',
                 value: answer(draft.foreignAccountExposure, {
                   none: 'No',
                   possible: 'Yes or possibly',
@@ -400,7 +401,7 @@ function GroupSummary({
                 value: answer(draft.foreignOperation),
               },
               {
-                label: 'Tax withheld outside India',
+                label: 'Foreign tax deducted from payments',
                 value: answer(draft.foreignTax),
               },
               {
@@ -408,12 +409,12 @@ function GroupSummary({
                 value: answer(draft.foreignTreatyRelief),
               },
               {
-                label: 'Complete annual total in rupees',
+                label: 'Full year’s gross receipts confirmed in rupees',
                 value: answer(draft.foreignReceiptsResolved),
               },
               {
                 label:
-                  'Currency conversions and exchange-rate effects included',
+                  'Currency conversions and exchange gains or losses included',
                 value: answer(draft.foreignCurrencyResolved),
               },
             ]
@@ -438,7 +439,7 @@ function GroupSummary({
         ...(creditTriggerMayApply(draft)
           ? [
               {
-                label: '60 or older during 2026-27',
+                label: `60 or older during ${taxYearShort}`,
                 value: answer(draft.ageSixtyOrOlder),
               },
             ]

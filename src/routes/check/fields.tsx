@@ -1,3 +1,5 @@
+import { taxYearShort } from '@/lib/tax-period'
+import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { SelectControl } from '@/components/select-control'
 import { Badge } from '@/components/ui/badge'
@@ -37,7 +39,7 @@ export function ChoiceField({
 }: {
   readonly id: string
   readonly label: string
-  readonly help?: string
+  readonly help?: ReactNode
   readonly value: string
   readonly options?: readonly string[]
   readonly labels?: Readonly<Record<string, string>>
@@ -154,7 +156,7 @@ export function MoneyField({
 }: {
   readonly id: DraftAmountKey
   readonly label: string
-  readonly help: string
+  readonly help: ReactNode
   readonly value: string
   readonly error?: string
   readonly onChange: (value: string) => void
@@ -196,7 +198,7 @@ export function CheckHeading({
   return (
     <header className="question-heading">
       <Badge className="mb-[.85rem]" variant="period">
-        {first ? 'Tax year 2026-27' : TAX_YEAR}
+        {first ? `Tax year ${taxYearShort}` : TAX_YEAR}
       </Badge>
       <h1 id="check-title" tabIndex={-1}>
         {title}

@@ -1,3 +1,4 @@
+import { taxYearShort } from '@/lib/tax-period'
 import type { MouseEvent } from 'react'
 import MuxPlayer from '@mux/mux-player-react/lazy'
 import { cn } from 'cn'
@@ -50,7 +51,7 @@ export function LandingRoute() {
     <section className="landing" aria-labelledby="landing-title">
       <header className="landing-hero">
         <div className="landing-title-row">
-          <Badge variant="period">Tax year 2026-27</Badge>
+          <Badge variant="period">Tax year {taxYearShort}</Badge>
           <h1 id="landing-title">My Next Filing</h1>
         </div>
         <p className="landing-intro">

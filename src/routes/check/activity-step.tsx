@@ -3,6 +3,7 @@ import { activityOptions, isBusinessPath } from '@/routes/check/model'
 import type { Activity, TriState } from '@/evaluation'
 import { CheckHeading, ChoiceField, SelectField } from '@/routes/check/fields'
 import type { Draft, DraftPath } from '@/routes/check/model'
+import { TaxMethodHelp } from '@/routes/check/tax-method-help'
 
 export function ActivityStep({
   className,
@@ -44,7 +45,13 @@ export function ActivityStep({
       <ChoiceField
         id="path"
         label="Which tax method do you use for this work?"
-        help="Choose the method in your records or the one confirmed by your tax adviser. We cannot estimate your tax without a confirmed method."
+        help={
+          <>
+            Choose the method in your records or the one confirmed by your tax
+            adviser. We cannot estimate your tax without a confirmed method.{' '}
+            <TaxMethodHelp />
+          </>
+        }
         options={['specified-profession', 'eligible-business']}
         value={draft.path}
         error={errors.path}

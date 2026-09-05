@@ -7,7 +7,7 @@ import type {
   UnsupportedFact,
 } from '@/evaluation'
 import { parseProfile } from '@/evaluation'
-import { TAX_YEAR } from '@/rules'
+import { TAX_YEAR, currentRules } from '@/rules'
 
 type DraftChoice = '' | TriState
 export type DraftPath = '' | 'specified-profession' | 'eligible-business'
@@ -174,8 +174,9 @@ export const optionLabels: Readonly<Record<string, string>> = {
   known: 'Known',
   incidental: 'Incidental domestic contractor',
   'incidental-domestic': 'Incidental domestic contractor',
-  'convertible-foreign-exchange': 'Convertible foreign exchange',
-  'rbi-permitted-rupee': 'RBI-permitted rupee route',
+  'convertible-foreign-exchange':
+    'Foreign currency that can be freely exchanged',
+  'rbi-permitted-rupee': 'Rupees through an RBI-permitted route',
   new: 'New tax regime',
   old: 'Old tax regime',
   domestic: 'Domestic clients only',
@@ -993,11 +994,10 @@ export function validateDraftGroup(
           'Choose whether another reason could require GST registration.'
       if (
         draft.thresholdLiabilityDate &&
-        (draft.thresholdLiabilityDate < '2026-04-01' ||
+        (draft.thresholdLiabilityDate < currentRules.effectiveStart ||
           draft.thresholdLiabilityDate > latestThresholdDate)
       )
-        nextErrors.thresholdLiabilityDate =
-          'Choose a past or present date in 2026-27.'
+        nextErrors.thresholdLiabilityDate = `Choose a past or present date in ${TAX_YEAR}.`
     }
     if (draft.gstKind === 'registered') {
       if (!draft.gstStatus)
