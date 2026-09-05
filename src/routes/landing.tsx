@@ -8,6 +8,7 @@ import { buttonVariants } from '@/components/ui/button'
 import { JourneySidebar, calculationStep } from '@/components/journey-sidebar'
 import { LandingFaqs } from '@/components/landing-faqs'
 import { ShareLink } from '@/components/share-link'
+import { sessionMatchesWorkspace } from '@/routes/plan/model'
 
 export function LandingRoute() {
   const app = useApp()
@@ -26,10 +27,7 @@ export function LandingRoute() {
     personalSession?.kind === 'complete' || (!personalSession && hasSaved)
       ? '/plan'
       : '/check'
-  const enter = (
-    event: MouseEvent<HTMLAnchorElement>,
-    action: (animate: boolean) => void,
-  ) => {
+  const enter = (event: MouseEvent<HTMLAnchorElement>, action: () => void) => {
     if (
       event.button !== 0 ||
       event.altKey ||
@@ -39,14 +37,14 @@ export function LandingRoute() {
     )
       return
     event.preventDefault()
-    action(event.detail > 0)
+    action()
   }
-  const continueEntry = (animate: boolean) =>
+  const continueEntry = () =>
     personalSession
       ? app.returnPersonal()
       : hasSaved
         ? app.openWorkspace()
-        : app.startPersonal(animate)
+        : app.startPersonal()
 
   return (
     <section className="landing" aria-labelledby="landing-title">
@@ -73,11 +71,12 @@ export function LandingRoute() {
         className="landing-sidebar"
         activeStep={0}
         backAction={
-          hasSaved ? (
+          hasSaved &&
+          !sessionMatchesWorkspace(personalSession, savedWorkspace) ? (
             <Link
               className={buttonVariants({
                 variant: 'outline',
-                className: 'w-full',
+                className: 'w-full min-w-0 whitespace-normal',
               })}
               to={personalSession ? '/plan' : '/check'}
               onClick={(event) =>
@@ -106,8 +105,8 @@ export function LandingRoute() {
           </Link>
         }
         disabledSteps={[2, 3, 4, 5, 6, 7, calculationStep]}
-        onStepSelect={(step, animate) =>
-          step === 0 ? window.scrollTo(0, 0) : continueEntry(animate)
+        onStepSelect={(step) =>
+          step === 0 ? window.scrollTo(0, 0) : continueEntry()
         }
       />
 

@@ -187,6 +187,8 @@ Every uncertainty that can stop or reduce Coverage offers "Not sure". The interf
 
 Questionnaire drafts use display strings and may be incomplete. They are not Profile values and never enter Evaluation without fresh completion and `parseProfile`.
 
+Amount inputs, including Plan payment updates, apply Indian digit grouping while the user types and preserve the cursor position. Blank and invalid entries remain available for correction without rounding or changing their meaning.
+
 For a personal questionnaire, create one versioned Recovery draft at `my-next-filing:recovery-draft` in current-tab `sessionStorage` as soon as `/check` opens, including while blank. Replace the complete small value after every answer change and retain it through Supported, Unsupported, stale-rules, and unsaved Plan states. A refresh restores the Draft, revalidates it, and reruns Profile parsing and Evaluation as applicable. Do not store examples, routes, errors, Profiles, Evaluation results, Completion records, or UI state in the Recovery draft.
 
 Treat Recovery storage as untrusted and best effort. Invalid Recovery data is removed and starts blank. A storage or removal failure preserves current in-memory answers, warns that refresh recovery is unavailable, and never blocks calculation. `Start over` removes only Recovery data after confirmation when answers exist. It never deletes a Saved workspace.
@@ -388,7 +390,7 @@ If a later statutory correction affects an archive's recorded Rule dataset, show
 
 ## Entry, workspace, and correction experience
 
-The public landing page remains generic. Reuse its current origin story and self-hosted media where the copy remains accurate. Update only the scope, privacy, and actions needed by this successor. Without browser data, its primary action starts an estimate. An incomplete Recovery draft uses `Continue your estimate`; a complete Recovery draft uses `Continue your plan`; and a Saved workspace alone uses `Continue your saved workspace`. When both exist, Recovery is primary and `Open saved workspace` is secondary. No action exposes a Profile, amount, deadline, or Completion record.
+The public landing page remains generic. Reuse its current origin story and self-hosted media where the copy remains accurate. Update only the scope, privacy, and actions needed by this successor. Without browser data, its primary action starts an estimate. An incomplete Recovery draft uses `Continue your estimate`; a complete Recovery draft uses `Continue your plan`; and a Saved workspace alone uses `Continue your saved workspace`. When both exist, Recovery is primary and `Open saved workspace` is secondary. Hide the secondary action when the complete personal plan has the same Profile and the Saved workspace has no Completion records or prior years to show. No action exposes a Profile, amount, deadline, or Completion record.
 
 Use the latest in-memory personal work for these actions when its Recovery write failed. Explicitly opening a Saved workspace selects it for the current document without replacing personal answers or deleting their Recovery draft. `Return to your estimate` restores those answers and clears that selection. Refresh clears temporary selection and restores a valid non-redundant Recovery draft ahead of the Saved workspace. Beginning a Saved-workspace edit while personal work exists requires the explicit `Discard draft and edit saved data` action.
 
@@ -445,6 +447,10 @@ The first incomplete group limits forward access, while Review requires all six 
 Preserve the current visual language: Fraunces headings, Inter body text, warm neutral ground, dark ink, green accent, compact rounded cards, one primary action, and chronological information. Follow `DESIGN.md`; use its semantic Tailwind tokens and the source-owned shadcn components backed by Base UI where applicable. Generated defaults must be curated to this visual language before use.
 
 Use restrained CSS transitions for press, hover, disclosure, and short content entry. Respect reduced motion. A successful plan transition may show brief confetti feedback, but do not animate money, urgency, or Deadline status.
+
+Navigation feedback is owned by the shared app shell. Pointer-driven links, buttons, and history changes use the same short entry, including opening a different plan at the same path. Initial load, keyboard navigation, hash-only changes, and reduced motion remain immediate. Answer edits, recalculation, and notices do not restart page entry; navigation must not remount content merely to animate it.
+
+Shared questionnaire and result-card containers smoothly resize for pointer-triggered content changes. Newly shown fields, notices, and editors inherit entry feedback. Keyboard interactions and reduced motion remain immediate. Let React remove obsolete or deleted content immediately, and animate only the remaining container's size. Input values and money results are never interpolated.
 
 ## Privacy, Analytics, and sharing
 

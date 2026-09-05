@@ -2,7 +2,7 @@ import Confetti from 'react-confetti-boom'
 import { useEffect } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { latestQuestionnaireDate, useApp } from '@/app-context'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { TopBar } from '@/components/top-bar'
 import { Badge } from '@/components/ui/badge'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -25,6 +25,7 @@ import {
 import { DeleteNotice, SavedDataState } from '@/routes/plan/editors'
 import type { PlanEditor } from '@/routes/plan/editors'
 import { usePlanCoordinator } from '@/routes/plan/coordinator'
+import { sessionMatchesWorkspace } from '@/routes/plan/model'
 
 const confettiColors = ['#15803d', '#0f172a', '#2563eb', '#fbbf24']
 
@@ -43,7 +44,6 @@ export function PlanRoute() {
   const location = useLocation()
   const navigate = useNavigate()
   const routeState = location.state as {
-    readonly animate?: boolean
     readonly confettiOrigin?: { readonly x: number; readonly y: number }
   } | null
   const confettiOrigin = routeState?.confettiOrigin
@@ -144,9 +144,6 @@ export function PlanRoute() {
             variant="result"
             aria-labelledby="unsupported-title"
           >
-            <Badge variant="state">
-              This version does not cover your situation
-            </Badge>
             <h1 tabIndex={-1} id="unsupported-title">
               We can't calculate a reliable plan from these answers
             </h1>
@@ -223,14 +220,18 @@ export function PlanRoute() {
               onUndo={removeCompletion}
             />
             {c.notice && (
-              <Alert className="mt-4" role="status">
-                <AlertDescription>{c.notice.message}</AlertDescription>
+              <TopBar
+                variant={
+                  c.notice.kind === 'conflict' ? 'warning' : 'destructive'
+                }
+              >
+                {c.notice.message}{' '}
                 {c.notice.kind === 'conflict' && (
                   <Button variant="link" onClick={c.reload}>
                     Reload saved data
                   </Button>
                 )}
-              </Alert>
+              </TopBar>
             )}
             <div className="plan-summary">
               <TaxSummary tax={supported.tax} />
@@ -294,11 +295,7 @@ export function PlanRoute() {
         />
       )}
       {isExample && (
-        <Alert
-          className="notice--top notice--example"
-          role="status"
-          variant="example"
-        >
+        <TopBar variant="example">
           <strong>Fictional example.</strong> These amounts are for
           demonstration only.{' '}
           <Button variant="link" onClick={app.returnPersonal}>
@@ -306,15 +303,12 @@ export function PlanRoute() {
               ? 'Return to your estimate'
               : 'Start your estimate'}
           </Button>
-        </Alert>
+        </TopBar>
       )}
-      <div
-        key={location.key}
-        className={`plan-main${routeState?.animate ? ' journey-view--enter' : ''}`}
-      >
+      <div className="plan-main">
         {renderPlan()}
         {c.staleEdit && (
-          <Alert role="status">
+          <TopBar variant="warning">
             Your saved workspace changed while you were editing. Your answers
             are still here.{' '}
             <Button
@@ -322,40 +316,48 @@ export function PlanRoute() {
               onClick={() => app.dispatch({ type: 'continue-unsaved' })}
             >
               Continue as a separate estimate
-            </Button>
+            </Button>{' '}
             {app.savedWorkspace.kind === 'ready' && (
               <Button variant="link" onClick={app.discardSavedEdit}>
                 Use newer saved workspace
               </Button>
             )}
-          </Alert>
+          </TopBar>
         )}
-        {model.kind === 'supported' && model.canSaveChanges && (
-          <Button className="mt-4" onClick={saveCurrent}>
-            Save changes
-          </Button>
-        )}
-        {c.interaction.kind === 'delete-confirmation' ? (
-          <DeleteNotice onDelete={c.deleteSaved} onCancel={c.cancel} />
-        ) : (
-          app.savedWorkspace.kind !== 'absent' && (
-            <div className="workspace-controls">
+        <div className="workspace-controls">
+          {model.kind === 'supported' && model.canSaveChanges && (
+            <Button onClick={saveCurrent}>Save changes</Button>
+          )}
+          {c.interaction.kind !== 'delete-confirmation' &&
+            app.savedWorkspace.kind !== 'absent' && (
               <Button variant="destructive" onClick={c.openDelete}>
                 Delete saved data
               </Button>
-            </div>
-          )
+            )}
+        </div>
+        {c.interaction.kind === 'delete-confirmation' && (
+          <DeleteNotice onDelete={c.deleteSaved} onCancel={c.cancel} />
         )}
         {source.kind === 'workspace' && app.personalSession && (
-          <Button variant="link" onClick={app.returnPersonal}>
+          <Button
+            className="workspace-switch"
+            variant="link"
+            onClick={app.returnPersonal}
+          >
             Return to your estimate
           </Button>
         )}
-        {source.kind !== 'workspace' && app.savedWorkspace.kind === 'ready' && (
-          <Button variant="link" onClick={app.openWorkspace}>
-            Open saved workspace
-          </Button>
-        )}
+        {source.kind !== 'workspace' &&
+          app.savedWorkspace.kind === 'ready' &&
+          !sessionMatchesWorkspace(app.session, app.savedWorkspace) && (
+            <Button
+              className="workspace-switch"
+              variant="link"
+              onClick={app.openWorkspace}
+            >
+              Open saved workspace
+            </Button>
+          )}
       </div>
       <JourneySidebar
         activeStep={calculationStep}
@@ -378,11 +380,11 @@ export function PlanRoute() {
             Start over
           </Button>
         }
-        onStepSelect={(step, animate) =>
+        onStepSelect={(step) =>
           step === 0
             ? navigate('/')
             : step <= questionnaireGroups.length
-              ? review(questionnaireGroups[step - 1].id, animate)
+              ? review(questionnaireGroups[step - 1].id)
               : undefined
         }
       />

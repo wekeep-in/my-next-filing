@@ -55,6 +55,7 @@
   --content-max: var(--container-content);
   --content-width: min(68vw, var(--content-max));
   --sidebar-width: clamp(17.25rem, 20vw, 24rem);
+  --top-bar-space: 5.5rem;
 }
 
 @layer base {
@@ -70,6 +71,7 @@
 
   html {
     scrollbar-gutter: stable;
+    scroll-padding-top: var(--top-bar-space);
     view-transition-name: none;
     @apply font-sans;
   }
@@ -269,11 +271,7 @@ main {
   font-size: var(--text-intro);
 }
 
-.landing-example button {
-  font-size: inherit;
-}
-
-.landing-example a,
+.landing-example :is(a, button),
 .site-footer a,
 .journey-note a,
 .landing-faqs a {
@@ -392,6 +390,10 @@ main {
   gap: 0.45rem;
 }
 
+.landing-sidebar .journey-actions {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .landing-start {
   grid-column: 1 / -1;
 }
@@ -475,10 +477,6 @@ main {
 }
 
 @media (min-width: 1101px) {
-  .plan.journey-layout > .notice--top {
-    grid-row: 1;
-  }
-
   .plan.journey-layout > .plan-main {
     grid-column: 1;
     grid-row: 1;
@@ -495,6 +493,14 @@ main {
   min-width: 0;
 }
 
+.questionnaire-actions {
+  padding-top: 2rem;
+}
+
+.questionnaire-main .question-group > :last-child {
+  margin-bottom: 0;
+}
+
 .plan-main {
   --plan-section-gap: 2.8rem;
 }
@@ -505,23 +511,6 @@ main {
 
 .question-group {
   padding-top: 2rem;
-}
-
-.question-group--enter,
-.journey-view--enter {
-  opacity: 1;
-  transform: translateY(0);
-  transition:
-    opacity 180ms var(--ease-app-out),
-    transform 180ms var(--ease-app-out);
-}
-
-@starting-style {
-  .question-group--enter,
-  .journey-view--enter {
-    opacity: 0;
-    transform: translateY(0.5rem);
-  }
 }
 
 .question-group h1,
@@ -590,7 +579,7 @@ legend {
 }
 
 .review-list h2 {
-  font-size: 1.15rem;
+  font-size: var(--text-heading-3);
   line-height: 1.25;
   margin: 0;
 }
@@ -618,13 +607,12 @@ legend {
 }
 
 .review-answer {
-  font-size: 0.9rem;
-  line-height: 1.4;
+  font-size: var(--text-body);
+  line-height: 1.6;
 }
 
 .review-answer dt {
   color: var(--muted-foreground);
-  font-size: 0.8rem;
 }
 
 .review-answer dd {
@@ -634,51 +622,26 @@ legend {
   overflow-wrap: anywhere;
 }
 
-.notice--top {
-  width: 100vw;
-  margin: calc(-1 * clamp(1.5rem, 3vw, 3rem)) 0 1.5rem
-    calc((var(--content-width) - 100vw) / 2);
-  border-left: 0;
-  border-radius: 0;
-  padding: 0.7rem max(1.25rem, calc((100vw - var(--content-max)) / 2));
-  font-size: clamp(0.75rem, 0.75vw, 0.9rem);
-  line-height: 1.35;
-}
-
-.journey-layout > .notice--top {
-  z-index: 130;
-  grid-column: 1 / -1;
-  position: relative;
-}
-
-.journey-layout > .notice--top.notice--toast {
+.top-bars {
   position: fixed;
   z-index: 300;
   inset: 0 0 auto;
-  width: 100%;
+  max-height: var(--top-bar-space);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.top-bar {
   margin: 0;
-  border: 0;
+  border-width: 0 0 1px;
   border-radius: 0;
-  padding-top: calc(0.7rem + env(safe-area-inset-top));
-  color: var(--card);
-  background: var(--warning);
-  opacity: 0;
-  transform: translateY(-100%);
-  transition:
-    transform 180ms var(--ease-app-out),
-    opacity 140ms var(--ease-app-out);
+  padding: 0.75rem max(1.25rem, calc((100% - var(--content-max)) / 2));
+  font-size: 0.9rem;
+  line-height: 1.5;
 }
 
-.journey-layout > .notice--top.notice--toast[data-visible='true'] {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-@starting-style {
-  .journey-layout > .notice--top.notice--toast[data-visible='true'] {
-    opacity: 0;
-    transform: translateY(-100%);
-  }
+.top-bar:first-child {
+  padding-top: calc(0.75rem + env(safe-area-inset-top));
 }
 
 .agenda-heading {
@@ -859,7 +822,7 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   }
 
   .app--journey main {
-    padding-top: 0;
+    padding-top: var(--top-bar-space);
   }
 
   .app--journey .journey-sidebar,
@@ -886,13 +849,8 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
     box-shadow: 0 0.35rem 1rem rgb(15 23 42 / 0.06);
   }
 
-  .journey-layout > .notice--top {
-    grid-row: 1;
-    margin: 0 0 0 calc((100% - 100vw) / 2);
-  }
-
-  .journey-layout:has(> .notice--top) .journey-nav {
-    grid-row: 2;
+  .top-bars:not(:empty) ~ .app--journey .journey-nav {
+    top: var(--top-bar-space);
   }
 
   .app--journey .journey-list {
@@ -980,11 +938,6 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
     grid-row: 2;
   }
 
-  .journey-layout:has(> .notice--top) .questionnaire-main,
-  .journey-layout:has(> .notice--top) .plan-main {
-    grid-row: 3;
-  }
-
   .app--journey .journey-actions {
     position: fixed;
     z-index: 110;
@@ -1002,10 +955,6 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
 
   .app--journey .site-footer {
     padding-bottom: calc(7rem + env(safe-area-inset-bottom));
-  }
-
-  .notice--top {
-    margin-left: calc((100% - 100vw) / 2);
   }
 }
 
@@ -1087,34 +1036,43 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   gap: 2.5rem;
 }
 
+.auto-size-content {
+  display: flow-root;
+}
+
+.auto-size[data-resizing] {
+  overflow: clip;
+  overflow-clip-margin: 0.25rem;
+}
+
 @media (prefers-reduced-motion: no-preference) {
-  .field-error,
-  .choice-warning,
-  .error-summary,
-  [data-slot='alert']:not(.notice--top) {
+  html[data-input-method='pointer']:not([data-page-transition])
+    :is(
+      .field,
+      .section-note,
+      .inline-editor,
+      .save-notice,
+      .delete-notice,
+      .field-error,
+      .choice-warning,
+      .error-summary,
+      [data-slot='alert']
+    ) {
     opacity: 1;
     transform: translateY(0);
     transition:
-      opacity 120ms var(--ease-app-out),
-      transform 120ms var(--ease-app-out);
+      opacity var(--entry-duration, 180ms) var(--ease-app-out),
+      transform var(--entry-duration, 180ms) var(--ease-app-out);
 
     @starting-style {
       opacity: 0;
-      transform: translateY(-0.25rem);
+      transform: translateY(var(--entry-offset, 0.25rem));
     }
   }
 
-  .path-follow-up {
-    opacity: 1;
-    transform: translateY(0);
-    transition:
-      opacity 180ms var(--ease-app-out),
-      transform 180ms var(--ease-app-out);
-
-    @starting-style {
-      opacity: 0;
-      transform: translateY(0.5rem);
-    }
+  :is(.field-error, .choice-warning, .error-summary, [data-slot='alert']) {
+    --entry-duration: 120ms;
+    --entry-offset: -0.25rem;
   }
 }
 
@@ -1396,22 +1354,20 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   border-radius: 0;
   padding: 0;
   background: transparent;
-  opacity: 1;
-  transform: translateY(0);
-  transition:
-    opacity 180ms var(--ease-app-out),
-    transform 180ms var(--ease-app-out);
-
-  @starting-style {
-    opacity: 0;
-    transform: translateY(0.35rem);
-  }
 }
 
 .attention-action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
   margin-top: 1rem;
   border-top: 1px solid var(--border);
   padding: 1rem 0 0;
+}
+
+.attention-action > :is(.save-notice, .inline-editor) {
+  width: 100%;
 }
 
 .attention-action .inline-editor {
@@ -1425,24 +1381,9 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
 .delete-notice {
   margin-top: 1.5rem;
   border-color: var(--destructive-border);
-  opacity: 1;
-  transform: translateY(0);
-  transition:
-    opacity 180ms var(--ease-app-out),
-    transform 180ms var(--ease-app-out);
-
-  @starting-style {
-    opacity: 0;
-    transform: translateY(0.35rem);
-  }
 }
 
 .delete-notice h2 {
-  margin-top: 0;
-}
-
-.workspace-controls > .delete-notice {
-  width: 100%;
   margin-top: 0;
 }
 
@@ -1451,9 +1392,24 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
 }
 
 .workspace-controls {
-  align-items: flex-start;
-  flex-direction: column;
   margin-top: var(--plan-section-gap);
+  flex-wrap: nowrap;
+}
+
+.workspace-controls:empty {
+  display: none;
+}
+
+.workspace-controls > button {
+  min-width: 0;
+  flex-shrink: 1;
+  white-space: normal;
+}
+
+.workspace-switch {
+  display: block;
+  width: fit-content;
+  margin-top: 1.5rem;
 }
 
 .inline-editor {
@@ -1574,11 +1530,6 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
     margin-top: 0;
   }
 
-  .workspace-controls {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
   .completion-controls {
     grid-template-columns: 1fr;
   }
@@ -1597,20 +1548,6 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
     scale: 1;
   }
 
-  .question-group--enter,
-  .journey-view--enter {
-    transform: translateY(0);
-    transition-property: opacity;
-  }
-
-  @starting-style {
-    .question-group--enter,
-    .journey-view--enter {
-      opacity: 0;
-      transform: translateY(0);
-    }
-  }
-
   details:has(> summary:not(:focus-visible))::details-content {
     transform: translateY(0);
     transition-property: content-visibility, opacity;
@@ -1627,28 +1564,6 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
 
   .choice-card:active {
     transform: none;
-  }
-
-  .save-notice,
-  .delete-notice {
-    transform: none;
-    transition-property: opacity;
-  }
-
-  .journey-layout > .notice--top.notice--toast {
-    transform: none;
-    transition-property: opacity;
-  }
-
-  @starting-style {
-    .save-notice,
-    .delete-notice {
-      transform: none;
-    }
-
-    .journey-layout > .notice--top.notice--toast[data-visible='true'] {
-      transform: none;
-    }
   }
 }
 
@@ -1679,19 +1594,6 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
     padding-bottom: 0.5rem;
     width: fit-content;
     white-space: nowrap;
-  }
-
-  .journey-layout {
-    position: relative;
-  }
-
-  .journey-layout > .notice--example {
-    position: absolute;
-    z-index: 130;
-    top: calc(-1 * clamp(3rem, 7vw, 5.5rem));
-    left: calc((var(--content-width) - 100vw) / 2);
-    width: 100vw;
-    margin: 0;
   }
 }
 
@@ -1757,11 +1659,6 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   --radius-4xl: calc(var(--radius) * 2.6);
   --ease-app-out: cubic-bezier(0.23, 1, 0.32, 1);
   --shadow-panel: 0 1rem 2.5rem rgb(15 23 42 / 0.09);
-}
-
-.app-notices .notice--top {
-  width: 100%;
-  margin: 0;
 }
 
 .app-confirmation {

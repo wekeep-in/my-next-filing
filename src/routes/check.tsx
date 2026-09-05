@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState } from 'react'
+import { useEffect, useLayoutEffect } from 'react'
 import type { MouseEvent } from 'react'
 import {
   Navigate,
@@ -11,7 +11,8 @@ import { latestQuestionnaireDate, useApp } from '@/app-context'
 import type { AppOutletContext } from '@/app-context'
 import type { ProfileGroup } from '@/evaluation'
 import { JourneySidebar, calculationStep } from '@/components/journey-sidebar'
-import { Alert } from '@/components/ui/alert'
+import { TopBar } from '@/components/top-bar'
+import { AutoSize } from '@/components/auto-size'
 import { Button } from '@/components/ui/button'
 import { ActivityStep } from '@/routes/check/activity-step'
 import { ClientsStep } from '@/routes/check/clients-step'
@@ -31,16 +32,12 @@ import {
 } from '@/routes/check/model'
 import type { DraftAmountKey } from '@/routes/check/model'
 import { questionnaireErrors } from '@/routes/check/session'
+import { sessionMatchesWorkspace } from '@/routes/plan/model'
 
 type CheckContext = {
   readonly app: AppOutletContext
-  readonly className: string
   readonly latestDate: string
-  readonly go: (
-    group: ProfileGroup,
-    animate?: boolean,
-    replace?: boolean,
-  ) => void
+  readonly go: (group: ProfileGroup, replace?: boolean) => void
 }
 
 export function CheckIndex() {
@@ -59,7 +56,7 @@ export function CheckIndex() {
 }
 
 export function CheckGroup({ group }: { readonly group: ProfileGroup }) {
-  const { app, className, latestDate, go } = useOutletContext<CheckContext>()
+  const { app, latestDate, go } = useOutletContext<CheckContext>()
   const session = app.session
   if (!session) return null
   if (!canOpenGroup(session.draft, group, latestDate))
@@ -76,7 +73,7 @@ export function CheckGroup({ group }: { readonly group: ProfileGroup }) {
     ]),
   )
   const props = {
-    className,
+    className: 'question-group',
     draft: session.draft,
     errors,
     dispatch: app.dispatch,
@@ -105,10 +102,10 @@ export function CheckGroup({ group }: { readonly group: ProfileGroup }) {
     case 'review':
       return (
         <ReviewStep
-          className={className}
+          className="question-group"
           draft={session.draft}
           errors={errors}
-          onEdit={(step, motion) => go(questionnaireGroups[step].id, motion)}
+          onEdit={(step) => go(questionnaireGroups[step].id)}
         />
       )
   }
@@ -121,8 +118,6 @@ export function CheckRoute() {
   const group = questionnaireGroupFromPath(location.pathname)
   const isIndex =
     location.pathname === '/check' || location.pathname === '/check/'
-  const routeMotion = location.state as { readonly animate?: boolean } | null
-  const [animate, setAnimate] = useState(Boolean(routeMotion?.animate))
   const latestDate = latestQuestionnaireDate(new Date())
   const { session, dispatch } = app
   useEffect(() => {
@@ -147,14 +142,12 @@ export function CheckRoute() {
     window.scrollTo(0, 0)
     document.getElementById('check-title')?.focus()
   }, [group, location.key])
-  const go = (target: ProfileGroup, motion = false, replace = false) => {
+  const go = (target: ProfileGroup, replace = false) => {
     dispatch({ type: 'clear-validation' })
-    setAnimate(motion)
     void navigate(`/check/${target}`, { replace })
   }
   const context: CheckContext = {
     app,
-    className: `question-group${animate ? ' question-group--enter' : ''}`,
     latestDate,
     go,
   }
@@ -179,12 +172,11 @@ export function CheckRoute() {
     const errors = validateDraftGroup(session.draft, group!, latest)
     if (errors.length) {
       dispatch({ type: 'expose-validation', group: group! })
-      setAnimate(false)
       focusError(errors[0]?.field)
       return
     }
     if (group !== 'review') {
-      go(questionnaireGroups[step + 1].id, event.detail > 0)
+      go(questionnaireGroups[step + 1].id)
       return
     }
     const completed = completeDraft(session.draft, latest)
@@ -193,7 +185,6 @@ export function CheckRoute() {
         type: 'expose-validation',
         group: completed.errors[0]?.group ?? 'review',
       })
-      setAnimate(false)
       void navigate(`/check/${completed.errors[0]?.group ?? 'review'}`)
       focusError(completed.errors[0]?.field)
       return
@@ -204,7 +195,6 @@ export function CheckRoute() {
       state:
         event.detail > 0
           ? {
-              animate: true,
               confettiOrigin: {
                 x: (button.left + button.width / 2) / window.innerWidth,
                 y: (button.top + button.height / 2) / window.innerHeight,
@@ -219,11 +209,7 @@ export function CheckRoute() {
       aria-labelledby="check-title"
     >
       {session.origin.kind === 'example' && (
-        <Alert
-          className="notice--top notice--example"
-          variant="example"
-          role="status"
-        >
+        <TopBar variant="example">
           <strong>Fictional example.</strong> You can explore these answers, but
           they cannot be saved.{' '}
           <Button variant="link" onClick={app.returnPersonal}>
@@ -231,19 +217,22 @@ export function CheckRoute() {
               ? 'Return to your estimate'
               : 'Start your estimate'}
           </Button>
-        </Alert>
+        </TopBar>
       )}
       <div className="questionnaire-main">
-        <Outlet context={context} />
-        <div className="button-row">
+        <AutoSize>
+          <Outlet context={context} />
+        </AutoSize>
+        <div className="button-row questionnaire-actions">
           <Button variant="link" onClick={app.startOver}>
             Start over
           </Button>
-          {app.savedWorkspace.kind === 'ready' && (
-            <Button variant="link" onClick={app.openWorkspace}>
-              Open saved workspace
-            </Button>
-          )}
+          {app.savedWorkspace.kind === 'ready' &&
+            !sessionMatchesWorkspace(session, app.savedWorkspace) && (
+              <Button variant="link" onClick={app.openWorkspace}>
+                Open saved workspace
+              </Button>
+            )}
         </div>
       </div>
       <JourneySidebar
@@ -252,10 +241,10 @@ export function CheckRoute() {
           <Button
             className="w-full min-w-0 px-[.65rem] leading-[1.1]! font-extrabold!"
             variant="outline"
-            onClick={(event) =>
+            onClick={() =>
               step === 0
                 ? navigate('/', { replace: true })
-                : go(questionnaireGroups[step - 1].id, event.detail > 0, true)
+                : go(questionnaireGroups[step - 1].id, true)
             }
           >
             Back
@@ -275,10 +264,10 @@ export function CheckRoute() {
             canOpenGroup(session.draft, id, latestDate) ? [] : [index + 1],
           ),
         ]}
-        onStepSelect={(selected, motion) =>
+        onStepSelect={(selected) =>
           selected === 0
             ? navigate('/')
-            : go(questionnaireGroups[selected - 1].id, motion)
+            : go(questionnaireGroups[selected - 1].id)
         }
       />
     </section>

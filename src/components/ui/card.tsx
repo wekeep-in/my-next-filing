@@ -1,10 +1,12 @@
 import * as React from 'react'
 import { cn } from 'cn'
+import { AutoSize } from '@/components/auto-size'
 
 function Card({
   as: Component = 'div',
   className,
   variant = 'default',
+  children,
   ...props
 }: React.ComponentProps<'div'> & {
   readonly as?: 'article' | 'div' | 'section'
@@ -15,12 +17,13 @@ function Card({
       data-slot="card"
       className={cn(
         'rounded-card border border-border bg-card text-card-foreground',
-        variant === 'result' &&
-          'p-[clamp(1.15rem,3vw,1.8rem)] [&_h1]:leading-tight! [&_h2]:leading-tight! [&_h3]:leading-tight!',
+        variant === 'result' && 'p-[clamp(1.15rem,3vw,1.8rem)]',
         className,
       )}
       {...props}
-    />
+    >
+      {variant === 'result' ? <AutoSize>{children}</AutoSize> : children}
+    </Component>
   )
 }
 

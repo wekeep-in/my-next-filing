@@ -12,6 +12,7 @@ import {
   derivePlanModel,
   preparePayment,
   selectPlanSource,
+  sessionMatchesWorkspace,
   updateCompletionRecords,
 } from '../src/routes/plan/model.ts'
 import {
@@ -35,7 +36,10 @@ import {
   sessionFromProfile,
 } from '../src/routes/check/session.ts'
 import assert from 'node:assert/strict'
+import { createMemoryRouter } from 'react-router-dom'
+import { formatAmountEdit } from '../src/components/amount-input.tsx'
 import { indiaDate } from '../src/lib/india-date.ts'
+import { shouldAnimatePage } from '../src/lib/page-transition.ts'
 import {
   blankDraft,
   canOpenGroup,
@@ -54,6 +58,89 @@ import {
 } from '../src/routes/check/model.ts'
 
 const today = '2026-09-05'
+const navigationRouter = createMemoryRouter([{ path: '*' }])
+const initialLocation = navigationRouter.state.location
+assert.equal(
+  shouldAnimatePage(initialLocation, initialLocation, true, false),
+  false,
+)
+await navigationRouter.navigate('/plan')
+const planLocation = navigationRouter.state.location
+assert.equal(
+  shouldAnimatePage(initialLocation, planLocation, true, false),
+  true,
+)
+await navigationRouter.navigate('/plan')
+const workspaceLocation = navigationRouter.state.location
+assert.equal(
+  shouldAnimatePage(planLocation, workspaceLocation, true, false),
+  true,
+)
+assert.equal(
+  shouldAnimatePage(planLocation, workspaceLocation, false, false),
+  false,
+)
+assert.equal(
+  shouldAnimatePage(planLocation, workspaceLocation, true, true),
+  false,
+)
+await navigationRouter.navigate(-1)
+assert.equal(
+  shouldAnimatePage(
+    workspaceLocation,
+    navigationRouter.state.location,
+    true,
+    false,
+  ),
+  true,
+)
+await navigationRouter.navigate(1)
+assert.equal(
+  shouldAnimatePage(planLocation, navigationRouter.state.location, true, false),
+  true,
+)
+await navigationRouter.navigate('/plan#details')
+assert.equal(
+  shouldAnimatePage(
+    workspaceLocation,
+    navigationRouter.state.location,
+    true,
+    false,
+  ),
+  false,
+)
+navigationRouter.dispose()
+
+for (const [raw, expected] of [
+  ['1000', '1,000'],
+  ['100000', '1,00,000'],
+  ['12345678', '1,23,45,678'],
+  ['₹ 123456', '1,23,456'],
+  ['00010', '10'],
+  ['0', '0'],
+  ['', ''],
+  ['12.50', '12.50'],
+  ['-1000', '-1000'],
+  ['1e6', '1e6'],
+  ['9007199254740992', '9007199254740992'],
+]) {
+  assert.deepEqual(formatAmountEdit(raw, raw.length), {
+    value: expected,
+    caret: expected.length,
+  })
+}
+assert.deepEqual(formatAmountEdit('192,345', 2), {
+  value: '1,92,345',
+  caret: 3,
+})
+assert.deepEqual(formatAmountEdit('1234', 1, 'deleteContentBackward'), {
+  value: '1,234',
+  caret: 1,
+})
+assert.deepEqual(formatAmountEdit('1234', 1, 'deleteContentForward'), {
+  value: '1,234',
+  caret: 2,
+})
 assert.equal(indiaDate(new Date('2026-09-04T18:29:59Z')), '2026-09-04')
 assert.equal(indiaDate(new Date('2026-09-04T18:30:00Z')), today)
 assert.equal(indiaDate(new Date('2026-12-31T18:30:00Z')), '2027-01-01')
@@ -608,6 +695,55 @@ const planSession = sessionFromProfile(
   today,
 )
 assert.ok(planSession.kind === 'complete')
+assert.equal(sessionMatchesWorkspace(planSession, readyWorkspace), true)
+assert.equal(sessionMatchesWorkspace(null, readyWorkspace), false)
+assert.equal(sessionMatchesWorkspace(started, readyWorkspace), false)
+assert.equal(sessionMatchesWorkspace(planSession, { kind: 'absent' }), false)
+assert.equal(
+  sessionMatchesWorkspace(
+    { ...planSession, origin: { kind: 'example' } },
+    readyWorkspace,
+  ),
+  false,
+)
+assert.equal(
+  sessionMatchesWorkspace(
+    {
+      ...planSession,
+      profile: {
+        ...planSession.profile,
+        otherIncome: {
+          ...planSession.profile.otherIncome,
+          advanceTaxPaid: 100,
+        },
+      },
+    },
+    readyWorkspace,
+  ),
+  false,
+)
+assert.equal(
+  sessionMatchesWorkspace(planSession, {
+    kind: 'ready',
+    workspace: { ...savedV2.workspace, active: null },
+  }),
+  false,
+)
+assert.equal(
+  sessionMatchesWorkspace(planSession, {
+    kind: 'ready',
+    workspace: {
+      ...savedV2.workspace,
+      active: {
+        ...workspaceInput.active!,
+        completions: [
+          { obligationId: 'annual-return:2026-27', completedOn: today },
+        ],
+      },
+    },
+  }),
+  false,
+)
 const transientSource = { kind: 'transient' as const, session: planSession }
 assert.equal(
   selectPlanSource(planSession, readyWorkspace, false, false).kind,

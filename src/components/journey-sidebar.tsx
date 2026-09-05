@@ -18,7 +18,7 @@ function JourneySteps({
 }: {
   readonly activeStep: number
   readonly disabledSteps: readonly number[]
-  readonly onStepSelect: (step: number, animate: boolean) => void
+  readonly onStepSelect: (step: number) => void
 }) {
   return (
     <ol className="journey-list">
@@ -38,7 +38,7 @@ function JourneySteps({
             type="button"
             disabled={disabledSteps.includes(index)}
             aria-label={`${index + 1}. ${label}`}
-            onClick={(event) => onStepSelect(index, event.detail > 0)}
+            onClick={() => onStepSelect(index)}
           >
             <span className="journey-number">{index + 1}</span>
             <span className="journey-label">{label}</span>
@@ -60,7 +60,7 @@ export function JourneySidebar({
   readonly activeStep: number
   readonly backAction: ReactNode
   readonly action: ReactNode
-  readonly onStepSelect: (step: number, animate: boolean) => void
+  readonly onStepSelect: (step: number) => void
   readonly disabledSteps?: readonly number[]
   readonly className?: string
 }) {

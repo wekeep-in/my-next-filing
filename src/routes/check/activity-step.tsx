@@ -73,7 +73,7 @@ export function ActivityStep({
         />
       )}
       {isBusinessPath(draft) && (
-        <div className="field-stack path-follow-up">
+        <div className="field-stack">
           <ChoiceField
             id="notGoodsCarriage"
             label="Does your practice provide services rather than transport goods?"

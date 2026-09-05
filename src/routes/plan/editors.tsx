@@ -5,7 +5,7 @@ import { DatePicker } from '@/components/date-picker'
 import { Badge } from '@/components/ui/badge'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
+import { AmountInput } from '@/components/amount-input'
 import type { Obligation } from '@/evaluation'
 import type { DateOnly } from '@/rules'
 import type { LoadSavedWorkspaceResult } from '@/workspace'
@@ -30,17 +30,8 @@ export function SaveNotice({
       </p>
       <p>
         There is no account, sync, backup, or recovery. Private browsing or
-        clearing site data may remove them. Read more{' '}
-        <Link
-          className={buttonVariants({
-            variant: 'link',
-            className: '[font-size:inherit]',
-          })}
-          to="/#faqs"
-        >
-          here
-        </Link>
-        .
+        clearing site data may remove them. Read the{' '}
+        <Link to="/#faqs">saved-data FAQs</Link>.
       </p>
       <div className="button-row">
         <Button className="max-[520px]:w-full" type="button" onClick={onSave}>
@@ -88,15 +79,14 @@ export function PaymentEditor({
         >
           ₹
         </span>
-        <Input
+        <AmountInput
           className="pl-8"
           id="advance-tax-update"
-          inputMode="numeric"
           value={value}
           aria-describedby={error ? errorId : undefined}
           aria-invalid={error ? true : undefined}
-          onChange={(event) => {
-            setValue(event.target.value)
+          onValueChange={(amount) => {
+            setValue(amount)
             setError('')
           }}
         />

@@ -30,11 +30,11 @@ export type AppOutletContext = {
   readonly deleted: boolean
   readonly writesPaused: boolean
   readonly refreshSavedWorkspace: () => void
-  readonly startPersonal: (animate?: boolean) => void
-  readonly startExample: (animate?: boolean) => void
+  readonly startPersonal: () => void
+  readonly startExample: () => void
   readonly returnPersonal: () => void
   readonly openWorkspace: () => void
-  readonly editGroup: (group: ProfileGroup, animate?: boolean) => void
+  readonly editGroup: (group: ProfileGroup) => void
   readonly startOver: () => void
   readonly discardSavedEdit: () => void
   readonly workspaceSaved: (

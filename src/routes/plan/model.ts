@@ -28,6 +28,21 @@ export type PlanSource =
       >
     }
 
+export function sessionMatchesWorkspace(
+  session: QuestionnaireState,
+  workspace: LoadSavedWorkspaceResult,
+): boolean {
+  return (
+    session?.kind === 'complete' &&
+    session.origin.kind !== 'example' &&
+    workspace.kind === 'ready' &&
+    workspace.workspace.active?.completions.length === 0 &&
+    workspace.workspace.priorYears.length === 0 &&
+    JSON.stringify(session.profile) ===
+      JSON.stringify(workspace.workspace.active.profile)
+  )
+}
+
 export function selectPlanSource(
   session: QuestionnaireState,
   workspace: LoadSavedWorkspaceResult,

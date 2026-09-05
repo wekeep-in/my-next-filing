@@ -1,10 +1,11 @@
+import { Link } from 'react-router-dom'
 import { SelectControl } from '@/components/select-control'
 import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
+import { AmountInput } from '@/components/amount-input'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { TAX_YEAR } from '@/rules'
 import type { DraftAmountKey } from '@/routes/check/model'
-import { optionLabels, parseMoney } from '@/routes/check/model'
+import { optionLabels } from '@/routes/check/model'
 
 const defaultChoiceOptions = ['yes', 'no', 'not-sure'] as const
 const noUnsupportedOptions: readonly string[] = []
@@ -91,7 +92,7 @@ export function ChoiceField({
         <p className="choice-warning" id={unsupportedId} role="alert">
           <strong>Outside this version.</strong> My Next Filing cannot calculate
           your plan for this situation.{' '}
-          <a href="/#faq-tax-support">See what this version supports</a>.
+          <Link to="/#faq-tax-support">See what this version supports</Link>.
         </p>
       )}
       <FieldError id={`${id}-error`} error={error} />
@@ -168,20 +169,14 @@ export function MoneyField({
         <span className="pl-[.9rem] text-muted-foreground" aria-hidden="true">
           ₹
         </span>
-        <Input
+        <AmountInput
           id={id}
-          inputMode="numeric"
           autoComplete="off"
           className="rounded-none border-0 focus-visible:border-0 focus-visible:ring-0"
           value={value}
           aria-describedby={`${id}-help${error ? ` ${id}-error` : ''}`}
           aria-invalid={Boolean(error)}
-          onChange={(event) => onChange(event.target.value)}
-          onBlur={() => {
-            const parsed = parseMoney(value)
-            if ('value' in parsed)
-              onChange(parsed.value.toLocaleString('en-IN'))
-          }}
+          onValueChange={onChange}
         />
       </div>
       <FieldError id={`${id}-error`} error={error} />

@@ -17,7 +17,7 @@ import {
   useNavigate,
 } from 'react-router-dom'
 import { ExternalLink } from '@/components/external-link'
-import { Alert } from '@/components/ui/alert'
+import { TopBar } from '@/components/top-bar'
 import { Button } from '@/components/ui/button'
 import { TAX_YEAR } from '@/rules'
 import type { ProfileGroup } from '@/evaluation'
@@ -60,6 +60,7 @@ import { CheckGroup, CheckIndex, CheckRoute } from '@/routes/check'
 import { LandingRoute } from '@/routes/landing'
 import { NotFoundRoute } from '@/routes/not-found'
 import { PlanRoute } from '@/routes/plan'
+import { usePageTransition } from '@/lib/page-transition'
 
 type Notice =
   | 'recovery-saved'
@@ -81,7 +82,6 @@ type Removal =
   | {
       readonly kind: 'saved-edit'
       readonly group: ProfileGroup
-      readonly animate: boolean
       readonly result: RecoveryDeleteResult
     }
   | {
@@ -99,12 +99,12 @@ type Confirmation =
   | {
       readonly kind: 'saved-edit'
       readonly group: ProfileGroup
-      readonly animate: boolean
     }
 
 function AppFrame() {
   const location = useLocation()
   const navigate = useNavigate()
+  const content = usePageTransition()
   const [session, rawDispatch] = useReducer(questionnaireReducer, null)
   const [savedWorkspace, setSavedWorkspace] =
     useState<LoadSavedWorkspaceResult>({ kind: 'absent' })
@@ -383,7 +383,7 @@ function AppFrame() {
     }
   }, [confirmation])
 
-  const startPersonal = (animate = false) => {
+  const startPersonal = () => {
     if (session && !isBlankDraft(session.draft)) {
       showConfirmation({ kind: 'start-over' })
       return
@@ -393,11 +393,9 @@ function AppFrame() {
     setDeleted(false)
     setWorkspaceSelected(false)
     dispatch({ type: 'start-over' })
-    void navigate('/check/tax-year', {
-      state: animate ? { animate: true } : null,
-    })
+    void navigate('/check/tax-year')
   }
-  const startExample = (animate = false) => {
+  const startExample = () => {
     if (session?.origin.kind !== 'example') setExampleReturn(session)
     setWorkspaceSelected(false)
     setDeleted(false)
@@ -409,9 +407,7 @@ function AppFrame() {
         latestQuestionnaireDate(new Date()),
       ),
     })
-    void navigate('/check/tax-year', {
-      state: animate ? { animate: true } : null,
-    })
+    void navigate('/check/tax-year')
   }
   const returnPersonal = () => {
     const returned =
@@ -441,11 +437,7 @@ function AppFrame() {
     setDeleted(false)
     void navigate('/plan')
   }
-  const beginSavedEdit = (
-    group: ProfileGroup,
-    animate: boolean,
-    discardVerified = false,
-  ) => {
+  const beginSavedEdit = (group: ProfileGroup, discardVerified = false) => {
     if (
       savedWorkspace.kind !== 'ready' ||
       !savedWorkspace.workspace.active ||
@@ -464,11 +456,9 @@ function AppFrame() {
         latestQuestionnaireDate(new Date()),
       ),
     })
-    void navigate(`/check/${group}`, {
-      state: animate ? { animate: true } : null,
-    })
+    void navigate(`/check/${group}`)
   }
-  const discardForSavedEdit = (group: ProfileGroup, animate: boolean) => {
+  const discardForSavedEdit = (group: ProfileGroup) => {
     sessionVersion.current++
     synchronizationPaused.current = true
     const storage = browserStorage('sessionStorage')
@@ -476,25 +466,23 @@ function AppFrame() {
       ? deleteRecoveryDraft(storage)
       : { kind: 'unavailable' }
     if (result.kind !== 'deleted' && result.kind !== 'absent') {
-      setRemoval({ kind: 'saved-edit', group, animate, result })
+      setRemoval({ kind: 'saved-edit', group, result })
       return
     }
     setRecovery({ kind: 'absent' })
     setRemoval(null)
-    beginSavedEdit(group, animate, true)
+    beginSavedEdit(group, true)
   }
-  const editGroup = (group: ProfileGroup, animate = false) => {
+  const editGroup = (group: ProfileGroup) => {
     if (workspaceSelected || !session) {
       if (session && !isBlankDraft(session.draft)) {
-        showConfirmation({ kind: 'saved-edit', group, animate })
+        showConfirmation({ kind: 'saved-edit', group })
         return
       }
-      beginSavedEdit(group, animate)
+      beginSavedEdit(group)
     } else {
       dispatch({ type: 'clear-validation' })
-      void navigate(`/check/${group}`, {
-        state: animate ? { animate: true } : null,
-      })
+      void navigate(`/check/${group}`)
     }
   }
   const startOver = (event?: MouseEvent<HTMLElement>) => {
@@ -566,8 +554,7 @@ function AppFrame() {
   }
   const retryRemoval = () => {
     if (removal?.kind === 'delete-all') deleteAll(removal.expectedRevision)
-    else if (removal?.kind === 'saved-edit')
-      discardForSavedEdit(removal.group, removal.animate)
+    else if (removal?.kind === 'saved-edit') discardForSavedEdit(removal.group)
     else if (removal) cleanupRecovery(removal.kind)
   }
   const cancelRemoval = () => {
@@ -578,7 +565,7 @@ function AppFrame() {
   const confirm = () => {
     if (confirmation?.kind === 'start-over') cleanupRecovery('start-over')
     else if (confirmation?.kind === 'saved-edit')
-      discardForSavedEdit(confirmation.group, confirmation.animate)
+      discardForSavedEdit(confirmation.group)
     setConfirmation(null)
   }
   const context: AppOutletContext = {
@@ -620,56 +607,62 @@ function AppFrame() {
           'app--journey',
       )}
     >
-      <div className="app-notices">
-        {notice && (
-          <Alert className="notice--top" role="status">
-            {noticeCopy[notice]}
-          </Alert>
-        )}
-        {recoveryFailed && (
-          <Alert className="notice--top" role="status">
-            {recovery.kind === 'deletion-unverified'
-              ? "We couldn't check whether your in-progress answers were removed from this tab's storage. Your current answers are still here. Try checking again."
-              : "This browser couldn't store your answers for refresh recovery. Your answers are still here, but a refresh may remove them."}{' '}
-            <Button variant="link" onClick={retryRecovery}>
-              Retry refresh recovery
+      {notice && (
+        <TopBar
+          variant={
+            notice === 'recovery-saved'
+              ? 'info'
+              : notice === 'all-deleted'
+                ? 'success'
+                : 'warning'
+          }
+        >
+          {noticeCopy[notice]}
+        </TopBar>
+      )}
+      {recoveryFailed && (
+        <TopBar variant="warning">
+          {recovery.kind === 'deletion-unverified'
+            ? "We couldn't check whether your in-progress answers were removed from this tab's storage. Your current answers are still here. Try checking again."
+            : "This browser couldn't store your answers for refresh recovery. Your answers are still here, but a refresh may remove them."}{' '}
+          <Button variant="link" onClick={retryRecovery}>
+            Retry refresh recovery
+          </Button>
+        </TopBar>
+      )}
+      {workspaceFailed && (
+        <TopBar variant="warning">
+          {savedWorkspace.kind === 'legacy-removal-unverified'
+            ? "We couldn't check whether your previously saved answers and completion dates were removed. Saving is paused until we can check again."
+            : savedWorkspace.kind === 'legacy' ||
+                savedWorkspace.kind === 'legacy-removal-failed'
+              ? 'Your previously saved data could not be removed. You can continue an estimate in this tab; saving is paused.'
+              : 'Your saved workspace could not be restored. You can continue an estimate in this tab.'}{' '}
+          <Button variant="link" onClick={refreshSavedWorkspace}>
+            Check saved data again
+          </Button>
+        </TopBar>
+      )}
+      {removal && (
+        <TopBar variant="destructive">
+          {removal.kind === 'delete-all'
+            ? removal.message
+            : removal.result.kind === 'deletion-unverified'
+              ? "We couldn't check whether your in-progress answers were removed from this tab's storage. Your current work is still available."
+              : removal.kind === 'cleanup'
+                ? 'Your workspace was saved, but its refresh copy could not be removed from this tab.'
+                : 'Your in-progress answers could not be removed. Your current answers are still here.'}{' '}
+          <Button variant="link" onClick={retryRemoval}>
+            Retry deletion
+          </Button>{' '}
+          {removal.kind !== 'cleanup' && (
+            <Button variant="link" onClick={cancelRemoval}>
+              Keep remaining answers
             </Button>
-          </Alert>
-        )}
-        {workspaceFailed && (
-          <Alert className="notice--top" role="status">
-            {savedWorkspace.kind === 'legacy-removal-unverified'
-              ? "We couldn't check whether your previously saved answers and completion dates were removed. Saving is paused until we can check again."
-              : savedWorkspace.kind === 'legacy' ||
-                  savedWorkspace.kind === 'legacy-removal-failed'
-                ? 'Your previously saved data could not be removed. You can continue an estimate in this tab; saving is paused.'
-                : 'Your saved workspace could not be restored. You can continue an estimate in this tab.'}{' '}
-            <Button variant="link" onClick={refreshSavedWorkspace}>
-              Check saved data again
-            </Button>
-          </Alert>
-        )}
-        {removal && (
-          <Alert className="notice--top" role="status">
-            {removal.kind === 'delete-all'
-              ? removal.message
-              : removal.result.kind === 'deletion-unverified'
-                ? "We couldn't check whether your in-progress answers were removed from this tab's storage. Your current work is still available."
-                : removal.kind === 'cleanup'
-                  ? 'Your workspace was saved, but its refresh copy could not be removed from this tab.'
-                  : 'Your in-progress answers could not be removed. Your current answers are still here.'}{' '}
-            <Button variant="link" onClick={retryRemoval}>
-              Retry deletion
-            </Button>
-            {removal.kind !== 'cleanup' && (
-              <Button variant="link" onClick={cancelRemoval}>
-                Keep remaining answers
-              </Button>
-            )}
-          </Alert>
-        )}
-      </div>
-      <main>{initialized && <Outlet context={context} />}</main>
+          )}
+        </TopBar>
+      )}
+      <main ref={content}>{initialized && <Outlet context={context} />}</main>
       {confirmation && (
         <dialog
           ref={dialog}

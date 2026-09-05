@@ -179,7 +179,7 @@ function GroupSummary({
   onEdit,
 }: {
   readonly draft: Draft
-  readonly onEdit: (step: number, animate: boolean) => void
+  readonly onEdit: (step: number) => void
 }) {
   const answer = (
     value: string,
@@ -515,7 +515,7 @@ function GroupSummary({
               variant="link"
               type="button"
               aria-label={editLabel}
-              onClick={(event) => onEdit(step, event.detail > 0)}
+              onClick={() => onEdit(step)}
             >
               Edit
             </Button>
@@ -543,7 +543,7 @@ export function ReviewStep({
   readonly className: string
   readonly draft: Draft
   readonly errors: Record<string, string>
-  readonly onEdit: (step: number, animate: boolean) => void
+  readonly onEdit: (step: number) => void
 }) {
   return (
     <div className={className}>
