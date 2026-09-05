@@ -306,6 +306,11 @@ main {
   list-style: none;
 }
 
+.journey-menu-trigger,
+.journey-menu-content {
+  display: none;
+}
+
 .journey-step {
   position: relative;
   --journey-marker-size: clamp(1.25rem, 1.45vw, 1.7rem);
@@ -818,11 +823,15 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
 
   .journey-layout {
     grid-template-columns: minmax(0, 1fr);
-    width: min(100%, 44rem);
+    width: 100%;
+  }
+
+  .app--journey main:has(> .journey-layout) {
+    width: 100%;
   }
 
   .app--journey main {
-    padding-top: var(--top-bar-space);
+    padding-top: var(--top-bar-height, 0px);
   }
 
   .app--journey .journey-sidebar,
@@ -837,11 +846,11 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   .app--journey .journey-nav {
     position: sticky;
     z-index: 120;
-    top: 0;
+    top: var(--top-bar-height, 0px);
     display: block;
     grid-row: 1;
-    width: 100vw;
-    margin: 0 0 0 calc((100% - 100vw) / 2);
+    width: 100%;
+    margin: 0;
     border: 0;
     border-bottom: 1px solid var(--page-divider);
     padding: 0;
@@ -849,93 +858,105 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
     box-shadow: 0 0.35rem 1rem rgb(15 23 42 / 0.06);
   }
 
-  .top-bars:not(:empty) ~ .app--journey .journey-nav {
-    top: var(--top-bar-space);
-  }
-
-  .app--journey .journey-list {
-    display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: clamp(0.35rem, 1.6vw, 0.75rem);
-    width: min(calc(100% - 2rem), 37rem);
-    min-height: 4rem;
-    margin-inline: auto;
-    padding: 0;
-    align-items: center;
-  }
-
-  .app--journey .journey-step {
-    min-height: 0;
-    place-self: center;
-    color: var(--muted-foreground);
-    font-weight: 700;
-  }
-
-  .app--journey .journey-step:not(:last-child)::after,
-  .app--journey .journey-label {
+  .app--journey .journey-nav > .journey-list {
     display: none;
   }
 
-  .app--journey .journey-step-link {
-    position: relative;
-    display: grid;
-    width: clamp(1.75rem, 8vw, 2.5rem);
-    min-height: 0;
-    place-self: center;
-    aspect-ratio: 1;
-    place-items: center;
-    grid-template-columns: 1fr;
-    gap: 0;
-    border-radius: 50%;
-    padding: 0.125rem 0 0;
-    color: var(--muted-foreground);
-    background: var(--accent);
-    font-size: clamp(0.8rem, 2.5vw, 1rem);
-    font-weight: 700;
-    line-height: 1;
-    transition: transform 100ms var(--ease-app-out);
+  .app--journey .journey-menu-trigger {
+    --journey-marker-size: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+    min-height: 3.5rem;
+    margin-inline: auto;
+    border-radius: 0;
+    padding: 0.75rem max(1rem, calc((100% - 42rem) / 2));
+    font-size: 0.9375rem;
+    line-height: 1.4;
+    text-align: left;
+    white-space: normal;
   }
 
-  .app--journey .journey-step-link::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 2.75rem;
-    height: 2.75rem;
-    transform: translate(-50%, -50%);
+  .journey-menu-trigger .journey-number {
+    font-size: 0.75rem;
   }
 
-  .app--journey .journey-step-link:disabled {
+  .journey-menu-trigger[aria-expanded='true'] svg {
+    transform: rotate(180deg);
+  }
+
+  [data-slot='popover-positioner']:has(> .journey-menu-content) {
+    overflow: hidden;
+  }
+
+  .journey-menu-content {
+    display: flex;
+    width: var(--anchor-width);
+    max-height: var(--available-height);
+    overflow: hidden;
+    border: 0;
+    border-bottom: 1px solid var(--page-divider);
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
+    animation: none;
+    transform: translateY(0);
+    transition: transform 180ms var(--ease-app-out);
+  }
+
+  .journey-menu-content[data-starting-style],
+  .journey-menu-content[data-ending-style] {
+    transform: translateY(-100%);
+  }
+
+  .journey-menu-scroll {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .journey-menu-content .journey-list {
+    padding: 0;
+  }
+
+  .journey-menu-content .journey-step {
+    --journey-marker-size: 2rem;
+    min-height: 3.5rem;
+    font-size: 1rem;
+  }
+
+  .journey-menu-content .journey-step:not(:last-child) {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .journey-menu-content .journey-step-link {
+    gap: 0.75rem;
+    border-radius: 0;
+    padding: 0.75rem max(1rem, calc((100% - 42rem) / 2));
+    outline-offset: -0.2rem;
+  }
+
+  .journey-menu-content .journey-step:not(:last-child)::after {
+    display: none;
+  }
+
+  .journey-menu-content .journey-number {
+    font-size: 0.875rem;
+  }
+
+  .journey-menu-content .journey-step-link:disabled {
     opacity: 0.55;
   }
 
-  .app--journey .journey-step.is-current .journey-step-link {
-    color: var(--card);
-    background: var(--foreground);
-  }
-
-  .app--journey .journey-step.is-complete .journey-step-link {
-    color: var(--card);
-    background: var(--primary);
-  }
-
-  .app--journey .journey-step-link:active:not(:focus-visible):not(:disabled) {
-    transform: scale(0.97);
-  }
-
-  .app--journey .journey-number {
-    display: contents;
-    color: inherit;
-    background: transparent;
-    font: inherit;
-    transform: none;
+  html[data-input-method='keyboard'] .journey-menu-content {
     transition: none;
   }
 
   .questionnaire-main,
   .plan-main {
     grid-row: 2;
+    width: min(calc(100% - 2rem), 44rem);
+    margin-inline: auto;
   }
 
   .app--journey .journey-actions {
@@ -979,12 +1000,13 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
     width: min(100% - 1.25rem, 90rem);
   }
 
-  .site-footer {
-    width: min(100% - 1.25rem, 90rem);
+  .questionnaire-main,
+  .plan-main {
+    width: calc(100% - 1.25rem);
   }
 
-  .app--journey .journey-list {
-    width: min(calc(100% - 1.25rem), 37rem);
+  .site-footer {
+    width: min(100% - 1.25rem, 90rem);
   }
 
   .journey-actions {
@@ -1542,6 +1564,11 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto !important;
+  }
+
+  .journey-menu-content {
+    animation: none;
+    transition: none;
   }
 
   [data-slot='button']:active:not(:focus-visible) {
