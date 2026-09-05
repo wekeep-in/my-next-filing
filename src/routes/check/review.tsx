@@ -52,7 +52,7 @@ export function UnsupportedFactsField({
   const options = (
     Object.entries(unsupportedFactLabels) as [UnsupportedFact, string][]
   ).filter(([value]) => value !== 'unsupportedFactsNotSure')
-  const warningId = 'unsupportedCertainty-warning'
+  const warningId = 'unsupportedCertainty-unsupported'
   const pointerSelection = useRef(false)
   const updateDraft = (event: QuestionnaireEvent) => {
     const apply = () => dispatch(event)
@@ -158,18 +158,6 @@ export function UnsupportedFactsField({
           )
         })}
       </RadioGroup>
-      {draft.unsupportedCertainty === 'selected' && (
-        <p className="choice-warning" id={warningId} role="alert">
-          <strong>Not supported.</strong> This version cannot calculate a
-          reliable plan when one of these situations applies.
-        </p>
-      )}
-      {draft.unsupportedCertainty === 'not-sure' && (
-        <p className="choice-warning" id={warningId} role="alert">
-          <strong>Cannot calculate yet.</strong> Confirm whether any of these
-          situations apply before calculating your plan.
-        </p>
-      )}
       <FieldError id="unsupportedCertainty-error" error={error} />
     </fieldset>
   )

@@ -1,4 +1,5 @@
 import { taxYearShort } from '@/lib/tax-period'
+import { createContext, useContext } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { SelectControl } from '@/components/select-control'
@@ -10,7 +11,10 @@ import type { DraftAmountKey } from '@/routes/check/model'
 import { optionLabels } from '@/routes/check/model'
 
 const defaultChoiceOptions = ['yes', 'no', 'not-sure'] as const
-const noUnsupportedOptions: readonly string[] = []
+export const CoverageWarnings = createContext<Readonly<Record<string, string>>>(
+  {},
+)
+export const FieldWarnings = createContext<Readonly<Record<string, string>>>({})
 
 export function FieldError({
   id,
@@ -19,11 +23,37 @@ export function FieldError({
   readonly id: string
   readonly error?: string
 }) {
-  return error ? (
-    <p className="field-error" id={id} role="alert">
-      {error}
-    </p>
-  ) : null
+  const warning = useContext(FieldWarnings)[id.replace(/-error$/, '')]
+  const coverage = useContext(CoverageWarnings)[id.replace(/-error$/, '')]
+  return (
+    <>
+      {warning && (
+        <p
+          className="choice-warning"
+          id={id.replace(/-error$/, '-unsupported')}
+          role="alert"
+        >
+          <strong>Outside this version.</strong> {warning}{' '}
+          <Link to="/#faq-tax-support">See what this version supports</Link>.
+        </p>
+      )}
+      {coverage && (
+        <p
+          className="choice-warning"
+          id={id.replace(/-error$/, '-coverage')}
+          role="status"
+        >
+          <strong>Partial plan.</strong> {coverage} Your income-tax estimate
+          remains available.
+        </p>
+      )}
+      {error ? (
+        <p className="field-error" id={id} role="alert">
+          {error}
+        </p>
+      ) : null}
+    </>
+  )
 }
 
 export function ChoiceField({
@@ -33,7 +63,6 @@ export function ChoiceField({
   value,
   options = defaultChoiceOptions,
   labels,
-  unsupportedOptions = noUnsupportedOptions,
   error,
   onChange,
 }: {
@@ -43,14 +72,18 @@ export function ChoiceField({
   readonly value: string
   readonly options?: readonly string[]
   readonly labels?: Readonly<Record<string, string>>
-  readonly unsupportedOptions?: readonly string[]
   readonly error?: string
   readonly onChange: (value: string) => void
 }) {
-  const describedBy = [help ? `${id}-help` : '', error ? `${id}-error` : '']
+  const describedBy = [
+    help ? `${id}-help` : '',
+    error ? `${id}-error` : '',
+    useContext(FieldWarnings)[id] ? `${id}-unsupported` : '',
+    useContext(CoverageWarnings)[id] ? `${id}-coverage` : '',
+  ]
     .filter(Boolean)
     .join(' ')
-  const selectedUnsupported = unsupportedOptions.includes(value)
+  const selectedUnsupported = Boolean(useContext(FieldWarnings)[id])
   const unsupportedId = `${id}-unsupported`
   return (
     <fieldset
@@ -90,13 +123,6 @@ export function ChoiceField({
           )
         })}
       </RadioGroup>
-      {selectedUnsupported && (
-        <p className="choice-warning" id={unsupportedId} role="alert">
-          <strong>Outside this version.</strong> My Next Filing cannot calculate
-          your plan for this situation.{' '}
-          <Link to="/#faq-tax-support">See what this version supports</Link>.
-        </p>
-      )}
       <FieldError id={`${id}-error`} error={error} />
     </fieldset>
   )
@@ -122,7 +148,12 @@ export function SelectField({
   readonly error?: string
   readonly onChange: (value: string) => void
 }) {
-  const describedBy = [help ? `${id}-help` : '', error ? `${id}-error` : '']
+  const describedBy = [
+    help ? `${id}-help` : '',
+    error ? `${id}-error` : '',
+    useContext(FieldWarnings)[id] ? `${id}-unsupported` : '',
+    useContext(CoverageWarnings)[id] ? `${id}-coverage` : '',
+  ]
     .filter(Boolean)
     .join(' ')
   return (
@@ -161,6 +192,7 @@ export function MoneyField({
   readonly error?: string
   readonly onChange: (value: string) => void
 }) {
+  const warning = useContext(FieldWarnings)[id]
   return (
     <div className="field">
       <label htmlFor={id}>{label}</label>
@@ -176,7 +208,7 @@ export function MoneyField({
           autoComplete="off"
           className="rounded-none border-0 focus-visible:border-0 focus-visible:ring-0"
           value={value}
-          aria-describedby={`${id}-help${error ? ` ${id}-error` : ''}`}
+          aria-describedby={`${id}-help${error ? ` ${id}-error` : ''}${warning ? ` ${id}-unsupported` : ''}`}
           aria-invalid={Boolean(error)}
           onValueChange={onChange}
         />

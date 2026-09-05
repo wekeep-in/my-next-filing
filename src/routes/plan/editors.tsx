@@ -5,6 +5,7 @@ import { DatePicker } from '@/components/date-picker'
 import { Badge } from '@/components/ui/badge'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { parseMoney } from '@/routes/check/model'
 import { AmountInput } from '@/components/amount-input'
 import type { Obligation } from '@/evaluation'
 import type { DateOnly } from '@/rules'
@@ -62,7 +63,9 @@ export function PaymentEditor({
   readonly embedded?: boolean
 }) {
   const [value, setValue] = useState(current.toLocaleString('en-IN'))
-  const [error, setError] = useState('')
+  const [touched, setTouched] = useState(false)
+  const parsed = parseMoney(value)
+  const error = touched && 'error' in parsed ? parsed.error : ''
   const errorId = 'advance-tax-update-error'
   return (
     <Card className="inline-editor">
@@ -83,11 +86,12 @@ export function PaymentEditor({
           className="pl-8"
           id="advance-tax-update"
           value={value}
+          onBlur={() => setTouched(true)}
           aria-describedby={error ? errorId : undefined}
           aria-invalid={error ? true : undefined}
           onValueChange={(amount) => {
             setValue(amount)
-            setError('')
+            setTouched(true)
           }}
         />
       </div>
@@ -101,14 +105,9 @@ export function PaymentEditor({
           className="max-[520px]:w-full"
           variant="outline"
           type="button"
+          disabled={'error' in parsed}
           onClick={() => {
-            const trimmed = value.trim()
-            const parsed = /^(?:₹\s?)?[\d,]+$/.test(trimmed)
-              ? Number(trimmed.replace(/^₹\s?/, '').replaceAll(',', ''))
-              : Number.NaN
-            if (!Number.isSafeInteger(parsed) || parsed < 0)
-              setError('Enter a whole-rupee amount of ₹0 or more.')
-            else onSubmit(String(parsed))
+            if ('value' in parsed) onSubmit(String(parsed.value))
           }}
         >
           Save and recalculate

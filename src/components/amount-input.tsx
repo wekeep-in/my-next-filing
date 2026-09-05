@@ -2,6 +2,10 @@ import type { ComponentProps } from 'react'
 import { Input } from '@/components/ui/input'
 import { parseMoney } from '@/routes/check/model'
 
+export function acceptsAmountEdit(raw: string) {
+  return raw === '' || 'value' in parseMoney(raw)
+}
+
 export function formatAmountEdit(raw: string, caret: number, inputType = '') {
   const parsed = parseMoney(raw)
   if ('error' in parsed || !/\d/.test(raw)) return { value: raw, caret }
@@ -31,7 +35,16 @@ export function AmountInput({
 }) {
   const update = (input: HTMLInputElement, event: Event) => {
     if (event instanceof InputEvent && event.isComposing) {
-      onValueChange(input.value)
+      return
+    }
+    if (!acceptsAmountEdit(input.value)) {
+      const caret = Math.max(
+        0,
+        (input.selectionStart ?? input.value.length) -
+          (input.value.length - value.length),
+      )
+      input.value = value
+      input.setSelectionRange(caret, caret)
       return
     }
     const next = formatAmountEdit(

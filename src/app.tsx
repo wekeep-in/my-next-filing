@@ -105,6 +105,8 @@ function AppFrame() {
   const location = useLocation()
   const navigate = useNavigate()
   const content = usePageTransition()
+  const exampleMode =
+    new URLSearchParams(location.search).get('example') === '1'
   const [session, rawDispatch] = useReducer(questionnaireReducer, null)
   const [savedWorkspace, setSavedWorkspace] =
     useState<LoadSavedWorkspaceResult>({ kind: 'absent' })
@@ -230,6 +232,7 @@ function AppFrame() {
         latestQuestionnaireDate(now),
       )
       if (
+        !exampleMode &&
         restored.kind === 'complete' &&
         workspace.kind === 'ready' &&
         JSON.stringify(restored.profile) ===
@@ -242,6 +245,7 @@ function AppFrame() {
     } else if (loaded.kind === 'invalid-removed')
       setNotice('invalid-recovery-removed')
     if (
+      !exampleMode &&
       !restored &&
       (location.pathname === '/check' ||
         location.pathname === '/check/' ||
@@ -253,13 +257,56 @@ function AppFrame() {
         draft: blankDraft(),
         validationGroup: null,
       }
+    if (exampleMode) {
+      setExampleReturn(restored)
+      restored = sessionFromProfile(
+        exampleProfile,
+        { kind: 'example' },
+        latestQuestionnaireDate(now),
+      )
+    }
     dispatch({ type: 'restore', session: restored })
     setInitialized(true)
-  }, [cleanupRecovery, dispatch, location.pathname, refreshSavedWorkspace])
+  }, [
+    cleanupRecovery,
+    dispatch,
+    exampleMode,
+    location.pathname,
+    refreshSavedWorkspace,
+  ])
+
+  useLayoutEffect(() => {
+    if (!initialized) return
+    if (exampleMode && session?.origin.kind !== 'example') {
+      // oxlint-disable-next-line react/set-state-in-effect -- Synchronize browser history mode with the in-memory return session.
+      setExampleReturn(session)
+      setWorkspaceSelected(false)
+      setDeleted(false)
+      dispatch({
+        type: 'restore',
+        session: sessionFromProfile(
+          exampleProfile,
+          { kind: 'example' },
+          latestQuestionnaireDate(new Date()),
+        ),
+      })
+    } else if (!exampleMode && session?.origin.kind === 'example') {
+      dispatch({ type: 'restore', session: exampleReturn })
+      setExampleReturn(null)
+    }
+  }, [
+    dispatch,
+    exampleMode,
+    exampleReturn,
+    initialized,
+    session,
+    setWorkspaceSelected,
+  ])
 
   const synchronizeRecovery = useCallback(() => {
     if (
       renderVersion !== sessionVersion.current ||
+      exampleMode ||
       synchronizationPaused.current ||
       !canSynchronizeRecovery(
         session,
@@ -295,7 +342,14 @@ function AppFrame() {
         setNotice('recovery-saved')
       }
     } else setRecovery({ kind: 'write-failed' })
-  }, [initialized, removal, renderVersion, session, workspaceSelected])
+  }, [
+    exampleMode,
+    initialized,
+    removal,
+    renderVersion,
+    session,
+    workspaceSelected,
+  ])
   const retryRecovery = () => {
     const storage = browserStorage('sessionStorage')
     const loaded: LoadRecoveryDraftResult = storage
@@ -407,7 +461,7 @@ function AppFrame() {
         latestQuestionnaireDate(new Date()),
       ),
     })
-    void navigate('/check/tax-year')
+    void navigate('/check/tax-year?example=1')
   }
   const returnPersonal = () => {
     const returned =
@@ -482,10 +536,16 @@ function AppFrame() {
       beginSavedEdit(group)
     } else {
       dispatch({ type: 'clear-validation' })
-      void navigate(`/check/${group}`)
+      void navigate(
+        `/check/${group}${session.origin.kind === 'example' ? '?example=1' : ''}`,
+      )
     }
   }
   const startOver = (event?: MouseEvent<HTMLElement>) => {
+    if (session?.origin.kind === 'example') {
+      startExample()
+      return
+    }
     if (session && !isBlankDraft(session.draft))
       showConfirmation({ kind: 'start-over' }, event?.currentTarget)
     else cleanupRecovery('start-over')
@@ -662,7 +722,12 @@ function AppFrame() {
           )}
         </TopBar>
       )}
-      <main ref={content}>{initialized && <Outlet context={context} />}</main>
+      <main ref={content}>
+        {initialized &&
+          exampleMode === (session?.origin.kind === 'example') && (
+            <Outlet context={context} />
+          )}
+      </main>
       {confirmation && (
         <dialog
           ref={dialog}

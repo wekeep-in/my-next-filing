@@ -1,3 +1,4 @@
+import { useContext } from 'react'
 import { currentRules } from '@/rules'
 import { taxYearShort } from '@/lib/tax-period'
 import { GstLiabilityDateHelp } from '@/routes/check/gst-liability-date-help'
@@ -11,6 +12,7 @@ import { DatePicker } from '@/components/date-picker'
 import {
   CheckHeading,
   ChoiceField,
+  CoverageWarnings,
   FieldError,
   MoneyField,
   SelectField,
@@ -37,6 +39,7 @@ export function GstStep({
   readonly dispatch: QuestionnaireDispatch
   readonly setAmount: (key: DraftAmountKey, value: string) => void
 }) {
+  const coverage = useContext(CoverageWarnings)
   return (
     <div className={className}>
       <CheckHeading
@@ -88,10 +91,6 @@ export function GstStep({
               }))}
             />
           )}
-          <p className="section-note">
-            This version doesn't calculate GST returns or show GST return dates.
-            You can still get your income-tax estimate.
-          </p>
         </>
       )}
       {isUnregisteredGst(draft) && (
@@ -168,7 +167,7 @@ export function GstStep({
               min={currentRules.effectiveStart}
               max={latestThresholdDate}
               clearable
-              describedBy={`threshold-date-help${errors.thresholdLiabilityDate ? ' thresholdLiabilityDate-error' : ''}`}
+              describedBy={`threshold-date-help${errors.thresholdLiabilityDate ? ' thresholdLiabilityDate-error' : ''}${coverage.thresholdLiabilityDate ? ' thresholdLiabilityDate-coverage' : ''}`}
               invalid={Boolean(errors.thresholdLiabilityDate)}
               onChange={(value) =>
                 dispatch({

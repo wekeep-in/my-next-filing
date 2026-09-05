@@ -83,7 +83,6 @@ export function ClientsStep({
                 label="Do you deliver the main service yourself?"
                 help="Choose No if you arrange someone else's service as an agent or intermediary."
                 value={draft.platformOwnAccount}
-                unsupportedOptions={['no']}
                 error={errors.platformOwnAccount}
                 onChange={(value) =>
                   dispatch({
@@ -98,7 +97,6 @@ export function ClientsStep({
                 label="Do your records identify who your service contract is with?"
                 help="This may be the client or the platform. A payer name alone is not enough."
                 value={draft.platformRecipientIdentifiable}
-                unsupportedOptions={['no']}
                 error={errors.platformRecipientIdentifiable}
                 onChange={(value) =>
                   dispatch({
@@ -112,7 +110,6 @@ export function ClientsStep({
                 id="platformGrossBeforeFees"
                 label="Do your records show the full client payment before fees and tax deductions?"
                 value={draft.platformGrossBeforeFees}
-                unsupportedOptions={['no']}
                 error={errors.platformGrossBeforeFees}
                 onChange={(value) =>
                   dispatch({
@@ -127,7 +124,6 @@ export function ClientsStep({
                 label="Is this payment for your own freelance services?"
                 help="Choose No for employment, commission, brokerage, royalties, licensing or agency income."
                 value={draft.platformIncomeCharacter}
-                unsupportedOptions={['no']}
                 error={errors.platformIncomeCharacter}
                 onChange={(value) =>
                   dispatch({
@@ -165,7 +161,6 @@ export function ClientsStep({
                   </>
                 }
                 value={draft.platformNoRecipientReverseCharge}
-                unsupportedOptions={['no']}
                 error={errors.platformNoRecipientReverseCharge}
                 onChange={(value) =>
                   dispatch({
@@ -190,7 +185,6 @@ export function ClientsStep({
                 id="foreignWorkInIndia"
                 label="Are you physically in India for all the work you do for these clients?"
                 value={draft.foreignWorkInIndia}
-                unsupportedOptions={['no']}
                 error={errors.foreignWorkInIndia}
                 onChange={(value) =>
                   dispatch({
@@ -204,7 +198,6 @@ export function ClientsStep({
                 id="foreignRecipientIdentifiable"
                 label="Do your records identify who your overseas service contract is with?"
                 value={draft.foreignRecipientIdentifiable}
-                unsupportedOptions={['no']}
                 error={errors.foreignRecipientIdentifiable}
                 onChange={(value) =>
                   dispatch({
@@ -219,7 +212,6 @@ export function ClientsStep({
                 label="Do you deliver the main service yourself for these overseas contracts?"
                 help="Choose No if you arrange someone else's service as an agent or intermediary."
                 value={draft.foreignOwnAccount}
-                unsupportedOptions={['no']}
                 error={errors.foreignOwnAccount}
                 onChange={(value) =>
                   dispatch({
@@ -239,7 +231,6 @@ export function ClientsStep({
                   </>
                 }
                 value={draft.foreignPlaceOfSupply}
-                unsupportedOptions={['no']}
                 error={errors.foreignPlaceOfSupply}
                 onChange={(value) =>
                   dispatch({
@@ -254,7 +245,6 @@ export function ClientsStep({
                 label="Are you and the overseas client parts of the same legal entity?"
                 help="For example, an Indian office and an overseas branch of the same entity. Choose No for separate legal entities."
                 value={draft.foreignSameEstablishment}
-                unsupportedOptions={['yes']}
                 error={errors.foreignSameEstablishment}
                 onChange={(value) =>
                   dispatch({
@@ -293,7 +283,6 @@ export function ClientsStep({
                 label="Do these payments reach your own Indian bank account through an authorised route?"
                 help="Confirm the route with your bank or payment provider."
                 value={draft.foreignSettledToIndianBank}
-                unsupportedOptions={['no']}
                 error={errors.foreignSettledToIndianBank}
                 onChange={(value) =>
                   dispatch({
@@ -330,7 +319,6 @@ export function ClientsStep({
                 label="Does this work involve an office or other business operation outside India?"
                 help="Having overseas clients alone does not count."
                 value={draft.foreignOperation}
-                unsupportedOptions={['yes']}
                 error={errors.foreignOperation}
                 onChange={(value) =>
                   dispatch({
@@ -344,7 +332,6 @@ export function ClientsStep({
                 id="foreignTax"
                 label="Was any foreign tax deducted from these payments?"
                 value={draft.foreignTax}
-                unsupportedOptions={['yes']}
                 error={errors.foreignTax}
                 onChange={(value) =>
                   dispatch({
@@ -359,7 +346,6 @@ export function ClientsStep({
                 label="Are you claiming tax relief for foreign tax or under a tax treaty?"
                 help={<ForeignTaxReliefHelp />}
                 value={draft.foreignTreatyRelief}
-                unsupportedOptions={['yes']}
                 error={errors.foreignTreatyRelief}
                 onChange={(value) =>
                   dispatch({
@@ -374,7 +360,6 @@ export function ClientsStep({
                 label="Have you confirmed the full year's gross receipts from these clients in rupees?"
                 help="Keep fees and tax deductions in gross receipts. Reconcile refunds, reversed payments and amounts still owed using your accounting method."
                 value={draft.foreignReceiptsResolved}
-                unsupportedOptions={['no']}
                 error={errors.foreignReceiptsResolved}
                 onChange={(value) =>
                   dispatch({
@@ -388,7 +373,6 @@ export function ClientsStep({
                 id="foreignCurrencyResolved"
                 label="Does that total include all currency conversions and exchange-rate gains or losses?"
                 value={draft.foreignCurrencyResolved}
-                unsupportedOptions={['no']}
                 error={errors.foreignCurrencyResolved}
                 onChange={(value) =>
                   dispatch({

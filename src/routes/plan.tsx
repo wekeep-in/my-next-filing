@@ -61,7 +61,7 @@ export function PlanRoute() {
     return (
       <Navigate
         replace
-        to={`/check/${firstIncompleteGroup(app.session.draft, latestQuestionnaireDate(new Date())) ?? 'review'}`}
+        to={`/check/${firstIncompleteGroup(app.session.draft, latestQuestionnaireDate(new Date())) ?? 'review'}${app.session.origin.kind === 'example' ? '?example=1' : ''}`}
       />
     )
   const renderPlan = () => {

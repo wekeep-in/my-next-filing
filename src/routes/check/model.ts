@@ -6,7 +6,7 @@ import type {
   TriState,
   UnsupportedFact,
 } from '@/evaluation'
-import { parseProfile } from '@/evaluation'
+import { parseProfile, screenProfile } from '@/evaluation'
 import { TAX_YEAR, currentRules } from '@/rules'
 
 type DraftChoice = '' | TriState
@@ -477,7 +477,7 @@ export function parseMoney(
 ): { value: number } | { error: string } {
   const trimmed = value.trim()
   if (!trimmed) return { error: 'Enter a whole-rupee amount.' }
-  if (!/^(?:₹\s?)?[\d,]+$/.test(trimmed))
+  if (!/^(?:₹\s?)?[\d,]+$/.test(trimmed) || !/\d/.test(trimmed))
     return { error: 'Use a non-negative whole-rupee amount.' }
   const amount = Number(trimmed.replace(/^₹\s?/, '').replaceAll(',', ''))
   return Number.isSafeInteger(amount) && amount >= 0
@@ -706,8 +706,8 @@ export function canOpenGroup(
   draft: Draft,
   group: ProfileGroup,
   latestThresholdDate: string,
+  incomplete = firstBlockedGroup(draft, latestThresholdDate),
 ) {
-  const incomplete = firstIncompleteGroup(draft, latestThresholdDate)
   return incomplete === null || groupStep(group) <= groupStep(incomplete)
 }
 
@@ -1011,4 +1011,184 @@ export function validateDraftGroup(
     group,
     message,
   }))
+}
+
+// Dependencies name the answers needed for a reason, not a second set of tax rules.
+export function draftFeedback(draft: Draft, latestDate: string) {
+  const screening = screenProfile(
+    candidateFromDraft(draft).value,
+    new Date(`${latestDate}T12:00:00+05:30`),
+    currentRules,
+  )
+  const hasAnswer = (field: string) =>
+    amountKeys.includes(field as DraftAmountKey)
+      ? 'value' in parseMoney(draft.amounts[field as DraftAmountKey])
+      : Boolean(draft[field as keyof Draft])
+  const receipts = isBusinessPath(draft)
+    ? ['path', 'pathConfirmed', ...amountKeys.slice(0, 5)]
+    : ['path', 'pathConfirmed', ...amountKeys.slice(0, 3)]
+  const dependencies: Record<string, readonly string[]> = {
+    'person-kind': ['personKind'],
+    adult: ['adult'],
+    residence: ['residence'],
+    'tax-regime': ['taxRegime'],
+    'one-practice': ['onePractice'],
+    'practice-location': ['setupInIndia'],
+    'work-location': ['workInIndia'],
+    partner: ['hasPartner'],
+    employee: ['hasEmployee'],
+    'foreign-operation': ['hasForeignOperation'],
+    'client-work-subcontractor': ['hasClientWorkSubcontractor'],
+    'contractor-boundary': ['contractorBoundary'],
+    activity: ['activity'],
+    'income-path-confirmation': ['pathConfirmed'],
+    'business-not-profession': ['pathConfirmed'],
+    'business-not-goods': ['notGoodsCarriage'],
+    'business-not-agency': ['notAgencyCommissionBrokerage'],
+    'business-no-deduction': ['noChapterViiiCDeduction'],
+    'business-five-year-exclusion': ['fiveYearExclusion'],
+    'profession-profit-floor': [
+      'pathConfirmed',
+      'grossReceipts',
+      'declaredProfit',
+    ],
+    'profession-receipt-limit': [
+      'pathConfirmed',
+      'grossReceipts',
+      'cashReceipts',
+    ],
+    'business-profit-floor': [
+      'qualifyingReceipts',
+      'otherReceipts',
+      'declaredProfit',
+    ],
+    'business-receipt-limit': ['grossReceipts', 'cashReceipts'],
+    'income-ceiling': receipts,
+    'client-branch-uncertain':
+      draft.clientKind === 'not-sure'
+        ? ['clientKind']
+        : draft.delivery === 'not-sure'
+          ? ['delivery']
+          : [],
+    'platform-own-account': ['platformOwnAccount'],
+    'platform-recipient': ['platformRecipientIdentifiable'],
+    'platform-gross': ['platformGrossBeforeFees'],
+    'platform-income-character': ['platformIncomeCharacter'],
+    'platform-reverse-charge': ['platformNoRecipientReverseCharge'],
+    'platform-fee-gst': ['platformForeignFeeGstTreatment'],
+    'foreign-work-location': ['foreignWorkInIndia'],
+    'foreign-recipient': ['foreignRecipientIdentifiable'],
+    'foreign-own-account': ['foreignOwnAccount'],
+    'foreign-place-of-supply': ['foreignPlaceOfSupply'],
+    'foreign-establishment': ['foreignSameEstablishment'],
+    'foreign-payment-route': ['foreignPaymentRoute'],
+    'foreign-indian-settlement': ['foreignSettledToIndianBank'],
+    'foreign-tax': ['foreignTax'],
+    'foreign-treaty-relief': ['foreignTreatyRelief'],
+    'foreign-receipts-resolved': ['foreignReceiptsResolved'],
+    'foreign-currency-resolved': ['foreignCurrencyResolved'],
+  }
+  const warnings: DraftError[] = []
+  for (const fact of screening.facts) {
+    const fields =
+      fact.code === 'foreign-operation' && fact.correctionGroup === 'clients'
+        ? ['foreignOperation']
+        : (dependencies[fact.code] ??
+          (fact.correctionGroup === 'review' ? ['unsupportedCertainty'] : []))
+    if (!fields.length || !fields.every(hasAnswer)) continue
+    let field = fields[0]
+    if (fact.correctionGroup === 'receipts')
+      field = fact.code.includes('receipt-limit')
+        ? 'grossReceipts'
+        : 'declaredProfit'
+    if (
+      fact.code === 'income-ceiling' &&
+      fact.correctionGroup === 'other-income' &&
+      hasAnswer('taxableBankInterest')
+    )
+      field = 'taxableBankInterest'
+    if (fact.code === 'client-branch-uncertain')
+      field = draft.clientKind === 'not-sure' ? 'clientKind' : 'delivery'
+    warnings.push({
+      field,
+      group: questionnaireGroups[errorStep(field)].id,
+      message: fact.reason,
+    })
+  }
+  const errors = screening.errors.flatMap((error) => {
+    const field = profileErrorKey(error)
+    if (!hasAnswer(field)) return []
+    if (field === 'cashReceipts' && !hasAnswer('grossReceipts')) return []
+    if (
+      field === 'otherReceipts' &&
+      !['grossReceipts', 'qualifyingReceipts', 'otherReceipts'].every(hasAnswer)
+    )
+      return []
+    return [{ field, group: error.group, message: error.message }]
+  })
+  const coverage: DraftError[] = []
+  for (const notice of screening.coverage) {
+    let field: string | undefined
+    if (notice.code === 'gst-return-calendar-deferred' && draft.gstKind)
+      field = 'gstKind'
+    if (notice.code === 'gst-fact-uncertain' && isUnregisteredGst(draft)) {
+      if (draft.turnoverComplete && draft.turnoverComplete !== 'yes')
+        field = 'turnoverComplete'
+      else if (
+        draft.compulsoryRegistration &&
+        draft.compulsoryRegistration !== 'no'
+      )
+        field = 'compulsoryRegistration'
+    }
+    if (
+      notice.code === 'gst-liability-date-uncertain' &&
+      draft.gstState &&
+      hasAnswer('aggregateTurnover') &&
+      draft.turnoverComplete === 'yes' &&
+      draft.compulsoryRegistration === 'no'
+    )
+      field = 'thresholdLiabilityDate'
+    if (
+      notice.code === 'foreign-account-coverage' &&
+      hasForeignClients(draft) &&
+      draft.foreignAccountExposure
+    )
+      field = 'foreignAccountExposure'
+    if (
+      notice.code === 'annual-return-trigger-uncertain' &&
+      draft.otherAnnualReturnTrigger
+    )
+      field = 'otherAnnualReturnTrigger'
+    if (
+      notice.code === 'annual-return-age-uncertain' &&
+      hasAnswer('tds') &&
+      hasAnswer('tcs') &&
+      draft.ageSixtyOrOlder
+    )
+      field = 'ageSixtyOrOlder'
+    if (field)
+      coverage.push({
+        field,
+        group: questionnaireGroups[errorStep(field)].id,
+        message: notice.reason,
+      })
+  }
+  return { warnings, errors, coverage, stale: screening.stale }
+}
+
+export function firstBlockedGroup(
+  draft: Draft,
+  latestDate: string,
+  feedback = draftFeedback(draft, latestDate),
+): ProfileGroup | null {
+  return (
+    questionnaireGroups.find(
+      ({ id }) =>
+        id !== 'review' &&
+        (validateDraftGroup(draft, id, latestDate).length > 0 ||
+          [...feedback.errors, ...feedback.warnings].some(
+            (item) => item.group === id,
+          )),
+    )?.id ?? null
+  )
 }

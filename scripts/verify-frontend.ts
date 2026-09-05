@@ -38,13 +38,17 @@ import {
 import assert from 'node:assert/strict'
 import { latestQuestionnaireDate } from '../src/app-context.ts'
 import { createMemoryRouter } from 'react-router-dom'
-import { formatAmountEdit } from '../src/components/amount-input.tsx'
+import {
+  acceptsAmountEdit,
+  formatAmountEdit,
+} from '../src/components/amount-input.tsx'
 import { indiaDate } from '../src/lib/india-date.ts'
 import { shouldAnimatePage } from '../src/lib/page-transition.ts'
 import {
   blankDraft,
   canOpenGroup,
   completeDraft,
+  draftFeedback,
   draftFromProfile,
   exampleProfile,
   firstIncompleteGroup,
@@ -160,6 +164,111 @@ const exampleDraft = draftFromProfile(exampleProfile)
 assert.equal(isBlankDraft(exampleDraft), false)
 assert.equal(firstIncompleteGroup(exampleDraft, today), null)
 assert.equal(canOpenGroup(exampleDraft, 'review', today), true)
+assert.deepEqual(draftFeedback(blankDraft(), today).warnings, [])
+assert.deepEqual(draftFeedback(blankDraft(), today).coverage, [])
+assert.deepEqual(draftFeedback(exampleDraft, today).warnings, [])
+for (const [field, value] of [
+  ['personKind', 'not-individual'],
+  ['adult', 'no'],
+  ['residence', 'not-sure'],
+  ['taxRegime', 'old'],
+  ['onePractice', 'no'],
+  ['setupInIndia', 'no'],
+  ['workInIndia', 'no'],
+  ['hasPartner', 'yes'],
+  ['hasEmployee', 'yes'],
+  ['hasForeignOperation', 'yes'],
+  ['hasClientWorkSubcontractor', 'yes'],
+  ['contractorBoundary', 'not-sure'],
+  ['activity', 'not-sure'],
+  ['pathConfirmed', 'not-sure'],
+  ['clientKind', 'not-sure'],
+  ['delivery', 'not-sure'],
+  ['unsupportedCertainty', 'not-sure'],
+] as const) {
+  const changed = { ...exampleDraft, [field]: value }
+  assert.ok(
+    draftFeedback(changed, today).warnings.some((item) => item.field === field),
+    field,
+  )
+  assert.equal(canOpenGroup(changed, 'review', today), false, field)
+}
+assert.ok(
+  draftFeedback(
+    { ...blankDraft(), clientKind: 'not-sure' },
+    today,
+  ).warnings.some((item) => item.field === 'clientKind'),
+)
+assert.ok(
+  draftFeedback(
+    {
+      ...exampleDraft,
+      amounts: { ...exampleDraft.amounts, declaredProfit: '100' },
+    },
+    today,
+  ).warnings.some((item) => item.field === 'declaredProfit'),
+)
+assert.ok(
+  draftFeedback(
+    {
+      ...exampleDraft,
+      amounts: {
+        ...exampleDraft.amounts,
+        cashReceipts: '2000000',
+        declaredProfit: '',
+      },
+    },
+    today,
+  ).errors.some((item) => item.field === 'cashReceipts'),
+)
+assert.ok(
+  draftFeedback(
+    {
+      ...exampleDraft,
+      amounts: { ...exampleDraft.amounts, taxableBankInterest: '6000000' },
+    },
+    today,
+  ).warnings.some((item) => item.field === 'taxableBankInterest'),
+)
+const gstUncertain = {
+  ...exampleDraft,
+  compulsoryRegistration: 'not-sure' as const,
+}
+assert.equal(draftFeedback(gstUncertain, today).warnings.length, 0)
+assert.ok(
+  draftFeedback(gstUncertain, today).coverage.some(
+    (item) => item.field === 'compulsoryRegistration',
+  ),
+)
+assert.equal(canOpenGroup(gstUncertain, 'review', today), true)
+assert.ok(
+  draftFeedback(
+    {
+      ...exampleDraft,
+      amounts: { ...exampleDraft.amounts, aggregateTurnover: '2100000' },
+    },
+    today,
+  ).coverage.some((item) => item.field === 'thresholdLiabilityDate'),
+)
+assert.ok(
+  draftFeedback(
+    { ...exampleDraft, thresholdLiabilityDate: '2026-02-30' },
+    today,
+  ).errors.some((item) => item.field === 'thresholdLiabilityDate'),
+)
+for (const raw of ['', '0', '123456', '1,23,456', '₹ 123456'])
+  assert.equal(acceptsAmountEdit(raw), true, raw)
+for (const raw of [
+  'abc',
+  ',',
+  '12a3',
+  '12.50',
+  '-100',
+  '+10',
+  '1e6',
+  '9007199254740992',
+])
+  assert.equal(acceptsAmountEdit(raw), false, raw)
 const completedExample = completeDraft(exampleDraft, today)
 assert.ok(completedExample.valid)
 assert.deepEqual(completedExample.profile, exampleProfile)

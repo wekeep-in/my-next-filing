@@ -650,7 +650,7 @@ function parseForeign(
   }
 }
 
-export function parseProfile(value: unknown): ParseProfileResult {
+function readProfile(value: unknown) {
   const errors: ProfileInputError[] = []
   const root = checkObject(
     value,
@@ -670,7 +670,7 @@ export function parseProfile(value: unknown): ParseProfileResult {
     'review',
     errors,
   )
-  if (!root) return { valid: false, kind: 'invalid', errors }
+  if (!root) return { profile: null, errors }
   const taxYear = isTaxYear(root.taxYear) ? root.taxYear : TAX_YEAR
   if (taxYear !== root.taxYear)
     addError(
@@ -1314,9 +1314,14 @@ export function parseProfile(value: unknown): ParseProfileResult {
     gst,
     unsupportedFacts: facts,
   }
-  return errors.length > 0
-    ? { valid: false, kind: 'invalid', errors }
-    : { valid: true, kind: 'valid', profile }
+  return { profile, errors }
+}
+
+export function parseProfile(value: unknown): ParseProfileResult {
+  const { profile, errors } = readProfile(value)
+  return profile && errors.length === 0
+    ? { valid: true, kind: 'valid', profile }
+    : { valid: false, kind: 'invalid', errors }
 }
 
 function roundMoney(amount: number, unit: number) {
@@ -1876,6 +1881,17 @@ type AnnualAreaResult = {
   readonly obligation: Obligation | null
 }
 
+function annualReturnUncertainty(profile: Profile, rules: AnnualReturnRules) {
+  const credits = profile.otherIncome.tds + profile.otherIncome.tcs
+  if (profile.otherIncome.otherAnnualReturnTrigger === 'not-sure')
+    return 'annual-return-trigger-uncertain'
+  return credits >= rules.tdsTcsThreshold &&
+    credits < rules.seniorTdsTcsThreshold &&
+    profile.otherIncome.ageSixtyOrOlder === 'not-sure'
+    ? 'annual-return-age-uncertain'
+    : null
+}
+
 function calculateAnnualReturn(
   profile: Profile,
   tax: TaxEstimate,
@@ -1911,20 +1927,12 @@ function calculateAnnualReturn(
     triggers.push(
       'You confirmed that another prescribed return trigger applies.',
     )
-  const ageUncertain =
-    credits >= rules.tdsTcsThreshold &&
-    credits < rules.seniorTdsTcsThreshold &&
-    profile.otherIncome.ageSixtyOrOlder === 'not-sure'
-  if (
-    profile.otherIncome.otherAnnualReturnTrigger === 'not-sure' ||
-    ageUncertain
-  ) {
+  const uncertainty = annualReturnUncertainty(profile, rules)
+  if (uncertainty) {
     return {
       coverage: coverageUnavailable(
         'annual-return',
-        profile.otherIncome.otherAnnualReturnTrigger === 'not-sure'
-          ? 'annual-return-trigger-uncertain'
-          : 'annual-return-age-uncertain',
+        uncertainty,
         'My Next Filing cannot determine every annual-return trigger from these answers.',
         'Check the prescribed triggers and current return guidance before relying on this part of your plan.',
         sourceIds,
@@ -2162,6 +2170,126 @@ function addUnique(values: readonly string[]) {
   return [...new Set(values)]
 }
 
+function coreSupportFacts(
+  current: Profile,
+  rules: RuleDataset,
+  sourceIds: readonly string[],
+) {
+  const coreFacts = [
+    ...factForSharedProfile(current, sourceIds),
+    ...factForPath(current, rules.groups.incomePaths.values, sourceIds),
+    ...factForClients(current, sourceIds),
+  ]
+  for (const fact of current.unsupportedFacts)
+    coreFacts.push(
+      unsupported(
+        fact,
+        'income-tax',
+        'review',
+        unsupportedFactLabels[fact],
+        fact === 'unsupportedFactsNotSure'
+          ? 'Confirm whether any listed situation applies before calculating your plan.'
+          : 'This fact needs Rules that this version does not calculate.',
+        sourceIds,
+      ),
+    )
+  const minimumIncome =
+    current.incomePath.kind === 'specified-profession'
+      ? percentage(
+          current.incomePath.grossReceipts,
+          rules.groups.incomePaths.values.professionMinimumProfitRate,
+        )
+      : percentage(
+          current.incomePath.qualifyingReceipts,
+          rules.groups.incomePaths.values.businessQualifyingReceiptRate,
+        ) +
+        percentage(
+          current.incomePath.otherReceipts,
+          rules.groups.incomePaths.values.businessOtherReceiptRate,
+        )
+  const roundedIncome = roundMoney(
+    Math.max(minimumIncome, current.incomePath.declaredProfit) +
+      current.otherIncome.taxableBankInterest,
+    rules.groups.commonIncomeTax.values.roundingUnit,
+  )
+  if (roundedIncome > rules.groups.commonIncomeTax.values.incomeCeiling)
+    coreFacts.push(
+      unsupported(
+        'income-ceiling',
+        'income-tax',
+        roundMoney(
+          Math.max(minimumIncome, current.incomePath.declaredProfit),
+          rules.groups.commonIncomeTax.values.roundingUnit,
+        ) > rules.groups.commonIncomeTax.values.incomeCeiling
+          ? 'receipts'
+          : 'other-income',
+        'Total income above ₹50 lakh',
+        'This version stops before surcharge and broader high-income rules.',
+        sourceIds,
+      ),
+    )
+  return coreFacts
+}
+
+// Screening returns reasons only. Incomplete input never produces an estimate.
+export function screenProfile(
+  value: unknown,
+  currentDate: Date,
+  rules: RuleDataset,
+) {
+  const { profile, errors } = readProfile(value)
+  const validated = validateRules(rules, currentDate)
+  const coverage: { code: string; reason: string }[] = []
+  if (profile && validated.valid) {
+    const data = validated.data
+    if (validated.groups['gst-registration'].valid) {
+      const group = data.groups.gstRegistration
+      const gst = calculateGst(
+        profile,
+        data,
+        indiaDate(currentDate),
+        group.verifiedOn,
+        group.expiresOn,
+        [],
+      ).coverage
+      if (gst.kind === 'unavailable') coverage.push(gst)
+    }
+    if (validated.groups['foreign-guidance'].valid) {
+      const foreign = calculateForeignCoverage(
+        profile,
+        data.groups.foreignGuidance.values,
+        [],
+      )
+      if (foreign.kind === 'unavailable') coverage.push(foreign)
+    }
+    if (validated.groups['annual-return'].valid) {
+      const code = annualReturnUncertainty(
+        profile,
+        data.groups.annualReturn.values,
+      )
+      if (code)
+        coverage.push({
+          code,
+          reason:
+            'Confirm these answers before relying on annual-return dates and triggers.',
+        })
+    }
+  }
+  return {
+    errors,
+    coverage,
+    facts:
+      profile && validated.valid
+        ? coreSupportFacts(
+            profile,
+            validated.data,
+            sourceIdsForRules(validated.data),
+          )
+        : [],
+    stale: !validated.valid,
+  }
+}
+
 export function evaluate(
   profile: Profile,
   currentDate: Date,
@@ -2195,64 +2323,7 @@ export function evaluate(
     }
   const current = parsed.profile
   const sourceIds = sourceIdsForRules(ruleValidation.data)
-  const coreFacts = [
-    ...factForSharedProfile(current, sourceIds),
-    ...factForPath(
-      current,
-      ruleValidation.data.groups.incomePaths.values,
-      sourceIds,
-    ),
-    ...factForClients(current, sourceIds),
-  ]
-  for (const fact of current.unsupportedFacts)
-    coreFacts.push(
-      unsupported(
-        fact,
-        'income-tax',
-        'review',
-        unsupportedFactLabels[fact],
-        fact === 'unsupportedFactsNotSure'
-          ? 'Confirm whether any listed situation applies before calculating your plan.'
-          : 'This fact needs Rules that this version does not calculate.',
-        sourceIds,
-      ),
-    )
-  const minimumIncome =
-    current.incomePath.kind === 'specified-profession'
-      ? percentage(
-          current.incomePath.grossReceipts,
-          ruleValidation.data.groups.incomePaths.values
-            .professionMinimumProfitRate,
-        )
-      : percentage(
-          current.incomePath.qualifyingReceipts,
-          ruleValidation.data.groups.incomePaths.values
-            .businessQualifyingReceiptRate,
-        ) +
-        percentage(
-          current.incomePath.otherReceipts,
-          ruleValidation.data.groups.incomePaths.values
-            .businessOtherReceiptRate,
-        )
-  const roundedIncome = roundMoney(
-    Math.max(minimumIncome, current.incomePath.declaredProfit) +
-      current.otherIncome.taxableBankInterest,
-    ruleValidation.data.groups.commonIncomeTax.values.roundingUnit,
-  )
-  if (
-    roundedIncome >
-    ruleValidation.data.groups.commonIncomeTax.values.incomeCeiling
-  )
-    coreFacts.push(
-      unsupported(
-        'income-ceiling',
-        'income-tax',
-        'receipts',
-        'Total income above ₹50 lakh',
-        'This version stops before surcharge and broader high-income rules.',
-        sourceIds,
-      ),
-    )
+  const coreFacts = coreSupportFacts(current, ruleValidation.data, sourceIds)
   if (coreFacts.length > 0)
     return {
       kind: 'unsupported',

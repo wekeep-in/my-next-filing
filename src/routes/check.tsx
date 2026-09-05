@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import type { MouseEvent } from 'react'
 import {
   Navigate,
@@ -24,6 +24,8 @@ import { SituationStep } from '@/routes/check/situation-step'
 import {
   canOpenGroup,
   completeDraft,
+  draftFeedback,
+  firstBlockedGroup,
   firstIncompleteGroup,
   groupStep,
   questionnaireGroupFromPath,
@@ -31,11 +33,15 @@ import {
   validateDraftGroup,
 } from '@/routes/check/model'
 import type { DraftAmountKey } from '@/routes/check/model'
+import { CoverageWarnings, FieldWarnings } from '@/routes/check/fields'
 import { questionnaireErrors } from '@/routes/check/session'
 import { sessionMatchesWorkspace } from '@/routes/plan/model'
 
 type CheckContext = {
   readonly app: AppOutletContext
+  readonly feedback: ReturnType<typeof draftFeedback> | null
+  readonly blockedGroup: ProfileGroup | null
+  readonly touched: ReadonlySet<string>
   readonly latestDate: string
   readonly go: (group: ProfileGroup, replace?: boolean) => void
 }
@@ -48,29 +54,39 @@ export function CheckIndex() {
       replace
       to={
         app.session.kind === 'complete'
-          ? '/plan'
-          : `/check/${firstIncompleteGroup(app.session.draft, latestDate) ?? 'review'}`
+          ? `/plan${app.session.origin.kind === 'example' ? '?example=1' : ''}`
+          : `/check/${firstIncompleteGroup(app.session.draft, latestDate) ?? 'review'}${app.session.origin.kind === 'example' ? '?example=1' : ''}`
       }
     />
   )
 }
 
 export function CheckGroup({ group }: { readonly group: ProfileGroup }) {
-  const { app, latestDate, go } = useOutletContext<CheckContext>()
+  const { app, latestDate, go, touched, feedback, blockedGroup } =
+    useOutletContext<CheckContext>()
   const session = app.session
   if (!session) return null
-  if (!canOpenGroup(session.draft, group, latestDate))
+  if (!canOpenGroup(session.draft, group, latestDate, blockedGroup))
     return (
       <Navigate
         replace
-        to={`/check/${firstIncompleteGroup(session.draft, latestDate)}`}
+        to={`/check/${blockedGroup}${session.origin.kind === 'example' ? '?example=1' : ''}`}
       />
     )
   const errors = Object.fromEntries(
-    questionnaireErrors(session, latestDate).map(({ field, message }) => [
-      field,
-      message,
-    ]),
+    [
+      ...questionnaireErrors(session, latestDate),
+      ...validateDraftGroup(session.draft, group, latestDate).filter(
+        ({ field }) =>
+          touched.has(field) ||
+          Boolean(
+            field in session.draft.amounts
+              ? session.draft.amounts[field as DraftAmountKey]
+              : session.draft[field as keyof typeof session.draft],
+          ),
+      ),
+      ...(feedback?.errors ?? []),
+    ].map(({ field, message }) => [field, message]),
   )
   const props = {
     className: 'question-group',
@@ -112,6 +128,7 @@ export function CheckGroup({ group }: { readonly group: ProfileGroup }) {
 }
 
 export function CheckRoute() {
+  const [touched, setTouched] = useState<ReadonlySet<string>>(new Set())
   const app = useApp()
   const location = useLocation()
   const navigate = useNavigate()
@@ -120,6 +137,14 @@ export function CheckRoute() {
     location.pathname === '/check' || location.pathname === '/check/'
   const latestDate = latestQuestionnaireDate(new Date())
   const { session, dispatch } = app
+  const feedback = useMemo(
+    () => (session ? draftFeedback(session.draft, latestDate) : null),
+    [session, latestDate],
+  )
+  const blockedGroup =
+    session && feedback
+      ? firstBlockedGroup(session.draft, latestDate, feedback)
+      : null
   useEffect(() => {
     if (
       session?.kind === 'editing' &&
@@ -144,18 +169,27 @@ export function CheckRoute() {
   }, [group, location.key])
   const go = (target: ProfileGroup, replace = false) => {
     dispatch({ type: 'clear-validation' })
-    void navigate(`/check/${target}`, { replace })
+    void navigate(
+      `/check/${target}${session?.origin.kind === 'example' ? '?example=1' : ''}`,
+      { replace },
+    )
   }
   const context: CheckContext = {
     app,
+    feedback,
+    blockedGroup,
+    touched,
     latestDate,
     go,
   }
   if (!group && !isIndex) return <Outlet context={context} />
   if (app.deleted) return <Navigate to="/plan" replace />
   if (app.workspaceSelected) return <Navigate to="/plan" replace />
-  if (!session) return null
+  if (!session || !feedback) return null
   if (isIndex) return <Outlet context={context} />
+  const blocking = [...feedback.errors, ...feedback.warnings].filter(
+    (item) => item.group === group,
+  )
   const step = groupStep(group!)
   const focusError = (field: string | undefined) => {
     if (!field) return
@@ -169,7 +203,10 @@ export function CheckRoute() {
   const next = (event: MouseEvent<HTMLButtonElement>) => {
     const now = new Date()
     const latest = latestQuestionnaireDate(now)
-    const errors = validateDraftGroup(session.draft, group!, latest)
+    const errors = [
+      ...validateDraftGroup(session.draft, group!, latest),
+      ...blocking,
+    ]
     if (errors.length) {
       dispatch({ type: 'expose-validation', group: group! })
       focusError(errors[0]?.field)
@@ -191,22 +228,31 @@ export function CheckRoute() {
     }
     dispatch({ type: 'complete', latestThresholdDate: latest })
     const button = event.currentTarget.getBoundingClientRect()
-    void navigate('/plan', {
-      state:
-        event.detail > 0
-          ? {
-              confettiOrigin: {
-                x: (button.left + button.width / 2) / window.innerWidth,
-                y: (button.top + button.height / 2) / window.innerHeight,
-              },
-            }
-          : null,
-    })
+    void navigate(
+      `/plan${session.origin.kind === 'example' ? '?example=1' : ''}`,
+      {
+        state:
+          event.detail > 0
+            ? {
+                confettiOrigin: {
+                  x: (button.left + button.width / 2) / window.innerWidth,
+                  y: (button.top + button.height / 2) / window.innerHeight,
+                },
+              }
+            : null,
+      },
+    )
   }
   return (
     <section
       className="questionnaire journey-layout"
       aria-labelledby="check-title"
+      onBlurCapture={(event) => {
+        const field = event.target.closest('.field')
+        const id =
+          field?.id || field?.querySelector('label[for]')?.getAttribute('for')
+        if (id) setTouched((current) => new Set([...current, id]))
+      }}
     >
       {session.origin.kind === 'example' && (
         <TopBar variant="example">
@@ -221,7 +267,25 @@ export function CheckRoute() {
       )}
       <div className="questionnaire-main">
         <AutoSize>
-          <Outlet context={context} />
+          <FieldWarnings
+            value={Object.fromEntries(
+              feedback.warnings.map((item) => [item.field, item.message]),
+            )}
+          >
+            <CoverageWarnings
+              value={Object.fromEntries(
+                feedback.coverage.map((item) => [item.field, item.message]),
+              )}
+            >
+              <Outlet context={context} />
+            </CoverageWarnings>
+          </FieldWarnings>
+          {feedback.stale && (
+            <p className="choice-warning" role="alert">
+              The rules need an update before this version can calculate your
+              plan.
+            </p>
+          )}
         </AutoSize>
         <div className="button-row questionnaire-actions">
           <Button variant="link" onClick={app.startOver}>
@@ -254,6 +318,11 @@ export function CheckRoute() {
           <Button
             className="w-full min-w-0 px-[.65rem] leading-[1.1]! font-extrabold!"
             onClick={next}
+            disabled={
+              blocking.length > 0 ||
+              feedback.stale ||
+              validateDraftGroup(session.draft, group!, latestDate).length > 0
+            }
           >
             {group === 'review' ? 'Calculate my plan' : 'Continue'}
           </Button>
@@ -261,7 +330,9 @@ export function CheckRoute() {
         disabledSteps={[
           calculationStep,
           ...questionnaireGroups.flatMap(({ id }, index) =>
-            canOpenGroup(session.draft, id, latestDate) ? [] : [index + 1],
+            canOpenGroup(session.draft, id, latestDate, blockedGroup)
+              ? []
+              : [index + 1],
           ),
         ]}
         onStepSelect={(selected) =>

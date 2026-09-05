@@ -34,7 +34,6 @@ export function SituationStep({
               value={draft.personKind}
               options={['individual', 'not-individual', 'not-sure']}
               labels={{ individual: 'Yes', 'not-individual': 'No' }}
-              unsupportedOptions={['not-individual']}
               error={errors.personKind}
               onChange={(value) =>
                 dispatch({
@@ -49,7 +48,6 @@ export function SituationStep({
               label="Are you 18 or older?"
               help="This version can only estimate tax for adults. You must also confirm this before saving."
               value={draft.adult}
-              unsupportedOptions={['no']}
               error={errors.adult}
               onChange={(value) =>
                 dispatch({
@@ -77,10 +75,6 @@ export function SituationStep({
                 'not-sure',
               ]}
               error={errors.residence}
-              unsupportedOptions={[
-                'resident-not-ordinarily-resident',
-                'non-resident',
-              ]}
               onChange={(value) =>
                 dispatch({
                   type: 'field-changed',
@@ -100,7 +94,6 @@ export function SituationStep({
               }
               value={draft.taxRegime}
               options={['new', 'old', 'not-sure']}
-              unsupportedOptions={['old']}
               error={errors.taxRegime}
               onChange={(value) =>
                 dispatch({
@@ -121,7 +114,6 @@ export function SituationStep({
               label="Do you run one self-employed service practice?"
               help="Choose No if you have more than one business or profession."
               value={draft.onePractice}
-              unsupportedOptions={['no']}
               error={errors.onePractice}
               onChange={(value) =>
                 dispatch({
@@ -135,7 +127,6 @@ export function SituationStep({
               id="setupInIndia"
               label="Is the practice set up and managed in India?"
               value={draft.setupInIndia}
-              unsupportedOptions={['no']}
               error={errors.setupInIndia}
               onChange={(value) =>
                 dispatch({
@@ -149,7 +140,6 @@ export function SituationStep({
               id="workInIndia"
               label="Do you perform all the work that earns this income while in India?"
               value={draft.workInIndia}
-              unsupportedOptions={['no']}
               error={errors.workInIndia}
               onChange={(value) =>
                 dispatch({
@@ -169,7 +159,6 @@ export function SituationStep({
               id="hasPartner"
               label="Do you have a business partner in this practice?"
               value={draft.hasPartner}
-              unsupportedOptions={['yes']}
               error={errors.hasPartner}
               onChange={(value) =>
                 dispatch({
@@ -183,7 +172,6 @@ export function SituationStep({
               id="hasEmployee"
               label="Do you employ anyone in this practice?"
               value={draft.hasEmployee}
-              unsupportedOptions={['yes']}
               error={errors.hasEmployee}
               onChange={(value) =>
                 dispatch({
@@ -198,7 +186,6 @@ export function SituationStep({
               label="Does your practice have an office or other business operation outside India?"
               help="Foreign clients alone do not count. We ask about clients later."
               value={draft.hasForeignOperation}
-              unsupportedOptions={['yes']}
               error={errors.hasForeignOperation}
               onChange={(value) =>
                 dispatch({
@@ -212,7 +199,6 @@ export function SituationStep({
               id="hasClientWorkSubcontractor"
               label="Does a subcontractor help deliver work to your clients?"
               value={draft.hasClientWorkSubcontractor}
-              unsupportedOptions={['yes']}
               error={errors.hasClientWorkSubcontractor}
               onChange={(value) =>
                 dispatch({
