@@ -1,3 +1,15 @@
+import {
+  groupStep,
+  activityOptions,
+  creditTriggerMayApply,
+  hasForeignClients,
+  hasPlatformWork,
+  isBusinessPath,
+  isUnregisteredGst,
+  optionLabels,
+  parseMoney,
+  unsupportedFactLabels,
+} from '@/routes/check/model'
 import { useRef } from 'react'
 import type { UnsupportedFact } from '@/evaluation'
 import { flushSync } from 'react-dom'
@@ -6,13 +18,6 @@ import { Card } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import type { Draft, PatchDraft } from '@/routes/check/model'
-import {
-  activityOptions,
-  creditTriggerMayApply,
-  optionLabels,
-  parseMoney,
-  unsupportedFactLabels,
-} from '@/routes/check/model'
 import { CheckHeading, FieldError } from '@/routes/check/fields'
 
 function ErrorSummary({ errors }: { readonly errors: Record<string, string> }) {
@@ -199,7 +204,7 @@ function GroupSummary({
     {
       title: 'You and your practice',
       editLabel: 'Edit answers about you and your practice',
-      step: 0,
+      step: groupStep('tax-year'),
       answers: [
         { label: 'Person', value: answer(draft.personKind) },
         { label: '18 or older', value: answer(draft.adult) },
@@ -243,7 +248,7 @@ function GroupSummary({
     {
       title: 'Your work and tax method',
       editLabel: 'Edit your work and tax method',
-      step: 1,
+      step: groupStep('activity'),
       answers: [
         {
           label: 'Work type',
@@ -253,7 +258,7 @@ function GroupSummary({
         },
         { label: 'Tax method', value: answer(draft.path) },
         { label: 'Method confirmed', value: answer(draft.pathConfirmed) },
-        ...(draft.path === 'eligible-business'
+        ...(isBusinessPath(draft)
           ? [
               {
                 label: 'Services rather than goods transport',
@@ -278,16 +283,15 @@ function GroupSummary({
     {
       title: 'Receipts and profit',
       editLabel: 'Edit receipts and profit',
-      step: 2,
+      step: groupStep('receipts'),
       answers: [
         {
-          label:
-            draft.path === 'eligible-business'
-              ? 'Gross business receipts'
-              : 'Gross professional receipts',
+          label: isBusinessPath(draft)
+            ? 'Gross business receipts'
+            : 'Gross professional receipts',
           value: money(draft.amounts.grossReceipts),
         },
-        ...(draft.path === 'eligible-business'
+        ...(isBusinessPath(draft)
           ? [
               {
                 label: 'Qualifying bank or online receipts',
@@ -312,7 +316,7 @@ function GroupSummary({
     {
       title: 'Clients and payments',
       editLabel: 'Edit clients and payments',
-      step: 3,
+      step: groupStep('clients'),
       answers: [
         { label: 'Client location', value: answer(draft.clientKind) },
         {
@@ -323,7 +327,7 @@ function GroupSummary({
             both: 'Directly and through a platform',
           }),
         },
-        ...(draft.delivery === 'platform' || draft.delivery === 'both'
+        ...(hasPlatformWork(draft)
           ? [
               {
                 label: 'Main service provided by you',
@@ -354,7 +358,7 @@ function GroupSummary({
               },
             ]
           : []),
-        ...(draft.clientKind === 'foreign' || draft.clientKind === 'mixed'
+        ...(hasForeignClients(draft)
           ? [
               {
                 label: 'Foreign-client work performed from India',
@@ -419,7 +423,7 @@ function GroupSummary({
     {
       title: 'Other income and tax paid',
       editLabel: 'Edit other income and tax paid',
-      step: 4,
+      step: groupStep('other-income'),
       answers: [
         {
           label: 'Taxable bank or deposit interest',
@@ -459,7 +463,7 @@ function GroupSummary({
     {
       title: 'GST registration',
       editLabel: 'Edit GST registration answers',
-      step: 5,
+      step: groupStep('gst'),
       answers: [
         { label: 'Ever had a GSTIN', value: answer(draft.gstKind) },
         ...(draft.gstKind === 'registered'
@@ -473,7 +477,7 @@ function GroupSummary({
                 : []),
             ]
           : []),
-        ...(draft.gstKind === 'unregistered'
+        ...(isUnregisteredGst(draft)
           ? [
               {
                 label: 'Taxable supplies made from',

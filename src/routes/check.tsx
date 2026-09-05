@@ -1,7 +1,7 @@
+import { indiaDate } from '@/lib/india-date'
 import { useEffect, useState } from 'react'
 import type { MouseEvent } from 'react'
 import { useLocation, useNavigate, useOutletContext } from 'react-router-dom'
-import { parseProfile } from '@/evaluation'
 import type { AppOutletContext } from '@/app'
 import {
   clearCurrentCheck,
@@ -19,14 +19,12 @@ import { GstStep } from '@/routes/check/gst-step'
 import type { Draft, DraftAmountKey } from '@/routes/check/model'
 import {
   blankDraft,
-  candidateFromDraft,
+  completeDraft,
   draftFromProfile,
-  errorStep,
   exampleProfile,
   groupStep,
-  profileErrorKey,
-  todayInIndia,
-  validateDraftStep,
+  questionnaireGroups,
+  validateDraftGroup,
 } from '@/routes/check/model'
 import { OtherIncomeStep } from '@/routes/check/other-income-step'
 import { ReceiptsStep } from '@/routes/check/receipts-step'
@@ -86,7 +84,7 @@ export function CheckRoute() {
   const [motion, setMotion] = useState<'none' | 'step'>(
     routeState?.animate ? 'step' : 'none',
   )
-  const today = todayInIndia()
+  const today = indiaDate(new Date())
   const latestThresholdDate = today < '2027-03-31' ? today : '2027-03-31'
 
   useEffect(() => {
@@ -128,7 +126,13 @@ export function CheckRoute() {
     patchDraft({ amounts: { ...draft.amounts, [key]: value } }, key)
 
   const validateStep = () => {
-    const nextErrors = validateDraftStep(draft, step, latestThresholdDate)
+    const nextErrors = Object.fromEntries(
+      validateDraftGroup(
+        draft,
+        questionnaireGroups[step].id,
+        latestThresholdDate,
+      ).map(({ field, message }) => [field, message]),
+    )
     setErrors(nextErrors)
     return Object.keys(nextErrors).length === 0
   }
@@ -146,19 +150,13 @@ export function CheckRoute() {
       setMotion('none')
       return
     }
-    const candidate = candidateFromDraft(draft)
-    if (Object.keys(candidate.errors).length > 0) {
-      setErrors(candidate.errors)
-      setStep(errorStep(Object.keys(candidate.errors)[0] ?? 'review'))
-      setMotion('none')
-      return
-    }
-    const parsed = parseProfile(candidate.value)
+    const parsed = completeDraft(draft, latestThresholdDate)
     if (!parsed.valid) {
-      const nextErrors = Object.fromEntries(
-        parsed.errors.map((error) => [profileErrorKey(error), error.message]),
+      setErrors(
+        Object.fromEntries(
+          parsed.errors.map(({ field, message }) => [field, message]),
+        ),
       )
-      setErrors(nextErrors)
       setStep(groupStep(parsed.errors[0]?.group ?? 'review'))
       setMotion('none')
       return

@@ -1,3 +1,5 @@
+import { groupStep } from '@/routes/check/model'
+import { indiaDate } from '@/lib/india-date'
 import Confetti from 'react-confetti-boom'
 import { useEffect, useState } from 'react'
 import {
@@ -46,11 +48,7 @@ import {
   SourceReferences,
   TaxSummary,
 } from '@/routes/plan/cards'
-import {
-  DeleteNotice,
-  SavedDataState,
-  todayInIndia,
-} from '@/routes/plan/editors'
+import { DeleteNotice, SavedDataState } from '@/routes/plan/editors'
 import type { PlanEditor } from '@/routes/plan/editors'
 
 const confettiColors = ['#15803d', '#0f172a', '#2563eb', '#fbbf24']
@@ -63,18 +61,6 @@ function sourceStorage() {
   } catch {
     return null
   }
-}
-
-function groupStep(group: ProfileGroup) {
-  return {
-    'tax-year': 0,
-    activity: 1,
-    receipts: 2,
-    clients: 3,
-    'other-income': 4,
-    gst: 5,
-    review: 6,
-  }[group]
 }
 
 export function PlanRoute() {
@@ -98,9 +84,8 @@ export function PlanRoute() {
     (savedWorkspace.kind === 'ready' && savedWorkspace.workspace.active
       ? savedWorkspace.workspace.active.profile
       : null)
-  const evaluation = profile
-    ? evaluate(profile, new Date(), currentRules)
-    : null
+  const now = new Date()
+  const evaluation = profile ? evaluate(profile, now, currentRules) : null
   const isExample = Boolean(transient?.example)
   const saved =
     savedWorkspace.kind === 'ready' &&
@@ -128,7 +113,7 @@ export function PlanRoute() {
       ? deriveWorkspaceView(
           saved ? savedWorkspace.workspace : null,
           { [profile?.taxYear ?? currentRules.taxPeriod]: evaluation },
-          todayInIndia(),
+          indiaDate(now),
         )
       : null
   const supported = evaluation?.kind === 'supported' ? evaluation : null
@@ -174,6 +159,7 @@ export function PlanRoute() {
   const persist = (
     nextProfile: Profile,
     completions: readonly CompletionRecord[],
+    actionDate = new Date(),
   ): boolean => {
     const storage = sourceStorage()
     if (!storage) {
@@ -188,7 +174,7 @@ export function PlanRoute() {
     const draft: SavedWorkspaceDraft = {
       noticeVersion: 1,
       consentDecidedAt:
-        currentSaved?.consentDecidedAt ?? new Date().toISOString(),
+        currentSaved?.consentDecidedAt ?? actionDate.toISOString(),
       activeTaxYear: nextProfile.taxYear,
       active: {
         ruleDatasetId: currentRules.id,
@@ -201,6 +187,7 @@ export function PlanRoute() {
       storage,
       currentSaved?.revision ?? null,
       draft,
+      actionDate,
     )
     if (result.kind === 'saved') {
       setStorageConflict(false)
@@ -247,7 +234,8 @@ export function PlanRoute() {
       )
       return
     }
-    const nextEvaluation = evaluate(parsed.profile, new Date(), currentRules)
+    const actionDate = new Date()
+    const nextEvaluation = evaluate(parsed.profile, actionDate, currentRules)
     if (nextEvaluation.kind !== 'supported') {
       setEditorMessage(
         'This update changed the supported result. Review the answers before saving it.',
@@ -257,7 +245,13 @@ export function PlanRoute() {
     const currentSaved =
       savedWorkspace.kind === 'ready' ? savedWorkspace.workspace : null
     if (currentSaved) {
-      if (persist(parsed.profile, currentSaved.active?.completions ?? []))
+      if (
+        persist(
+          parsed.profile,
+          currentSaved.active?.completions ?? [],
+          actionDate,
+        )
+      )
         setEditor(null)
     } else {
       setCurrentCheck(parsed.profile, false, true, false)

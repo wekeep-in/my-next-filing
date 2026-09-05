@@ -1,7 +1,7 @@
+import { activityOptions, isBusinessPath } from '@/routes/check/model'
 import type { Activity, TriState } from '@/evaluation'
 import { CheckHeading, ChoiceField, SelectField } from '@/routes/check/fields'
 import type { Draft, DraftPath, PatchDraft } from '@/routes/check/model'
-import { activityOptions } from '@/routes/check/model'
 
 export function ActivityStep({
   className,
@@ -49,7 +49,7 @@ export function ActivityStep({
         <ChoiceField
           id="pathConfirmed"
           label={
-            draft.path === 'eligible-business'
+            isBusinessPath(draft)
               ? 'Is your whole practice an eligible business?'
               : 'Is your whole practice a specified profession?'
           }
@@ -59,7 +59,7 @@ export function ActivityStep({
           onChange={(value) => patchDraft({ pathConfirmed: value as TriState })}
         />
       )}
-      {draft.path === 'eligible-business' && (
+      {isBusinessPath(draft) && (
         <div className="field-stack path-follow-up">
           <ChoiceField
             id="notGoodsCarriage"

@@ -1,3 +1,4 @@
+import { indiaDate } from '@/lib/india-date'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { DatePicker } from '@/components/date-picker'
@@ -12,18 +13,6 @@ import type { LoadSavedWorkspaceResult } from '@/workspace'
 export type PlanEditor =
   | { readonly kind: 'completion'; readonly obligation: Obligation }
   | { readonly kind: 'payment'; readonly obligation: Obligation }
-
-export function todayInIndia(): DateOnly {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Kolkata',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(new Date())
-  const part = (type: Intl.DateTimeFormatPartTypes) =>
-    parts.find((item) => item.type === type)?.value ?? ''
-  return `${part('year')}-${part('month')}-${part('day')}` as DateOnly
-}
 
 export function SaveNotice({
   onSave,
@@ -170,7 +159,7 @@ export function CompletionEditor({
           <DatePicker
             id={inputId}
             value={date}
-            max={todayInIndia()}
+            max={indiaDate(new Date())}
             describedBy={error ? errorId : undefined}
             invalid={Boolean(error)}
             onChange={(value) => {
@@ -190,7 +179,10 @@ export function CompletionEditor({
             variant="outline"
             type="button"
             onClick={() => {
-              if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date > todayInIndia())
+              if (
+                !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
+                date > indiaDate(new Date())
+              )
                 setError('Choose a valid date no later than today.')
               else onSubmit(date)
             }}

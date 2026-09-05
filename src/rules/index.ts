@@ -1,3 +1,4 @@
+import { indiaDate } from '@/lib/india-date'
 export type DateOnly = `${number}-${number}-${number}`
 
 export const TAX_YEAR = 'Tax Year 2026-27' as const
@@ -648,18 +649,6 @@ const isRate = (value: unknown) =>
 
 const safeAmount = (value: unknown): number | null =>
   isSafeAmount(value) ? value : null
-
-const indiaDate = (now: Date): DateOnly => {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Kolkata',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(now)
-  const part = (type: Intl.DateTimeFormatPartTypes) =>
-    parts.find((item) => item.type === type)?.value ?? ''
-  return `${part('year')}-${part('month')}-${part('day')}` as DateOnly
-}
 
 function validateDates(
   value: Record<string, unknown>,

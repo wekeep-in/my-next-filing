@@ -1,3 +1,4 @@
+import { isBusinessPath } from '@/routes/check/model'
 import { CheckHeading, MoneyField } from '@/routes/check/fields'
 import type { Draft, DraftAmountKey } from '@/routes/check/model'
 
@@ -18,7 +19,7 @@ export function ReceiptsStep({
         title="Your receipts and profit"
         description="Enter whole-rupee amounts from your records. Receipt amounts should be before expenses, platform fees, and Indian withholding."
       />
-      {draft.path === 'eligible-business' ? (
+      {isBusinessPath(draft) ? (
         <>
           <MoneyField
             id="grossReceipts"

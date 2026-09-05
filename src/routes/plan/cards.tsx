@@ -1,3 +1,4 @@
+import { indiaDate } from '@/lib/india-date'
 import { useId } from 'react'
 import { ExternalLink } from '@/components/external-link'
 import { Alert } from '@/components/ui/alert'
@@ -18,7 +19,6 @@ import {
   CompletionEditor,
   PaymentEditor,
   SaveNotice,
-  todayInIndia,
 } from '@/routes/plan/editors'
 import type { PlanEditor } from '@/routes/plan/editors'
 
@@ -366,7 +366,7 @@ export function AttentionCard({
               initialDate={
                 completions.find(
                   (record) => record.obligationId === editor.obligation.id,
-                )?.completedOn ?? todayInIndia()
+                )?.completedOn ?? indiaDate(new Date())
               }
               onSubmit={(date) => onCompletionSubmit(editor.obligation, date)}
               onCancel={onEditorCancel}
@@ -386,7 +386,7 @@ export function AttentionCard({
           {!editor && saved && !completion && !needsPayment && (
             <CompletionEditor
               obligation={next}
-              initialDate={todayInIndia()}
+              initialDate={indiaDate(new Date())}
               onSubmit={(date) => onCompletionSubmit(next, date)}
               embedded
             />

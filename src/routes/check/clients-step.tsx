@@ -1,3 +1,4 @@
+import { hasForeignClients, hasPlatformWork } from '@/routes/check/model'
 import type { TriState } from '@/evaluation'
 import { CheckHeading, ChoiceField } from '@/routes/check/fields'
 import type {
@@ -60,7 +61,7 @@ export function ClientsStep({
           </div>
         </section>
 
-        {(draft.delivery === 'platform' || draft.delivery === 'both') && (
+        {hasPlatformWork(draft) && (
           <section className="question-section" aria-labelledby="platform-work">
             <h2 id="platform-work">Platform work</h2>
             <div className="field-stack">
@@ -140,7 +141,7 @@ export function ClientsStep({
           </section>
         )}
 
-        {(draft.clientKind === 'foreign' || draft.clientKind === 'mixed') && (
+        {hasForeignClients(draft) && (
           <section
             className="question-section"
             aria-labelledby="foreign-clients"

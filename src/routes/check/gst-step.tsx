@@ -1,3 +1,7 @@
+import {
+  isUnregisteredGst,
+  statesAndUnionTerritories,
+} from '@/routes/check/model'
 import type { TriState } from '@/evaluation'
 import { DatePicker } from '@/components/date-picker'
 import {
@@ -14,7 +18,6 @@ import type {
   DraftGstStatus,
   PatchDraft,
 } from '@/routes/check/model'
-import { statesAndUnionTerritories } from '@/routes/check/model'
 
 export function GstStep({
   className,
@@ -83,7 +86,7 @@ export function GstStep({
           </p>
         </>
       )}
-      {draft.gstKind === 'unregistered' && (
+      {isUnregisteredGst(draft) && (
         <>
           <SelectField
             id="gstState"

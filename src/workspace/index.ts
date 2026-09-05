@@ -1,3 +1,4 @@
+import { indiaDate } from '@/lib/india-date'
 import { parseProfile } from '@/evaluation'
 import type { EvaluationResult, Obligation, Profile } from '@/evaluation'
 import { TAX_YEAR } from '@/rules'
@@ -284,18 +285,6 @@ function decodeWorkspace(
   return value as SavedWorkspace
 }
 
-function todayInIndia(now = new Date()): DateOnly {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Kolkata',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(now)
-  const part = (type: Intl.DateTimeFormatPartTypes) =>
-    parts.find((item) => item.type === type)?.value ?? ''
-  return `${part('year')}-${part('month')}-${part('day')}` as DateOnly
-}
-
 function readWorkspace(storage: Storage, today: DateOnly) {
   const raw = storage.getItem(WORKSPACE_KEY)
   if (raw === null) return { kind: 'absent' as const }
@@ -314,7 +303,7 @@ export function loadSavedWorkspace(
   now = new Date(),
 ): LoadSavedWorkspaceResult {
   try {
-    const result = readWorkspace(storage, todayInIndia(now))
+    const result = readWorkspace(storage, indiaDate(now))
     return result.kind === 'ready'
       ? result
       : result.kind === 'invalid'
@@ -328,6 +317,7 @@ export function loadSavedWorkspace(
 function withRevision(
   draft: SavedWorkspaceDraft,
   revision: number,
+  now: Date,
 ): SavedWorkspace {
   return {
     schemaVersion: 1,
@@ -337,7 +327,7 @@ function withRevision(
     activeTaxYear: draft.activeTaxYear,
     active: draft.active,
     priorYears: draft.priorYears,
-    updatedAt: new Date().toISOString(),
+    updatedAt: now.toISOString(),
   }
 }
 
@@ -345,6 +335,7 @@ export function saveSavedWorkspace(
   storage: Storage,
   expectedRevision: number | null,
   draft: SavedWorkspaceDraft,
+  now = new Date(),
 ): StorageWriteResult {
   try {
     if (
@@ -358,7 +349,7 @@ export function saveSavedWorkspace(
       ])
     )
       return { kind: 'invalid', reason: 'workspace-invalid' }
-    const today = todayInIndia()
+    const today = indiaDate(now)
     const current = readWorkspace(storage, today)
     if (current.kind === 'invalid')
       return { kind: 'invalid', reason: 'workspace-invalid' }
@@ -371,6 +362,7 @@ export function saveSavedWorkspace(
     const next = withRevision(
       draft,
       expectedRevision === null ? 0 : expectedRevision + 1,
+      now,
     )
     if (!decodeWorkspace(next, today))
       return { kind: 'invalid', reason: 'workspace-invalid' }
@@ -395,13 +387,14 @@ export function saveSavedWorkspace(
 export function deleteSavedWorkspace(
   storage: Storage,
   expectedRevision: number | null,
+  now = new Date(),
 ): StorageDeleteResult {
   try {
     const raw = storage.getItem(WORKSPACE_KEY)
     if (raw === null) return { kind: 'absent' }
     let current: SavedWorkspace | null = null
     try {
-      current = decodeWorkspace(JSON.parse(raw) as unknown, todayInIndia())
+      current = decodeWorkspace(JSON.parse(raw) as unknown, indiaDate(now))
     } catch {
       current = null
     }

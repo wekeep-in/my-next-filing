@@ -96,7 +96,7 @@ export type Draft = {
 
 export type PatchDraft = (patch: Partial<Draft>, ...errorKeys: string[]) => void
 
-const amountKeys: readonly DraftAmountKey[] = [
+export const amountKeys: readonly DraftAmountKey[] = [
   'grossReceipts',
   'cashReceipts',
   'declaredProfit',
@@ -486,17 +486,6 @@ export function parseMoney(
     : { error: 'Use an amount within the supported whole-rupee range.' }
 }
 
-export function todayInIndia() {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Kolkata',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(new Date())
-  const part = (type: Intl.DateTimeFormatPartTypes) =>
-    parts.find((item) => item.type === type)?.value ?? ''
-  return `${part('year')}-${part('month')}-${part('day')}`
-}
 function requiredAmount(
   errors: Record<string, string>,
   draft: Draft,
@@ -518,44 +507,41 @@ export function candidateFromDraft(draft: Draft) {
     amountKeys.map((key) => [key, 0]),
   ) as Record<DraftAmountKey, number>
   const requiredKeys = [
-    ...(draft.path === 'eligible-business'
+    ...(isBusinessPath(draft)
       ? amountKeys.slice(0, 5)
       : amountKeys.slice(0, 3)),
     ...amountKeys.slice(5, 9),
-    ...(draft.gstKind === 'unregistered' ? ['aggregateTurnover' as const] : []),
+    ...(isUnregisteredGst(draft) ? ['aggregateTurnover' as const] : []),
   ]
   for (const key of requiredKeys) {
     const parsed = parseMoney(draft.amounts[key])
     amountValues[key] = 'value' in parsed ? parsed.value : 0
   }
-  const path =
-    draft.path === 'eligible-business'
-      ? {
-          kind: 'eligible-business',
-          confirmed: draft.pathConfirmed || 'not-sure',
-          grossReceipts: amountValues.grossReceipts,
-          qualifyingReceipts: amountValues.qualifyingReceipts,
-          otherReceipts: amountValues.otherReceipts,
-          cashReceipts: amountValues.cashReceipts,
-          declaredProfit: amountValues.declaredProfit,
-          notSpecifiedProfession: draft.pathConfirmed || 'not-sure',
-          notGoodsCarriage: draft.notGoodsCarriage || 'not-sure',
-          notAgencyCommissionBrokerage:
-            draft.notAgencyCommissionBrokerage || 'not-sure',
-          noChapterViiiCDeduction: draft.noChapterViiiCDeduction || 'not-sure',
-          fiveYearExclusion: draft.fiveYearExclusion || 'not-sure',
-        }
-      : {
-          kind: 'specified-profession',
-          confirmed: draft.pathConfirmed || 'not-sure',
-          grossReceipts: amountValues.grossReceipts,
-          cashReceipts: amountValues.cashReceipts,
-          declaredProfit: amountValues.declaredProfit,
-        }
-  const foreignSelected =
-    draft.clientKind === 'foreign' || draft.clientKind === 'mixed'
-  const platformSelected =
-    draft.delivery === 'platform' || draft.delivery === 'both'
+  const path = isBusinessPath(draft)
+    ? {
+        kind: 'eligible-business',
+        confirmed: draft.pathConfirmed || 'not-sure',
+        grossReceipts: amountValues.grossReceipts,
+        qualifyingReceipts: amountValues.qualifyingReceipts,
+        otherReceipts: amountValues.otherReceipts,
+        cashReceipts: amountValues.cashReceipts,
+        declaredProfit: amountValues.declaredProfit,
+        notSpecifiedProfession: draft.pathConfirmed || 'not-sure',
+        notGoodsCarriage: draft.notGoodsCarriage || 'not-sure',
+        notAgencyCommissionBrokerage:
+          draft.notAgencyCommissionBrokerage || 'not-sure',
+        noChapterViiiCDeduction: draft.noChapterViiiCDeduction || 'not-sure',
+        fiveYearExclusion: draft.fiveYearExclusion || 'not-sure',
+      }
+    : {
+        kind: 'specified-profession',
+        confirmed: draft.pathConfirmed || 'not-sure',
+        grossReceipts: amountValues.grossReceipts,
+        cashReceipts: amountValues.cashReceipts,
+        declaredProfit: amountValues.declaredProfit,
+      }
+  const foreignSelected = hasForeignClients(draft)
+  const platformSelected = hasPlatformWork(draft)
   const value = {
     taxYear: TAX_YEAR,
     person: {
@@ -655,16 +641,100 @@ export function candidateFromDraft(draft: Draft) {
     errors.gstKind = 'Choose whether you have ever had a GSTIN.'
   return { value, errors }
 }
+export const questionnaireGroups = [
+  { id: 'tax-year', label: 'You and your practice' },
+  { id: 'activity', label: 'Your work and tax method' },
+  { id: 'receipts', label: 'Receipts and profit' },
+  { id: 'clients', label: 'Clients and payments' },
+  { id: 'other-income', label: 'Other income and tax paid' },
+  { id: 'gst', label: 'GST registration' },
+  { id: 'review', label: 'Review your answers' },
+] as const satisfies readonly {
+  readonly id: ProfileGroup
+  readonly label: string
+}[]
+
 export function groupStep(group: ProfileGroup) {
-  return {
-    'tax-year': 0,
-    activity: 1,
-    receipts: 2,
-    clients: 3,
-    'other-income': 4,
-    gst: 5,
-    review: 6,
-  }[group]
+  return questionnaireGroups.findIndex(({ id }) => id === group)
+}
+
+export const isBusinessPath = (draft: Draft) =>
+  draft.path === 'eligible-business'
+export const hasPlatformWork = (draft: Draft) =>
+  draft.delivery === 'platform' || draft.delivery === 'both'
+export const hasForeignClients = (draft: Draft) =>
+  draft.clientKind === 'foreign' || draft.clientKind === 'mixed'
+export const isUnregisteredGst = (draft: Draft) =>
+  draft.gstKind === 'unregistered'
+
+export type DraftError = {
+  readonly field: string
+  readonly group: ProfileGroup
+  readonly message: string
+}
+
+export const isBlankDraft = (draft: Draft) =>
+  Object.entries(draft).every(([key, value]) =>
+    key === 'amounts'
+      ? Object.values(draft.amounts).every((amount) => amount === '')
+      : key === 'unsupportedFacts'
+        ? draft.unsupportedFacts.length === 0
+        : value === '',
+  )
+
+export function firstIncompleteGroup(
+  draft: Draft,
+  latestThresholdDate: string,
+): ProfileGroup | null {
+  return (
+    questionnaireGroups.find(
+      ({ id }) =>
+        id !== 'review' &&
+        validateDraftGroup(draft, id, latestThresholdDate).length > 0,
+    )?.id ?? null
+  )
+}
+
+export function canOpenGroup(
+  draft: Draft,
+  group: ProfileGroup,
+  latestThresholdDate: string,
+) {
+  const incomplete = firstIncompleteGroup(draft, latestThresholdDate)
+  return incomplete === null || groupStep(group) <= groupStep(incomplete)
+}
+
+export function completeDraft(
+  draft: Draft,
+  latestThresholdDate: string,
+):
+  | { readonly valid: true; readonly profile: Profile }
+  | { readonly valid: false; readonly errors: readonly DraftError[] } {
+  const errors = questionnaireGroups.flatMap(({ id }) =>
+    validateDraftGroup(draft, id, latestThresholdDate),
+  )
+  if (errors.length) return { valid: false, errors }
+  const candidate = candidateFromDraft(draft)
+  if (Object.keys(candidate.errors).length)
+    return {
+      valid: false,
+      errors: Object.entries(candidate.errors).map(([field, message]) => ({
+        field,
+        group: questionnaireGroups[errorStep(field)].id,
+        message,
+      })),
+    }
+  const parsed = parseProfile(candidate.value)
+  return parsed.valid
+    ? parsed
+    : {
+        valid: false,
+        errors: parsed.errors.map((error) => ({
+          field: profileErrorKey(error),
+          group: error.group,
+          message: error.message,
+        })),
+      }
 }
 
 export function errorStep(key: string) {
@@ -684,7 +754,7 @@ export function errorStep(key: string) {
       'contractorBoundary',
     ].includes(key)
   )
-    return 0
+    return groupStep('tax-year')
   if (
     [
       'activity',
@@ -696,7 +766,7 @@ export function errorStep(key: string) {
       'fiveYearExclusion',
     ].includes(key)
   )
-    return 1
+    return groupStep('activity')
   if (
     [
       'grossReceipts',
@@ -706,13 +776,13 @@ export function errorStep(key: string) {
       'otherReceipts',
     ].includes(key)
   )
-    return 2
+    return groupStep('receipts')
   if (
     key.startsWith('platform') ||
     key.startsWith('foreign') ||
     ['clientKind', 'delivery'].includes(key)
   )
-    return 3
+    return groupStep('clients')
   if (
     [
       'taxableBankInterest',
@@ -724,8 +794,8 @@ export function errorStep(key: string) {
       'unsupportedCertainty',
     ].includes(key)
   )
-    return 4
-  return 5
+    return groupStep('other-income')
+  return groupStep('gst')
 }
 
 export function profileErrorKey(error: ProfileInputError) {
@@ -752,13 +822,13 @@ export function profileErrorKey(error: ProfileInputError) {
   const last = error.path.split('.').at(-1) ?? error.group
   return aliases[last] ?? last
 }
-export function validateDraftStep(
+export function validateDraftGroup(
   draft: Draft,
-  step: number,
+  group: ProfileGroup,
   latestThresholdDate: string,
 ) {
   const nextErrors: Record<string, string> = {}
-  if (step === 0) {
+  if (group === 'tax-year') {
     if (!draft.personKind)
       nextErrors.personKind = 'Choose whether you are an individual.'
     if (!draft.adult) nextErrors.adult = 'Choose whether you are 18 or older.'
@@ -792,7 +862,7 @@ export function validateDraftStep(
       nextErrors.contractorBoundary =
         'Choose whether you use a support-only contractor in India.'
   }
-  if (step === 1) {
+  if (group === 'activity') {
     if (!draft.activity)
       nextErrors.activity = 'Choose the option that best describes your work.'
     if (!draft.path)
@@ -800,7 +870,7 @@ export function validateDraftStep(
     if (draft.path && !draft.pathConfirmed)
       nextErrors.pathConfirmed =
         'Confirm the tax method for your whole practice.'
-    if (draft.path === 'eligible-business') {
+    if (isBusinessPath(draft)) {
       const requiredFields: readonly [keyof Draft, string][] = [
         [
           'notGoodsCarriage',
@@ -823,8 +893,8 @@ export function validateDraftStep(
         if (!draft[key]) nextErrors[key] = message
     }
   }
-  if (step === 2) {
-    for (const key of draft.path === 'eligible-business'
+  if (group === 'receipts') {
+    for (const key of isBusinessPath(draft)
       ? amountKeys.slice(0, 5)
       : amountKeys.slice(0, 3))
       requiredAmount(nextErrors, draft, key)
@@ -832,7 +902,7 @@ export function validateDraftStep(
     const gross = parseMoney(draft.amounts.grossReceipts)
     const otherReceipts = parseMoney(draft.amounts.otherReceipts)
     if (
-      draft.path === 'eligible-business' &&
+      isBusinessPath(draft) &&
       'value' in qualifying &&
       'value' in gross &&
       qualifying.value > gross.value
@@ -840,7 +910,7 @@ export function validateDraftStep(
       nextErrors.qualifyingReceipts =
         'Qualifying receipts cannot exceed gross receipts.'
     if (
-      draft.path === 'eligible-business' &&
+      isBusinessPath(draft) &&
       'value' in qualifying &&
       'value' in gross &&
       'value' in otherReceipts &&
@@ -849,14 +919,14 @@ export function validateDraftStep(
       nextErrors.otherReceipts =
         'Qualifying and other receipts must add up to gross business receipts.'
   }
-  if (step === 3) {
+  if (group === 'clients') {
     if (!draft.clientKind)
       nextErrors.clientKind =
         'Choose whether clients are domestic, foreign, or mixed.'
     if (!draft.delivery)
       nextErrors.delivery =
         'Choose direct work, platform work, both, or Not sure.'
-    if (draft.delivery === 'platform' || draft.delivery === 'both')
+    if (hasPlatformWork(draft))
       for (const key of [
         'platformOwnAccount',
         'platformRecipientIdentifiable',
@@ -865,13 +935,10 @@ export function validateDraftStep(
         'platformNoRecipientReverseCharge',
       ] as const)
         if (!draft[key]) nextErrors[key] = 'Choose Yes, No, or Not sure.'
-    if (
-      (draft.delivery === 'platform' || draft.delivery === 'both') &&
-      !draft.platformForeignFeeGstTreatment
-    )
+    if (hasPlatformWork(draft) && !draft.platformForeignFeeGstTreatment)
       nextErrors.platformForeignFeeGstTreatment =
         'Choose whether a foreign platform fee applies.'
-    if (draft.clientKind === 'foreign' || draft.clientKind === 'mixed')
+    if (hasForeignClients(draft))
       for (const key of [
         'foreignWorkInIndia',
         'foreignRecipientIdentifiable',
@@ -886,20 +953,14 @@ export function validateDraftStep(
         'foreignCurrencyResolved',
       ] as const)
         if (!draft[key]) nextErrors[key] = 'Choose Yes, No, or Not sure.'
-    if (
-      (draft.clientKind === 'foreign' || draft.clientKind === 'mixed') &&
-      !draft.foreignPaymentRoute
-    )
+    if (hasForeignClients(draft) && !draft.foreignPaymentRoute)
       nextErrors.foreignPaymentRoute =
         'Choose a payment route, or choose Not sure.'
-    if (
-      (draft.clientKind === 'foreign' || draft.clientKind === 'mixed') &&
-      !draft.foreignAccountExposure
-    )
+    if (hasForeignClients(draft) && !draft.foreignAccountExposure)
       nextErrors.foreignAccountExposure =
         'Choose whether these payments involve a foreign account or similar arrangement.'
   }
-  if (step === 4) {
+  if (group === 'other-income') {
     for (const key of amountKeys.slice(5, 9))
       requiredAmount(nextErrors, draft, key)
     if (creditTriggerMayApply(draft) && !draft.ageSixtyOrOlder)
@@ -911,10 +972,10 @@ export function validateDraftStep(
       nextErrors.unsupportedCertainty =
         'Select any situations that apply, or choose None of these or Not sure.'
   }
-  if (step === 5) {
+  if (group === 'gst') {
     if (!draft.gstKind)
       nextErrors.gstKind = 'Choose whether you have ever had a GSTIN.'
-    if (draft.gstKind === 'unregistered') {
+    if (isUnregisteredGst(draft)) {
       if (!draft.gstState)
         nextErrors.gstState = 'Choose a state or Union territory.'
       requiredAmount(nextErrors, draft, 'aggregateTurnover')
@@ -939,5 +1000,9 @@ export function validateDraftStep(
         nextErrors.gstState = 'Choose where your active GSTIN is registered.'
     }
   }
-  return nextErrors
+  return Object.entries(nextErrors).map(([field, message]): DraftError => ({
+    field,
+    group,
+    message,
+  }))
 }

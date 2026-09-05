@@ -1,3 +1,4 @@
+import { indiaDate } from '@/lib/india-date'
 import { validateRules } from '@/rules'
 import type {
   AnnualReturnRules,
@@ -1317,18 +1318,6 @@ export function parseProfile(value: unknown): ParseProfileResult {
   return errors.length > 0
     ? { valid: false, kind: 'invalid', errors }
     : { valid: true, kind: 'valid', profile }
-}
-
-function indiaDate(now: Date): DateOnly {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Kolkata',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(now)
-  const part = (type: Intl.DateTimeFormatPartTypes) =>
-    parts.find((item) => item.type === type)?.value ?? ''
-  return `${part('year')}-${part('month')}-${part('day')}` as DateOnly
 }
 
 function roundMoney(amount: number, unit: number) {

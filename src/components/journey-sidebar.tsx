@@ -1,18 +1,11 @@
+import { questionnaireGroups } from '@/routes/check/model'
 import type { ReactNode } from 'react'
 import { cn } from 'cn'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 
-export const questionnaireSteps = [
-  'You and your practice',
-  'Your work and tax method',
-  'Receipts and profit',
-  'Clients and payments',
-  'Other income and tax paid',
-  'GST registration',
-  'Review your answers',
-] as const
+export const questionnaireSteps = questionnaireGroups.map(({ label }) => label)
 
 export const calculationStep = questionnaireSteps.length + 1
 const journeySteps = ['Overview', ...questionnaireSteps, 'Your plan']

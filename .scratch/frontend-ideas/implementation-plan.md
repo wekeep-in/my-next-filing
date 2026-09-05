@@ -1,6 +1,6 @@
 # Frontend state, routing, and recovery implementation plan
 
-Status: approved for implementation
+Status: implementation in progress on `frontend-recovery`
 
 Source specification: [Frontend state, routing, and recovery specification](spec.md)
 
@@ -76,7 +76,7 @@ Status: complete
 
 ## Work item 1: add shared questionnaire and date primitives
 
-Status: pending
+Status: complete; shared primitives and frontend assertions pass lint, typecheck, and tests
 
 ### Changes
 
