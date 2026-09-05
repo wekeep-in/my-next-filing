@@ -7,14 +7,16 @@
 | Product | My Next Filing |
 | Production domain | `mynextfiling.wekeep.in` |
 | Initial statutory period | Tax Year 2026-27 |
-| Planning authority | [.scratch/my-next-filing-solo-freelancer/map.md](.scratch/my-next-filing-solo-freelancer/map.md) |
-| Implementation plan | [.scratch/my-next-filing-solo-freelancer/implementation-plan.md](.scratch/my-next-filing-solo-freelancer/implementation-plan.md) |
+| Original planning authority | [.scratch/my-next-filing-solo-freelancer/map.md](.scratch/my-next-filing-solo-freelancer/map.md) |
+| Frontend redesign authority | [.scratch/frontend-ideas/spec.md](.scratch/frontend-ideas/spec.md) |
+| Original implementation plan | [.scratch/my-next-filing-solo-freelancer/implementation-plan.md](.scratch/my-next-filing-solo-freelancer/implementation-plan.md) |
+| Frontend redesign plan | [.scratch/frontend-ideas/implementation-plan.md](.scratch/frontend-ideas/implementation-plan.md) |
 
 ## Document authority
 
 This root specification is authoritative for the successor implementation. The previous release specification remains recoverable in version control history and is not a second public journey.
 
-[`CONTEXT.md`](CONTEXT.md) defines controlled product language. The decision tickets linked from the [final audit](.scratch/my-next-filing-solo-freelancer/issues/15-audit-decision-completeness.md) explain why this specification makes each material change. This document defines the resulting behavior.
+[`CONTEXT.md`](CONTEXT.md) defines controlled product language. The original decision tickets linked from the [final audit](.scratch/my-next-filing-solo-freelancer/issues/15-audit-decision-completeness.md) and the accepted [frontend ADRs](docs/adr/) explain the material choices. This document defines the resulting behavior.
 
 Statutory values in this specification come from the planning research dated 2 September 2026. They are implementation inputs, not release approval. The compliance gate in [Define verification and release gates](.scratch/my-next-filing-solo-freelancer/issues/14-define-verification-and-release-gates.md) must verify them again against then-current official sources before Rule freeze and public release.
 
@@ -169,7 +171,7 @@ Another or uncertain registration state, multiple GSTINs, composition, suspensio
 
 ## Questionnaire
 
-The questionnaire uses one group per view, visible progress, back navigation, preserved in-memory answers, and a final review with one Edit action per group. Introduce `1 April 2026 to 31 March 2027` before the shorthand `Tax Year 2026-27` on first use. It asks only facts that change a supported branch, calculation, Coverage result, Review action, or Obligation.
+The questionnaire uses one group per static nested `/check` route, visible progress, back navigation, preserved answers, and a final review with one Edit action per group. Introduce `1 April 2026 to 31 March 2027` before the shorthand `Tax Year 2026-27` on first use. It asks only facts that change a supported branch, calculation, Coverage result, Review action, or Obligation.
 
 The groups are:
 
@@ -183,7 +185,17 @@ The groups are:
 
 Every uncertainty that can stop or reduce Coverage offers "Not sure". The interface explains uncommon legal confirmations. It does not infer a favorable answer to save a click.
 
-Questionnaire drafts use display strings and may be incomplete. They are not Profile values and never enter Evaluation or storage. A refresh clears an unsaved draft.
+Questionnaire drafts use display strings and may be incomplete. They are not Profile values and never enter Evaluation without fresh completion and `parseProfile`.
+
+For a personal questionnaire, create one versioned Recovery draft at `my-next-filing:recovery-draft` in current-tab `sessionStorage` as soon as `/check` opens, including while blank. Replace the complete small value after every answer change and retain it through Supported, Unsupported, stale-rules, and unsaved Plan states. A refresh restores the Draft, revalidates it, and reruns Profile parsing and Evaluation as applicable. Do not store examples, routes, errors, Profiles, Evaluation results, Completion records, or UI state in the Recovery draft.
+
+Treat Recovery storage as untrusted and best effort. Invalid Recovery data is removed and starts blank. A storage or removal failure preserves current in-memory answers, warns that refresh recovery is unavailable, and never blocks calculation. `Start over` removes only Recovery data after confirmation when answers exist. It never deletes a Saved workspace.
+
+Restore browser data before enabling Recovery writes. Pause synchronization while an example or explicitly selected Saved workspace is displayed and during deletion. Start over replaces the old answers with a blank Draft only after verified removal. Saving the active Draft clears its recoverable session before cleanup; full deletion clears it after verified removal. A later render or route transition must not recreate the removed answers. Full deletion leaves both keys absent until a new personal questionnaire opens.
+
+Storage warnings remain visible and actionable until their own conditions resolve. Derive them separately from temporary success notices, so a successful Recovery write cannot hide a workspace failure or vice versa.
+
+After the first verified Recovery write in a loaded document, show for about four seconds: `Your answers will stay available if you refresh this tab. Closing the tab may remove them.` Explain the same behavior in the landing-page FAQ. A later unchanged write does not repeat the notice.
 
 ## Evaluation contract
 
@@ -289,15 +301,15 @@ Tutorials never establish applicability, values, dates, or Coverage. Removing a 
 
 ## Saved workspace
 
-Saving is optional and starts off. Offer it only after a complete Profile parses and Evaluation returns Supported, including Supported with Incomplete coverage. Do not save drafts, examples, malformed data, Unsupported Profiles, or Profiles evaluated with stale core Rules.
+Longer-lived saving is optional and starts off. Offer it only after a complete Profile parses and Evaluation returns Supported, including Supported with Incomplete coverage. Do not put Recovery drafts, examples, malformed data, Unsupported Profiles, or Profiles evaluated with stale core Rules in the Saved workspace.
 
-Before the first write, show this standalone notice, subject to qualified privacy review:
+Before the first Saved-workspace write, show this standalone notice, subject to qualified privacy review:
 
 > Save your answers and the completion dates you add. Anyone using this browser profile may be able to see them. There is no account, sync, backup, or recovery. Private browsing or clearing site data may remove them.
 
-Actions are `Save data` and `Cancel`. The landing-page FAQ explains saved-data behavior. The questionnaire confirms the user is eighteen or older before a supported result can be saved. Canceling the notice leaves the save action available in the same unsaved session.
+Actions are `Save data` and `Cancel`. Store accepted notice version 2. The landing-page FAQ explains saved-data behavior. The questionnaire confirms the user is eighteen or older before a supported result can be saved. Canceling the notice leaves the save action available in the same unsaved session.
 
-The one stable key is `my-next-filing:workspace`. Its version-1 envelope contains only:
+The one stable key is `my-next-filing:workspace`. Its version-2 envelope contains only:
 
 - schema version and revision;
 - accepted notice version and local ISO decision timestamp;
@@ -320,25 +332,29 @@ Treat storage as untrusted input. The workspace module:
 5. selects and validates exact matching Rules; and
 6. runs fresh Evaluation before deriving the workspace view.
 
-Version 1 has no predecessor and no migration framework. A later version adds one explicit migration from the real prior shape.
+Version 2 deliberately does not migrate version 1. When the Application encounters a parsed JSON object whose top-level schema version is 1, it rereads the exact key, confirms that version, removes only that key, verifies absence, and shows: `Your previously saved answers and completion dates were removed because this version uses a new workspace.` It repeats verified removal if version 1 reappears, but shows the notice at most once per loaded document. It creates no backup and offers no recovery.
+
+If inspection confirms the version-1 value remains, leave it untouched and offer deletion retry. If removal may have succeeded but verification cannot read the key, report an unverified deletion and offer inspection retry without claiming the raw value survived. Both outcomes block Saved-workspace writes and keep the in-memory questionnaire and Recovery draft available. Do not recreate removed data. A code rollback cannot restore a removed version-1 Profile or Completion record.
 
 Every write replaces the complete small envelope. Immediately before a write or deletion, compare the stored revision with the revision loaded by the tab. A mismatch produces a conflict and reload option. The browser `storage` event refreshes read-only views or marks an editor stale. The Application does not auto-merge.
 
-A quota, security, private-mode, serialization, write, or removal failure preserves the valid in-memory work and the last saved value. It never displays false success. Invalid saved data produces no calculation and cannot be overwritten until the user deliberately deletes it.
+A quota, security, private-mode, serialization, write, or removal failure preserves valid in-memory work and leaves any verified remaining stored value untouched. Never promise that the previous value survived unreadable post-mutation state or display false success. If deletion may have succeeded but readback fails, report an unverified deletion, pause writes to the affected key, and offer inspection retry. Invalid saved data produces no calculation and cannot be overwritten until the user deliberately deletes it.
+
+Recovery cleanup after saving applies only to the Draft being committed or a freshly verified redundant Profile. Completion changes, saved payment updates, and other workspace-only mutations preserve unrelated in-memory answers and Recovery storage.
 
 The user may start a separate unsaved estimate while invalid saved data remains. That estimate cannot overwrite the invalid value.
 
-Retain the workspace until the user deletes it or the browser clears or evicts it. State that this is best effort, not a statutory record-keeping system. `Delete saved data` withdraws the storage choice by deleting the complete workspace because the Application has no second purpose for retaining it.
+Retain the workspace until the user deletes it or the browser clears or evicts it. State that this is best effort, not a statutory record-keeping system. `Delete saved data` withdraws the storage choice by deleting the complete workspace and current-tab Recovery draft because the Application has no second purpose for retaining them.
 
-Deletion removes only `my-next-filing:workspace`. It never calls `localStorage.clear()`. On confirmed success, show:
+Deletion removes and verifies only `my-next-filing:workspace` before removing and verifying `my-next-filing:recovery-draft`. It never calls `localStorage.clear()` or `sessionStorage.clear()`. A partial failure identifies what remains; an unreadable result states what could not be verified. Keep inspection and deletion retry reachable even after the workspace key is absent. Clear corresponding memory only after verified removal. Other tabs' Recovery drafts remain separate. On confirmed success, show:
 
-> Your saved answers and completion dates were removed from this browser.
+> Your saved answers and completion dates were removed from this browser. Your in-progress answers were removed from this tab.
 
 ## Completion records
 
 A Completion record stores exactly one composite Obligation identity and one valid `completedOn` India date no later than today. Absence means not marked complete. It stores no note, amount, acknowledgement, portal status, document, URL, evidence, or payment reference.
 
-Only a current Obligation can create a record. When the next action can be completed, its main card shows a calendar date selector defaulted to today's India date and a secondary `Mark completed` action. Other agenda items use `Add completion date` to open the same controls. After saving, the `Completed` status exposes on hover and keyboard focus:
+Only a current Obligation in a Saved workspace can create a record. A Recovery-only or otherwise unsaved Plan offers saving but no Completion control. When the next saved action can be completed, its main card shows a calendar date selector defaulted to today's India date and a secondary `Mark completed` action. Other saved agenda items use `Add completion date` to open the same controls. After saving, the `Completed` status exposes on hover and keyboard focus:
 
 > You marked this complete on [date]. My Next Filing cannot verify government acceptance.
 
@@ -372,9 +388,11 @@ If a later statutory correction affects an archive's recorded Rule dataset, show
 
 ## Entry, workspace, and correction experience
 
-The public landing page remains generic. Reuse its current origin story and self-hosted media where the copy remains accurate. Update only the scope, privacy, and actions needed by this successor. Without saved data, its primary action starts an estimate. With a valid Saved workspace, the primary action says `Continue your saved workspace` without exposing a Profile, amount, deadline, or Completion record.
+The public landing page remains generic. Reuse its current origin story and self-hosted media where the copy remains accurate. Update only the scope, privacy, and actions needed by this successor. Without browser data, its primary action starts an estimate. An incomplete Recovery draft uses `Continue your estimate`; a complete Recovery draft uses `Continue your plan`; and a Saved workspace alone uses `Continue your saved workspace`. When both exist, Recovery is primary and `Open saved workspace` is secondary. No action exposes a Profile, amount, deadline, or Completion record.
 
-Keep one `Try a fictional example` path using the synthetic domestic professional Profile below. Label it fictional throughout. Example state cannot be saved, completed, rolled over, or archived. `Start your estimate` starts a blank personal estimate. Do not track edits to individual example fields.
+Use the latest in-memory personal work for these actions when its Recovery write failed. Explicitly opening a Saved workspace selects it for the current document without replacing personal answers or deleting their Recovery draft. `Return to your estimate` restores those answers and clears that selection. Refresh clears temporary selection and restores a valid non-redundant Recovery draft ahead of the Saved workspace. Beginning a Saved-workspace edit while personal work exists requires the explicit `Discard draft and edit saved data` action.
+
+Keep one `Try a fictional example` path using the synthetic domestic professional Profile below. Label it fictional throughout. Example state cannot be saved, completed, rolled over, archived, or stored as Recovery. Before example entry, retain the latest personal or Saved-edit session in an in-memory return snapshot. Leaving the example restores those exact answers, including changes that could not be stored, and clears the snapshot. Refresh can restore only the stored Recovery draft. When no personal work exists, `Start your estimate` starts a blank personal estimate. Do not track edits to individual example fields.
 
 | Example fact | Value |
 | --- | --- |
@@ -416,11 +434,13 @@ Stale core Rules preserve saved data, replace the main card with `Plan unavailab
 Keep these routes:
 
 - `/` for the generic landing and optional share action;
-- `/check` for the questionnaire and review;
+- `/check` as the questionnaire index, with static children `/check/tax-year`, `/check/activity`, `/check/receipts`, `/check/clients`, `/check/other-income`, `/check/gst`, and `/check/review`;
 - `/plan` for a transient result or restored workspace; and
 - the existing not-found route.
 
-Selected Tax Year, Profile values, amounts, Evaluation state, Completion state, and save state remain in memory or the one workspace value. They do not enter routes, queries, fragments, titles, logs, clipboard content, Analytics, or external links.
+Only the questionnaire-group identity enters its path. Selected Tax Year, Profile values, amounts, Evaluation state, Completion state, Recovery state, and save state remain in memory or their exact browser-storage values. They do not enter routes, queries, fragments, titles, logs, clipboard content, Analytics, or external links.
+
+The first incomplete group limits forward access, while Review requires all six answer groups to validate. Bare `/check` redirects to the first incomplete group, Review, or a complete session's Plan. Unknown `/check/*` paths remain not-found. Continue and sidebar moves push browser history; index and access corrections plus the interface Back control replace the current entry.
 
 Preserve the current visual language: Fraunces headings, Inter body text, warm neutral ground, dark ink, green accent, compact rounded cards, one primary action, and chronological information. Follow `DESIGN.md`; use its semantic Tailwind tokens and the source-owned shadcn components backed by Base UI where applicable. Generated defaults must be curated to this visual language before use.
 
@@ -430,7 +450,7 @@ Use restrained CSS transitions for press, hover, disclosure, and short content e
 
 The successor has no Google Analytics, product events, session replay, remote error reporting, or remotely executed third-party script. All scripts, fonts, images, video, and captions are bundled or same-origin.
 
-The landing-page FAQ must describe the legal operator and contact, stored categories, restore purpose, current-browser scope, shared-browser risk, best-effort retention, loss, archives, migrations, deletion, Cloudflare hosting request metadata, absence of Analytics, user access/correction/deletion routes, adult-only saving, and incident/grievance contacts approved by the qualified reviewer.
+The landing-page FAQ must describe the legal operator and contact, automatic current-tab Recovery drafts, longer-lived opt-in Saved workspaces, their stored categories and separate purposes, refresh and tab-closing behavior, current-browser scope, shared-browser risk, best-effort retention, loss, version-1 deletion, archives, deletion controls, Cloudflare hosting request metadata, absence of Analytics, user access/correction/deletion routes, adult-only Saved-workspace creation, and incident/grievance contacts approved by the qualified reviewer.
 
 It must not call browser storage private, anonymous, encrypted, permanent, securely erased, accessible only by the user, or guaranteed to remain on one physical device. State that application code does not upload saved values or include them in application requests, while scripts on the origin and other users of the browser profile may be able to access them.
 
@@ -496,7 +516,7 @@ This slice calculates no GST payable, ledger balance, input-tax credit, refund, 
 
 The complete product works from 320 CSS pixels upward, at 200 percent zoom, by keyboard, with visible focus, semantic landmarks and headings, persistent labels, linked errors, named groups, text in addition to color, 44-pixel targets, announced state changes, and no focus trap.
 
-VoiceOver on Safari and one desktop screen reader must complete save, resume, Completion, undo, conflict recovery, and deletion. Reduced motion removes nonessential movement.
+VoiceOver on Safari and one desktop screen reader must complete Recovery restoration, nested-route navigation, save, resume, Completion, undo, conflict recovery, Start over, and deletion. Reduced motion removes nonessential movement.
 
 Evaluation and workspace derivation remain synchronous. No questionnaire transition shows a loading state. After initial same-origin assets load, the core calculation works without a network connection. Route-level splitting is allowed only after measurement shows a need.
 
@@ -508,6 +528,8 @@ The release commit must pass the complete gate in [Define verification and relea
 
 - one formatting, lint, type, Rule, deterministic-test, and production-build path;
 - exact Profile, Evaluation, Rules, workspace, Completion, rollover, and failure fixtures;
+- exact questionnaire reducer, branch selector, Recovery draft, nested-route, Plan-model, schema-version-2, version-1 deletion, unverified and partial-deletion fixtures, including independent warnings, unrelated-draft preservation, and example return after failed writes;
+- built-browser verification that restoration precedes synchronization, later Effects cannot recreate deleted answers, and partial-deletion retry remains reachable;
 - the synthetic multi-browser journey matrix;
 - production-bundle, storage, network, CSP, and deletion inspection;
 - refreshed official-source compliance review;

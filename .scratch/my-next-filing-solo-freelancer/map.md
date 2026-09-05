@@ -4,6 +4,8 @@ Label: wayfinder:map
 
 Status: decision-complete
 
+The accepted [frontend redesign specification](../frontend-ideas/spec.md) supersedes this map where it changes questionnaire routing, Recovery drafts, Saved-workspace schema and legacy deletion, frontend state ownership, or their release checks. The root `SPEC.md` remains authoritative.
+
 ## Destination
 
 Reach a decision-complete product and technical definition for a successor to the current release that serves resident-individual solo digital freelancers with domestic or Foreign professional receipts, saves work on the current device, tracks user-declared completion, and remains ready for a separate implementation specification and ordered implementation plan.

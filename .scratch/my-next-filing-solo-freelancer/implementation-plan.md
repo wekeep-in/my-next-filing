@@ -1,6 +1,6 @@
 # Solo-freelancer successor implementation plan
 
-Status: first successor implementation in progress; release gates pending
+Status: original implementation complete; frontend state, routing, Recovery-draft, and workspace-version instructions superseded by [the frontend redesign plan](../frontend-ideas/implementation-plan.md)
 
 Source specification: [My Next Filing solo-freelancer successor specification](successor-spec.md)
 

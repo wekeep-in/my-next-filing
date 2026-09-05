@@ -22,3 +22,15 @@ Checked: 3 September 2026
 - Deployed-preview Lighthouse, plus keyboard, zoom, reduced-motion, VoiceOver, and desktop screen-reader evidence.
 - Five-person moderated comprehension test using synthetic data.
 - Cloudflare preview headers/network/offline smoke test, protected-branch release, rollback record, and production smoke test.
+
+## Frontend replacement release evidence
+
+Planning update: 5 September 2026. No new release checks or approvals are recorded by this update. The [frontend plan](../frontend-ideas/implementation-plan.md) carries every blocker above forward to the combined release commit; the historical checks above do not approve the replacement.
+
+- Update the [privacy packet](privacy-applicability-review-packet.md) for automatic current-tab Recovery and opt-in Saved workspaces, then obtain approval for the exact behavior and final copy.
+- Run the complete automated gate and refresh official-source compliance review for the release commit.
+- Complete current-stable Chrome, Firefox, desktop Safari, and iOS Safari journeys, deployed-preview Lighthouse, keyboard, zoom, reduced-motion and screen-reader checks, and the five-person moderated usability test.
+- Exercise restoration and Effect ordering, source switching, unrelated-draft preservation during workspace mutations, failed-write example return, simultaneous storage warnings, unverified removal, and partial-deletion retry after the workspace key disappears. Verify that later renders cannot recreate removed answers.
+- Record preview headers, network, offline behavior, deployment, production smoke tests, and rollback evidence against the same commit using synthetic data only.
+
+The replacement intentionally deletes version-1 Saved workspaces without migration or backup. Code rollback cannot restore removed Profiles or Completion records. Keep the prior deployment available for code rollback and test that limitation explicitly.

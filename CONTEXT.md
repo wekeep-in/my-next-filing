@@ -69,6 +69,10 @@ _Avoid_: Obligation, deadline
 The best-effort browser copy of a validated Profile and its Completion records. It is not an account, backup, government record, or calculated result.
 _Avoid_: Account, cloud profile, filing record
 
+**Recovery draft**:
+A set of questionnaire answers retained so the user can resume a questionnaire or unsaved plan after a refresh. It is separate from a Profile and Saved workspace and never enters Evaluation without fresh parsing.
+_Avoid_: Saved workspace, Profile, autosave
+
 **Active Tax Year**:
 The one current earning period whose Profile the user can edit in the Saved workspace.
 
