@@ -1,17 +1,18 @@
+import type { QuestionnaireDispatch } from '@/routes/check/session'
 import type { TriState } from '@/evaluation'
 import { CheckHeading, ChoiceField } from '@/routes/check/fields'
-import type { Draft, PatchDraft } from '@/routes/check/model'
+import type { Draft } from '@/routes/check/model'
 
 export function SituationStep({
   className,
   draft,
   errors,
-  patchDraft,
+  dispatch,
 }: {
   readonly className: string
   readonly draft: Draft
   readonly errors: Record<string, string>
-  readonly patchDraft: PatchDraft
+  readonly dispatch: QuestionnaireDispatch
 }) {
   return (
     <div className={className}>
@@ -33,7 +34,11 @@ export function SituationStep({
               unsupportedOptions={['not-individual']}
               error={errors.personKind}
               onChange={(value) =>
-                patchDraft({ personKind: value as Draft['personKind'] })
+                dispatch({
+                  type: 'field-changed',
+                  field: 'personKind',
+                  value: value as Draft['personKind'],
+                })
               }
             />
             <ChoiceField
@@ -43,7 +48,13 @@ export function SituationStep({
               value={draft.adult}
               unsupportedOptions={['no']}
               error={errors.adult}
-              onChange={(value) => patchDraft({ adult: value as TriState })}
+              onChange={(value) =>
+                dispatch({
+                  type: 'field-changed',
+                  field: 'adult',
+                  value: value as TriState,
+                })
+              }
             />
             <ChoiceField
               id="residence"
@@ -62,7 +73,11 @@ export function SituationStep({
                 'non-resident',
               ]}
               onChange={(value) =>
-                patchDraft({ residence: value as Draft['residence'] })
+                dispatch({
+                  type: 'field-changed',
+                  field: 'residence',
+                  value: value as Draft['residence'],
+                })
               }
             />
             <ChoiceField
@@ -74,7 +89,11 @@ export function SituationStep({
               unsupportedOptions={['old']}
               error={errors.taxRegime}
               onChange={(value) =>
-                patchDraft({ taxRegime: value as Draft['taxRegime'] })
+                dispatch({
+                  type: 'field-changed',
+                  field: 'taxRegime',
+                  value: value as Draft['taxRegime'],
+                })
               }
             />
           </div>
@@ -91,7 +110,11 @@ export function SituationStep({
               unsupportedOptions={['no']}
               error={errors.onePractice}
               onChange={(value) =>
-                patchDraft({ onePractice: value as TriState })
+                dispatch({
+                  type: 'field-changed',
+                  field: 'onePractice',
+                  value: value as TriState,
+                })
               }
             />
             <ChoiceField
@@ -101,7 +124,11 @@ export function SituationStep({
               unsupportedOptions={['no']}
               error={errors.setupInIndia}
               onChange={(value) =>
-                patchDraft({ setupInIndia: value as TriState })
+                dispatch({
+                  type: 'field-changed',
+                  field: 'setupInIndia',
+                  value: value as TriState,
+                })
               }
             />
             <ChoiceField
@@ -111,7 +138,11 @@ export function SituationStep({
               unsupportedOptions={['no']}
               error={errors.workInIndia}
               onChange={(value) =>
-                patchDraft({ workInIndia: value as TriState })
+                dispatch({
+                  type: 'field-changed',
+                  field: 'workInIndia',
+                  value: value as TriState,
+                })
               }
             />
           </div>
@@ -127,7 +158,11 @@ export function SituationStep({
               unsupportedOptions={['yes']}
               error={errors.hasPartner}
               onChange={(value) =>
-                patchDraft({ hasPartner: value as TriState })
+                dispatch({
+                  type: 'field-changed',
+                  field: 'hasPartner',
+                  value: value as TriState,
+                })
               }
             />
             <ChoiceField
@@ -137,7 +172,11 @@ export function SituationStep({
               unsupportedOptions={['yes']}
               error={errors.hasEmployee}
               onChange={(value) =>
-                patchDraft({ hasEmployee: value as TriState })
+                dispatch({
+                  type: 'field-changed',
+                  field: 'hasEmployee',
+                  value: value as TriState,
+                })
               }
             />
             <ChoiceField
@@ -148,7 +187,11 @@ export function SituationStep({
               unsupportedOptions={['yes']}
               error={errors.hasForeignOperation}
               onChange={(value) =>
-                patchDraft({ hasForeignOperation: value as TriState })
+                dispatch({
+                  type: 'field-changed',
+                  field: 'hasForeignOperation',
+                  value: value as TriState,
+                })
               }
             />
             <ChoiceField
@@ -157,17 +200,12 @@ export function SituationStep({
               value={draft.hasClientWorkSubcontractor}
               unsupportedOptions={['yes']}
               error={errors.hasClientWorkSubcontractor}
-              onChange={(value) => {
-                const next = value as TriState
-                patchDraft(
-                  {
-                    hasClientWorkSubcontractor: next,
-                    contractorBoundary:
-                      next === 'no' ? draft.contractorBoundary : '',
-                  },
-                  'contractorBoundary',
-                )
-              }}
+              onChange={(value) =>
+                dispatch({
+                  type: 'hasClientWorkSubcontractor-changed',
+                  value: value as TriState,
+                })
+              }
             />
             {draft.hasClientWorkSubcontractor === 'no' && (
               <ChoiceField
@@ -179,8 +217,10 @@ export function SituationStep({
                 value={draft.contractorBoundary}
                 error={errors.contractorBoundary}
                 onChange={(value) =>
-                  patchDraft({
-                    contractorBoundary: value as Draft['contractorBoundary'],
+                  dispatch({
+                    type: 'field-changed',
+                    field: 'contractorBoundary',
+                    value: value as Draft['contractorBoundary'],
                   })
                 }
               />

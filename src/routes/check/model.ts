@@ -94,8 +94,6 @@ export type Draft = {
   readonly thresholdLiabilityDate: string
 }
 
-export type PatchDraft = (patch: Partial<Draft>, ...errorKeys: string[]) => void
-
 export const amountKeys: readonly DraftAmountKey[] = [
   'grossReceipts',
   'cashReceipts',

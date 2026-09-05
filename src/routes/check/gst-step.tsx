@@ -1,3 +1,4 @@
+import type { QuestionnaireDispatch } from '@/routes/check/session'
 import {
   isUnregisteredGst,
   statesAndUnionTerritories,
@@ -16,7 +17,6 @@ import type {
   DraftAmountKey,
   DraftGstKind,
   DraftGstStatus,
-  PatchDraft,
 } from '@/routes/check/model'
 
 export function GstStep({
@@ -24,14 +24,14 @@ export function GstStep({
   draft,
   errors,
   latestThresholdDate,
-  patchDraft,
+  dispatch,
   setAmount,
 }: {
   readonly className: string
   readonly draft: Draft
   readonly errors: Record<string, string>
   readonly latestThresholdDate: string
-  readonly patchDraft: PatchDraft
+  readonly dispatch: QuestionnaireDispatch
   readonly setAmount: (key: DraftAmountKey, value: string) => void
 }) {
   return (
@@ -47,11 +47,7 @@ export function GstStep({
         value={draft.gstKind}
         error={errors.gstKind}
         onChange={(value) =>
-          patchDraft({
-            gstKind: value as DraftGstKind,
-            gstStatus: '',
-            gstState: '',
-          })
+          dispatch({ type: 'gstKind-changed', value: value as DraftGstKind })
         }
       />
       {draft.gstKind === 'registered' && (
@@ -64,7 +60,10 @@ export function GstStep({
             value={draft.gstStatus}
             error={errors.gstStatus}
             onChange={(value) =>
-              patchDraft({ gstStatus: value as DraftGstStatus })
+              dispatch({
+                type: 'gstStatus-changed',
+                value: value as DraftGstStatus,
+              })
             }
           />
           {draft.gstStatus === 'one-normal' && (
@@ -73,7 +72,13 @@ export function GstStep({
               label="Where is your active GSTIN registered?"
               value={draft.gstState}
               error={errors.gstState}
-              onChange={(value) => patchDraft({ gstState: value })}
+              onChange={(value) =>
+                dispatch({
+                  type: 'field-changed',
+                  field: 'gstState',
+                  value: value,
+                })
+              }
               options={statesAndUnionTerritories.map((state) => ({
                 value: state,
                 label: state,
@@ -93,7 +98,13 @@ export function GstStep({
             label="Which state or Union territory do you make taxable supplies from?"
             value={draft.gstState}
             error={errors.gstState}
-            onChange={(value) => patchDraft({ gstState: value })}
+            onChange={(value) =>
+              dispatch({
+                type: 'field-changed',
+                field: 'gstState',
+                value: value,
+              })
+            }
             options={statesAndUnionTerritories.map((state) => ({
               value: state,
               label: state,
@@ -117,7 +128,11 @@ export function GstStep({
             value={draft.turnoverComplete}
             error={errors.turnoverComplete}
             onChange={(value) =>
-              patchDraft({ turnoverComplete: value as TriState })
+              dispatch({
+                type: 'field-changed',
+                field: 'turnoverComplete',
+                value: value as TriState,
+              })
             }
           />
           <ChoiceField
@@ -127,7 +142,11 @@ export function GstStep({
             value={draft.compulsoryRegistration}
             error={errors.compulsoryRegistration}
             onChange={(value) =>
-              patchDraft({ compulsoryRegistration: value as TriState })
+              dispatch({
+                type: 'field-changed',
+                field: 'compulsoryRegistration',
+                value: value as TriState,
+              })
             }
           />
           <div className="field">
@@ -148,7 +167,11 @@ export function GstStep({
               describedBy={`threshold-date-help${errors.thresholdLiabilityDate ? ' thresholdLiabilityDate-error' : ''}`}
               invalid={Boolean(errors.thresholdLiabilityDate)}
               onChange={(value) =>
-                patchDraft({ thresholdLiabilityDate: value })
+                dispatch({
+                  type: 'field-changed',
+                  field: 'thresholdLiabilityDate',
+                  value: value,
+                })
               }
             />
             <FieldError

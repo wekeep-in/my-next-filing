@@ -1,3 +1,4 @@
+import type { QuestionnaireDispatch } from '@/routes/check/session'
 import { hasForeignClients, hasPlatformWork } from '@/routes/check/model'
 import type { TriState } from '@/evaluation'
 import { CheckHeading, ChoiceField } from '@/routes/check/fields'
@@ -5,19 +6,18 @@ import type {
   Draft,
   DraftClientKind,
   DraftDelivery,
-  PatchDraft,
 } from '@/routes/check/model'
 
 export function ClientsStep({
   className,
   draft,
   errors,
-  patchDraft,
+  dispatch,
 }: {
   readonly className: string
   readonly draft: Draft
   readonly errors: Record<string, string>
-  readonly patchDraft: PatchDraft
+  readonly dispatch: QuestionnaireDispatch
 }) {
   return (
     <div className={className}>
@@ -40,7 +40,10 @@ export function ClientsStep({
               value={draft.clientKind}
               error={errors.clientKind}
               onChange={(value) =>
-                patchDraft({ clientKind: value as DraftClientKind })
+                dispatch({
+                  type: 'clientKind-changed',
+                  value: value as DraftClientKind,
+                })
               }
             />
             <ChoiceField
@@ -55,7 +58,10 @@ export function ClientsStep({
               value={draft.delivery}
               error={errors.delivery}
               onChange={(value) =>
-                patchDraft({ delivery: value as DraftDelivery })
+                dispatch({
+                  type: 'delivery-changed',
+                  value: value as DraftDelivery,
+                })
               }
             />
           </div>
@@ -72,7 +78,11 @@ export function ClientsStep({
                 unsupportedOptions={['no']}
                 error={errors.platformOwnAccount}
                 onChange={(value) =>
-                  patchDraft({ platformOwnAccount: value as TriState })
+                  dispatch({
+                    type: 'field-changed',
+                    field: 'platformOwnAccount',
+                    value: value as TriState,
+                  })
                 }
               />
               <ChoiceField
@@ -82,8 +92,10 @@ export function ClientsStep({
                 unsupportedOptions={['no']}
                 error={errors.platformRecipientIdentifiable}
                 onChange={(value) =>
-                  patchDraft({
-                    platformRecipientIdentifiable: value as TriState,
+                  dispatch({
+                    type: 'field-changed',
+                    field: 'platformRecipientIdentifiable',
+                    value: value as TriState,
                   })
                 }
               />
@@ -94,7 +106,11 @@ export function ClientsStep({
                 unsupportedOptions={['no']}
                 error={errors.platformGrossBeforeFees}
                 onChange={(value) =>
-                  patchDraft({ platformGrossBeforeFees: value as TriState })
+                  dispatch({
+                    type: 'field-changed',
+                    field: 'platformGrossBeforeFees',
+                    value: value as TriState,
+                  })
                 }
               />
               <ChoiceField
@@ -104,7 +120,11 @@ export function ClientsStep({
                 unsupportedOptions={['no']}
                 error={errors.platformIncomeCharacter}
                 onChange={(value) =>
-                  patchDraft({ platformIncomeCharacter: value as TriState })
+                  dispatch({
+                    type: 'field-changed',
+                    field: 'platformIncomeCharacter',
+                    value: value as TriState,
+                  })
                 }
               />
               <ChoiceField
@@ -118,9 +138,10 @@ export function ClientsStep({
                 value={draft.platformForeignFeeGstTreatment}
                 error={errors.platformForeignFeeGstTreatment}
                 onChange={(value) =>
-                  patchDraft({
-                    platformForeignFeeGstTreatment:
-                      value as Draft['platformForeignFeeGstTreatment'],
+                  dispatch({
+                    type: 'field-changed',
+                    field: 'platformForeignFeeGstTreatment',
+                    value: value as Draft['platformForeignFeeGstTreatment'],
                   })
                 }
               />
@@ -132,8 +153,10 @@ export function ClientsStep({
                 unsupportedOptions={['no']}
                 error={errors.platformNoRecipientReverseCharge}
                 onChange={(value) =>
-                  patchDraft({
-                    platformNoRecipientReverseCharge: value as TriState,
+                  dispatch({
+                    type: 'field-changed',
+                    field: 'platformNoRecipientReverseCharge',
+                    value: value as TriState,
                   })
                 }
               />
@@ -155,7 +178,11 @@ export function ClientsStep({
                 unsupportedOptions={['no']}
                 error={errors.foreignWorkInIndia}
                 onChange={(value) =>
-                  patchDraft({ foreignWorkInIndia: value as TriState })
+                  dispatch({
+                    type: 'field-changed',
+                    field: 'foreignWorkInIndia',
+                    value: value as TriState,
+                  })
                 }
               />
               <ChoiceField
@@ -165,8 +192,10 @@ export function ClientsStep({
                 unsupportedOptions={['no']}
                 error={errors.foreignRecipientIdentifiable}
                 onChange={(value) =>
-                  patchDraft({
-                    foreignRecipientIdentifiable: value as TriState,
+                  dispatch({
+                    type: 'field-changed',
+                    field: 'foreignRecipientIdentifiable',
+                    value: value as TriState,
                   })
                 }
               />
@@ -177,7 +206,11 @@ export function ClientsStep({
                 unsupportedOptions={['no']}
                 error={errors.foreignOwnAccount}
                 onChange={(value) =>
-                  patchDraft({ foreignOwnAccount: value as TriState })
+                  dispatch({
+                    type: 'field-changed',
+                    field: 'foreignOwnAccount',
+                    value: value as TriState,
+                  })
                 }
               />
               <ChoiceField
@@ -188,7 +221,11 @@ export function ClientsStep({
                 unsupportedOptions={['no']}
                 error={errors.foreignPlaceOfSupply}
                 onChange={(value) =>
-                  patchDraft({ foreignPlaceOfSupply: value as TriState })
+                  dispatch({
+                    type: 'field-changed',
+                    field: 'foreignPlaceOfSupply',
+                    value: value as TriState,
+                  })
                 }
               />
               <ChoiceField
@@ -199,8 +236,10 @@ export function ClientsStep({
                 unsupportedOptions={['yes']}
                 error={errors.foreignSameEstablishment}
                 onChange={(value) =>
-                  patchDraft({
-                    foreignSameEstablishment: value as TriState,
+                  dispatch({
+                    type: 'field-changed',
+                    field: 'foreignSameEstablishment',
+                    value: value as TriState,
                   })
                 }
               />
@@ -216,8 +255,10 @@ export function ClientsStep({
                 value={draft.foreignPaymentRoute}
                 error={errors.foreignPaymentRoute}
                 onChange={(value) =>
-                  patchDraft({
-                    foreignPaymentRoute: value as Draft['foreignPaymentRoute'],
+                  dispatch({
+                    type: 'field-changed',
+                    field: 'foreignPaymentRoute',
+                    value: value as Draft['foreignPaymentRoute'],
                   })
                 }
               />
@@ -228,8 +269,10 @@ export function ClientsStep({
                 unsupportedOptions={['no']}
                 error={errors.foreignSettledToIndianBank}
                 onChange={(value) =>
-                  patchDraft({
-                    foreignSettledToIndianBank: value as TriState,
+                  dispatch({
+                    type: 'field-changed',
+                    field: 'foreignSettledToIndianBank',
+                    value: value as TriState,
                   })
                 }
               />
@@ -241,9 +284,10 @@ export function ClientsStep({
                 value={draft.foreignAccountExposure}
                 error={errors.foreignAccountExposure}
                 onChange={(value) =>
-                  patchDraft({
-                    foreignAccountExposure:
-                      value as Draft['foreignAccountExposure'],
+                  dispatch({
+                    type: 'field-changed',
+                    field: 'foreignAccountExposure',
+                    value: value as Draft['foreignAccountExposure'],
                   })
                 }
               />
@@ -254,7 +298,11 @@ export function ClientsStep({
                 unsupportedOptions={['yes']}
                 error={errors.foreignOperation}
                 onChange={(value) =>
-                  patchDraft({ foreignOperation: value as TriState })
+                  dispatch({
+                    type: 'field-changed',
+                    field: 'foreignOperation',
+                    value: value as TriState,
+                  })
                 }
               />
               <ChoiceField
@@ -264,7 +312,11 @@ export function ClientsStep({
                 unsupportedOptions={['yes']}
                 error={errors.foreignTax}
                 onChange={(value) =>
-                  patchDraft({ foreignTax: value as TriState })
+                  dispatch({
+                    type: 'field-changed',
+                    field: 'foreignTax',
+                    value: value as TriState,
+                  })
                 }
               />
               <ChoiceField
@@ -274,7 +326,11 @@ export function ClientsStep({
                 unsupportedOptions={['yes']}
                 error={errors.foreignTreatyRelief}
                 onChange={(value) =>
-                  patchDraft({ foreignTreatyRelief: value as TriState })
+                  dispatch({
+                    type: 'field-changed',
+                    field: 'foreignTreatyRelief',
+                    value: value as TriState,
+                  })
                 }
               />
               <ChoiceField
@@ -285,7 +341,11 @@ export function ClientsStep({
                 unsupportedOptions={['no']}
                 error={errors.foreignReceiptsResolved}
                 onChange={(value) =>
-                  patchDraft({ foreignReceiptsResolved: value as TriState })
+                  dispatch({
+                    type: 'field-changed',
+                    field: 'foreignReceiptsResolved',
+                    value: value as TriState,
+                  })
                 }
               />
               <ChoiceField
@@ -295,7 +355,11 @@ export function ClientsStep({
                 unsupportedOptions={['no']}
                 error={errors.foreignCurrencyResolved}
                 onChange={(value) =>
-                  patchDraft({ foreignCurrencyResolved: value as TriState })
+                  dispatch({
+                    type: 'field-changed',
+                    field: 'foreignCurrencyResolved',
+                    value: value as TriState,
+                  })
                 }
               />
             </div>

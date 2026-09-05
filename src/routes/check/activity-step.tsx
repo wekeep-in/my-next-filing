@@ -1,18 +1,19 @@
+import type { QuestionnaireDispatch } from '@/routes/check/session'
 import { activityOptions, isBusinessPath } from '@/routes/check/model'
 import type { Activity, TriState } from '@/evaluation'
 import { CheckHeading, ChoiceField, SelectField } from '@/routes/check/fields'
-import type { Draft, DraftPath, PatchDraft } from '@/routes/check/model'
+import type { Draft, DraftPath } from '@/routes/check/model'
 
 export function ActivityStep({
   className,
   draft,
   errors,
-  patchDraft,
+  dispatch,
 }: {
   readonly className: string
   readonly draft: Draft
   readonly errors: Record<string, string>
-  readonly patchDraft: PatchDraft
+  readonly dispatch: QuestionnaireDispatch
 }) {
   return (
     <div className={className}>
@@ -25,7 +26,13 @@ export function ActivityStep({
         label="Which option best describes your work?"
         value={draft.activity}
         error={errors.activity}
-        onChange={(value) => patchDraft({ activity: value as Activity })}
+        onChange={(value) =>
+          dispatch({
+            type: 'field-changed',
+            field: 'activity',
+            value: value as Activity,
+          })
+        }
         options={activityOptions}
       />
       {draft.activity === 'not-sure' && (
@@ -42,7 +49,7 @@ export function ActivityStep({
         value={draft.path}
         error={errors.path}
         onChange={(value) =>
-          patchDraft({ path: value as DraftPath, pathConfirmed: '' })
+          dispatch({ type: 'path-changed', value: value as DraftPath })
         }
       />
       {draft.path && (
@@ -56,7 +63,13 @@ export function ActivityStep({
           help="Choose Yes only if this matches your records or professional advice."
           value={draft.pathConfirmed}
           error={errors.pathConfirmed}
-          onChange={(value) => patchDraft({ pathConfirmed: value as TriState })}
+          onChange={(value) =>
+            dispatch({
+              type: 'field-changed',
+              field: 'pathConfirmed',
+              value: value as TriState,
+            })
+          }
         />
       )}
       {isBusinessPath(draft) && (
@@ -68,7 +81,11 @@ export function ActivityStep({
             unsupportedOptions={['no']}
             error={errors.notGoodsCarriage}
             onChange={(value) =>
-              patchDraft({ notGoodsCarriage: value as TriState })
+              dispatch({
+                type: 'field-changed',
+                field: 'notGoodsCarriage',
+                value: value as TriState,
+              })
             }
           />
           <ChoiceField
@@ -78,8 +95,10 @@ export function ActivityStep({
             unsupportedOptions={['no']}
             error={errors.notAgencyCommissionBrokerage}
             onChange={(value) =>
-              patchDraft({
-                notAgencyCommissionBrokerage: value as TriState,
+              dispatch({
+                type: 'field-changed',
+                field: 'notAgencyCommissionBrokerage',
+                value: value as TriState,
               })
             }
           />
@@ -90,7 +109,11 @@ export function ActivityStep({
             unsupportedOptions={['no']}
             error={errors.noChapterViiiCDeduction}
             onChange={(value) =>
-              patchDraft({ noChapterViiiCDeduction: value as TriState })
+              dispatch({
+                type: 'field-changed',
+                field: 'noChapterViiiCDeduction',
+                value: value as TriState,
+              })
             }
           />
           <ChoiceField
@@ -102,8 +125,10 @@ export function ActivityStep({
             unsupportedOptions={['applies']}
             error={errors.fiveYearExclusion}
             onChange={(value) =>
-              patchDraft({
-                fiveYearExclusion: value as Draft['fiveYearExclusion'],
+              dispatch({
+                type: 'field-changed',
+                field: 'fiveYearExclusion',
+                value: value as Draft['fiveYearExclusion'],
               })
             }
           />

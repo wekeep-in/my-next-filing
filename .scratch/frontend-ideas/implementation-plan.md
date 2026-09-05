@@ -100,7 +100,7 @@ Status: complete; shared primitives and frontend assertions pass lint, typecheck
 
 ## Work item 2: implement the questionnaire reducer
 
-Status: pending
+Status: complete; intent events replace route patches and reducer assertions pass lint, typecheck, and tests
 
 ### Changes
 

@@ -1,6 +1,7 @@
+import type { QuestionnaireDispatch } from '@/routes/check/session'
 import type { TriState } from '@/evaluation'
 import { CheckHeading, ChoiceField, MoneyField } from '@/routes/check/fields'
-import type { Draft, DraftAmountKey, PatchDraft } from '@/routes/check/model'
+import type { Draft, DraftAmountKey } from '@/routes/check/model'
 import { creditTriggerMayApply } from '@/routes/check/model'
 import { UnsupportedFactsField } from '@/routes/check/review'
 
@@ -8,13 +9,13 @@ export function OtherIncomeStep({
   className,
   draft,
   errors,
-  patchDraft,
+  dispatch,
   setAmount,
 }: {
   readonly className: string
   readonly draft: Draft
   readonly errors: Record<string, string>
-  readonly patchDraft: PatchDraft
+  readonly dispatch: QuestionnaireDispatch
   readonly setAmount: (key: DraftAmountKey, value: string) => void
 }) {
   return (
@@ -63,7 +64,11 @@ export function OtherIncomeStep({
           value={draft.ageSixtyOrOlder}
           error={errors.ageSixtyOrOlder}
           onChange={(value) =>
-            patchDraft({ ageSixtyOrOlder: value as TriState })
+            dispatch({
+              type: 'field-changed',
+              field: 'ageSixtyOrOlder',
+              value: value as TriState,
+            })
           }
         />
       )}
@@ -74,12 +79,16 @@ export function OtherIncomeStep({
         value={draft.otherAnnualReturnTrigger}
         error={errors.otherAnnualReturnTrigger}
         onChange={(value) =>
-          patchDraft({ otherAnnualReturnTrigger: value as TriState })
+          dispatch({
+            type: 'field-changed',
+            field: 'otherAnnualReturnTrigger',
+            value: value as TriState,
+          })
         }
       />
       <UnsupportedFactsField
         draft={draft}
-        setDraft={patchDraft}
+        dispatch={dispatch}
         error={errors.unsupportedCertainty}
       />
     </div>

@@ -1,7 +1,11 @@
+import type {
+  QuestionnaireDispatch,
+  QuestionnaireEvent,
+} from '@/routes/check/session'
 import {
-  groupStep,
   activityOptions,
   creditTriggerMayApply,
+  groupStep,
   hasForeignClients,
   hasPlatformWork,
   isBusinessPath,
@@ -17,7 +21,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import type { Draft, PatchDraft } from '@/routes/check/model'
+import type { Draft } from '@/routes/check/model'
 import { CheckHeading, FieldError } from '@/routes/check/fields'
 
 function ErrorSummary({ errors }: { readonly errors: Record<string, string> }) {
@@ -37,11 +41,11 @@ function ErrorSummary({ errors }: { readonly errors: Record<string, string> }) {
 
 export function UnsupportedFactsField({
   draft,
-  setDraft,
+  dispatch,
   error,
 }: {
   readonly draft: Draft
-  readonly setDraft: PatchDraft
+  readonly dispatch: QuestionnaireDispatch
   readonly error?: string
 }) {
   const options = (
@@ -49,8 +53,8 @@ export function UnsupportedFactsField({
   ).filter(([value]) => value !== 'unsupportedFactsNotSure')
   const warningId = 'unsupportedCertainty-warning'
   const pointerSelection = useRef(false)
-  const updateDraft = (patch: Partial<Draft>) => {
-    const apply = () => setDraft(patch)
+  const updateDraft = (event: QuestionnaireEvent) => {
+    const apply = () => dispatch(event)
     const animate = pointerSelection.current
     pointerSelection.current = false
     if (
@@ -103,14 +107,10 @@ export function UnsupportedFactsField({
                 checked={checked}
                 aria-describedby={checked ? warningId : undefined}
                 onCheckedChange={(nextChecked) => {
-                  const unsupportedFacts = nextChecked
-                    ? [...draft.unsupportedFacts, value]
-                    : draft.unsupportedFacts.filter((fact) => fact !== value)
                   updateDraft({
-                    unsupportedFacts,
-                    unsupportedCertainty: unsupportedFacts.length
-                      ? 'selected'
-                      : '',
+                    type: 'unsupported-fact-toggled',
+                    fact: value,
+                    checked: nextChecked,
                   })
                 }}
               />
@@ -131,8 +131,8 @@ export function UnsupportedFactsField({
         }
         onValueChange={(value) =>
           updateDraft({
-            unsupportedCertainty: value as Draft['unsupportedCertainty'],
-            unsupportedFacts: [],
+            type: 'unsupportedCertainty-changed',
+            value: value as Draft['unsupportedCertainty'],
           })
         }
       >

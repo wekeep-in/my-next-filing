@@ -1,5 +1,10 @@
+import type { QuestionnaireState } from '@/routes/check/session'
+import {
+  questionnaireErrors,
+  questionnaireReducer,
+} from '@/routes/check/session'
 import { indiaDate } from '@/lib/india-date'
-import { useEffect, useState } from 'react'
+import { useEffect, useReducer, useState } from 'react'
 import type { MouseEvent } from 'react'
 import { useLocation, useNavigate, useOutletContext } from 'react-router-dom'
 import type { AppOutletContext } from '@/app'
@@ -16,12 +21,13 @@ import {
 import { ActivityStep } from '@/routes/check/activity-step'
 import { ClientsStep } from '@/routes/check/clients-step'
 import { GstStep } from '@/routes/check/gst-step'
-import type { Draft, DraftAmountKey } from '@/routes/check/model'
+import type { DraftAmountKey } from '@/routes/check/model'
 import {
   blankDraft,
   completeDraft,
   draftFromProfile,
   exampleProfile,
+  firstIncompleteGroup,
   groupStep,
   questionnaireGroups,
   validateDraftGroup,
@@ -64,28 +70,43 @@ export function CheckRoute() {
       !routeState?.example &&
       (Boolean(routeState?.editSaved) || Boolean(currentCheck?.saved)),
   )
-  const [draft, setDraft] = useState<Draft>(() =>
-    startingProfile ? draftFromProfile(startingProfile) : blankDraft(),
+  const [session, dispatch] = useReducer(
+    questionnaireReducer,
+    null,
+    (): QuestionnaireState => ({
+      kind: 'editing',
+      origin: usingExample
+        ? { kind: 'example' }
+        : editingSaved
+          ? {
+              kind: 'saved-edit',
+              baseWorkspaceRevision:
+                savedWorkspace.kind === 'ready'
+                  ? savedWorkspace.workspace.revision
+                  : 0,
+            }
+          : { kind: 'personal' },
+      draft: startingProfile ? draftFromProfile(startingProfile) : blankDraft(),
+      validationGroup: null,
+    }),
   )
+  const draft = session?.draft ?? blankDraft()
   const [step, setStep] = useState(() =>
     Math.min(Math.max(routeState?.step ?? 0, 0), questionnaireSteps.length - 1),
   )
-  const [highestStep, setHighestStep] = useState(() =>
-    Math.min(
-      Math.max(
-        routeState?.step ??
-          (startingProfile ? questionnaireSteps.length - 1 : 0),
-        0,
-      ),
-      questionnaireSteps.length - 1,
-    ),
-  )
-  const [errors, setErrors] = useState<Record<string, string>>({})
   const [motion, setMotion] = useState<'none' | 'step'>(
     routeState?.animate ? 'step' : 'none',
   )
   const today = indiaDate(new Date())
   const latestThresholdDate = today < '2027-03-31' ? today : '2027-03-31'
+  const highestStep = groupStep(
+    firstIncompleteGroup(draft, latestThresholdDate) ?? 'review',
+  )
+  const errors = Object.fromEntries(
+    questionnaireErrors(session, latestThresholdDate).map(
+      ({ field, message }) => [field, message],
+    ),
+  )
 
   useEffect(() => {
     if (routeState?.example || routeState?.personal) clearCurrentCheck()
@@ -103,27 +124,17 @@ export function CheckRoute() {
     document.getElementById('check-title')?.focus()
   }, [step])
 
-  useEffect(() => {
-    const first = Object.keys(errors)[0]
-    if (!first) return
-    const direct = document.getElementById(first)
-    const target = direct ?? document.querySelector(`input[name="${first}"]`)
-    if (target instanceof HTMLElement) target.focus()
-  }, [errors])
-
-  const patchDraft = (patch: Partial<Draft>, ...errorKeys: string[]) => {
-    setDraft((current) => ({ ...current, ...patch }))
-    setErrors((current) => {
-      const next = { ...current }
-      for (const key of [...Object.keys(patch), ...errorKeys]) {
-        if (key !== 'amounts') delete next[key]
-      }
-      return next
+  const focusError = (field: string | undefined) => {
+    if (!field) return
+    requestAnimationFrame(() => {
+      const target =
+        document.getElementById(field) ??
+        document.querySelector(`input[name="${field}"]`)
+      if (target instanceof HTMLElement) target.focus()
     })
-    setHighestStep((current) => Math.min(current, step))
   }
-  const setAmount = (key: DraftAmountKey, value: string) =>
-    patchDraft({ amounts: { ...draft.amounts, [key]: value } }, key)
+  const setAmount = (field: DraftAmountKey, value: string) =>
+    dispatch({ type: 'amount-changed', field, value })
 
   const validateStep = () => {
     const nextErrors = Object.fromEntries(
@@ -133,15 +144,15 @@ export function CheckRoute() {
         latestThresholdDate,
       ).map(({ field, message }) => [field, message]),
     )
-    setErrors(nextErrors)
+    dispatch({ type: 'expose-validation', group: questionnaireGroups[step].id })
+    focusError(Object.keys(nextErrors)[0])
     return Object.keys(nextErrors).length === 0
   }
 
   const go = (nextStep: number, animate: boolean) => {
-    setErrors({})
+    dispatch({ type: 'clear-validation' })
     setMotion(animate ? 'step' : 'none')
     setStep(nextStep)
-    setHighestStep((current) => Math.max(current, nextStep))
   }
 
   const calculate = (event: MouseEvent<HTMLButtonElement>) => {
@@ -152,15 +163,16 @@ export function CheckRoute() {
     }
     const parsed = completeDraft(draft, latestThresholdDate)
     if (!parsed.valid) {
-      setErrors(
-        Object.fromEntries(
-          parsed.errors.map(({ field, message }) => [field, message]),
-        ),
-      )
+      dispatch({
+        type: 'expose-validation',
+        group: parsed.errors[0]?.group ?? 'review',
+      })
+      focusError(parsed.errors[0]?.field)
       setStep(groupStep(parsed.errors[0]?.group ?? 'review'))
       setMotion('none')
       return
     }
+    dispatch({ type: 'complete', latestThresholdDate })
     setCurrentCheck(parsed.profile, usingExample, true, editingSaved)
     const button = event.currentTarget.getBoundingClientRect()
     void navigate('/plan', {
@@ -194,7 +206,7 @@ export function CheckRoute() {
           className={questionGroupClassName}
           draft={draft}
           errors={errors}
-          patchDraft={patchDraft}
+          dispatch={dispatch}
         />
       )
     if (step === 1)
@@ -204,7 +216,7 @@ export function CheckRoute() {
           className={questionGroupClassName}
           draft={draft}
           errors={errors}
-          patchDraft={patchDraft}
+          dispatch={dispatch}
         />
       )
     if (step === 2)
@@ -224,7 +236,7 @@ export function CheckRoute() {
           className={questionGroupClassName}
           draft={draft}
           errors={errors}
-          patchDraft={patchDraft}
+          dispatch={dispatch}
         />
       )
     if (step === 4)
@@ -234,7 +246,7 @@ export function CheckRoute() {
           className={questionGroupClassName}
           draft={draft}
           errors={errors}
-          patchDraft={patchDraft}
+          dispatch={dispatch}
           setAmount={setAmount}
         />
       )
@@ -246,7 +258,7 @@ export function CheckRoute() {
           draft={draft}
           errors={errors}
           latestThresholdDate={latestThresholdDate}
-          patchDraft={patchDraft}
+          dispatch={dispatch}
           setAmount={setAmount}
         />
       )
