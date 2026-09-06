@@ -2,7 +2,6 @@ import { indiaDate } from '@/lib/india-date'
 import { useId } from 'react'
 import { ExternalLink } from '@/components/external-link'
 import { GstFrequencyHelp, QrmpPaymentHelp } from '@/components/gst-help'
-import { Alert } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -17,11 +16,7 @@ import { formatDate, formatMoney } from '@/lib/format'
 import { sourceRegistry } from '@/rules'
 import type { DateOnly } from '@/rules'
 import type { CompletionRecord } from '@/workspace'
-import {
-  CompletionEditor,
-  PaymentEditor,
-  SaveNotice,
-} from '@/routes/plan/editors'
+import { CompletionEditor, PaymentEditor } from '@/routes/plan/editors'
 import type { PlanEditor } from '@/routes/plan/editors'
 import { ActionLinks } from '@/routes/plan/action-links'
 
@@ -29,22 +24,31 @@ const cardKickerClass =
   'mb-[.45rem] flex border-0 bg-transparent p-0 [font-size:.72rem] leading-[1.6] font-extrabold tracking-[.04em] text-muted-foreground uppercase'
 
 function formatActionSummary(obligation: Obligation) {
-  if (obligation.kind === 'advance-tax') {
-    const amount =
-      obligation.amountDue === 0
-        ? 'No estimated amount left to pay'
-        : `${formatMoney(obligation.amountDue ?? 0)} estimated left to pay`
-    return `${amount}. Due ${formatDate(obligation.dueDate)}`
-  }
   const prefix =
     obligation.kind === 'gst-lut'
       ? 'Before'
       : obligation.kind === 'gst-qrmp-payment'
         ? 'Normal review date'
         : obligation.kind === 'gst-gstr1' || obligation.kind === 'gst-gstr3b'
-          ? 'Normal due date'
-          : 'Due'
-  return `${prefix} ${formatDate(obligation.dueDate)}`
+          ? 'Normally due by'
+          : 'Due by'
+  return (
+    <>
+      {obligation.kind === 'advance-tax' && (
+        <>
+          {obligation.amountDue === 0 ? (
+            'No estimated amount left to pay.'
+          ) : (
+            <>
+              <strong>{formatMoney(obligation.amountDue ?? 0)}</strong>{' '}
+              estimated left to pay.
+            </>
+          )}{' '}
+        </>
+      )}
+      {prefix} <strong>{formatDate(obligation.dueDate)}</strong>.
+    </>
+  )
 }
 
 export function SourceLinks({ ids }: { readonly ids: readonly string[] }) {
@@ -318,9 +322,6 @@ export function AttentionCard({
   isExample,
   advanceTaxPaid,
   onSave,
-  savePrompt,
-  onSaveConfirm,
-  onSaveCancel,
   editor,
   onPaymentSubmit,
   onCompletionSubmit,
@@ -336,9 +337,6 @@ export function AttentionCard({
   readonly isExample: boolean
   readonly advanceTaxPaid: number
   readonly onSave?: () => void
-  readonly savePrompt: boolean
-  readonly onSaveConfirm: () => void
-  readonly onSaveCancel: () => void
   readonly editor: PlanEditor | null
   readonly onPaymentSubmit: (value: string) => void
   readonly onCompletionSubmit: (
@@ -365,9 +363,7 @@ export function AttentionCard({
   const needsPayment = next?.kind === 'advance-tax' && (next.amountDue ?? 0) > 0
   const actions = (editor ||
     (!completion && saved && next) ||
-    (!saved &&
-      !isExample &&
-      (savePrompt || onSave || next?.kind === 'advance-tax'))) && (
+    (!saved && !isExample && (onSave || next?.kind === 'advance-tax'))) && (
     <div className="attention-action">
       {!editor && !saved && !isExample && next?.kind === 'advance-tax' && (
         <Button variant="link" onClick={onUpdatePayment}>
@@ -421,22 +417,16 @@ export function AttentionCard({
           embedded
         />
       )}
-      {!editor &&
-        !saved &&
-        !isExample &&
-        (savePrompt || onSave) &&
-        (savePrompt ? (
-          <SaveNotice onSave={onSaveConfirm} onContinue={onSaveCancel} />
-        ) : (
-          <Button
-            className="max-[520px]:w-full"
-            variant="outline"
-            type="button"
-            onClick={onSave}
-          >
-            Save data in this browser
-          </Button>
-        ))}
+      {!editor && !saved && !isExample && onSave && (
+        <Button
+          className="min-h-11"
+          variant="link"
+          type="button"
+          onClick={onSave}
+        >
+          Save data in this browser
+        </Button>
+      )}
     </div>
   )
   if (!next)
@@ -463,16 +453,10 @@ export function AttentionCard({
       <Badge variant="outline" className={cardKickerClass}>
         Next action
       </Badge>
-      <h2 id="attention-title">{next.title}</h2>
-      <p>
-        {next.reasons[0]}
-        {next.kind === 'gst-qrmp-payment' && (
-          <>
-            {' '}
-            <QrmpPaymentHelp />
-          </>
-        )}
-      </p>
+      <h2 id="attention-title" tabIndex={-1}>
+        {next.title}
+      </h2>
+      <p className="attention-summary">{formatActionSummary(next)}</p>
       {completion && !needsPayment && !editor ? (
         <div className="completion-state">
           <p>
@@ -503,21 +487,28 @@ export function AttentionCard({
             </Button>
           </div>
         </div>
-      ) : !saved && isExample ? (
-        <Alert
-          className="mt-4 mb-(--text-journey) text-journey leading-[1.6] text-warning"
-          role={undefined}
-        >
-          This fictional example cannot be saved or marked complete.
-        </Alert>
       ) : null}
-      <ActionLinks
-        kind={next.kind}
-        prominent
-        summary={formatActionSummary(next)}
-      />
+      <ActionLinks kind={next.kind} prominent>
+        <details className="action-reason">
+          <summary>Why this action</summary>
+          <p>
+            {next.reasons[0]}
+            {next.kind === 'gst-qrmp-payment' && (
+              <>
+                {' '}
+                <QrmpPaymentHelp />
+              </>
+            )}
+          </p>
+        </details>
+      </ActionLinks>
       <SourceReferences ids={next.statutorySourceIds} />
       {actions}
+      {!saved && isExample && (
+        <p className="attention-example">
+          This fictional example cannot be saved or marked complete.
+        </p>
+      )}
     </Card>
   )
 }

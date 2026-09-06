@@ -176,10 +176,8 @@ function ResourceCard({ resource }: { readonly resource: Resource }) {
           Check the official source for updates before relying on this guidance.
         </p>
       )}
-      <details className="text-sm">
-        <summary className="min-h-11 cursor-pointer py-2.5 font-bold">
-          About this source
-        </summary>
+      <details>
+        <summary>About this source</summary>
         <ul className="m-0 space-y-3 pl-5">
           {resource.taxPeriod && <li>Reviewed for {resource.taxPeriod}</li>}
           <li>

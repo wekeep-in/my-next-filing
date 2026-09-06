@@ -22,7 +22,7 @@ import {
   SourceReferences,
   TaxSummary,
 } from '@/routes/plan/cards'
-import { DeleteNotice, SavedDataState } from '@/routes/plan/editors'
+import { DeleteNotice, SaveNotice, SavedDataState } from '@/routes/plan/editors'
 import type { PlanEditor } from '@/routes/plan/editors'
 import { usePlanCoordinator } from '@/routes/plan/coordinator'
 import { sessionMatchesWorkspace } from '@/routes/plan/model'
@@ -205,9 +205,6 @@ export function PlanRoute() {
               isExample={isExample}
               advanceTaxPaid={profile?.otherIncome.advanceTaxPaid ?? 0}
               onSave={canOfferSave ? c.openSave : undefined}
-              savePrompt={savePrompt}
-              onSaveConfirm={saveCurrent}
-              onSaveCancel={c.cancel}
               editor={editor}
               onPaymentSubmit={updatePayment}
               onCompletionSubmit={saveCompletion}
@@ -219,7 +216,21 @@ export function PlanRoute() {
               onChangeDate={(obligation) => c.openCompletion(obligation)}
               onUndo={removeCompletion}
             />
-            {c.notice && (
+            {savePrompt && (
+              <SaveNotice onSave={saveCurrent} onContinue={c.cancel}>
+                {c.notice && (
+                  <p role="alert" className="field-error">
+                    {c.notice.message}{' '}
+                    {c.notice.kind === 'conflict' && (
+                      <Button variant="link" onClick={c.reload}>
+                        Reload saved data
+                      </Button>
+                    )}
+                  </p>
+                )}
+              </SaveNotice>
+            )}
+            {c.notice && !savePrompt && (
               <TopBar
                 variant={
                   c.notice.kind === 'conflict' ? 'warning' : 'destructive'

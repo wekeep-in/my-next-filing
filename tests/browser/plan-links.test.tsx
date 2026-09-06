@@ -46,9 +46,14 @@ test.each([
     'Furnishing_of_Letter_of_Undertaking.htm',
   ],
 ] as const)(
-  'uses inline agenda links and a next-action portal button for %s',
+  'discloses agenda guidance and keeps next-action portal links visible for %s',
   async (kind, host, entry, guide) => {
     const view = await render(<ActionLinks kind={kind} />)
+    const disclosure = view.container.querySelector('details')!
+    expect(disclosure.open).toBe(false)
+    expect(getComputedStyle(disclosure).borderTopWidth).toBe('1px')
+    disclosure.querySelector('summary')!.click()
+    expect(disclosure.open).toBe(true)
     const links = view.container.querySelectorAll('a')
     expect(links).toHaveLength(2)
     const portal = new URL(links[1].href)
@@ -74,20 +79,17 @@ test.each([
       )
     if (kind === 'gst-qrmp-payment')
       expect(view.container.textContent).toContain('If a deposit is needed')
-    await view.rerender(
-      <ActionLinks kind={kind} prominent summary="Due 15 March 2027" />,
-    )
-    expect(view.container.querySelector('p')!.textContent).toContain(
-      'Due 15 March 2027.',
-    )
-    expect(
-      getComputedStyle(view.container.firstElementChild!).borderTopWidth,
-    ).toBe('0px')
-    const button = view.container.querySelectorAll('a')[1]
+    disclosure.querySelector('summary')!.click()
+    await view.rerender(<ActionLinks kind={kind} prominent />)
+    const button = view.container.querySelectorAll('a')[0]
     expect(button.closest('p')).toBeNull()
+    expect(button.closest('details')).toBeNull()
+    expect(
+      view.container.querySelectorAll('a')[1].closest('details'),
+    ).not.toBeNull()
     expect(button.getBoundingClientRect().height).toBeGreaterThanOrEqual(44)
-    expect(button.getBoundingClientRect().top).toBeGreaterThanOrEqual(
-      view.container.querySelector('p')!.getBoundingClientRect().bottom,
+    expect(button.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+      view.container.querySelector('summary')!.getBoundingClientRect().top,
     )
   },
 )

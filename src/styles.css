@@ -658,21 +658,50 @@ legend {
   margin: 0.35rem 0 0.55rem;
 }
 
+details {
+  font-size: var(--text-body);
+  line-height: 1.5;
+}
+
 details:not(.assumptions) {
   margin-top: 1.25rem;
-  border-top: 1px solid var(--border);
-  padding-top: 0.9rem;
+  border-block: 1px solid var(--border);
+}
+
+details + details:not(.assumptions) {
+  margin-top: 0;
+  border-top: 0;
+}
+
+details:not(.assumptions):last-child {
+  border-bottom: 0;
 }
 
 .agenda-item details {
-  border-top-color: var(--page-divider);
+  border-color: var(--page-divider);
 }
 
 summary {
+  min-height: 44px;
+  padding-block: 0.75rem;
   color: var(--foreground);
   cursor: pointer;
+  font-size: 0.875rem;
   font-weight: 800;
   user-select: none;
+}
+
+details :is(p, li, .source-reference) {
+  font-size: inherit;
+}
+
+details > summary + *,
+details > summary + * > :first-child {
+  margin-top: 0;
+}
+
+details > :not(summary):last-child {
+  margin-bottom: 0.75rem;
 }
 
 details:has(> summary:not(:focus-visible))::details-content {
@@ -697,7 +726,7 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
 .calculation-list {
   display: grid;
   gap: 0.55rem;
-  margin: 1rem 0 0;
+  margin: 0;
 }
 
 .calculation-list div {
@@ -705,7 +734,6 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   justify-content: space-between;
   gap: 1rem;
   color: var(--muted-foreground);
-  font-size: 0.9rem;
 }
 
 .calculation-list dd {
@@ -720,14 +748,8 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   font-weight: 750;
 }
 
-.source-list,
-.calculation-details {
-  font-size: 0.875rem;
-}
-
 .source-reference {
   margin: 0.7rem 0 0;
-  font-size: 0.8rem;
 }
 
 .agenda {
@@ -742,13 +764,11 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   display: grid;
   grid-template-columns: 4.25rem minmax(0, 1fr);
   gap: 1rem;
-  border-top: 0;
-  border-bottom: 1px solid var(--page-divider);
-  padding: 1.25rem 0;
+  padding: 2rem 0;
 }
 
-.agenda-item:last-child {
-  border-bottom: 0;
+.agenda-item + .agenda-item {
+  border-top: 1px solid var(--page-divider);
 }
 
 .agenda-date {
@@ -777,19 +797,12 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   margin-bottom: 0.55rem;
 }
 
-.consequence {
-  font-size: 0.875rem;
-}
-
 .assumptions {
   margin-top: 2rem;
+  padding-block: 0.5rem;
 }
 
 .assumptions + .assumptions {
-  margin-top: 0.75rem;
-}
-
-.assumptions > ul {
   margin-top: 0.75rem;
 }
 
@@ -839,8 +852,7 @@ main:has(> .resources-page) {
 
 .resource-card details {
   margin-top: 0.5rem;
-  padding-top: 0;
-  border-top: 0;
+  border: 0;
 }
 
 @media (min-height: 800px) {
@@ -1283,6 +1295,26 @@ main:has(> .resources-page) {
   margin: 0 0 0.25rem;
 }
 
+.attention-card .attention-summary {
+  margin: 0.75rem 0 0.5rem;
+  color: var(--muted-foreground);
+  font-size: 1rem;
+}
+
+.attention-summary strong {
+  color: var(--foreground);
+}
+
+.attention-portals {
+  margin: 1.25rem 0;
+}
+
+.attention-card .attention-example {
+  margin: 0;
+  padding-top: 1rem;
+  font-size: 0.9rem;
+}
+
 .completion-state {
   border-left: 0.25rem solid var(--primary);
   padding-left: 0.8rem;
@@ -1306,11 +1338,6 @@ main:has(> .resources-page) {
 .tax-summary h2 {
   margin: 0 0 0.7rem;
   font-size: 1.728rem;
-}
-
-.tax-summary .calculation-details + .source-list {
-  margin-top: 0.7rem;
-  padding-top: 0.7rem;
 }
 
 .coverage-card h2 {
@@ -1447,12 +1474,10 @@ main:has(> .resources-page) {
   flex-wrap: wrap;
   align-items: center;
   gap: 1rem;
-  margin-top: 1rem;
-  border-top: 1px solid var(--border);
   padding: 1rem 0 0;
 }
 
-.attention-action > :is(.save-notice, .inline-editor) {
+.attention-action > .inline-editor {
   width: 100%;
 }
 
@@ -1475,6 +1500,16 @@ main:has(> .resources-page) {
 
 .save-notice .button-row {
   margin-top: 1rem;
+}
+
+.save-dialog {
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+}
+
+.save-dialog p {
+  font-size: 1rem;
+  line-height: 1.6;
 }
 
 .workspace-controls {
@@ -1510,13 +1545,14 @@ main:has(> .resources-page) {
 
 .completion-controls {
   display: grid;
-  grid-template-columns: minmax(0, 24rem) max-content;
+  grid-template-columns: minmax(0, 16rem) max-content;
   align-items: start;
   gap: 1rem;
 }
 
-.inline-editor .completion-field label {
+.inline-editor .completion-label {
   margin-top: 0;
+  font-size: 0.85rem;
 }
 
 .inline-editor .completion-controls .button-row {

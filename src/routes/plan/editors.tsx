@@ -1,7 +1,8 @@
 import { indiaDate } from '@/lib/india-date'
 import { formatDate } from '@/lib/format'
 import { canCompleteObligation } from '@/evaluation'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { DatePicker } from '@/components/date-picker'
 import { Badge } from '@/components/ui/badge'
@@ -21,36 +22,68 @@ export type PlanEditor =
 export function SaveNotice({
   onSave,
   onContinue,
+  children,
 }: {
   readonly onSave: () => void
   readonly onContinue: () => void
+  readonly children?: ReactNode
 }) {
+  const dialog = useRef<HTMLDialogElement>(null)
+  useEffect(() => {
+    const element = dialog.current!
+    const trigger = document.activeElement
+    element.showModal()
+    element.querySelector('h2')?.focus()
+    return () => {
+      element.close()
+      if (trigger instanceof HTMLElement && trigger.isConnected) trigger.focus()
+      else
+        (
+          document.querySelector<HTMLElement>('.attention-action button') ??
+          document.getElementById('attention-title')
+        )?.focus()
+    }
+  }, [])
   return (
-    <section className="save-notice" aria-label="Save data">
-      <p>
-        Save your answers and any completion dates you add in this browser.
-        Anyone using this browser profile may be able to see them, so don't save
-        on a shared browser.
-      </p>
-      <p>
-        There is no account, sync, backup, or recovery. Private browsing or
-        clearing site data may remove them. Read the{' '}
-        <Link to="/#faqs">saved-data FAQs</Link>.
-      </p>
-      <div className="button-row">
-        <Button className="max-[520px]:w-full" type="button" onClick={onSave}>
-          Save data
-        </Button>
-        <Button
-          className="max-[520px]:w-full"
-          variant="outline"
-          type="button"
-          onClick={onContinue}
-        >
-          Cancel
-        </Button>
-      </div>
-    </section>
+    <dialog
+      className="app-confirmation save-dialog"
+      ref={dialog}
+      aria-labelledby="save-dialog-title"
+      onCancel={(event) => {
+        event.preventDefault()
+        onContinue()
+      }}
+    >
+      <h2 id="save-dialog-title" tabIndex={-1}>
+        Save data in this browser?
+      </h2>
+      <section className="save-notice" aria-label="Save data">
+        <p>
+          Save your answers and any completion dates you add in this browser.
+          Anyone using this browser profile may be able to see them, so don't
+          save on a shared browser.
+        </p>
+        <p>
+          There is no account, sync, backup, or recovery. Private browsing or
+          clearing site data may remove them. Read the{' '}
+          <Link to="/#faqs">saved-data FAQs</Link>.
+        </p>
+        {children}
+        <div className="button-row">
+          <Button className="max-[520px]:w-full" type="button" onClick={onSave}>
+            Save data
+          </Button>
+          <Button
+            className="max-[520px]:w-full"
+            variant="outline"
+            type="button"
+            onClick={onContinue}
+          >
+            Cancel
+          </Button>
+        </div>
+      </section>
+    </dialog>
   )
 }
 
@@ -152,17 +185,19 @@ export function CompletionEditor({
     <Card
       className={`inline-editor${embedded ? ' inline-editor--embedded' : ''}`}
     >
-      <p>
-        {reviewed
-          ? 'Choose the date you checked whether GST was due and made any required payment.'
-          : 'Choose the date you completed this action. Your plan will update.'}
-        {reviewed && (
-          <>
-            {' '}
-            <QrmpPaymentHelp />
-          </>
-        )}
-      </p>
+      {(!embedded || reviewed) && (
+        <p>
+          {reviewed
+            ? 'Choose the date you checked whether GST was due and made any required payment.'
+            : 'Choose the date you completed this action. Your plan will update.'}
+          {reviewed && (
+            <>
+              {' '}
+              <QrmpPaymentHelp />
+            </>
+          )}
+        </p>
+      )}
       {tooEarly && (
         <p>
           You can record this action from{' '}
@@ -176,11 +211,11 @@ export function CompletionEditor({
           the saved data before saving this date.
         </p>
       )}
+      <label className="completion-label" htmlFor={inputId}>
+        {reviewed ? 'Review date' : 'Completion date'}
+      </label>
       <div className="completion-controls">
         <div className="completion-field">
-          <label className="sr-only" htmlFor={inputId}>
-            {reviewed ? 'Review date' : 'Completion date'}
-          </label>
           <DatePicker
             id={inputId}
             value={date}

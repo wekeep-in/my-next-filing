@@ -322,11 +322,13 @@ The next-action card and each agenda item link to a fixed official portal entry 
 
 Longer-lived saving is optional and starts off. Offer it only after a complete Profile parses and Evaluation returns Supported, including Supported with Incomplete coverage. Do not put Recovery drafts, examples, malformed data, Unsupported Profiles, or Profiles evaluated with stale core Rules in the Saved workspace.
 
-Before the first Saved-workspace write, show this standalone notice, subject to qualified privacy review:
+Before the first Saved-workspace write, show this standalone notice in a dialog, subject to qualified privacy review:
 
 > Save your answers and the completion dates you add. Anyone using this browser profile may be able to see them. There is no account, sync, backup, or recovery. Private browsing or clearing site data may remove them.
 
 Actions are `Save data` and `Cancel`. Store accepted notice version 2. The landing-page FAQ explains saved-data behavior. The questionnaire confirms the user is eighteen or older before a supported result can be saved. Canceling the notice leaves the save action available in the same unsaved session.
+
+Keep the entire notice visible before consent. Escape cancels and returns focus to the save action. Saving errors and conflict recovery stay inside the dialog; no failure may be hidden behind it.
 
 The one stable key is `my-next-filing:workspace`. Its version-4 envelope contains only:
 

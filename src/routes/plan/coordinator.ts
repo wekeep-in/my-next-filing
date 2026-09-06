@@ -76,12 +76,13 @@ export function usePlanCoordinator(app: AppOutletContext) {
     trigger.current?.focus()
   }
   useEffect(() => {
-    if (interaction.kind === 'none') return
+    if (interaction.kind === 'none' || interaction.kind === 'save-confirmation')
+      return
     const target =
       interaction.kind === 'payment-editing'
         ? document.getElementById('advance-tax-update')
         : document.querySelector(
-            '.inline-editor input, .save-notice button, .delete-notice button',
+            '.inline-editor input, .inline-editor [id^="completion-date-"], .delete-notice button',
           )
     if (target instanceof HTMLElement) target.focus()
   }, [interaction])

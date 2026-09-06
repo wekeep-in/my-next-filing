@@ -26,15 +26,35 @@ test('keeps the plan and saved data when portal and guide links open in a new ta
   const portal = next.getByRole('link', { name: /^Open e-Pay Tax/ })
   const guide = next.getByRole('link', { name: /^official e-Pay Tax guide/ })
   await expect(portal).toBeVisible()
+  await expect(guide).not.toBeVisible()
+  await next.getByText('How to pay', { exact: true }).click()
   await expect(guide).toBeVisible()
+  await expect(next.locator('.attention-summary')).toContainText(
+    '₹55,160 estimated left to pay. Due by 15 March 2027.',
+  )
+  await expect(next.locator('.attention-summary strong')).toHaveText([
+    '₹55,160',
+    '15 March 2027',
+  ])
+  const reason = next.getByText(
+    'Estimated tax after Indian TDS and TCS is at least ₹10,000.',
+    { exact: true },
+  )
+  await expect(reason).not.toBeVisible()
+  await next.getByText('Why this action', { exact: true }).click()
+  await expect(reason).toBeVisible()
   await expect(
-    next.locator('p').filter({
-      has: page.getByRole('link', { name: /^official e-Pay Tax guide/ }),
-    }),
-  ).toContainText('₹55,160 estimated left to pay. Due 15 March 2027.')
+    agenda.getByRole('link', { name: /^Open e-Pay Tax/ }),
+  ).not.toBeVisible()
+  await expect(
+    agenda.getByRole('link', { name: /^official e-Filing guide/ }),
+  ).not.toBeVisible()
+  await agenda.getByText('How to pay', { exact: true }).focus()
+  await page.keyboard.press('Enter')
   await expect(
     agenda.getByRole('link', { name: /^Open e-Pay Tax/ }),
   ).toBeVisible()
+  await agenda.getByText('How to file', { exact: true }).click()
   await expect(
     agenda.getByRole('link', { name: /^official e-Filing guide/ }),
   ).toBeVisible()
