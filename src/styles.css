@@ -274,7 +274,7 @@ main {
 .landing-example :is(a, button),
 .site-footer a,
 .journey-note a,
-.landing-faqs a {
+.landing-faqs :is(a, button) {
   color: var(--foreground);
   font-weight: 800;
   text-decoration-thickness: 1.5px;
