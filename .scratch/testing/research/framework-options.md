@@ -64,3 +64,50 @@ Before implementation, check a clean pnpm install, TypeScript 7 typechecking, Vi
 5. Add focused accessibility scans and parser properties only after the current scenarios run reliably in CI.
 
 Jest would add ESM/transform configuration without a clear benefit for a Vite application; its current ESM guide still marks that path experimental. Cypress is capable, but brings a new command model and requires a plugin for multiple tabs. Neither is my choice for this migration. [Jest ESM](https://jestjs.io/docs/ecmascript-modules), [Cypress tradeoffs](https://docs.cypress.io/app/references/trade-offs#multiple-browsers-open-at-the-same-time)
+
+## Lighthouse performance scripts
+
+Use **Lighthouse CI's `@lhci/cli`** for repeated performance checks. The repository audit found a temporary script that manually launches Chromium, allocates a debugging port, imports tools from another temporary project and prints one Resources audit. LHCI replaces that orchestration with configuration, repeated measurements, thresholds and saved reports. Direct Lighthouse CLI remains adequate for a single diagnostic report, with built-in HTML/JSON output. [Lighthouse CLI](https://github.com/GoogleChrome/lighthouse/blob/main/readme.md#using-the-node-cli), [LHCI workflow](https://github.com/GoogleChrome/lighthouse-ci/blob/main/docs/getting-started.md)
+
+Suggested `lighthouserc.json`, shown for review only. JSON avoids CommonJS/ESM ambiguity in this `type: module` repository:
+
+```json
+{
+  "ci": {
+    "collect": {
+      "staticDistDir": "dist",
+      "isSinglePageApplication": true,
+      "url": ["http://localhost/", "http://localhost/resources"],
+      "numberOfRuns": 3,
+      "settings": {
+        "formFactor": "mobile",
+        "onlyCategories": ["performance", "accessibility"]
+      }
+    },
+    "assert": {
+      "assertions": {
+        "categories:performance": ["error", {"minScore": 0.9, "aggregationMethod": "median"}],
+        "categories:accessibility": ["error", {"minScore": 1, "aggregationMethod": "pessimistic"}]
+      }
+    },
+    "upload": {
+      "target": "filesystem",
+      "outputDir": "artifacts/lighthouse"
+    }
+  }
+}
+```
+
+After installation, run `pnpm build` followed by `pnpm exec lhci autorun`. LHCI collects, asserts and writes reports. `staticDistDir` serves the build; SPA fallback supports deep links. Explicit URLs avoid discovering only `index.html`; LHCI replaces their ports with its server's port. Use `startServerCommand` instead only when a particular preview server or response headers are part of the measurement. Do not combine it with `staticDistDir`. Filesystem output needs no LHCI account, database, hosted server or public upload. [Configuration](https://github.com/GoogleChrome/lighthouse-ci/blob/main/docs/configuration.md)
+
+The three runs are deliberate. LHCI defaults to three, but assertions default to **optimistic**, which chooses the value most likely to pass. The example explicitly checks median Performance and worst-run Accessibility. `median` is the median of that score, while `median-run` chooses a representative run using other performance metrics. Error-level failures return nonzero. [Assertion implementation](https://github.com/GoogleChrome/lighthouse-ci/blob/v0.15.1/packages/utils/src/assertions.js), [collector](https://github.com/GoogleChrome/lighthouse-ci/blob/v0.15.1/packages/cli/src/collect/collect.js)
+
+The thresholds match [SPEC.md:575](/home/sarthak/projects/my-next-filing/SPEC.md:575). These two URLs are a starting configuration, not full compliance with its landing, questionnaire-state and plan/workspace targets. The embedded Lighthouse defaults to mobile screen/UA emulation and simulated throttling. [Lighthouse defaults](https://github.com/GoogleChrome/lighthouse/blob/v12.6.1/core/config/constants.js)
+
+For restored workspace audits, use the documented `puppeteerScript` hook only when needed. Add a direct Puppeteer dependency then, use `context.url` for the actual origin, and seed synthetic browser data before measurement. The hook runs once per URL before its repeated audits; reset state between scenarios. Check the selected engine's storage-reset behavior. `disableStorageReset` also changes cache conditions, so use it deliberately for a separate restored-state benchmark. [Hook contract](https://github.com/GoogleChrome/lighthouse-ci/blob/main/docs/configuration.md#puppeteerscript), [hook implementation](https://github.com/GoogleChrome/lighthouse-ci/blob/v0.15.1/packages/cli/src/collect/puppeteer-manager.js), [storage defaults](https://github.com/GoogleChrome/lighthouse/blob/v12.6.1/core/config/constants.js)
+
+URL audits reload pages. They cannot preserve arbitrary transient questionnaire state reached through clicks. If those states need Lighthouse measurement, use its official User Flows API: snapshots for current-state accessibility and timespans for interaction performance. Neither yields an overall Performance score; the 90-point navigation target cannot simply be applied to them. Keep these targeted flow checks separate from ordinary LHCI page-load audits. A Playwright-to-Lighthouse bridge adds no needed capability here. [User flow modes](https://github.com/GoogleChrome/lighthouse/blob/main/docs/user-flows.md)
+
+Pin the Lighthouse and Chrome versions and use a consistent runner image. Run performance collection without concurrent browser tests or builds competing for CPU. Start with the same command on demand and on a schedule; add a separate PR job when the baseline is repeatable. Keep HTML/JSON as CI artifacts, including failed runs. Diagnose repeated variance rather than rerunning until the score passes. These choices follow Lighthouse's explanation of hardware, page and environmental variability. [Variability](https://github.com/GoogleChrome/lighthouse/blob/main/docs/variability.md)
+
+Compatibility caveat: registry metadata currently reports `@lhci/cli` **0.15.1**, with no declared Node engine of its own, embedding Lighthouse **12.6.1**, whose Node engine is `>=18.20`. The existing temporary script uses Lighthouse **13.4.1**, currently also the standalone latest release, requiring Node `>=22.19`. Local Node 26.7 satisfies both stated ranges, but no LHCI installation or run was performed. Adopting LHCI therefore changes the Lighthouse engine version; establish a new baseline instead of comparing scores as if the engine were unchanged. The older LHCI getting-started workflow's Node 16 example should not be copied. [LHCI manifest](https://registry.npmjs.org/@lhci%2fcli/0.15.1), [embedded Lighthouse manifest](https://registry.npmjs.org/lighthouse/12.6.1), [standalone Lighthouse manifest](https://registry.npmjs.org/lighthouse/13.4.1)

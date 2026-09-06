@@ -22,5 +22,5 @@
     "allowUnreachableCode": false,
     "noEmit": true
   },
-  "include": ["src", "scripts", "vite.config.ts"]
+  "include": ["src", "scripts", "tests", "*.config.ts"]
 }
