@@ -132,7 +132,6 @@ export function Agenda({
                     date.
                   </p>
                 )}
-                <ActionLinks kind={obligation.kind} />
                 {saved && !completion && !isNext && (
                   <Button
                     variant="link"
@@ -149,7 +148,7 @@ export function Agenda({
                   </Button>
                 )}
                 {saved && completion && !needsPayment && (
-                  <>
+                  <div className="flex flex-wrap gap-6">
                     <Button
                       variant="link"
                       type="button"
@@ -158,7 +157,7 @@ export function Agenda({
                       {obligation.kind === 'gst-qrmp-payment'
                         ? 'Change review date'
                         : 'Change completion date'}
-                    </Button>{' '}
+                    </Button>
                     <Button
                       variant="link"
                       type="button"
@@ -168,8 +167,9 @@ export function Agenda({
                         ? 'Remove review'
                         : 'Remove completion'}
                     </Button>
-                  </>
+                  </div>
                 )}
+                <ActionLinks kind={obligation.kind} />
                 <details className="consequence">
                   <summary>What may happen after this date</summary>
                   <p>{obligation.consequence}</p>

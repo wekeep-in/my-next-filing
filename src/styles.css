@@ -1804,6 +1804,10 @@ main:has(> .resources-page) {
   background: var(--card);
 }
 
+.app-confirmation > h2 {
+  margin-top: 0;
+}
+
 .app-confirmation::backdrop {
   background: rgb(15 23 42 / 0.4);
 }
