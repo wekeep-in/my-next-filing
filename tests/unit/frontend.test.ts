@@ -904,7 +904,7 @@ test('deletes legacy workspaces and handles conflicts and uncertain removal', ()
   }
   const savedV2 = saveSavedWorkspace(workspaceStore, null, workspaceInput)
   assert.ok(savedV2.kind === 'saved')
-  assert.equal(savedV2.workspace.schemaVersion, 4)
+  assert.equal(savedV2.workspace.schemaVersion, 5)
   assert.equal(savedV2.workspace.noticeVersion, 2)
   assert.equal(deleteLegacyWorkspace(workspaceStore).kind, 'conflict')
   assert.equal(loadSavedWorkspace(workspaceStore).kind, 'ready')

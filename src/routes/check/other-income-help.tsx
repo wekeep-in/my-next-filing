@@ -2,6 +2,64 @@ import { ExternalLink } from '@/components/external-link'
 import { HelpModal } from '@/components/help-modal'
 import { currentRules } from '@/rules'
 
+// Reviewed 2026-09-06: amended Act sections 7, 92, 93, 276, 408 and 425; SEBI circular 2020/194.
+export function AdditionalIncomeHelp() {
+  return (
+    <HelpModal
+      topic="dividends and additional interest"
+      title="Which dividends and interest can I include?"
+      description={`Use the amounts taxable for ${currentRules.taxPeriod} from your tax records, before TDS. The total credited to your bank may be different.`}
+    >
+      <p>
+        Include ordinary dividends from Indian companies. The taxable year can
+        depend on when a dividend was declared, distributed, paid or made
+        available. Use your issuer's records to confirm the year. Do not deduct
+        interest or other expenses from dividends or mutual-fund distributions.
+      </p>
+      <p>
+        Indian mutual-fund distributions may be called IDCW, or Income
+        Distribution cum Capital Withdrawal. Include the confirmed taxable
+        amount whether paid to you or reinvested. Do not enter proceeds from
+        selling, redeeming or switching units, or subtract a capital portion
+        yourself.
+      </p>
+      <p>
+        For post-office interest, enter only the taxable part before TDS. Your
+        records must already resolve any exemption, ownership share and the year
+        it belongs to. Exclude deposit principal, exempt interest and full
+        maturity proceeds. This version does not calculate scheme exemptions or
+        adjustments for early closure.
+      </p>
+      <p>
+        For an Indian income-tax refund, include only its interest component
+        taxable this year, not the refund itself. Reversals, disputed amounts,
+        cross-year adjustments, other refund types, and unresolved amounts need
+        separate guidance.
+      </p>
+      <p>
+        This version does not cover foreign or deemed dividends, buybacks,
+        company loans, liquidation or capital reductions, REIT/InvIT or other
+        business-trust distributions, AIF income, special certificates/bonds,
+        capital gains, losses, or expense/deduction claims. These are product
+        limits. If you cannot confirm the categories and amounts, choose Not
+        sure.
+      </p>
+      <p>
+        The normal presumptive advance-tax date stays 15 March. Unexpected
+        dividend income can need a separate timing review, including the
+        conditional provision for payment by 31 March. Ask your adviser; this
+        plan does not calculate interest or promise relief.
+      </p>
+      <ExternalLink href="https://www.incometaxindia.gov.in/documents/d/guest/income_tax_act_2025_as_amended_by_fa_act_2026-pdf">
+        Official income-tax treatment
+      </ExternalLink>
+      <ExternalLink href="https://www.sebi.gov.in/sebi_data/attachdocs/oct-2020/1601906688276.pdf">
+        SEBI guide to mutual-fund distributions, PDF
+      </ExternalLink>
+    </HelpModal>
+  )
+}
+
 export function SalaryCoverageHelp() {
   return (
     <HelpModal
@@ -108,7 +166,7 @@ export function TdsHelp() {
     <HelpModal
       topic="Indian TDS credit"
       title="Which TDS amount?"
-      description="TDS is tax a client, employer or bank withheld. Enter the actual credit for freelance income, supported salary and bank interest included in this estimate."
+      description="TDS is tax withheld by a payer. Enter the actual Indian credit for all income included in this estimate, including supported dividends, distributions and interest."
     >
       <p>
         Match payer certificates with AIS tax-credit entries for{' '}

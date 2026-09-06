@@ -1,4 +1,6 @@
 import { test } from 'vitest'
+import recoveryV3 from '../fixtures/recovery-v3.json' with { type: 'json' }
+import workspaceV4 from '../fixtures/workspace-v4.json' with { type: 'json' }
 import assert from 'node:assert/strict'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -429,7 +431,16 @@ test('clears inactive calendar facts and migrates Recovery', () => {
     TAX_YEAR,
   )!
   assert.deepEqual(parseRecoveryDraft(recovery, TAX_YEAR), recovery)
-  const oldDraft = structuredClone(draft)
+  const oldDraft = {
+    ...structuredClone(recoveryV3.draft),
+    gstKind: 'registered',
+    gstStatus: 'one-normal',
+    gstState: 'Maharashtra',
+    amounts: { ...recoveryV3.draft.amounts, aggregateTurnover: '' },
+    turnoverComplete: '',
+    compulsoryRegistration: '',
+    thresholdLiabilityDate: '',
+  }
   for (const key of Object.keys(blankGstCalendarFields))
     Reflect.deleteProperty(oldDraft, key)
   const migrated = parseRecoveryDraft(
@@ -518,8 +529,10 @@ test('reconciles calendar Completions and migrates workspace schema three', () =
     )
     assert.equal(loadSavedWorkspace(storage, now).kind, 'invalid')
   }
-  const oldProfile = structuredClone(registered())
-  Reflect.deleteProperty(oldProfile.gst, 'calendar')
+  const oldProfile = {
+    ...structuredClone(workspaceV4.active.profile),
+    gst: { kind: 'registered', status: 'one-normal', state: 'Maharashtra' },
+  }
   const raw = JSON.stringify({
     ...saved.workspace,
     schemaVersion: 3,

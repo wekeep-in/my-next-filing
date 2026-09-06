@@ -201,6 +201,27 @@ const quarterlyEarlyStates = [
 ] as const
 
 export const sourceRegistry: readonly Source[] = [
+  {
+    id: 'mutual-fund-idcw-guide',
+    kind: 'tutorial',
+    publisher: 'Securities and Exchange Board of India',
+    title: 'SEBI: income distribution cum capital withdrawal options',
+    url: 'https://www.sebi.gov.in/sebi_data/attachdocs/oct-2020/1601906688276.pdf',
+    reviewDate: '2026-09-06',
+    coveredObligation: 'income-distributions',
+    status: 'approved',
+  },
+  {
+    id: 'domestic-investment-income-2026',
+    kind: 'statutory',
+    publisher: 'Income Tax Department',
+    title:
+      'Income-tax Act: ordinary dividends, distributions and interest, sections 7, 92, 93, 276, 408 and 425',
+    url: 'https://www.incometaxindia.gov.in/documents/d/guest/income_tax_act_2025_as_amended_by_fa_act_2026-pdf',
+    reviewDate: '2026-09-06',
+    taxPeriod: TAX_YEAR,
+    coveredRuleIds: ['ordinary-domestic-income'],
+  },
   ...(
     [
       [
@@ -368,7 +389,11 @@ export const sourceRegistry: readonly Source[] = [
     publicationDate: '2026-03-30',
     reviewDate: reviewedOn,
     taxPeriod: TAX_YEAR,
-    coveredRuleIds: ['income-ceiling', 'health-education-cess'],
+    coveredRuleIds: [
+      'income-ceiling',
+      'health-education-cess',
+      'dividend-expenses-disallowed',
+    ],
   },
   {
     id: 'section-404',
@@ -395,8 +420,8 @@ export const sourceRegistry: readonly Source[] = [
     kind: 'statutory',
     publisher: 'Income Tax Department',
     title: 'Section 263: return filing due date and triggers',
-    url: 'https://www.incometaxindia.gov.in/w/section-263-72',
-    reviewDate: reviewedOn,
+    url: 'https://www.incometaxindia.gov.in/documents/d/guest/income_tax_act_2025_as_amended_by_fa_act_2026-pdf',
+    reviewDate: '2026-09-06',
     taxPeriod: TAX_YEAR,
     coveredRuleIds: [
       'annual-return-income-threshold',
@@ -415,7 +440,11 @@ export const sourceRegistry: readonly Source[] = [
     publicationDate: '2026-03-20',
     reviewDate: reviewedOn,
     taxPeriod: TAX_YEAR,
-    coveredRuleIds: ['annual-return-tds-tcs-threshold'],
+    coveredRuleIds: [
+      'annual-return-tds-tcs-threshold',
+      'annual-return-profession-threshold',
+      'annual-return-business-threshold',
+    ],
   },
   {
     id: 'budget-2026-return-dates',
@@ -574,14 +603,20 @@ const group = <T>(
   id,
   effectiveStart,
   effectiveEnd,
-  verifiedOn: id === 'common-income-tax' ? '2026-09-06' : reviewedOn,
+  verifiedOn: [
+    'common-income-tax',
+    'annual-return',
+    'gst-registration',
+  ].includes(id)
+    ? '2026-09-06'
+    : reviewedOn,
   expiresOn,
   values,
   provenance,
 })
 
 export const currentRules: RuleDataset = {
-  id: 'my-next-filing-2026-27-v5',
+  id: 'my-next-filing-2026-27-v6',
   schemaVersion: 1,
   taxPeriod: TAX_YEAR,
   effectiveStart,
@@ -589,6 +624,7 @@ export const currentRules: RuleDataset = {
   verifiedOn: '2026-09-06',
   expiresOn,
   changeNotes: [
+    'Ordinary domestic dividends, taxable Indian mutual-fund distributions, post-office and income-tax refund interest added after review on 6 September 2026. Preserve established annual-return and GST-threshold conclusions despite independent uncertainty; annual triggers and dates now cite enacted authority.',
     'GST return calendars and independent LUT guidance reviewed on 6 September 2026, expiring on 30 September pending another extension review. Dates are normal statutory dates; the current extension inventory is incomplete.',
     'Domestic salary and one capped standard deduction added after review on 6 September 2026; the presumptive advance-tax schedule and business-income return date continue to apply.',
     'Tax Year 2026-27 Rule groups reviewed on 3 September 2026.',
@@ -751,6 +787,16 @@ export const currentRules: RuleDataset = {
           role: 'applicability',
         },
         {
+          ruleId: 'ordinary-domestic-income',
+          sourceId: 'domestic-investment-income-2026',
+          role: 'applicability',
+        },
+        {
+          ruleId: 'dividend-expenses-disallowed',
+          sourceId: 'finance-act-2026',
+          role: 'applicability',
+        },
+        {
           ruleId: 'salary-standard-deduction',
           sourceId: 'domestic-salary-2026',
           role: 'threshold',
@@ -815,12 +861,12 @@ export const currentRules: RuleDataset = {
         },
         {
           ruleId: 'annual-return-profession-threshold',
-          sourceId: 'section-263',
+          sourceId: 'rule-163',
           role: 'threshold',
         },
         {
           ruleId: 'annual-return-business-threshold',
-          sourceId: 'section-263',
+          sourceId: 'rule-163',
           role: 'threshold',
         },
         {
@@ -830,7 +876,7 @@ export const currentRules: RuleDataset = {
         },
         {
           ruleId: 'annual-return-date',
-          sourceId: 'budget-2026-return-dates',
+          sourceId: 'section-263',
           role: 'date',
         },
       ],
@@ -1524,6 +1570,8 @@ export function validateRules(
       ],
       commonIncomeTax: [
         'domestic-salary',
+        'ordinary-domestic-income',
+        'dividend-expenses-disallowed',
         'salary-standard-deduction',
         'income-ceiling',
         'new-regime-slabs',

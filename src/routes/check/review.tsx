@@ -1,11 +1,15 @@
 import { taxYearShort } from '@/lib/tax-period'
-import { SalaryCoverageHelp } from '@/routes/check/other-income-help'
+import {
+  AdditionalIncomeHelp,
+  SalaryCoverageHelp,
+} from '@/routes/check/other-income-help'
 import type {
   QuestionnaireDispatch,
   QuestionnaireEvent,
 } from '@/routes/check/session'
 import {
   activityOptions,
+  additionalIncomeFields,
   creditTriggerMayApply,
   groupStep,
   gstQuarterQuestions,
@@ -53,7 +57,11 @@ export function UnsupportedFactsField({
 }) {
   const options = (
     Object.entries(unsupportedFactLabels) as [UnsupportedFact, string][]
-  ).filter(([value]) => value !== 'unsupportedFactsNotSure')
+  ).filter(
+    ([value]) =>
+      value !== 'unsupportedFactsNotSure' &&
+      (value !== 'dividendsOrGifts' || draft.unsupportedFacts.includes(value)),
+  )
   const warningId = 'unsupportedCertainty-unsupported'
   const pointerSelection = useRef(false)
   const updateDraft = (event: QuestionnaireEvent) => {
@@ -126,6 +134,14 @@ export function UnsupportedFactsField({
         <p className="field-help">
           Check which salary situations this version can cover.{' '}
           <SalaryCoverageHelp />
+        </p>
+      )}
+      {(draft.unsupportedFacts.includes('unsupportedDividends') ||
+        draft.unsupportedFacts.includes('dividendsOrGifts')) && (
+        <p className="field-help">
+          Review the dividend and interest fields above. If an older answer
+          combined dividends and gifts, select any gift income separately before
+          clearing that answer. <AdditionalIncomeHelp />
         </p>
       )}
       <RadioGroup
@@ -422,6 +438,22 @@ function GroupSummary({
       editLabel: 'Edit other income and tax paid',
       step: groupStep('other-income'),
       answers: [
+        {
+          label: 'Dividends and additional interest',
+          value: answer(draft.hasAdditionalIncome),
+        },
+        ...(draft.hasAdditionalIncome === 'yes'
+          ? [
+              {
+                label: 'Income types and annual amounts confirmed',
+                value: answer(draft.additionalIncomeConfirmed),
+              },
+              ...additionalIncomeFields.map(({ key, label }) => ({
+                label,
+                value: money(draft.amounts[key]),
+              })),
+            ]
+          : []),
         {
           label: 'Salary alongside freelancing',
           value: answer(draft.hasSalary),

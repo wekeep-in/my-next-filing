@@ -1,6 +1,7 @@
 import type { Profile, ProfileGroup, UnsupportedFact } from '@/evaluation'
 import type { Draft, DraftAmountKey } from '@/routes/check/model'
 import {
+  additionalIncomeKeys,
   amountKeys,
   blankDraft,
   blankGstCalendarFields,
@@ -120,6 +121,10 @@ export function clearInactiveDraft(draft: Draft): Draft {
   if (draft.hasSalary !== 'yes') {
     next.salaryConfirmed = ''
     next.amounts.grossSalary = ''
+  }
+  if (draft.hasAdditionalIncome !== 'yes') {
+    next.additionalIncomeConfirmed = ''
+    for (const key of additionalIncomeKeys) next.amounts[key] = ''
   }
   if (!creditTriggerMayApply(draft)) next.ageSixtyOrOlder = ''
   if (draft.unsupportedCertainty !== 'selected') next.unsupportedFacts = []

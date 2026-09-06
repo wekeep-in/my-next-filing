@@ -153,12 +153,25 @@ The Application does not collect client or platform names, client countries, acc
 The Profile supports only:
 
 - the domestic salary branch below, alongside either supported presumptive practice;
+- the confirmed ordinary domestic dividend and additional-interest branch below;
 - taxable bank or deposit interest before TDS;
 - actual Indian TDS for included income;
 - actual Indian TCS; and
 - advance tax already paid for the Tax Year.
 
-House property, dividends or gifts, capital gains, crypto, gaming, lottery, agricultural income, unrelated foreign income, foreign tax, disputed credits, deductions other than the supported salary standard deduction, losses, special-rate income, and another business or profession are Unsupported.
+House property, gifts, unsupported dividends or distributions, capital gains, crypto, gaming, lottery, agricultural income, unrelated foreign income, foreign tax, disputed credits, deductions other than the supported salary standard deduction, losses, special-rate income, and another business or profession are Unsupported.
+
+### Ordinary domestic dividends and additional interest
+
+Ask whether the user has Indian-company dividends, Indian mutual-fund distributions, taxable post-office interest or income-tax refund interest. No is an explicit absent branch; Yes reveals four annual amounts and a scope confirmation. Unknown amounts or treatment never mean zero. Keep bank/deposit interest and all existing income fields separate.
+
+Use tax-record amounts taxable for this Tax Year before Indian TDS. Company dividends follow the applicable declaration/distribution/payment rules; other-source amounts use the user's regular accounting method. Include taxable mutual-fund IDCW whether paid out or reinvested. A bank-credit total alone is not sufficient. Add the four amounts once to combined taxable income before rounding; do not deduct dividend/distribution expenses or change the presumptive profit calculation. Include related actual TDS once in the existing credit total.
+
+Require confirmed ordinary Indian-company dividends and taxable Indian regulated mutual-fund distributions only. Exclude foreign or deemed dividends, buybacks, capital reductions/liquidation, company loans, sale/redemption/switch proceeds, capital gains/losses, REIT/InvIT/business-trust or AIF distributions, other specialised income, and expense/deduction or relief claims. Post-office amounts must already resolve exemptions, ownership and annual timing; exclude principal, exempt interest, unsupported certificates/bonds and premature-closure adjustments. Refund interest excludes refund principal, other kinds of refunds, reversals, disputes and cross-year adjustments.
+
+Keep GST aggregate turnover independently declared; never add these four income-tax fields to it automatically. The normal presumptive advance-tax date remains 15 March. Explain that unexpected dividend income can require a separate review of payment timing, including the conditional 31 March provision, without computing interest or promising relief. Current-year return-form selection remains unavailable.
+
+Preserve workspace version 4 through a version-5 migration. Its supported Profiles explicitly excluded other income, so add the absent additional-income branch. Retain every legacy unsupported fact; a combined dividend/gift exclusion stays blocked until the user reviews it. Recovery version 3 migrates to version 4 with the new answer blank. Capture and retain historical input fixtures. The [research and recent-commit analysis](.scratch/domestic-investment-income/map.md) define the scope and source limitations.
 
 ### Domestic salary alongside freelancing
 
@@ -285,7 +298,7 @@ This applies when any supported trigger is established:
 - actual Indian TDS plus TCS is at least ₹25,000, or at least ₹50,000 for a resident individual aged sixty or older; or
 - the user confirms that another prescribed filing trigger applies.
 
-Ask whether the user is sixty or older only when that answer changes the TDS/TCS trigger. If another prescribed trigger is uncertain, keep the tax estimate and make annual-return Coverage unavailable.
+An established trigger is sufficient to show required annual-return Coverage and the dated Obligation. Omit uncertain reasons. Unknown age cannot establish the lower TDS/TCS threshold; credits at or above the higher threshold establish the trigger for either age band. If no trigger is established and a material answer is uncertain, keep the tax estimate and make annual-return Coverage unavailable. Never infer a negative filing conclusion from unknown answers. Independent foreign-account or return-form guidance remains separate.
 
 The normal due date is 31 August 2027 for the supported non-audit Profile. The Obligation does not name ITR-3 or ITR-4. Return-form guidance remains unavailable until current forms and disclosure facts are reviewed.
 
@@ -293,7 +306,7 @@ The normal due date is 31 August 2027 for the supported non-audit Profile. The O
 
 This applies only when an unregistered Profile exceeds the applicable service threshold, the threshold-liability date is known, and no separate compulsory-registration uncertainty exists. The normal due date is thirty days after liability arose.
 
-The starting threshold is ₹10 lakh in Manipur, Mizoram, Nagaland, and Tripura and ₹20 lakh elsewhere. Exactly at the threshold is an Available conclusion with no Obligation. Above the threshold with an unknown liability date produces an urgent Review action and unavailable GST Coverage, not an invented date.
+The starting threshold is ₹10 lakh in Manipur, Mizoram, Nagaland, and Tripura and ₹20 lakh elsewhere. Exactly at the threshold is an Available conclusion with no Obligation. With complete turnover and supported compulsory-registration facts, above-threshold turnover remains an Available registration-required conclusion even if the liability date is unknown. Also show an urgent date Review action in screening and results. Withhold the dated Obligation until the date is established; never invent it. Invalid or future dates and independent compulsory-registration uncertainty retain their safeguards.
 
 This Obligation shows no GST amount.
 
@@ -330,7 +343,7 @@ Actions are `Save data` and `Cancel`. Store accepted notice version 2. The landi
 
 Keep the entire notice visible before consent. Escape cancels and returns focus to the save action. Saving errors and conflict recovery stay inside the dialog; no failure may be hidden behind it.
 
-The one stable key is `my-next-filing:workspace`. Its version-4 envelope contains only:
+The one stable key is `my-next-filing:workspace`. Its version-5 envelope contains only:
 
 - schema version and revision;
 - accepted notice version and local ISO decision timestamp;

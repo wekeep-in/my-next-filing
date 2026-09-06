@@ -42,7 +42,7 @@ test('publishes unique resources with complete provenance', () => {
   )
   assert.equal(
     new Set(catalogue.resources.flatMap((resource) => resource.sourceIds)).size,
-    31,
+    33,
   )
 })
 
@@ -57,7 +57,9 @@ test('ranks exact titles identifiers and reviewed aliases', () => {
   sameMatches('advance tax', 'how do I pay advance tax')
   sameMatches('ITR', 'income tax return')
   sameMatches('ITR', 'income-tax returns')
-  assert.ok(ids('ITR').includes('section-263'))
+  assert.ok(ids('ITR').includes('income-tax-act-2025-2026'))
+  assert.deepEqual(ids('section 263'), ['income-tax-act-2025-2026'])
+  assert.ok(ids('IDCW').includes('mutual-fund-idcw-guide'))
   for (const variant of ['GSTR3B', 'gstr 3b', 'ＧＳＴＲ－３Ｂ', 'GSTR–3B']) {
     sameMatches('GSTR-3B', variant)
     assert.equal(ids(variant)[0], 'gst-notification-82-2020')
@@ -136,7 +138,7 @@ test('distinguishes Tax Years Assessment Years and publication years', () => {
       .sort(),
   )
   sameMatches('advance tax Tax Year 2026-27', 'advance tax Tax Year 2026-2027')
-  assert.equal(ids('Tax Year 2026-27').length, 20)
+  assert.equal(ids('Tax Year 2026-27').length, 19)
   const gstPeriod = search('GST Tax Year 2026-27')
   assert.ok(gstPeriod.results.length > 0)
   assert.ok(
@@ -192,7 +194,7 @@ test('combines filters and counts unique resources in every facet', () => {
 })
 
 test('consolidates source descriptions and oldest review dates', () => {
-  assert.equal(act.sources.length, 3)
+  assert.equal(act.sources.length, 5)
   assert.equal(act.reviewDate, '2026-09-03')
   assert.ok(act.references?.some((reference) => reference.includes('156')))
   assert.ok(act.references?.some((reference) => reference.includes('salary')))

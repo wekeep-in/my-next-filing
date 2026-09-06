@@ -1,4 +1,6 @@
 import { test } from 'vitest'
+import recoveryV3 from '../fixtures/recovery-v3.json' with { type: 'json' }
+import workspaceV4 from '../fixtures/workspace-v4.json' with { type: 'json' }
 import assert from 'node:assert/strict'
 import { evaluate, parseProfile } from '../../src/evaluation/index.ts'
 import { TAX_YEAR, currentRules } from '../../src/rules/index.ts'
@@ -266,7 +268,7 @@ test('clears salary answers and migrates the original Recovery schema', () => {
   const recovery = recoveryFromSession(session, TAX_YEAR)
   assert.ok(recovery)
   assert.deepEqual(parseRecoveryDraft(recovery, TAX_YEAR), recovery)
-  const oldDraft = structuredClone(draftFromProfile(exampleProfile))
+  const oldDraft = structuredClone(recoveryV3.draft)
   for (const key of Object.keys(oldDraft).filter(
     (field) =>
       field.startsWith('gst') &&
@@ -318,7 +320,7 @@ test('migrates old workspaces in memory and preserves Completion records', () =>
     kind: 'ready',
     workspace: saved.workspace,
   })
-  const legacyProfile = structuredClone(exampleProfile)
+  const legacyProfile = structuredClone(workspaceV4.active.profile)
   Reflect.deleteProperty(legacyProfile.otherIncome, 'salary')
   const oldWorkspace = {
     ...saved.workspace,
@@ -329,7 +331,7 @@ test('migrates old workspaces in memory and preserves Completion records', () =>
   storage.setItem(WORKSPACE_KEY, raw)
   const restored = loadSavedWorkspace(storage, now)
   assert.ok(restored.kind === 'ready')
-  assert.equal(restored.workspace.schemaVersion, 4)
+  assert.equal(restored.workspace.schemaVersion, 5)
   assert.deepEqual(restored.workspace.active?.profile.otherIncome.salary, {
     kind: 'none',
   })

@@ -45,6 +45,17 @@ export type ResourceDefinition = {
 // Coverage descriptions only. Review evidence: .scratch/resources/research/source-review.md.
 // URLs, statutory periods, publishers and source-review dates stay in the Rule registry.
 export const resourceDefinitions: readonly ResourceDefinition[] = [
+  {
+    sourceIds: ['mutual-fund-idcw-guide'],
+    title: 'Mutual-fund IDCW distributions',
+    description:
+      'SEBI explains the name Income Distribution cum Capital Withdrawal and payout, reinvestment and transfer options. This circular does not calculate the taxable amount.',
+    documentType: 'Circular',
+    topics: ['income-tax'],
+    tasks: ['income-tax-return'],
+    aliases: ['mutual fund dividend payout reinvestment distribution IDCW'],
+    identifiers: ['SEBI/HO/IMD/DF3/CIR/P/2020/194'],
+  },
   // Procedural guides only. Review: .scratch/plan-action-links/source-review.md.
   {
     sourceIds: ['advance-tax-challan'],
@@ -213,11 +224,13 @@ export const resourceDefinitions: readonly ResourceDefinition[] = [
     sourceIds: [
       'income-tax-act-2025-2026',
       'domestic-salary-2026',
+      'domestic-investment-income-2026',
       'section-156',
+      'section-263',
     ],
-    title: 'Income-tax Act: freelance income, salary and rebate',
+    title: 'Income-tax Act: income, rebate and return requirements',
     description:
-      'The amended Act used for the income-tax references in this collection, including salary alongside freelance income and the resident-individual rebate.',
+      'The amended Act used for freelance income, salary, dividends, mutual-fund distributions, interest, rebate and enacted return-filing requirements.',
     documentType: 'Act',
     topics: ['income-tax'],
     tasks: [
@@ -228,15 +241,17 @@ export const resourceDefinitions: readonly ResourceDefinition[] = [
     ],
     aliases: [
       'salary standard deduction',
+      'dividends mutual fund IDCW distributions post office refund interest',
       'rebate marginal relief',
       'presumptive income',
       'ITR',
     ],
-    identifiers: ['Income-tax Act 2025'],
+    identifiers: ['Income-tax Act 2025', 'Section 263'],
     references: [
+      'Section 263: enacted return-filing requirements and due dates',
+      'Sections 7, 92, 93 and 276: taxable ordinary dividends, distributions and interest',
       'Sections 15–19: salary and deductions',
       'Section 156: rebate',
-      'Section 263: income tax return',
       'Section 408: advance tax',
     ],
   },
@@ -315,17 +330,6 @@ export const resourceDefinitions: readonly ResourceDefinition[] = [
     aliases: ['advance tax due date', 'pay advance tax'],
     identifiers: ['Section 408'],
     references: ['Section 408(2): presumptive advance tax'],
-  },
-  {
-    sourceIds: ['section-263'],
-    title: 'Income tax return: filing requirements and dates',
-    description:
-      'The section covering return-filing requirements and due dates.',
-    documentType: 'Section',
-    topics: ['income-tax'],
-    tasks: ['income-tax-return'],
-    aliases: ['ITR', 'annual return', 'filing threshold'],
-    identifiers: ['Section 263'],
   },
   {
     sourceIds: ['rule-163'],

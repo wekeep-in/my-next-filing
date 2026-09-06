@@ -13,6 +13,7 @@ import {
 import type { Obligation, SupportedResult, TaxEstimate } from '@/evaluation'
 import { canCompleteObligation } from '@/evaluation'
 import { formatDate, formatMoney } from '@/lib/format'
+import { additionalIncomeFields } from '@/routes/check/model'
 import { sourceRegistry } from '@/rules'
 import type { DateOnly } from '@/rules'
 import type { CompletionRecord } from '@/workspace'
@@ -195,6 +196,13 @@ export function TaxSummary({ tax }: { readonly tax: TaxEstimate }) {
             <dt>Taxable bank interest</dt>
             <dd>{formatMoney(tax.taxableBankInterest)}</dd>
           </div>
+          {tax.additionalIncome &&
+            additionalIncomeFields.map(({ key, label: incomeLabel }) => (
+              <div key={key}>
+                <dt>{incomeLabel}</dt>
+                <dd>{formatMoney(tax.additionalIncome![key])}</dd>
+              </div>
+            ))}
           {tax.salary && (
             <>
               <div>
@@ -253,6 +261,7 @@ export function TaxSummary({ tax }: { readonly tax: TaxEstimate }) {
           'section-156',
           'finance-act-2026',
           ...(tax.salary ? ['domestic-salary-2026'] : []),
+          ...(tax.additionalIncome ? ['domestic-investment-income-2026'] : []),
         ]}
       />
     </Card>

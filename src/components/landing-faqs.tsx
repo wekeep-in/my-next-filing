@@ -2,7 +2,10 @@ import { Link } from 'react-router-dom'
 import { ExternalLink } from '@/components/external-link'
 import { formatDate } from '@/lib/format'
 import { currentRules } from '@/rules'
-import { SalaryCoverageHelp } from '@/routes/check/other-income-help'
+import {
+  AdditionalIncomeHelp,
+  SalaryCoverageHelp,
+} from '@/routes/check/other-income-help'
 
 const openSourceUrl = 'https://github.com/wekeep-in/my-next-filing'
 
@@ -141,6 +144,12 @@ export function LandingFaqs() {
             salary, with one standard deduction of up to ₹75,000 across all
             employers. <SalaryCoverageHelp />
           </p>
+          <p>
+            It can also include ordinary Indian-company dividends, taxable
+            Indian mutual-fund distributions, taxable post-office interest and
+            income-tax refund interest when your records confirm the amounts.{' '}
+            <AdditionalIncomeHelp />
+          </p>
           <p>It stops without showing a personal estimate if you have:</p>
           <ul>
             <li>
@@ -148,10 +157,10 @@ export function LandingFaqs() {
               surcharge, or another tax regime.
             </li>
             <li>
-              Salary this version cannot cover, house-property income,
-              dividends, gifts, capital gains, crypto, lottery or gaming,
-              agricultural income, unrelated foreign income, or foreign-tax
-              relief.
+              Salary this version cannot cover, house-property income, gifts,
+              unsupported dividends or distributions, capital gains, crypto,
+              lottery or gaming, agricultural income, unrelated foreign income,
+              or foreign-tax relief.
             </li>
             <li>
               Another business or profession, commission, brokerage, agency
@@ -188,8 +197,9 @@ export function LandingFaqs() {
           </p>
           <ol>
             <li>
-              Adds supported salary after its standard deduction and taxable
-              bank or deposit interest.
+              Adds supported salary after its standard deduction, taxable bank
+              interest, and supported dividends, distributions and additional
+              interest.
             </li>
             <li>Rounds total income to the nearest ₹10.</li>
             <li>

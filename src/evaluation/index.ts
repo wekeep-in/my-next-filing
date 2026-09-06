@@ -34,7 +34,9 @@ export type Activity =
 const unsupportedFactLabels = {
   salary: 'Salary this version cannot cover',
   houseProperty: 'House-property income',
-  dividendsOrGifts: 'Dividend or gift income',
+  dividendsOrGifts: 'Dividend or gift income to review from an earlier version',
+  gifts: 'Gift income',
+  unsupportedDividends: 'Dividends or distributions this version cannot cover',
   capitalGains: 'Capital gains',
   cryptoLotteryGaming: 'Crypto, lottery, or gaming income',
   agriculturalIncome: 'Agricultural income',
@@ -64,6 +66,19 @@ export type SalaryIncome =
       readonly confirmed: TriState
       readonly grossSalary: number
     }
+
+export type AdditionalIncomeAmounts = {
+  readonly dividends: number
+  readonly mutualFundDistributions: number
+  readonly postOfficeInterest: number
+  readonly incomeTaxRefundInterest: number
+}
+export type AdditionalIncome =
+  | { readonly kind: 'none' | 'not-sure' }
+  | ({
+      readonly kind: 'domestic'
+      readonly confirmed: TriState
+    } & AdditionalIncomeAmounts)
 
 export type SpecifiedProfessionalPath = {
   readonly kind: 'specified-profession'
@@ -199,6 +214,7 @@ export type Profile = {
   readonly clients: ClientProfile
   readonly otherIncome: {
     readonly salary: SalaryIncome
+    readonly additionalIncome: AdditionalIncome
     readonly taxableBankInterest: number
     readonly tds: number
     readonly tcs: number
@@ -338,6 +354,7 @@ export type TaxEstimate = {
     readonly taxableSalary: number
   } | null
   readonly taxableBankInterest: number
+  readonly additionalIncome: AdditionalIncomeAmounts | null
   readonly roundedTotalIncome: number
   readonly slabTax: number
   readonly rebate: number
@@ -1081,6 +1098,7 @@ function readProfile(value: unknown) {
     root.otherIncome,
     [
       'salary',
+      'additionalIncome',
       'taxableBankInterest',
       'tds',
       'tcs',
@@ -1094,6 +1112,10 @@ function readProfile(value: unknown) {
   )
   const otherIncome = {
     salary: parseSalary(otherRecord?.salary, errors),
+    additionalIncome: parseAdditionalIncome(
+      otherRecord?.additionalIncome,
+      errors,
+    ),
     taxableBankInterest: otherRecord
       ? readAmount(
           otherRecord,
@@ -1502,6 +1524,94 @@ export function canCompleteObligation(obligation: Obligation, date: DateOnly) {
   )
 }
 
+function parseAdditionalIncome(
+  value: unknown,
+  errors: ProfileInputError[],
+): AdditionalIncome {
+  const path = 'otherIncome.additionalIncome'
+  if (!isRecord(value)) {
+    addError(
+      errors,
+      'invalid',
+      path,
+      'other-income',
+      'Choose whether you have dividends or additional interest.',
+    )
+    return { kind: 'not-sure' }
+  }
+  if (value.kind !== 'domestic') {
+    checkObject(value, ['kind'], path, 'other-income', errors)
+    return {
+      kind: readText(
+        value,
+        'kind',
+        ['none', 'not-sure'],
+        path,
+        'other-income',
+        errors,
+      ),
+    }
+  }
+  checkObject(
+    value,
+    [
+      'kind',
+      'confirmed',
+      'dividends',
+      'mutualFundDistributions',
+      'postOfficeInterest',
+      'incomeTaxRefundInterest',
+    ],
+    path,
+    'other-income',
+    errors,
+  )
+  const income: AdditionalIncome = {
+    kind: 'domestic',
+    confirmed: readTri(value, 'confirmed', path, 'other-income', errors),
+    dividends: readAmount(value, 'dividends', path, 'other-income', errors),
+    mutualFundDistributions: readAmount(
+      value,
+      'mutualFundDistributions',
+      path,
+      'other-income',
+      errors,
+    ),
+    postOfficeInterest: readAmount(
+      value,
+      'postOfficeInterest',
+      path,
+      'other-income',
+      errors,
+    ),
+    incomeTaxRefundInterest: readAmount(
+      value,
+      'incomeTaxRefundInterest',
+      path,
+      'other-income',
+      errors,
+    ),
+  }
+  if (!Number.isSafeInteger(additionalIncomeTotal(income)))
+    addError(
+      errors,
+      'invalid',
+      `${path}.total`,
+      'other-income',
+      'The combined dividends and additional interest exceed the supported whole-rupee range.',
+    )
+  return income
+}
+
+function additionalIncomeTotal(income: AdditionalIncome) {
+  return income.kind === 'domestic'
+    ? income.dividends +
+        income.mutualFundDistributions +
+        income.postOfficeInterest +
+        income.incomeTaxRefundInterest
+    : 0
+}
+
 function parseSalary(
   value: unknown,
   errors: ProfileInputError[],
@@ -1669,6 +1779,7 @@ function calculateTax(
   const roundedTotalIncome = roundMoney(
     usedIncome +
       (salary?.taxableSalary ?? 0) +
+      additionalIncomeTotal(profile.otherIncome.additionalIncome) +
       profile.otherIncome.taxableBankInterest,
     taxRules.roundingUnit,
   )
@@ -1703,6 +1814,18 @@ function calculateTax(
     },
     salary,
     taxableBankInterest: profile.otherIncome.taxableBankInterest,
+    additionalIncome:
+      profile.otherIncome.additionalIncome.kind === 'domestic'
+        ? {
+            dividends: profile.otherIncome.additionalIncome.dividends,
+            mutualFundDistributions:
+              profile.otherIncome.additionalIncome.mutualFundDistributions,
+            postOfficeInterest:
+              profile.otherIncome.additionalIncome.postOfficeInterest,
+            incomeTaxRefundInterest:
+              profile.otherIncome.additionalIncome.incomeTaxRefundInterest,
+          }
+        : null,
     roundedTotalIncome,
     slabTax,
     rebate,
@@ -2134,7 +2257,12 @@ type AnnualAreaResult = {
   readonly obligation: Obligation | null
 }
 
-function annualReturnUncertainty(profile: Profile, rules: AnnualReturnRules) {
+function annualReturnUncertainty(
+  profile: Profile,
+  rules: AnnualReturnRules,
+  establishedTriggers: readonly string[],
+) {
+  if (establishedTriggers.length) return null
   const credits = profile.otherIncome.tds + profile.otherIncome.tcs
   if (profile.otherIncome.otherAnnualReturnTrigger === 'not-sure')
     return 'annual-return-trigger-uncertain'
@@ -2145,15 +2273,11 @@ function annualReturnUncertainty(profile: Profile, rules: AnnualReturnRules) {
     : null
 }
 
-function calculateAnnualReturn(
+function annualReturnTriggers(
   profile: Profile,
   tax: TaxEstimate,
   rules: AnnualReturnRules,
-  today: DateOnly,
-  verifiedOn: DateOnly,
-  expiresOn: DateOnly,
-  sourceIds: readonly string[],
-): AnnualAreaResult {
+) {
   const triggers: string[] = []
   if (tax.roundedTotalIncome > rules.filingIncomeThreshold)
     triggers.push('Rounded total income is above ₹4,00,000.')
@@ -2169,9 +2293,9 @@ function calculateAnnualReturn(
     triggers.push('Eligible-business gross receipts are above ₹60,00,000.')
   const credits = profile.otherIncome.tds + profile.otherIncome.tcs
   const creditThreshold =
-    profile.otherIncome.ageSixtyOrOlder === 'yes'
-      ? rules.seniorTdsTcsThreshold
-      : rules.tdsTcsThreshold
+    profile.otherIncome.ageSixtyOrOlder === 'no'
+      ? rules.tdsTcsThreshold
+      : rules.seniorTdsTcsThreshold
   if (credits >= creditThreshold)
     triggers.push(
       `Indian TDS and TCS credits are at least ₹${creditThreshold.toLocaleString('en-IN')}.`,
@@ -2180,7 +2304,20 @@ function calculateAnnualReturn(
     triggers.push(
       'You confirmed that another prescribed return trigger applies.',
     )
-  const uncertainty = annualReturnUncertainty(profile, rules)
+  return triggers
+}
+
+function calculateAnnualReturn(
+  profile: Profile,
+  tax: TaxEstimate,
+  rules: AnnualReturnRules,
+  today: DateOnly,
+  verifiedOn: DateOnly,
+  expiresOn: DateOnly,
+  sourceIds: readonly string[],
+): AnnualAreaResult {
+  const triggers = annualReturnTriggers(profile, tax, rules)
+  const uncertainty = annualReturnUncertainty(profile, rules, triggers)
   if (uncertainty) {
     return {
       coverage: coverageUnavailable(
@@ -2574,38 +2711,41 @@ function calculateGst(
       : profile.gst.aggregateTurnover === threshold
         ? 'at'
         : 'above'
-  if (
-    status === 'above' &&
-    (!profile.gst.thresholdLiabilityDate ||
-      profile.gst.thresholdLiabilityDate > today)
-  ) {
-    return {
-      coverage: coverageUnavailable(
-        'gst',
-        'gst-liability-date-uncertain',
-        'Turnover is above the starting threshold but the liability date is not an established past date.',
-        'Review the date when liability arose. My Next Filing does not invent a registration deadline.',
-        sourceIds,
-      ),
-      review: [
-        reviewAction(
-          'gst-liability-date',
-          'Confirm the GST liability date',
-          'gst',
-          'gst',
-          'A registration date cannot be derived without the date on which liability arose.',
-          sourceIds,
-        ),
-      ],
-      obligation: null,
-    }
-  }
   const value: GstConclusion = {
     status,
     threshold,
     difference,
     state: profile.gst.state,
     registrationRequired: status === 'above',
+  }
+  if (
+    status === 'above' &&
+    (!profile.gst.thresholdLiabilityDate ||
+      profile.gst.thresholdLiabilityDate > today)
+  ) {
+    return {
+      coverage:
+        profile.gst.thresholdLiabilityDate === null
+          ? { kind: 'available', value, sourceIds }
+          : coverageUnavailable(
+              'gst',
+              'gst-liability-date-uncertain',
+              'Turnover is above the starting threshold but the liability date is not an established past date.',
+              'Review the date when liability arose. My Next Filing does not invent a registration deadline.',
+              sourceIds,
+            ),
+      review: [
+        reviewAction(
+          'gst-liability-date',
+          'Confirm when GST registration became required',
+          'gst',
+          'gst',
+          'Your turnover exceeds the registration threshold. Check when registration became required as soon as possible; that date is needed to work out the application deadline.',
+          sourceIds,
+        ),
+      ],
+      obligation: null,
+    }
   }
   const dueDate =
     status === 'above' && profile.gst.thresholdLiabilityDate
@@ -2697,6 +2837,22 @@ function coreSupportFacts(
     ...factForClients(current, sourceIds),
   ]
   const salary = current.otherIncome.salary
+  const additionalIncome = current.otherIncome.additionalIncome
+  if (
+    additionalIncome.kind === 'not-sure' ||
+    (additionalIncome.kind === 'domestic' &&
+      additionalIncome.confirmed !== 'yes')
+  )
+    coreFacts.push(
+      unsupported(
+        'additional-income-scope',
+        'income-tax',
+        'other-income',
+        'Dividends and additional interest',
+        'Confirm the supported income types and annual taxable amounts before this version can estimate your tax.',
+        sourceIds,
+      ),
+    )
   if (
     salary.kind === 'not-sure' ||
     (salary.kind === 'domestic' && salary.confirmed !== 'yes')
@@ -2742,6 +2898,7 @@ function coreSupportFacts(
     Math.max(minimumIncome, current.incomePath.declaredProfit) +
       (calculateSalary(salary, rules.groups.commonIncomeTax.values)
         ?.taxableSalary ?? 0) +
+      additionalIncomeTotal(additionalIncome) +
       current.otherIncome.taxableBankInterest,
     rules.groups.commonIncomeTax.values.roundingUnit,
   )
@@ -2793,8 +2950,15 @@ export function screenProfile(
         group.verifiedOn,
         group.expiresOn,
         [],
-      ).coverage
-      if (gst.kind === 'unavailable') coverage.push(gst)
+      )
+      if (gst.coverage.kind === 'unavailable') coverage.push(gst.coverage)
+      else
+        coverage.push(
+          ...gst.review.map(({ reason }) => ({
+            code: 'gst-liability-date-uncertain',
+            reason,
+          })),
+        )
     }
     if (validated.groups['foreign-guidance'].valid) {
       const foreign = calculateForeignCoverage(
@@ -2808,6 +2972,15 @@ export function screenProfile(
       const code = annualReturnUncertainty(
         profile,
         data.groups.annualReturn.values,
+        annualReturnTriggers(
+          profile,
+          calculateTax(
+            profile,
+            data.groups.incomePaths.values,
+            data.groups.commonIncomeTax.values,
+          ),
+          data.groups.annualReturn.values,
+        ),
       )
       if (code)
         coverage.push({
@@ -3105,6 +3278,11 @@ export function evaluate(
       ...(tax.salary
         ? [
             'Salary uses your combined annual amount from all employers, less one standard deduction capped at salary. Employer TDS is included only through the Indian TDS credit you entered.',
+          ]
+        : []),
+      ...(tax.additionalIncome
+        ? [
+            'Supported dividends, mutual-fund distributions and additional interest are included once at their confirmed annual taxable amounts before TDS. No dividend or distribution expenses are deducted.',
           ]
         : []),
       'Total income is rounded to the nearest ₹10 before slab tax, relief, cess, and credits.',

@@ -1,5 +1,6 @@
 import type {
   Activity,
+  AdditionalIncomeAmounts,
   GstCadence,
   GstExportRoute,
   Profile,
@@ -18,6 +19,7 @@ export type DraftDelivery = '' | 'direct' | 'platform' | 'both' | 'not-sure'
 export type DraftGstKind = '' | 'unregistered' | 'registered' | 'not-sure'
 export type DraftGstStatus = '' | 'one-normal' | 'other' | 'not-sure'
 export type DraftAmountKey =
+  | keyof AdditionalIncomeAmounts
   | 'grossReceipts'
   | 'cashReceipts'
   | 'declaredProfit'
@@ -87,6 +89,8 @@ export type Draft = {
   readonly foreignCurrencyResolved: DraftChoice
   readonly hasSalary: DraftChoice
   readonly salaryConfirmed: DraftChoice
+  readonly hasAdditionalIncome: DraftChoice
+  readonly additionalIncomeConfirmed: DraftChoice
   readonly ageSixtyOrOlder: DraftChoice
   readonly otherAnnualReturnTrigger: DraftChoice
   readonly unsupportedCertainty: '' | 'none' | 'selected' | 'not-sure'
@@ -108,6 +112,17 @@ export type Draft = {
   readonly thresholdLiabilityDate: string
 }
 
+export const additionalIncomeFields = [
+  { key: 'dividends', label: 'Indian-company dividends' },
+  { key: 'mutualFundDistributions', label: 'Indian mutual-fund distributions' },
+  { key: 'postOfficeInterest', label: 'Taxable post-office interest' },
+  { key: 'incomeTaxRefundInterest', label: 'Income-tax refund interest' },
+] as const satisfies readonly {
+  readonly key: keyof AdditionalIncomeAmounts
+  readonly label: string
+}[]
+export const additionalIncomeKeys = additionalIncomeFields.map(({ key }) => key)
+
 export const amountKeys: readonly DraftAmountKey[] = [
   'grossReceipts',
   'cashReceipts',
@@ -120,6 +135,7 @@ export const amountKeys: readonly DraftAmountKey[] = [
   'advanceTaxPaid',
   'aggregateTurnover',
   'grossSalary',
+  ...additionalIncomeKeys,
 ]
 
 export const statesAndUnionTerritories = [
@@ -210,7 +226,9 @@ export const optionLabels: Readonly<Record<string, string>> = {
 export const unsupportedFactLabels: Record<UnsupportedFact, string> = {
   salary: 'Salary this version cannot cover',
   houseProperty: 'House-property income',
-  dividendsOrGifts: 'Dividend or gift income',
+  dividendsOrGifts: 'Dividend or gift income to review from an earlier version',
+  gifts: 'Gift income',
+  unsupportedDividends: 'Dividends or distributions this version cannot cover',
   capitalGains: 'Capital gains',
   cryptoLotteryGaming: 'Crypto, lottery, or gaming income',
   agriculturalIncome: 'Agricultural income',
@@ -306,6 +324,8 @@ export const blankDraft = (): Draft => ({
   foreignCurrencyResolved: '',
   hasSalary: '',
   salaryConfirmed: '',
+  hasAdditionalIncome: '',
+  additionalIncomeConfirmed: '',
   ageSixtyOrOlder: '',
   otherAnnualReturnTrigger: '',
   unsupportedCertainty: '',
@@ -335,6 +355,10 @@ export function draftFromProfile(profile: Profile): Draft {
   amounts.advanceTaxPaid =
     profile.otherIncome.advanceTaxPaid.toLocaleString('en-IN')
   const salary = profile.otherIncome.salary
+  const additional = profile.otherIncome.additionalIncome
+  if (additional.kind === 'domestic')
+    for (const key of additionalIncomeKeys)
+      amounts[key] = additional[key].toLocaleString('en-IN')
   if (salary.kind === 'domestic')
     amounts.grossSalary = salary.grossSalary.toLocaleString('en-IN')
   if (profile.gst.kind === 'unregistered')
@@ -367,6 +391,14 @@ export function draftFromProfile(profile: Profile): Draft {
           ? 'yes'
           : 'not-sure',
     salaryConfirmed: salary.kind === 'domestic' ? salary.confirmed : '',
+    hasAdditionalIncome:
+      additional.kind === 'none'
+        ? 'no'
+        : additional.kind === 'domestic'
+          ? 'yes'
+          : 'not-sure',
+    additionalIncomeConfirmed:
+      additional.kind === 'domestic' ? additional.confirmed : '',
     clientKind: profile.clients.kind,
     delivery: profile.clients.delivery,
     platformOwnAccount: profile.clients.platform
@@ -514,6 +546,7 @@ const exampleCandidate = {
   },
   otherIncome: {
     salary: { kind: 'none' },
+    additionalIncome: { kind: 'none' },
     taxableBankInterest: 10_000,
     tds: 40_000,
     tcs: 0,
@@ -575,6 +608,7 @@ function candidateFromDraft(draft: Draft) {
       : amountKeys.slice(0, 3)),
     ...amountKeys.slice(5, 9),
     ...(draft.hasSalary === 'yes' ? ['grossSalary' as const] : []),
+    ...(draft.hasAdditionalIncome === 'yes' ? additionalIncomeKeys : []),
     ...(isUnregisteredGst(draft) ? ['aggregateTurnover' as const] : []),
   ]
   for (const key of requiredKeys) {
@@ -664,6 +698,17 @@ function candidateFromDraft(draft: Draft) {
         : null,
     },
     otherIncome: {
+      additionalIncome:
+        draft.hasAdditionalIncome === 'yes'
+          ? {
+              kind: 'domestic',
+              confirmed: draft.additionalIncomeConfirmed || 'not-sure',
+              dividends: amountValues.dividends,
+              mutualFundDistributions: amountValues.mutualFundDistributions,
+              postOfficeInterest: amountValues.postOfficeInterest,
+              incomeTaxRefundInterest: amountValues.incomeTaxRefundInterest,
+            }
+          : { kind: draft.hasAdditionalIncome === 'no' ? 'none' : 'not-sure' },
       salary:
         draft.hasSalary === 'yes'
           ? {
@@ -882,6 +927,9 @@ function errorStep(key: string) {
     [
       'taxableBankInterest',
       'hasSalary',
+      'hasAdditionalIncome',
+      'additionalIncomeConfirmed',
+      ...additionalIncomeKeys,
       'salaryConfirmed',
       'grossSalary',
       'tds',
@@ -897,6 +945,16 @@ function errorStep(key: string) {
 }
 
 function profileErrorKey(error: ProfileInputError) {
+  if (error.path.startsWith('otherIncome.additionalIncome')) {
+    const last = error.path.split('.').at(-1) ?? ''
+    return last === 'confirmed'
+      ? 'additionalIncomeConfirmed'
+      : last === 'total'
+        ? 'dividends'
+        : additionalIncomeKeys.includes(last as keyof AdditionalIncomeAmounts)
+          ? last
+          : 'hasAdditionalIncome'
+  }
   if (error.path.startsWith('gst.calendar')) {
     const aliases: Record<string, string> = {
       registeredFrom: 'gstRegisteredFrom',
@@ -1081,6 +1139,16 @@ function validateDraftGroup(
         'Choose whether these payments involve a foreign account or similar arrangement.'
   }
   if (group === 'other-income') {
+    if (!draft.hasAdditionalIncome)
+      nextErrors.hasAdditionalIncome =
+        'Choose whether you have dividends or additional interest.'
+    if (draft.hasAdditionalIncome === 'yes') {
+      if (!draft.additionalIncomeConfirmed)
+        nextErrors.additionalIncomeConfirmed =
+          'Confirm the income types and annual amounts, or choose Not sure.'
+      for (const key of additionalIncomeKeys)
+        requiredAmount(nextErrors, draft, key)
+    }
     if (!draft.hasSalary)
       nextErrors.hasSalary = 'Choose whether you have salary income.'
     if (draft.hasSalary === 'yes') {
@@ -1215,6 +1283,10 @@ function draftFeedback(draft: Draft, latestDate: string) {
     'income-ceiling': receipts,
     'salary-scope':
       draft.hasSalary === 'yes' ? ['salaryConfirmed'] : ['hasSalary'],
+    'additional-income-scope':
+      draft.hasAdditionalIncome === 'yes'
+        ? ['additionalIncomeConfirmed']
+        : ['hasAdditionalIncome'],
     'client-branch-uncertain':
       draft.clientKind === 'not-sure'
         ? ['clientKind']
@@ -1261,6 +1333,17 @@ function draftFeedback(draft: Draft, latestDate: string) {
         draft.hasSalary === 'yes' && hasAnswer('grossSalary')
           ? 'grossSalary'
           : 'taxableBankInterest'
+    if (
+      fact.code === 'income-ceiling' &&
+      fact.correctionGroup === 'other-income' &&
+      draft.hasAdditionalIncome === 'yes'
+    ) {
+      const extra = additionalIncomeKeys.find((key) => {
+        const amount = parseMoney(draft.amounts[key])
+        return 'value' in amount && amount.value > 0
+      })
+      if (extra) field = extra
+    }
     if (fact.code === 'client-branch-uncertain')
       field = draft.clientKind === 'not-sure' ? 'clientKind' : 'delivery'
     warnings.push({
