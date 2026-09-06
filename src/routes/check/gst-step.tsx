@@ -115,7 +115,7 @@ export function GstStep({
           <MoneyField
             id="aggregateTurnover"
             label="GST aggregate turnover for this PAN"
-            help={`Enter your all-India total for ${taxYearShort}. Include taxable, exempt, export, and inter-State supplies. Exclude GST, cess, and inward supplies taxed under reverse charge. This may differ from the receipts entered earlier.`}
+            help={`Enter your all-India total for ${taxYearShort}. Include taxable, exempt, export, and inter-State supplies. Exclude employment salary, GST, cess, and inward supplies taxed under reverse charge. This may differ from the receipts entered earlier.`}
             value={draft.amounts.aggregateTurnover}
             error={errors.aggregateTurnover}
             onChange={(value) => setAmount('aggregateTurnover', value)}

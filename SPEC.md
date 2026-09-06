@@ -152,12 +152,25 @@ The Application does not collect client or platform names, client countries, acc
 
 The Profile supports only:
 
+- the domestic salary branch below, alongside either supported presumptive practice;
 - taxable bank or deposit interest before TDS;
 - actual Indian TDS for included income;
 - actual Indian TCS; and
 - advance tax already paid for the Tax Year.
 
-Salary, house property, dividends or gifts, capital gains, crypto, gaming, lottery, agricultural income, unrelated foreign income, foreign tax, disputed credits, deductions, losses, special-rate income, and another business or profession are Unsupported.
+House property, dividends or gifts, capital gains, crypto, gaming, lottery, agricultural income, unrelated foreign income, foreign tax, disputed credits, deductions other than the supported salary standard deduction, losses, special-rate income, and another business or profession are Unsupported.
+
+### Domestic salary alongside freelancing
+
+Ask whether salary exists, with Yes, No, and Not sure. Yes reveals a scope confirmation and one annual salary amount. No stores an explicit no-salary branch; uncertainty stops calculation.
+
+The user confirms that all employment is with employers in India for work performed in India, and that their records resolve the complete Tax Year salary under the new regime. The amount combines all employers, includes taxable allowances, bonuses and employer-valued benefits, and excludes only confirmed new-regime exemptions. It is before the standard deduction and TDS, not CTC, take-home pay, or the sum of employer figures after separate standard deductions.
+
+Foreign employment, pension, retirement or termination payouts, leave-encashment settlements, arrears, advance salary, share-based pay, unresolved fund tax adjustments, benefits or exemptions, tax relief, and deductions other than the standard deduction, including employer NPS and Agniveer deductions, remain Unsupported in this slice. These are product exclusions, not claims that the income or deduction is unlawful. Salary is separate from freelance receipts and employment salary is not included in GST aggregate turnover. Include current-year salary due even when not yet paid; do not subtract employee PF, professional tax or personal NPS contributions.
+
+Deduct the lower of ₹75,000 and aggregate salary once per individual and Tax Year. Add the resulting taxable salary to presumptive income and taxable bank interest. Include actual Indian employer TDS in the existing combined TDS input, counted once. The combined income controls rebate, marginal relief, the ₹50 lakh ceiling, and annual-return income triggers. The presumptive advance-tax date remains 15 March 2027. Return-form selection remains unavailable.
+
+The [salary research](.scratch/salary-plus-freelancing/research/domestic-salary.md) records the Tax Year 2026-27 authority and exclusions. Preserve existing workspace version-2 records through an explicit version-3 migration adding no salary where the old facts declared none. Recovery version 1 migrates to version 2 with salary unanswered, preserving other answers and requiring confirmation. Neither migration deletes data or grants new salary eligibility. Clear salary amount and confirmation when the salary branch is deselected.
 
 ### GST branch
 
@@ -232,7 +245,7 @@ For the Eligible business path, presumptive income is the greater of declared pr
 - 6 percent of qualifying banking or online receipts; and
 - 8 percent of all other receipts.
 
-Add supported taxable bank or deposit interest to presumptive income. Round total income to the nearest ₹10 before applying slab tax. Apply the Tax Year 2026-27 new-regime bands:
+Add supported taxable salary after its single capped standard deduction and taxable bank or deposit interest to presumptive income. Round total income to the nearest ₹10 before applying slab tax. Apply the Tax Year 2026-27 new-regime bands:
 
 | Rounded total-income band | Rate |
 | --- | ---: |
@@ -248,7 +261,7 @@ For ordinary slab-tax income no higher than ₹12 lakh, the rebate is the lower 
 
 Calculate Health and Education Cess at 4 percent after rebate or marginal relief. Subtract actual Indian TDS and TCS. The rounded non-negative result before advance tax paid is estimated advance-tax liability. Subtract advance tax already paid to produce the estimated remaining amount or refund, rounded to the nearest ₹10.
 
-The Application stops when rounded total income exceeds ₹50 lakh. It calculates no surcharge, deduction, loss, special-rate tax, foreign-tax relief, interest, fee, or penalty.
+The Application stops when rounded total income exceeds ₹50 lakh. It calculates no surcharge, deduction other than the supported salary standard deduction, loss, special-rate tax, foreign-tax relief, interest, fee, or penalty.
 
 ## First-release Obligation catalog
 
@@ -311,7 +324,7 @@ Before the first Saved-workspace write, show this standalone notice, subject to 
 
 Actions are `Save data` and `Cancel`. Store accepted notice version 2. The landing-page FAQ explains saved-data behavior. The questionnaire confirms the user is eighteen or older before a supported result can be saved. Canceling the notice leaves the save action available in the same unsaved session.
 
-The one stable key is `my-next-filing:workspace`. Its version-2 envelope contains only:
+The one stable key is `my-next-filing:workspace`. Its version-3 envelope contains only:
 
 - schema version and revision;
 - accepted notice version and local ISO decision timestamp;
@@ -334,7 +347,9 @@ Treat storage as untrusted input. The workspace module:
 5. selects and validates exact matching Rules; and
 6. runs fresh Evaluation before deriving the workspace view.
 
-Version 2 deliberately does not migrate version 1. When the Application encounters a parsed JSON object whose top-level schema version is 1, it rereads the exact key, confirms that version, removes only that key, verifies absence, and shows: `Your previously saved answers and completion dates were removed because this version uses a new workspace.` It repeats verified removal if version 1 reappears, but shows the notice at most once per loaded document. It creates no backup and offers no recovery.
+Version 3 migrates version 2 in memory, validates the complete result, and preserves revision, consent, all Profile values and Completion records. It adds the explicit no-salary branch to old Profiles that excluded salary; an old salary exclusion becomes uncertain and remains Unsupported. A later ordinary save writes version 3 with the normal revision check. Mixed schemas or unknown fields are invalid.
+
+The earlier version-1 deletion policy remains. When the Application encounters a parsed JSON object whose top-level schema version is 1, it rereads the exact key, confirms that version, removes only that key, verifies absence, and shows: `Your previously saved answers and completion dates were removed because this version uses a new workspace.` It repeats verified removal if version 1 reappears, but shows the notice at most once per loaded document. It creates no backup and offers no recovery.
 
 If inspection confirms the version-1 value remains, leave it untouched and offer deletion retry. If removal may have succeeded but verification cannot read the key, report an unverified deletion and offer inspection retry without claiming the raw value survived. Both outcomes block Saved-workspace writes and keep the in-memory questionnaire and Recovery draft available. Do not recreate removed data. A code rollback cannot restore a removed version-1 Profile or Completion record.
 
@@ -534,7 +549,7 @@ The release commit must pass the complete gate in [Define verification and relea
 
 - one formatting, lint, type, Rule, deterministic-test, and production-build path;
 - exact Profile, Evaluation, Rules, workspace, Completion, rollover, and failure fixtures;
-- exact questionnaire reducer, branch selector, Recovery draft, nested-route, Plan-model, schema-version-2, version-1 deletion, unverified and partial-deletion fixtures, including independent warnings, unrelated-draft preservation, and example return after failed writes;
+- exact questionnaire reducer, branch selector, Recovery draft, nested-route, Plan-model, workspace version-2-to-3 and Recovery version-1-to-2 migrations, version-1 workspace deletion, unverified and partial-deletion fixtures, including independent warnings, unrelated-draft preservation, and example return after failed writes;
 - built-browser verification that restoration precedes synchronization, later Effects cannot recreate deleted answers, and partial-deletion retry remains reachable;
 - the synthetic multi-browser journey matrix;
 - production-bundle, storage, network, CSP, and deletion inspection;

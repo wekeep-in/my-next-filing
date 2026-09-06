@@ -125,7 +125,9 @@ export function LandingFaqs() {
           <p>
             This version is for an adult individual who is resident and
             ordinarily resident in India, uses the new tax regime, and runs one
-            solo service practice.
+            solo service practice. It can also include supported domestic
+            salary, with one standard deduction of up to ₹75,000 across all
+            employers.
           </p>
           <p>It stops without showing a personal estimate if you have:</p>
           <ul>
@@ -134,9 +136,10 @@ export function LandingFaqs() {
               surcharge, or another tax regime.
             </li>
             <li>
-              Salary, house-property income, dividends, gifts, capital gains,
-              crypto, lottery or gaming, agricultural income, unrelated foreign
-              income, or foreign-tax relief.
+              Salary outside the supported domestic branch, house-property
+              income, dividends, gifts, capital gains, crypto, lottery or
+              gaming, agricultural income, unrelated foreign income, or
+              foreign-tax relief.
             </li>
             <li>
               Another business or profession, commission, brokerage, agency
@@ -162,7 +165,10 @@ export function LandingFaqs() {
             uses a higher declared profit if you enter one. It then:
           </p>
           <ol>
-            <li>Adds taxable bank or deposit interest.</li>
+            <li>
+              Adds supported salary after its standard deduction and taxable
+              bank or deposit interest.
+            </li>
             <li>Rounds total income to the nearest ₹10.</li>
             <li>
               Applies the {currentRules.taxPeriod} new-regime slabs, rebate or

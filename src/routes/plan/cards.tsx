@@ -163,6 +163,24 @@ export function TaxSummary({ tax }: { readonly tax: TaxEstimate }) {
             <dt>Taxable bank interest</dt>
             <dd>{formatMoney(tax.taxableBankInterest)}</dd>
           </div>
+          {tax.salary && (
+            <>
+              <div>
+                <dt>Salary before standard deduction</dt>
+                <dd>{formatMoney(tax.salary.grossSalary)}</dd>
+              </div>
+              <div>
+                <dt>Salary standard deduction</dt>
+                <dd className="whitespace-nowrap">
+                  −{formatMoney(tax.salary.standardDeduction)}
+                </dd>
+              </div>
+              <div>
+                <dt>Taxable salary</dt>
+                <dd>{formatMoney(tax.salary.taxableSalary)}</dd>
+              </div>
+            </>
+          )}
           <div>
             <dt>Rounded total income</dt>
             <dd>{formatMoney(tax.roundedTotalIncome)}</dd>
@@ -198,7 +216,12 @@ export function TaxSummary({ tax }: { readonly tax: TaxEstimate }) {
         </dl>
       </details>
       <SourceReferences
-        ids={['section-202', 'section-156', 'finance-act-2026']}
+        ids={[
+          'section-202',
+          'section-156',
+          'finance-act-2026',
+          ...(tax.salary ? ['domestic-salary-2026'] : []),
+        ]}
       />
     </Card>
   )

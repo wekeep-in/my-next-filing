@@ -12,7 +12,7 @@ import {
 } from '../src/workspace/index.ts'
 import type { SavedWorkspaceDraft } from '../src/workspace/index.ts'
 
-const now = new Date('2026-09-03T12:00:00+05:30')
+const now = new Date('2026-09-06T12:00:00+05:30')
 
 const baseCandidate = {
   taxYear: 'Tax Year 2026-27',
@@ -47,6 +47,7 @@ const baseCandidate = {
     foreign: null,
   },
   otherIncome: {
+    salary: { kind: 'none' },
     taxableBankInterest: 10_000,
     tds: 40_000,
     tcs: 0,
@@ -684,7 +685,7 @@ failedRemove.setItem(
   WORKSPACE_KEY,
   JSON.stringify({
     ...workspaceDraft,
-    schemaVersion: 2,
+    schemaVersion: 3,
     revision: 0,
     updatedAt: '2026-09-03T06:30:00.000Z',
   }),

@@ -114,6 +114,10 @@ export function clearInactiveDraft(draft: Draft): Draft {
     }
   }
   if (draft.hasClientWorkSubcontractor !== 'no') next.contractorBoundary = ''
+  if (draft.hasSalary !== 'yes') {
+    next.salaryConfirmed = ''
+    next.amounts.grossSalary = ''
+  }
   if (!creditTriggerMayApply(draft)) next.ageSixtyOrOlder = ''
   if (draft.unsupportedCertainty !== 'selected') next.unsupportedFacts = []
   if (!isUnregisteredGst(draft)) {

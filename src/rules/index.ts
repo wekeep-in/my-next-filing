@@ -84,6 +84,7 @@ export type IncomePathRules = {
 }
 
 export type CommonIncomeTaxRules = {
+  readonly salaryStandardDeduction: number
   readonly incomeCeiling: number
   readonly slabs: readonly {
     readonly upper: number | null
@@ -165,6 +166,17 @@ const reviewedOn = '2026-09-03' as DateOnly
 const expiresOn = '2027-08-31' as DateOnly
 
 export const sourceRegistry: readonly Source[] = [
+  {
+    id: 'domestic-salary-2026',
+    kind: 'statutory',
+    publisher: 'Income Tax Department',
+    title:
+      'Income-tax Act, 2025 as amended: salary, deductions and combined income, sections 15–19, 202, 263, 405 and 408',
+    url: 'https://www.incometaxindia.gov.in/documents/d/guest/income_tax_act_2025_as_amended_by_fa_act_2026-pdf',
+    reviewDate: '2026-09-06',
+    taxPeriod: TAX_YEAR,
+    coveredRuleIds: ['domestic-salary', 'salary-standard-deduction'],
+  },
   {
     id: 'income-tax-act-2025-2026',
     kind: 'statutory',
@@ -383,21 +395,22 @@ const group = <T>(
   id,
   effectiveStart,
   effectiveEnd,
-  verifiedOn: reviewedOn,
+  verifiedOn: id === 'common-income-tax' ? '2026-09-06' : reviewedOn,
   expiresOn,
   values,
   provenance,
 })
 
 export const currentRules: RuleDataset = {
-  id: 'my-next-filing-2026-27-v3',
+  id: 'my-next-filing-2026-27-v4',
   schemaVersion: 1,
   taxPeriod: TAX_YEAR,
   effectiveStart,
   effectiveEnd,
-  verifiedOn: reviewedOn,
+  verifiedOn: '2026-09-06',
   expiresOn,
   changeNotes: [
+    'Domestic salary and one capped standard deduction added after review on 6 September 2026; the presumptive advance-tax schedule and business-income return date continue to apply.',
     'Tax Year 2026-27 Rule groups reviewed on 3 September 2026.',
     'The dataset separates the two presumptive paths and independently reviewed annual-return, GST, and foreign-transition areas.',
     'GST aggregate turnover remains a direct declared amount and is never derived from income-tax inputs.',
@@ -459,6 +472,7 @@ export const currentRules: RuleDataset = {
     commonIncomeTax: group(
       'common-income-tax',
       {
+        salaryStandardDeduction: 75_000,
         incomeCeiling: 5_000_000,
         slabs: [
           { upper: 400_000, rate: 0 },
@@ -476,6 +490,16 @@ export const currentRules: RuleDataset = {
         roundingUnit: 10,
       },
       [
+        {
+          ruleId: 'domestic-salary',
+          sourceId: 'domestic-salary-2026',
+          role: 'applicability',
+        },
+        {
+          ruleId: 'salary-standard-deduction',
+          sourceId: 'domestic-salary-2026',
+          role: 'threshold',
+        },
         {
           ruleId: 'income-ceiling',
           sourceId: 'finance-act-2026',
@@ -943,6 +967,10 @@ function validateValues(
       errors.push('Rules contain income-path values outside the reviewed set.')
   }
   if (id === 'common-income-tax') {
+    if (values.salaryStandardDeduction !== 75_000)
+      errors.push(
+        'Rules contain a salary standard deduction outside the reviewed set.',
+      )
     const slabs = values.slabs
     if (
       !isSafeAmount(values.incomeCeiling) ||
@@ -1151,6 +1179,7 @@ export function validateRules(
         'businessLowCashReceiptLimit',
       ],
       commonIncomeTax: [
+        'salaryStandardDeduction',
         'incomeCeiling',
         'slabs',
         'rebateLimit',
@@ -1195,6 +1224,8 @@ export function validateRules(
         'business-five-year-exclusion',
       ],
       commonIncomeTax: [
+        'domestic-salary',
+        'salary-standard-deduction',
         'income-ceiling',
         'new-regime-slabs',
         'rebate-and-marginal-relief',

@@ -15,7 +15,7 @@ import { clearInactiveDraft } from '@/routes/check/session'
 
 export const RECOVERY_KEY = 'my-next-filing:recovery-draft'
 export type RecoveryDraftEnvelope = {
-  readonly schemaVersion: 1
+  readonly schemaVersion: 2
   readonly taxYear: TaxYear
   readonly origin: 'personal' | 'saved-edit'
   readonly baseWorkspaceRevision: number | null
@@ -74,6 +74,8 @@ const choices = {
   foreignTreatyRelief: triState,
   foreignReceiptsResolved: triState,
   foreignCurrencyResolved: triState,
+  hasSalary: triState,
+  salaryConfirmed: triState,
   ageSixtyOrOlder: triState,
   otherAnnualReturnTrigger: triState,
   unsupportedCertainty: ['', 'none', 'selected', 'not-sure'],
@@ -102,6 +104,30 @@ export function parseRecoveryDraft(
   taxYear: TaxYear,
 ): RecoveryDraftEnvelope | null {
   try {
+    if (isRecord(value) && value.schemaVersion === 1) {
+      const draft = value.draft
+      if (
+        !isRecord(draft) ||
+        !isRecord(draft.amounts) ||
+        Object.hasOwn(draft, 'hasSalary') ||
+        Object.hasOwn(draft, 'salaryConfirmed') ||
+        Object.hasOwn(draft.amounts, 'grossSalary')
+      )
+        return null
+      return parseRecoveryDraft(
+        {
+          ...value,
+          schemaVersion: 2,
+          draft: {
+            ...draft,
+            hasSalary: '',
+            salaryConfirmed: '',
+            amounts: { ...draft.amounts, grossSalary: '' },
+          },
+        },
+        taxYear,
+      )
+    }
     if (
       !isRecord(value) ||
       !exactKeys(value, [
@@ -111,7 +137,7 @@ export function parseRecoveryDraft(
         'baseWorkspaceRevision',
         'draft',
       ]) ||
-      value.schemaVersion !== 1 ||
+      value.schemaVersion !== 2 ||
       value.taxYear !== taxYear
     )
       return null
@@ -168,7 +194,7 @@ export function parseRecoveryDraft(
     if (JSON.stringify(clearInactiveDraft(parsed)) !== JSON.stringify(parsed))
       return null
     return {
-      schemaVersion: 1,
+      schemaVersion: 2,
       taxYear,
       origin: value.origin,
       baseWorkspaceRevision: value.baseWorkspaceRevision as number | null,
@@ -299,7 +325,7 @@ export function recoveryFromSession(
 ): RecoveryDraftEnvelope | null {
   if (!session || session.origin.kind === 'example') return null
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     taxYear,
     origin: session.origin.kind,
     baseWorkspaceRevision:

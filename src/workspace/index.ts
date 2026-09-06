@@ -38,7 +38,7 @@ export type ArchivedPriorYearRecord = {
 export type PriorYearRecord = OpenPriorYearRecord | ArchivedPriorYearRecord
 
 export type SavedWorkspace = {
-  readonly schemaVersion: 2
+  readonly schemaVersion: 3
   readonly revision: number
   readonly noticeVersion: 2
   readonly consentDecidedAt: string
@@ -241,6 +241,46 @@ function decodeWorkspace(
   value: unknown,
   today: DateOnly,
 ): SavedWorkspace | null {
+  if (isRecord(value) && value.schemaVersion === 2) {
+    const migrateRecord = (record: unknown) => {
+      if (record === null) return null
+      if (
+        !isRecord(record) ||
+        !isRecord(record.profile) ||
+        !isRecord(record.profile.otherIncome) ||
+        Object.hasOwn(record.profile.otherIncome, 'salary')
+      )
+        return null
+      return {
+        ...record,
+        profile: {
+          ...record.profile,
+          otherIncome: {
+            ...record.profile.otherIncome,
+            salary: {
+              kind:
+                Array.isArray(record.profile.unsupportedFacts) &&
+                record.profile.unsupportedFacts.includes('salary')
+                  ? 'not-sure'
+                  : 'none',
+            },
+          },
+        },
+      }
+    }
+    if (!Array.isArray(value.priorYears)) return null
+    const active = migrateRecord(value.active)
+    if (value.active !== null && active === null) return null
+    return decodeWorkspace(
+      {
+        ...value,
+        schemaVersion: 3,
+        active,
+        priorYears: value.priorYears.map(migrateRecord),
+      },
+      today,
+    )
+  }
   if (
     !isRecord(value) ||
     !exactKeys(value, [
@@ -253,7 +293,7 @@ function decodeWorkspace(
       'priorYears',
       'updatedAt',
     ]) ||
-    value.schemaVersion !== 2 ||
+    value.schemaVersion !== 3 ||
     !isSafeInteger(value.revision) ||
     value.noticeVersion !== STORAGE_NOTICE_VERSION ||
     !isIsoTimestamp(value.consentDecidedAt) ||
@@ -325,7 +365,7 @@ function withRevision(
   now: Date,
 ): SavedWorkspace {
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     revision,
     noticeVersion: STORAGE_NOTICE_VERSION,
     consentDecidedAt: draft.consentDecidedAt,

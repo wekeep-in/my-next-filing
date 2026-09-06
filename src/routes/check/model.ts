@@ -26,6 +26,7 @@ export type DraftAmountKey =
   | 'tcs'
   | 'advanceTaxPaid'
   | 'aggregateTurnover'
+  | 'grossSalary'
 
 export type Draft = {
   readonly personKind: '' | 'individual' | 'not-individual' | 'not-sure'
@@ -82,6 +83,8 @@ export type Draft = {
   readonly foreignTreatyRelief: DraftChoice
   readonly foreignReceiptsResolved: DraftChoice
   readonly foreignCurrencyResolved: DraftChoice
+  readonly hasSalary: DraftChoice
+  readonly salaryConfirmed: DraftChoice
   readonly ageSixtyOrOlder: DraftChoice
   readonly otherAnnualReturnTrigger: DraftChoice
   readonly unsupportedCertainty: '' | 'none' | 'selected' | 'not-sure'
@@ -105,6 +108,7 @@ export const amountKeys: readonly DraftAmountKey[] = [
   'tcs',
   'advanceTaxPaid',
   'aggregateTurnover',
+  'grossSalary',
 ]
 
 export const statesAndUnionTerritories = [
@@ -193,7 +197,7 @@ export const optionLabels: Readonly<Record<string, string>> = {
 }
 
 export const unsupportedFactLabels: Record<UnsupportedFact, string> = {
-  salary: 'Salary income',
+  salary: 'Salary outside the supported domestic branch',
   houseProperty: 'House-property income',
   dividendsOrGifts: 'Dividend or gift income',
   capitalGains: 'Capital gains',
@@ -264,6 +268,8 @@ export const blankDraft = (): Draft => ({
   foreignTreatyRelief: '',
   foreignReceiptsResolved: '',
   foreignCurrencyResolved: '',
+  hasSalary: '',
+  salaryConfirmed: '',
   ageSixtyOrOlder: '',
   otherAnnualReturnTrigger: '',
   unsupportedCertainty: '',
@@ -290,6 +296,9 @@ export function draftFromProfile(profile: Profile): Draft {
   amounts.tcs = profile.otherIncome.tcs.toLocaleString('en-IN')
   amounts.advanceTaxPaid =
     profile.otherIncome.advanceTaxPaid.toLocaleString('en-IN')
+  const salary = profile.otherIncome.salary
+  if (salary.kind === 'domestic')
+    amounts.grossSalary = salary.grossSalary.toLocaleString('en-IN')
   if (profile.gst.kind === 'unregistered')
     amounts.aggregateTurnover =
       profile.gst.aggregateTurnover.toLocaleString('en-IN')
@@ -313,6 +322,13 @@ export function draftFromProfile(profile: Profile): Draft {
     path: path.kind,
     pathConfirmed: choice(path.confirmed),
     amounts,
+    hasSalary:
+      salary.kind === 'none'
+        ? 'no'
+        : salary.kind === 'domestic'
+          ? 'yes'
+          : 'not-sure',
+    salaryConfirmed: salary.kind === 'domestic' ? salary.confirmed : '',
     clientKind: profile.clients.kind,
     delivery: profile.clients.delivery,
     platformOwnAccount: profile.clients.platform
@@ -450,6 +466,7 @@ const exampleCandidate = {
     foreign: null,
   },
   otherIncome: {
+    salary: { kind: 'none' },
     taxableBankInterest: 10_000,
     tds: 40_000,
     tcs: 0,
@@ -510,6 +527,7 @@ function candidateFromDraft(draft: Draft) {
       ? amountKeys.slice(0, 5)
       : amountKeys.slice(0, 3)),
     ...amountKeys.slice(5, 9),
+    ...(draft.hasSalary === 'yes' ? ['grossSalary' as const] : []),
     ...(isUnregisteredGst(draft) ? ['aggregateTurnover' as const] : []),
   ]
   for (const key of requiredKeys) {
@@ -599,6 +617,14 @@ function candidateFromDraft(draft: Draft) {
         : null,
     },
     otherIncome: {
+      salary:
+        draft.hasSalary === 'yes'
+          ? {
+              kind: 'domestic',
+              confirmed: draft.salaryConfirmed || 'not-sure',
+              grossSalary: amountValues.grossSalary,
+            }
+          : { kind: draft.hasSalary === 'no' ? 'none' : 'not-sure' },
       taxableBankInterest: amountValues.taxableBankInterest,
       tds: amountValues.tds,
       tcs: amountValues.tcs,
@@ -784,6 +810,9 @@ function errorStep(key: string) {
   if (
     [
       'taxableBankInterest',
+      'hasSalary',
+      'salaryConfirmed',
+      'grossSalary',
       'tds',
       'tcs',
       'advanceTaxPaid',
@@ -797,6 +826,12 @@ function errorStep(key: string) {
 }
 
 function profileErrorKey(error: ProfileInputError) {
+  if (error.path.startsWith('otherIncome.salary'))
+    return error.path.endsWith('.grossSalary')
+      ? 'grossSalary'
+      : error.path.endsWith('.confirmed')
+        ? 'salaryConfirmed'
+        : 'hasSalary'
   const aliases: Record<string, string> = {
     kind:
       error.path === 'person.kind'
@@ -959,6 +994,14 @@ function validateDraftGroup(
         'Choose whether these payments involve a foreign account or similar arrangement.'
   }
   if (group === 'other-income') {
+    if (!draft.hasSalary)
+      nextErrors.hasSalary = 'Choose whether you have salary income.'
+    if (draft.hasSalary === 'yes') {
+      if (!draft.salaryConfirmed)
+        nextErrors.salaryConfirmed =
+          'Confirm whether your salary meets these conditions.'
+      requiredAmount(nextErrors, draft, 'grossSalary')
+    }
     for (const key of amountKeys.slice(5, 9))
       requiredAmount(nextErrors, draft, key)
     if (creditTriggerMayApply(draft) && !draft.ageSixtyOrOlder)
@@ -1055,6 +1098,8 @@ function draftFeedback(draft: Draft, latestDate: string) {
     ],
     'business-receipt-limit': ['grossReceipts', 'cashReceipts'],
     'income-ceiling': receipts,
+    'salary-scope':
+      draft.hasSalary === 'yes' ? ['salaryConfirmed'] : ['hasSalary'],
     'client-branch-uncertain':
       draft.clientKind === 'not-sure'
         ? ['clientKind']
@@ -1095,9 +1140,12 @@ function draftFeedback(draft: Draft, latestDate: string) {
     if (
       fact.code === 'income-ceiling' &&
       fact.correctionGroup === 'other-income' &&
-      hasAnswer('taxableBankInterest')
+      (hasAnswer('grossSalary') || hasAnswer('taxableBankInterest'))
     )
-      field = 'taxableBankInterest'
+      field =
+        draft.hasSalary === 'yes' && hasAnswer('grossSalary')
+          ? 'grossSalary'
+          : 'taxableBankInterest'
     if (fact.code === 'client-branch-uncertain')
       field = draft.clientKind === 'not-sure' ? 'clientKind' : 'delivery'
     warnings.push({

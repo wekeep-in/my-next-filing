@@ -59,7 +59,7 @@ import {
   questionnaireGroups,
 } from '../src/routes/check/model.ts'
 
-const today = '2026-09-05'
+const today = '2026-09-06'
 assert.equal(
   latestQuestionnaireDate(new Date('2026-09-05T23:59:00+05:30')),
   '2026-09-05',
@@ -152,7 +152,7 @@ assert.deepEqual(formatAmountEdit('1234', 1, 'deleteContentForward'), {
   caret: 2,
 })
 assert.equal(indiaDate(new Date('2026-09-04T18:29:59Z')), '2026-09-04')
-assert.equal(indiaDate(new Date('2026-09-04T18:30:00Z')), today)
+assert.equal(indiaDate(new Date('2026-09-04T18:30:00Z')), '2026-09-05')
 assert.equal(indiaDate(new Date('2026-12-31T18:30:00Z')), '2027-01-01')
 assert.equal(isBlankDraft(blankDraft()), true)
 assert.equal(firstIncompleteGroup(blankDraft(), today), 'tax-year')
@@ -679,7 +679,7 @@ for (const invalid of [
   [],
   {},
   { ...recovery, route: '/plan' },
-  { ...recovery, schemaVersion: 2 },
+  { ...recovery, schemaVersion: 99 },
   { ...recovery, taxYear: 'Tax Year 2025-26' },
   { ...recovery, origin: 'example' },
   { ...recovery, baseWorkspaceRevision: 0 },
@@ -836,7 +836,7 @@ for (let encounter = 0; encounter < 2; encounter++) {
 }
 const savedV2 = saveSavedWorkspace(workspaceStore, null, workspaceInput)
 assert.ok(savedV2.kind === 'saved')
-assert.equal(savedV2.workspace.schemaVersion, 2)
+assert.equal(savedV2.workspace.schemaVersion, 3)
 assert.equal(savedV2.workspace.noticeVersion, 2)
 assert.equal(deleteLegacyWorkspace(workspaceStore).kind, 'conflict')
 assert.equal(loadSavedWorkspace(workspaceStore).kind, 'ready')
@@ -856,7 +856,7 @@ workspaceStore.setItem(WORKSPACE_KEY, JSON.stringify({ schemaVersion: 99 }))
 assert.equal(loadSavedWorkspace(workspaceStore).kind, 'invalid')
 assert.equal(deleteLegacyWorkspace(workspaceStore).kind, 'conflict')
 
-const planDate = new Date('2026-09-05T12:00:00+05:30')
+const planDate = new Date('2026-09-06T12:00:00+05:30')
 const readyWorkspace = { kind: 'ready' as const, workspace: savedV2.workspace }
 const planSession = sessionFromProfile(
   exampleProfile,

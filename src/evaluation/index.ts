@@ -31,7 +31,7 @@ export type Activity =
   | 'not-sure'
 
 const unsupportedFactLabels = {
-  salary: 'Salary income',
+  salary: 'Salary outside the supported domestic branch',
   houseProperty: 'House-property income',
   dividendsOrGifts: 'Dividend or gift income',
   capitalGains: 'Capital gains',
@@ -55,6 +55,14 @@ const unsupportedFactLabels = {
 } as const
 
 export type UnsupportedFact = keyof typeof unsupportedFactLabels
+
+export type SalaryIncome =
+  | { readonly kind: 'none' | 'not-sure' }
+  | {
+      readonly kind: 'domestic'
+      readonly confirmed: TriState
+      readonly grossSalary: number
+    }
 
 export type SpecifiedProfessionalPath = {
   readonly kind: 'specified-profession'
@@ -159,6 +167,7 @@ export type Profile = {
   readonly incomePath: IncomePath
   readonly clients: ClientProfile
   readonly otherIncome: {
+    readonly salary: SalaryIncome
     readonly taxableBankInterest: number
     readonly tds: number
     readonly tcs: number
@@ -270,6 +279,11 @@ export type TaxEstimate = {
     readonly qualifyingReceipts: number | null
     readonly otherReceipts: number | null
   }
+  readonly salary: {
+    readonly grossSalary: number
+    readonly standardDeduction: number
+    readonly taxableSalary: number
+  } | null
   readonly taxableBankInterest: number
   readonly roundedTotalIncome: number
   readonly slabTax: number
@@ -1012,6 +1026,7 @@ function readProfile(value: unknown) {
   const otherRecord = checkObject(
     root.otherIncome,
     [
+      'salary',
       'taxableBankInterest',
       'tds',
       'tcs',
@@ -1024,6 +1039,7 @@ function readProfile(value: unknown) {
     errors,
   )
   const otherIncome = {
+    salary: parseSalary(otherRecord?.salary, errors),
     taxableBankInterest: otherRecord
       ? readAmount(
           otherRecord,
@@ -1317,6 +1333,54 @@ function readProfile(value: unknown) {
   return { profile, errors }
 }
 
+function parseSalary(
+  value: unknown,
+  errors: ProfileInputError[],
+): SalaryIncome {
+  const path = 'otherIncome.salary'
+  if (!isRecord(value)) {
+    addError(
+      errors,
+      'invalid',
+      path,
+      'other-income',
+      'Choose whether you have salary income.',
+    )
+    return { kind: 'not-sure' }
+  }
+  if (value.kind === 'domestic') {
+    checkObject(
+      value,
+      ['kind', 'confirmed', 'grossSalary'],
+      path,
+      'other-income',
+      errors,
+    )
+    return {
+      kind: 'domestic',
+      confirmed: readTri(value, 'confirmed', path, 'other-income', errors),
+      grossSalary: readAmount(
+        value,
+        'grossSalary',
+        path,
+        'other-income',
+        errors,
+      ),
+    }
+  }
+  checkObject(value, ['kind'], path, 'other-income', errors)
+  return {
+    kind: readText(
+      value,
+      'kind',
+      ['none', 'not-sure'],
+      path,
+      'other-income',
+      errors,
+    ),
+  }
+}
+
 export function parseProfile(value: unknown): ParseProfileResult {
   const { profile, errors } = readProfile(value)
   return profile && errors.length === 0
@@ -1402,6 +1466,22 @@ function calculateSlabTax(totalIncome: number, rules: CommonIncomeTaxRules) {
   return tax
 }
 
+function calculateSalary(
+  salary: SalaryIncome,
+  rules: CommonIncomeTaxRules,
+): TaxEstimate['salary'] {
+  if (salary.kind !== 'domestic') return null
+  const standardDeduction = Math.min(
+    salary.grossSalary,
+    rules.salaryStandardDeduction,
+  )
+  return {
+    grossSalary: salary.grossSalary,
+    standardDeduction,
+    taxableSalary: salary.grossSalary - standardDeduction,
+  }
+}
+
 function calculateTax(
   profile: Profile,
   pathRules: IncomePathRules,
@@ -1416,8 +1496,11 @@ function calculateTax(
           pathRules.businessQualifyingReceiptRate,
         ) + percentage(path.otherReceipts, pathRules.businessOtherReceiptRate)
   const usedIncome = Math.max(minimumIncome, path.declaredProfit)
+  const salary = calculateSalary(profile.otherIncome.salary, taxRules)
   const roundedTotalIncome = roundMoney(
-    usedIncome + profile.otherIncome.taxableBankInterest,
+    usedIncome +
+      (salary?.taxableSalary ?? 0) +
+      profile.otherIncome.taxableBankInterest,
     taxRules.roundingUnit,
   )
   const slabTax = calculateSlabTax(roundedTotalIncome, taxRules)
@@ -1449,6 +1532,7 @@ function calculateTax(
       otherReceipts:
         path.kind === 'eligible-business' ? path.otherReceipts : null,
     },
+    salary,
     taxableBankInterest: profile.otherIncome.taxableBankInterest,
     roundedTotalIncome,
     slabTax,
@@ -2180,6 +2264,21 @@ function coreSupportFacts(
     ...factForPath(current, rules.groups.incomePaths.values, sourceIds),
     ...factForClients(current, sourceIds),
   ]
+  const salary = current.otherIncome.salary
+  if (
+    salary.kind === 'not-sure' ||
+    (salary.kind === 'domestic' && salary.confirmed !== 'yes')
+  )
+    coreFacts.push(
+      unsupported(
+        'salary-scope',
+        'income-tax',
+        'other-income',
+        'Domestic salary',
+        'Confirm the supported domestic salary conditions. Other or uncertain salary treatment needs a separate review before this version can estimate tax.',
+        sourceIds,
+      ),
+    )
   for (const fact of current.unsupportedFacts)
     coreFacts.push(
       unsupported(
@@ -2209,6 +2308,8 @@ function coreSupportFacts(
         )
   const roundedIncome = roundMoney(
     Math.max(minimumIncome, current.incomePath.declaredProfit) +
+      (calculateSalary(salary, rules.groups.commonIncomeTax.values)
+        ?.taxableSalary ?? 0) +
       current.otherIncome.taxableBankInterest,
     rules.groups.commonIncomeTax.values.roundingUnit,
   )
@@ -2539,12 +2640,17 @@ export function evaluate(
     assumptions: [
       'This estimate is for one adult who is resident and ordinarily resident in India and runs one individual practice.',
       'The amounts you entered are complete, non-negative whole-rupee values from your tax records.',
-      'This is a best-effort estimate. It does not calculate surcharge, deductions, losses, special-rate tax, foreign-tax relief, interest, fees, or penalties.',
+      'This is a best-effort estimate. It does not calculate deductions other than the salary standard deduction, surcharge, losses, special-rate tax, foreign-tax relief, interest, fees, or penalties.',
     ],
     explanations: [
       current.incomePath.kind === 'specified-profession'
         ? 'Professional income uses the higher of declared profit and 50% of gross receipts.'
         : 'Business income uses the higher of declared profit and 6% of qualifying banking or online receipts plus 8% of other receipts.',
+      ...(tax.salary
+        ? [
+            'Salary uses your combined annual amount from all employers, less one standard deduction capped at salary. Employer TDS is included only through the Indian TDS credit you entered.',
+          ]
+        : []),
       'Total income is rounded to the nearest ₹10 before slab tax, relief, cess, and credits.',
     ],
     sourceIds: addUnique([

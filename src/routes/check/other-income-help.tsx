@@ -2,6 +2,39 @@ import { ExternalLink } from '@/components/external-link'
 import { HelpModal } from '@/components/help-modal'
 import { currentRules } from '@/rules'
 
+// Reviewed 2026-09-06 against amended Act sections 15–19 and 202.
+export function SalaryHelp() {
+  return (
+    <HelpModal
+      topic="annual salary"
+      title="Which salary amount?"
+      description={`Use the combined salary from all employers for ${currentRules.taxPeriod}, before the standard deduction and TDS.`}
+    >
+      <p>
+        Include salary due for this year even if it has not reached your bank,
+        taxable allowances, bonuses and employer-valued benefits. Subtract only
+        exemptions confirmed under the new regime. Do not subtract employee PF,
+        professional tax or personal NPS contributions.
+      </p>
+      <p>
+        If an employer's figure already subtracts a standard deduction, add that
+        deduction back before combining it with other employers' figures. We
+        apply one deduction to the combined salary, capped at ₹75,000 or salary,
+        whichever is lower.
+      </p>
+      <p>
+        Use your tax records to resolve benefits and exemptions first. If you
+        cannot confirm the amount or the salary conditions, choose Not sure.
+        Enter actual employer TDS separately in Indian TDS credit; do not
+        include expected future withholding.
+      </p>
+      <ExternalLink href="https://www.incometaxindia.gov.in/w/section-19-199">
+        Official salary deduction rules
+      </ExternalLink>
+    </HelpModal>
+  )
+}
+
 // Reviewed 2026-09-06 against the linked ITD AIS/Form 168 guidance; undated.
 export function InterestHelp() {
   return (
@@ -28,14 +61,15 @@ export function TdsHelp() {
     <HelpModal
       topic="Indian TDS credit"
       title="Which TDS amount?"
-      description="TDS is tax a client or bank withheld. Enter the actual credit for work income and bank interest included in this estimate."
+      description="TDS is tax a client, employer or bank withheld. Enter the actual credit for freelance income, supported salary and bank interest included in this estimate."
     >
       <p>
         Match payer certificates with AIS tax-credit entries for{' '}
         {currentRules.taxPeriod}. Total the tax deducted, not the gross
-        payments. Count each credit once. Exclude salary, foreign and GST
-        withholding; enter TCS and advance tax separately. Resolve mismatches
-        with the payer before proceeding; use 0 only if no credit applies.
+        payments. Count each credit once, including employer TDS. Exclude
+        foreign and GST withholding; enter TCS and advance tax separately.
+        Resolve mismatches with the payer before proceeding; use 0 only if no
+        credit applies.
       </p>
       <ExternalLink href="https://www.incometaxindia.gov.in/documents/d/guest/form-168-faqs">
         Official AIS and credit guide, PDF

@@ -415,6 +415,22 @@ function GroupSummary({
       step: groupStep('other-income'),
       answers: [
         {
+          label: 'Salary alongside freelancing',
+          value: answer(draft.hasSalary),
+        },
+        ...(draft.hasSalary === 'yes'
+          ? [
+              {
+                label: 'Domestic salary conditions confirmed',
+                value: answer(draft.salaryConfirmed),
+              },
+              {
+                label: 'Annual salary before standard deduction',
+                value: money(draft.amounts.grossSalary),
+              },
+            ]
+          : []),
+        {
           label: 'Taxable bank or deposit interest',
           value: money(draft.amounts.taxableBankInterest),
         },

@@ -7,6 +7,7 @@ import { creditTriggerMayApply } from '@/routes/check/model'
 import { UnsupportedFactsField } from '@/routes/check/review'
 import {
   InterestHelp,
+  SalaryHelp,
   TcsHelp,
   TdsHelp,
 } from '@/routes/check/other-income-help'
@@ -30,6 +31,64 @@ export function OtherIncomeStep({
         title="Other income and tax paid"
         description={`Enter your Indian amounts for ${taxYearShort}. Use 0 if you have none.`}
       />
+      <ChoiceField
+        id="hasSalary"
+        label={`Do you also have salary income for ${taxYearShort}?`}
+        help="Include salary from a job you held for only part of the year. Keep employment salary separate from freelance receipts."
+        value={draft.hasSalary}
+        error={errors.hasSalary}
+        onChange={(value) =>
+          dispatch({
+            type: 'field-changed',
+            field: 'hasSalary',
+            value: value as TriState,
+          })
+        }
+      />
+      {draft.hasSalary === 'yes' && (
+        <div className="field-stack">
+          <ChoiceField
+            id="salaryConfirmed"
+            label="Does all your salary meet these conditions?"
+            help={
+              <>
+                Your employers are in India and you performed all employment
+                work in India. Your records resolve the full year's salary,
+                taxable benefits and any exemptions under the new regime.
+                <br />
+                You have no pension, retirement or termination payout,
+                leave-encashment settlement, arrears, advance salary,
+                share-based pay, foreign salary, unresolved fund tax adjustment,
+                tax relief or deduction other than the standard deduction. This
+                excludes employer NPS and Agniveer deductions.
+              </>
+            }
+            value={draft.salaryConfirmed}
+            error={errors.salaryConfirmed}
+            onChange={(value) =>
+              dispatch({
+                type: 'field-changed',
+                field: 'salaryConfirmed',
+                value: value as TriState,
+              })
+            }
+          />
+          <MoneyField
+            id="grossSalary"
+            label="Annual salary before standard deduction"
+            help={
+              <>
+                Combine all employers and enter salary before TDS and the
+                standard deduction, not CTC or take-home pay. We apply the
+                standard deduction once, up to ₹75,000. <SalaryHelp />
+              </>
+            }
+            value={draft.amounts.grossSalary}
+            error={errors.grossSalary}
+            onChange={(value) => setAmount('grossSalary', value)}
+          />
+        </div>
+      )}
       <MoneyField
         id="taxableBankInterest"
         label="Taxable bank or deposit interest"
@@ -47,8 +106,8 @@ export function OtherIncomeStep({
         label="Indian TDS credit"
         help={
           <>
-            Enter actual Indian TDS for the income included in this estimate.{' '}
-            <TdsHelp />
+            Enter actual Indian TDS for included freelance income, salary and
+            bank interest. Count each credit once. <TdsHelp />
           </>
         }
         value={draft.amounts.tds}
