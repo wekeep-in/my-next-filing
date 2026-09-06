@@ -316,6 +316,8 @@ The operative date controls current status but never replaces the normal date. `
 
 Tutorials never establish applicability, values, dates, or Coverage. Removing a tutorial cannot change Evaluation.
 
+The next-action card and each agenda item link to a fixed official portal entry point and, when approved, an official procedural tutorial for that action kind. Use public registration or payment pages where available, otherwise the official login with a short menu destination. Links open in a new tab without a referrer and never carry Profile, period, amount, or Completion values. Opening a link does not record completion. Annual-return help covers portal navigation without choosing a return form; QRMP help retains conditional payment-review language. Keep tutorials in the Source registry and Resources catalogue, separate from statutory authority.
+
 ## Saved workspace
 
 Longer-lived saving is optional and starts off. Offer it only after a complete Profile parses and Evaluation returns Supported, including Supported with Incomplete coverage. Do not put Recovery drafts, examples, malformed data, Unsupported Profiles, or Profiles evaluated with stale core Rules in the Saved workspace.
