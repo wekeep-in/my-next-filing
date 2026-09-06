@@ -5,6 +5,7 @@ import { ExternalLink } from '@/components/external-link'
 import { QrmpPaymentHelp } from '@/components/gst-help'
 import { GST_PORTAL_URL } from '@/rules'
 import { completionLabel } from '@/routes/plan/model'
+import { ActionLinks } from '@/routes/plan/action-links'
 import type { Obligation, ProfileGroup, SupportedResult } from '@/evaluation'
 import { canCompleteObligation } from '@/evaluation'
 import type { CompletionRecord, WorkspaceView } from '@/workspace'
@@ -131,6 +132,7 @@ export function Agenda({
                     date.
                   </p>
                 )}
+                <ActionLinks kind={obligation.kind} />
                 {saved && !completion && !isNext && (
                   <Button
                     variant="link"

@@ -35,19 +35,19 @@ const withSources = (change: (source: Source) => Source): RuleDataset => ({
 
 test('publishes unique resources with complete provenance', () => {
   assert.deepEqual(catalogue.errors, [])
-  assert.equal(catalogue.resources.length, 22)
+  assert.equal(catalogue.resources.length, 29)
   assert.equal(
     new Set(catalogue.resources.map((resource) => resource.url)).size,
-    22,
+    29,
   )
   assert.equal(
     new Set(catalogue.resources.flatMap((resource) => resource.sourceIds)).size,
-    24,
+    31,
   )
 })
 
 test('ranks exact titles identifiers and reviewed aliases', () => {
-  assert.equal(ids('').length, 22)
+  assert.equal(ids('').length, 29)
   sameMatches('', '   ')
   assert.equal(ids('how do I').length, 0)
   assert.deepEqual(
@@ -74,6 +74,7 @@ test('ranks exact titles identifiers and reviewed aliases', () => {
       'gst-notification-37-2017',
       'gst-circular-8-2017',
       'gst-circular-125-2019',
+      'gst-lut-guide',
     ]),
   )
   assert.equal(ids('notification 83/2020')[0], 'gst-notification-83-2020')
@@ -128,7 +129,12 @@ test('distinguishes Tax Years Assessment Years and publication years', () => {
     assert.equal(search(query).periodProblem, true, query)
     assert.equal(search(query).suggestion, null, query)
   }
-  sameMatches('advance tax', 'advance tax Tax Year 2026-27')
+  assert.deepEqual(
+    ids('advance tax Tax Year 2026-27').sort(),
+    ids('advance tax')
+      .filter((id) => id !== 'advance-tax-challan')
+      .sort(),
+  )
   sameMatches('advance tax Tax Year 2026-27', 'advance tax Tax Year 2026-2027')
   assert.equal(ids('Tax Year 2026-27').length, 20)
   const gstPeriod = search('GST Tax Year 2026-27')
@@ -140,7 +146,7 @@ test('distinguishes Tax Years Assessment Years and publication years', () => {
   )
   assert.ok(ids('Finance Act 2026').includes('finance-act-2026'))
   assert.ok(ids('2020').includes('gst-notification-82-2020'))
-  assert.equal(ids('How to generate challan form').length, 0)
+  assert.deepEqual(ids('How to generate challan form'), ['advance-tax-challan'])
   assert.equal(
     ids('Identification and generation of applicable return').length,
     0,
@@ -205,7 +211,7 @@ test('warns at independent review boundaries without hiding documents', () => {
       new Date(`${date}T12:00:00+05:30`),
     )
     assert.deepEqual(result.errors, [])
-    assert.equal(result.resources.length, 22)
+    assert.equal(result.resources.length, 29)
     assert.equal(
       result.resources.find(
         (resource) => resource.id === 'gst-notification-82-2020',
@@ -231,7 +237,7 @@ test('retains bibliography when the root review expires', () => {
     currentRules,
     new Date('2027-09-01T12:00:00+05:30'),
   )
-  assert.equal(expired.resources.length, 22)
+  assert.equal(expired.resources.length, 29)
   assert.ok(
     expired.resources
       .filter((resource) => resource.taxPeriod)
@@ -284,7 +290,7 @@ test('withholds malformed or future source review dates', () => {
       ),
       now,
     )
-    assert.equal(result.resources.length, 21)
+    assert.equal(result.resources.length, 28)
     assert.ok(result.errors.length > 0)
     assert.ok(
       !result.resources.some((resource) => resource.id === 'section-58'),
@@ -308,7 +314,7 @@ test('withholds unsafe source URLs', () => {
       ),
       now,
     )
-    assert.equal(result.resources.length, 21)
+    assert.equal(result.resources.length, 28)
     assert.ok(result.errors.length > 0)
   }
 })
@@ -336,7 +342,7 @@ test('excludes unapproved tutorials from search', () => {
       ),
       now,
     )
-    assert.equal(result.resources.length, 21)
+    assert.equal(result.resources.length, 28)
     assert.equal(
       searchResources(result.resources, {
         ...emptyResourceFilters,
@@ -404,6 +410,6 @@ test('rejects unclassified duplicate missing and malformed catalogue entries', (
           : entry,
       ),
     ).resources.length,
-    21,
+    28,
   )
 })

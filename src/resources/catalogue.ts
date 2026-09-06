@@ -45,6 +45,84 @@ export type ResourceDefinition = {
 // Coverage descriptions only. Review evidence: .scratch/resources/research/source-review.md.
 // URLs, statutory periods, publishers and source-review dates stay in the Rule registry.
 export const resourceDefinitions: readonly ResourceDefinition[] = [
+  // Procedural guides only. Review: .scratch/plan-action-links/source-review.md.
+  {
+    sourceIds: ['advance-tax-challan'],
+    title: 'Generate a challan with e-Pay Tax',
+    description:
+      'Official instructions for creating an income-tax payment challan before or after login. Select the applicable period and payment type on the portal.',
+    documentType: 'Guide',
+    topics: ['income-tax'],
+    tasks: ['advance-tax'],
+    aliases: ['e-Pay Tax', 'income tax payment', 'payment challan'],
+    identifiers: [],
+  },
+  {
+    sourceIds: ['efiling-portal-guide'],
+    title: 'Find filing services on the e-Filing portal',
+    description:
+      'An official tour of the dashboard, income-tax return filing and verification services. This guide does not select a return form for your plan.',
+    documentType: 'Guide',
+    topics: ['income-tax'],
+    tasks: ['income-tax-return'],
+    aliases: ['ITR', 'income tax return', 'e-filing dashboard'],
+    identifiers: [],
+  },
+  {
+    sourceIds: ['gst-registration-guide'],
+    title: 'Apply for GST registration',
+    description:
+      'The official walkthrough for completing a normal-taxpayer registration application, including Parts A and B and submission.',
+    documentType: 'Guide',
+    topics: ['gst'],
+    tasks: ['gst-registration'],
+    aliases: ['GST registration help', 'new registration'],
+    identifiers: ['GST REG-01'],
+  },
+  {
+    sourceIds: ['gst-gstr1-guide'],
+    title: 'Prepare and file GSTR-1',
+    description:
+      'Official instructions for entering outward supplies, reviewing the summary and filing monthly or quarterly GSTR-1.',
+    documentType: 'Guide',
+    topics: ['gst'],
+    tasks: ['gst-returns'],
+    aliases: ['outward supplies', 'GST filing help'],
+    identifiers: ['GSTR-1'],
+  },
+  {
+    sourceIds: ['gst-gstr3b-guide'],
+    title: 'Prepare and file GSTR-3B',
+    description:
+      'Official instructions for preparing, previewing and filing GSTR-3B, including the payment screens.',
+    documentType: 'Guide',
+    topics: ['gst'],
+    tasks: ['gst-returns'],
+    aliases: ['GST filing help'],
+    identifiers: ['GSTR-3B'],
+  },
+  {
+    sourceIds: ['gst-qrmp-payment-guide'],
+    title: 'Create a challan for a QRMP payment',
+    description:
+      'Official instructions for creating a GST challan, including the monthly payment option under QRMP. Use it after checking whether a deposit is needed.',
+    documentType: 'Guide',
+    topics: ['gst'],
+    tasks: ['gst-returns'],
+    aliases: ['QRMP', 'quarterly returns monthly payment', 'GST payment'],
+    identifiers: ['PMT-06'],
+  },
+  {
+    sourceIds: ['gst-lut-guide'],
+    title: 'Furnish a letter of undertaking on the GST portal',
+    description:
+      'The official walkthrough for preparing, previewing and submitting an LUT in Form GST RFD-11.',
+    documentType: 'Guide',
+    topics: ['gst', 'overseas-clients'],
+    tasks: ['lut'],
+    aliases: ['LUT', 'letter of undertaking', 'export services'],
+    identifiers: ['GST RFD-11'],
+  },
   {
     sourceIds: ['gst-notification-82-2020'],
     title: 'GSTR-3B and QRMP payment schedules',
@@ -335,8 +413,6 @@ export const resourceDefinitions: readonly ResourceDefinition[] = [
 ]
 
 export const resourceExclusions: Readonly<Record<string, string>> = {
-  'advance-tax-challan':
-    'Provisional: period-specific payment instructions need review.',
   'return-identification':
     'Deferred: current-period return instructions need review.',
 }

@@ -5,6 +5,15 @@ import viteConfig from './vite.config.ts'
 export default mergeConfig(
   viteConfig,
   defineConfig({
+    optimizeDeps: {
+      // Prebundle link-button dependencies so a fresh browser run does not reload mid-test.
+      include: [
+        '@base-ui/react/button',
+        'class-variance-authority',
+        'cn',
+        'lucide-react',
+      ],
+    },
     test: {
       allowOnly: false,
       reporters: ['default', 'junit'],

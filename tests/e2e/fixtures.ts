@@ -86,20 +86,26 @@ export async function failRecoveryWrites(page: Page) {
 }
 
 export async function openResources(page: Page) {
-  // Use the Plan link so a fictional session never exits through the personal landing page.
   await page
     .getByRole('button', { name: '8. Review your answers', exact: true })
     .click()
   await page
     .getByRole('button', { name: 'Calculate my plan', exact: true })
     .click()
+  await browseResourcesFromPlan(page)
+}
+
+export async function browseResourcesFromPlan(page: Page) {
+  await page.getByRole('link', { name: 'Read the FAQs', exact: true }).click()
   await page
-    .getByRole('link', { name: 'Browse resources', exact: true })
+    .getByRole('link', { name: 'Browse all resources', exact: true })
     .click()
   await expect(page).toHaveURL(/\/resources$/)
 }
 
 export async function returnFromResources(page: Page) {
+  await page.goBack()
+  await expect(page).toHaveURL(/\/#faqs$/)
   await page.goBack()
   await expect(page).toHaveURL(/\/plan(?:\?example=1)?$/)
   await page

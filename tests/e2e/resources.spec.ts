@@ -1,4 +1,5 @@
 import {
+  browseResourcesFromPlan,
   expect,
   failRecoveryWrites,
   openResources,
@@ -17,7 +18,7 @@ test('searches a fresh public catalogue without changing storage URL title or ou
       remote.push(request.url())
   })
   await page.goto('/resources')
-  await expect(page.locator('[aria-label="Resources"] > li')).toHaveCount(22)
+  await expect(page.locator('[aria-label="Resources"] > li')).toHaveCount(29)
   const help = page.getByRole('button', { name: 'Search resources help' })
   await help.hover()
   await expect(page.getByRole('tooltip')).toHaveText(
@@ -44,14 +45,14 @@ test('searches a fresh public catalogue without changing storage URL title or ou
     .getByRole('button', { name: 'Did you mean “advance tax”?' })
     .click()
   await expect(search).toHaveValue('advance tax')
-  await expect(page.getByRole('status')).toHaveText('4 resources')
+  await expect(page.getByRole('status')).toHaveText('5 resources')
   await search.press('Enter')
   await expect(page).toHaveURL(url)
   await expect(page).toHaveTitle(title)
   expect(await stored(page)).toEqual(before)
   expect(remote).toEqual([])
   await search.fill('')
-  await expect(page.locator('[aria-label="Resources"] > li')).toHaveCount(22)
+  await expect(page.locator('[aria-label="Resources"] > li')).toHaveCount(29)
 })
 
 test('keeps a personal plan and browse state through Back Forward and reload', async ({
@@ -65,13 +66,18 @@ test('keeps a personal plan and browse state through Back Forward and reload', a
     .getByRole('link', { name: 'Continue your plan', exact: true })
     .click()
   await expect(page).toHaveURL(/\/plan$/)
-  await page
-    .getByRole('link', { name: 'Browse resources', exact: true })
-    .click()
+  await expect(
+    page.getByRole('link', { name: 'Browse resources', exact: true }),
+  ).toHaveCount(0)
+  await browseResourcesFromPlan(page)
   await page.locator('#resource-search').fill('LUT')
+  await page.goBack()
+  await expect(page).toHaveURL(/\/#faqs$/)
   await page.goBack()
   await expect(page).toHaveURL(/\/plan$/)
   expect(await stored(page)).toEqual(before)
+  await page.goForward()
+  await expect(page).toHaveURL(/\/#faqs$/)
   await page.goForward()
   await expect(page.locator('#resource-search')).toHaveValue('LUT')
   expect(await stored(page)).toEqual(before)
@@ -80,7 +86,7 @@ test('keeps a personal plan and browse state through Back Forward and reload', a
   expect(await stored(page)).toEqual(before)
 })
 
-test('retains personal and fictional edits through resource visits and failed Recovery writes', async ({
+test('retains personal edits through FAQ resource visits and failed Recovery writes', async ({
   page,
 }) => {
   await seedPersonal(page, true)
@@ -96,59 +102,11 @@ test('retains personal and fictional edits through resource visits and failed Re
   await expect(gross).toHaveValue('21,00,000')
   expect(await stored(page)).toEqual(personal)
 
-  await page.getByRole('link', { name: 'Read the FAQs' }).click()
-  await page
-    .getByRole('link', { name: 'fictional example', exact: true })
-    .click()
-  await page
-    .getByRole('button', { name: '4. Receipts and profit', exact: true })
-    .click()
-  await gross.fill('2300000')
-  const fictional = await stored(page)
-  await openResources(page)
-  await expect(
-    page.getByText('Fictional example.', { exact: true }),
-  ).toHaveCount(0)
-  await page.goBack()
-  await expect(page).toHaveURL(/\/plan\?example=1$/)
-  await page.goForward()
-  await expect(page.locator('#resource-search')).toHaveValue('LUT')
-  await returnFromResources(page)
-  await expect(page).toHaveURL(/\?example=1$/)
-  await expect(gross).toHaveValue('23,00,000')
-  expect(await stored(page)).toEqual(fictional)
-  await page
-    .getByRole('button', { name: 'Return to your estimate', exact: true })
-    .click()
-  await page
-    .getByRole('button', { name: '4. Receipts and profit', exact: true })
-    .click()
-  await expect(gross).toHaveValue('21,00,000')
-
   await failRecoveryWrites(page)
   const beforeFailure = await stored(page)
   await gross.fill('2400000')
   await openResources(page)
   await returnFromResources(page)
-  await expect(gross).toHaveValue('24,00,000')
-  expect(await stored(page)).toEqual(beforeFailure)
-  await page.getByRole('link', { name: 'Read the FAQs' }).click()
-  await page
-    .getByRole('link', { name: 'fictional example', exact: true })
-    .click()
-  await page
-    .getByRole('button', { name: '4. Receipts and profit', exact: true })
-    .click()
-  await gross.fill('2500000')
-  await openResources(page)
-  await returnFromResources(page)
-  await expect(gross).toHaveValue('25,00,000')
-  await page
-    .getByRole('button', { name: 'Return to your estimate', exact: true })
-    .click()
-  await page
-    .getByRole('button', { name: '4. Receipts and profit', exact: true })
-    .click()
   await expect(gross).toHaveValue('24,00,000')
   expect(await stored(page)).toEqual(beforeFailure)
   await openResources(page)
@@ -175,9 +133,9 @@ test('preserves selected workspace and its separate personal draft', async ({
     .getByRole('button', { name: 'Open saved workspace', exact: true })
     .click()
   const selected = await stored(page)
-  await page
-    .getByRole('link', { name: 'Browse resources', exact: true })
-    .click()
+  await browseResourcesFromPlan(page)
+  await page.goBack()
+  await expect(page).toHaveURL(/\/#faqs$/)
   await page.goBack()
   await expect(
     page.getByRole('button', { name: 'Return to your estimate', exact: true }),

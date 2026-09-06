@@ -480,7 +480,7 @@ Shared questionnaire and result-card containers smoothly resize for pointer-trig
 
 ## Resources
 
-The public Resources page lets visitors find official references and help destinations without entering a Profile. Link it from a landing-page FAQ about browsing without completing the questionnaire and every Plan result state, including unavailable results. It is outside the numbered questionnaire and does not infer applicability, personal deadlines, or eligibility from search or filters.
+The public Resources page lets visitors find official references and help destinations without entering a Profile. Link it from a landing-page FAQ about browsing without completing the questionnaire. The Plan page has no general resource-browsing link; its action-specific guides and official sources remain available. Resources is outside the numbered questionnaire and does not infer applicability, personal deadlines, or eligibility from search or filters.
 
 Browse all publishable resources or search reviewed titles, descriptions, aliases, identifiers, and known periods. Offer one Topic and one Task filter, combined with AND, with unique-resource counts, removable selections, and explicit empty-state recovery. Exact form, section, notification, and year identifiers take priority and are never corrected into a different identifier. Ordinary-word typo suggestions require explicit selection. An Assessment Year is not a Tax Year alias. Show recorded coverage rather than a year filter while the collection has one statutory period.
 

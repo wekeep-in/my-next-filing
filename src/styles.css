@@ -1088,7 +1088,6 @@ main:has(> .resources-page) {
 
 /* Successor journey additions. The existing visual language remains the base. */
 .button-row,
-.attention-meta,
 .workspace-controls {
   display: flex;
   flex-wrap: wrap;
@@ -1282,15 +1281,6 @@ main:has(> .resources-page) {
 
 .attention-card h2 {
   margin: 0 0 0.25rem;
-}
-
-.attention-meta {
-  margin-bottom: 0.8rem;
-}
-
-.attention-card .attention-meta {
-  justify-content: space-between;
-  margin-top: 1rem;
 }
 
 .completion-state {
@@ -1520,7 +1510,8 @@ main:has(> .resources-page) {
 
 .completion-controls {
   display: grid;
-  grid-template-columns: minmax(0, 24rem);
+  grid-template-columns: minmax(0, 24rem) max-content;
+  align-items: start;
   gap: 1rem;
 }
 
@@ -1543,6 +1534,12 @@ main:has(> .resources-page) {
   border-radius: 0;
   padding: 1rem 0 0;
   background: transparent;
+}
+
+@media (max-width: 520px) {
+  .completion-controls {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 860px) {
@@ -1624,10 +1621,6 @@ main:has(> .resources-page) {
 
   .review-answer dd {
     margin-top: 0;
-  }
-
-  .completion-controls {
-    grid-template-columns: 1fr;
   }
 
   .needs-review-item {

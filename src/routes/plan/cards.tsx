@@ -23,11 +23,19 @@ import {
   SaveNotice,
 } from '@/routes/plan/editors'
 import type { PlanEditor } from '@/routes/plan/editors'
+import { ActionLinks } from '@/routes/plan/action-links'
 
 const cardKickerClass =
   'mb-[.45rem] flex border-0 bg-transparent p-0 [font-size:.72rem] leading-[1.6] font-extrabold tracking-[.04em] text-muted-foreground uppercase'
 
-function formatDeadline(obligation: Obligation) {
+function formatActionSummary(obligation: Obligation) {
+  if (obligation.kind === 'advance-tax') {
+    const amount =
+      obligation.amountDue === 0
+        ? 'No estimated amount left to pay'
+        : `${formatMoney(obligation.amountDue ?? 0)} estimated left to pay`
+    return `${amount}. Due ${formatDate(obligation.dueDate)}`
+  }
   const prefix =
     obligation.kind === 'gst-lut'
       ? 'Before'
@@ -465,18 +473,6 @@ export function AttentionCard({
           </>
         )}
       </p>
-      <div className="attention-meta">
-        {next.kind === 'advance-tax' && (
-          <span className="text-[1.1rem] font-extrabold text-foreground">
-            {next.amountDue === 0
-              ? 'No estimated amount left to pay'
-              : `${formatMoney(next.amountDue ?? 0)} estimated left to pay`}
-          </span>
-        )}
-        <span className="text-[1.1rem] font-extrabold text-foreground">
-          {formatDeadline(next)}
-        </span>
-      </div>
       {completion && !needsPayment && !editor ? (
         <div className="completion-state">
           <p>
@@ -515,6 +511,11 @@ export function AttentionCard({
           This fictional example cannot be saved or marked complete.
         </Alert>
       ) : null}
+      <ActionLinks
+        kind={next.kind}
+        prominent
+        summary={formatActionSummary(next)}
+      />
       <SourceReferences ids={next.statutorySourceIds} />
       {actions}
     </Card>

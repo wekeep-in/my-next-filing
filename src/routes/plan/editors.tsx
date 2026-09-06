@@ -178,7 +178,7 @@ export function CompletionEditor({
       )}
       <div className="completion-controls">
         <div className="completion-field">
-          <label htmlFor={inputId}>
+          <label className="sr-only" htmlFor={inputId}>
             {reviewed ? 'Review date' : 'Completion date'}
           </label>
           <DatePicker
