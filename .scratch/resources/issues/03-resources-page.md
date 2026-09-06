@@ -1,6 +1,6 @@
 # Build the accessible resources page
 
-Status: planned. Depends on [search and filters](02-search-and-filters.md). Complete route wiring in issue 4 before testing the integrated page.
+Status: implemented and verified locally. Responsive, keyboard and automated accessibility checks are recorded in [verification](../verification.md).
 
 ## Result
 

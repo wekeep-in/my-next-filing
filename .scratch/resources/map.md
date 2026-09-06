@@ -1,10 +1,12 @@
 # Searchable resources
 
-Status: implementation plan complete, 6 September 2026. Application code has not changed.
+Status: implemented and verified locally, 6 September 2026. Manual usability and public-release gates remain pending.
 
 The user approved a public resources page after the product assessment and requested a full plan through `grill-with-docs`. Technical and obvious decisions are delegated to the agent. Ask about product or design only if a material ambiguity remains.
 
 - [Implementation plan](implementation-plan.md)
+- [Implementation verification and remaining gates](verification.md)
+- [Resource description/source review](research/source-review.md)
 - [Current source inventory and publication decisions](research/source-inventory.md)
 - [Prepare the catalogue](issues/01-prepare-catalogue.md)
 - [Implement search and filters](issues/02-search-and-filters.md)
@@ -34,10 +36,12 @@ No unresolved product or design question was found. The accepted proposal settle
 
 The planning workflow read `grill-with-docs`, `grilling`, and `domain-modeling` directly because this session has no dedicated Skill tool. Fact-finding was delegated as the grilling workflow directs. `CONTEXT.md` now distinguishes a Resource from an Obligation or personalized result. No new ADR is warranted: these choices reuse existing boundaries and can be revised without a new architectural commitment.
 
-## Completion record for this planning stage
+## Completion record
 
 - Completed the linked plan, current-source inventory, and five ordered issues.
 - Checked document links, file references, internal consistency, and whitespace. The source inventory and search/freshness contracts received a second read-only fact check.
-- Planning is complete. Application implementation, source-description review, browser validation, participant checks, and public release remain separate work.
+- Committed the planning documents as `6fbf45c`, then implemented the five issues. The catalogue has 22 resources and two explicitly withheld tutorials.
+- Source descriptions were reviewed with recorded access limitations. Automated release checks and browser validation passed; see the verification record for evidence and the manual gates still pending.
+- Browser evidence added passive route matching through the router, spacing for retained storage notices, and on-demand loading of other screens to meet the performance target. Failed screen imports retain AppFrame and unsaved answers.
 
 Do not mark implementation or manual release checks complete from planning evidence.

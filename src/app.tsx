@@ -1,4 +1,4 @@
-import type { MouseEvent } from 'react'
+import type { ComponentType, MouseEvent } from 'react'
 import { browserStorage, latestQuestionnaireDate } from '@/app-context'
 import type { AppOutletContext } from '@/app-context'
 import {
@@ -11,9 +11,11 @@ import {
 } from 'react'
 import { cn } from 'cn'
 import {
+  Link,
   Outlet,
   createBrowserRouter,
   useLocation,
+  useMatch,
   useNavigate,
 } from 'react-router-dom'
 import { ExternalLink } from '@/components/external-link'
@@ -33,16 +35,16 @@ import {
   firstIncompleteGroup,
   isBlankDraft,
   questionnaireGroupFromPath,
+  questionnaireGroups,
 } from '@/routes/check/model'
 import {
   questionnaireReducer,
   sessionFromProfile,
 } from '@/routes/check/session'
 import type { QuestionnaireSession } from '@/routes/check/session'
-import { CheckGroup, CheckIndex, CheckRoute } from '@/routes/check'
-import { LandingRoute } from '@/routes/landing'
 import { NotFoundRoute } from '@/routes/not-found'
-import { PlanRoute } from '@/routes/plan'
+import { ResourcesRoute } from '@/routes/resources'
+import { emptyResourceFilters } from '@/resources'
 import { usePageTransition } from '@/lib/page-transition'
 
 type Notice =
@@ -71,9 +73,13 @@ function AppFrame() {
   const location = useLocation()
   const navigate = useNavigate()
   const content = usePageTransition()
-  const exampleMode =
-    new URLSearchParams(location.search).get('example') === '1'
   const [session, rawDispatch] = useReducer(questionnaireReducer, null)
+  const isResourcesRoute =
+    useMatch({ path: '/resources', caseSensitive: true, end: true }) !== null
+  const exampleMode = isResourcesRoute
+    ? session?.origin.kind === 'example'
+    : new URLSearchParams(location.search).get('example') === '1'
+  const [resourceFilters, setResourceFilters] = useState(emptyResourceFilters)
   const [savedWorkspace, setSavedWorkspace] =
     useState<LoadSavedWorkspaceResult>({ kind: 'absent' })
   const [workspaceSelected, rawSelectWorkspace] = useState(false)
@@ -200,7 +206,7 @@ function AppFrame() {
   })
 
   useLayoutEffect(() => {
-    if (initializedOnce.current) return
+    if (isResourcesRoute || initializedOnce.current) return
     initializedOnce.current = true
     const now = new Date()
     const workspace = refreshSavedWorkspace()
@@ -244,11 +250,12 @@ function AppFrame() {
     dispatch,
     exampleMode,
     location.pathname,
+    isResourcesRoute,
     refreshSavedWorkspace,
   ])
 
   useLayoutEffect(() => {
-    if (!initialized) return
+    if (!initialized || isResourcesRoute) return
     if (exampleMode && session?.origin.kind !== 'example') {
       // oxlint-disable-next-line react/set-state-in-effect -- Synchronize browser history mode with the in-memory return session.
       setExampleReturn(session)
@@ -271,6 +278,7 @@ function AppFrame() {
     exampleMode,
     exampleReturn,
     initialized,
+    isResourcesRoute,
     session,
     setWorkspaceSelected,
   ])
@@ -281,13 +289,14 @@ function AppFrame() {
     return () => window.clearTimeout(timeout)
   }, [notice])
   useEffect(() => {
+    if (!initialized) return
     const onStorage = (event: StorageEvent) => {
       if (event.key === WORKSPACE_KEY || event.key === null)
         refreshSavedWorkspace()
     }
     window.addEventListener('storage', onStorage)
     return () => window.removeEventListener('storage', onStorage)
-  }, [refreshSavedWorkspace])
+  }, [initialized, refreshSavedWorkspace])
   useEffect(() => {
     const target = location.hash
       ? document.getElementById(location.hash.slice(1))
@@ -412,6 +421,8 @@ function AppFrame() {
     setConfirmation(null)
   }
   const context: AppOutletContext = {
+    resourceFilters,
+    setResourceFilters,
     session,
     personalSession:
       session?.origin.kind === 'example' ? exampleReturn : session,
@@ -508,10 +519,11 @@ function AppFrame() {
         </TopBar>
       )}
       <main ref={content}>
-        {initialized &&
-          exampleMode === (session?.origin.kind === 'example') && (
-            <Outlet context={context} />
-          )}
+        {(isResourcesRoute ||
+          (initialized &&
+            exampleMode === (session?.origin.kind === 'example'))) && (
+          <Outlet context={context} />
+        )}
       </main>
       {confirmation && (
         <dialog
@@ -565,56 +577,78 @@ function AppFrame() {
   )
 }
 
+function RouteLoadError() {
+  return (
+    <section className="reference-page" role="alert">
+      <h1>This page couldn't load</h1>
+      <p>
+        Any answers you entered are still here. You can keep browsing resources.
+      </p>
+      <Link to="/resources" className="inline-flex min-h-11 items-center">
+        Back to resources
+      </Link>
+    </section>
+  )
+}
+
+function loadScreen(load: () => Promise<ComponentType>) {
+  return async () => {
+    try {
+      return { Component: await load() }
+    } catch {
+      // Resolve a failed import to a screen, keeping its route and the stateful shell mounted.
+      return { Component: RouteLoadError }
+    }
+  }
+}
+
 export const router = createBrowserRouter([
   {
     element: <AppFrame />,
+    hydrateFallbackElement: (
+      <main>
+        <p role="status">Loading My Next Filing...</p>
+      </main>
+    ),
     children: [
-      { index: true, element: <LandingRoute /> },
+      {
+        index: true,
+        lazy: loadScreen(
+          async () => (await import('@/routes/landing')).LandingRoute,
+        ),
+        errorElement: <RouteLoadError />,
+      },
       {
         path: '/check',
         caseSensitive: true,
-        element: <CheckRoute />,
+        lazy: loadScreen(
+          async () => (await import('@/routes/check')).CheckRoute,
+        ),
+        errorElement: <RouteLoadError />,
         children: [
-          { index: true, element: <CheckIndex /> },
           {
-            path: 'tax-year',
-            caseSensitive: true,
-            element: <CheckGroup group="tax-year" />,
+            index: true,
+            lazy: loadScreen(
+              async () => (await import('@/routes/check')).CheckIndex,
+            ),
           },
-          {
-            path: 'activity',
+          ...questionnaireGroups.map(({ id }) => ({
+            path: id,
             caseSensitive: true,
-            element: <CheckGroup group="activity" />,
-          },
-          {
-            path: 'receipts',
-            caseSensitive: true,
-            element: <CheckGroup group="receipts" />,
-          },
-          {
-            path: 'clients',
-            caseSensitive: true,
-            element: <CheckGroup group="clients" />,
-          },
-          {
-            path: 'other-income',
-            caseSensitive: true,
-            element: <CheckGroup group="other-income" />,
-          },
-          {
-            path: 'gst',
-            caseSensitive: true,
-            element: <CheckGroup group="gst" />,
-          },
-          {
-            path: 'review',
-            caseSensitive: true,
-            element: <CheckGroup group="review" />,
-          },
+            lazy: loadScreen(async () => {
+              const { CheckGroup } = await import('@/routes/check')
+              return () => <CheckGroup group={id} />
+            }),
+          })),
           { path: '*', element: <NotFoundRoute /> },
         ],
       },
-      { path: '/plan', element: <PlanRoute /> },
+      {
+        path: '/plan',
+        lazy: loadScreen(async () => (await import('@/routes/plan')).PlanRoute),
+        errorElement: <RouteLoadError />,
+      },
+      { path: '/resources', caseSensitive: true, element: <ResourcesRoute /> },
       { path: '*', element: <NotFoundRoute /> },
     ],
   },

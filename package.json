@@ -11,7 +11,7 @@
     "format:check": "oxfmt --check package.json index.html tsconfig.json vite.config.ts scripts src",
     "lint": "oxlint --deny-warnings --ignore-pattern 'public/video/hls/**/*.ts'",
     "lint:fix": "oxlint --fix --deny-warnings --ignore-pattern 'public/video/hls/**/*.ts'",
-    "test": "tsx scripts/verify.ts && tsx scripts/verify-frontend.ts && tsx scripts/verify-salary.ts && tsx scripts/verify-gst-calendar.ts",
+    "test": "tsx scripts/verify.ts && tsx scripts/verify-frontend.ts && tsx scripts/verify-salary.ts && tsx scripts/verify-gst-calendar.ts && tsx scripts/verify-resources.ts",
     "typecheck": "tsc --noEmit",
     "rules:validate": "tsx scripts/validate-rules.ts",
     "verify:build": "node --experimental-strip-types scripts/verify-build.ts",

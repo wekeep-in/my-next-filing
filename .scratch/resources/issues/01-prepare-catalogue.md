@@ -1,6 +1,6 @@
 # Prepare the reviewed resources catalogue
 
-Status: planned. Depends on the completed [implementation plan](../implementation-plan.md).
+Status: implemented locally. See [source review](../research/source-review.md) for evidence and access limitations, and [verification](../verification.md) for executed checks.
 
 ## Result
 

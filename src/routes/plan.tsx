@@ -1,6 +1,6 @@
 import Confetti from 'react-confetti-boom'
 import { useEffect } from 'react'
-import { Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { latestQuestionnaireDate, useApp } from '@/app-context'
 import { TopBar } from '@/components/top-bar'
 import { Badge } from '@/components/ui/badge'
@@ -307,6 +307,11 @@ export function PlanRoute() {
       )}
       <div className="plan-main">
         {renderPlan()}
+        <p className="my-4">
+          <Link to="/resources" className="inline-flex min-h-11 items-center">
+            Browse resources
+          </Link>
+        </p>
         {c.staleEdit && (
           <TopBar variant="warning">
             Your saved workspace changed while you were editing. Your answers

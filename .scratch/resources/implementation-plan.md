@@ -1,6 +1,6 @@
 # Resources page implementation plan
 
-Status: complete plan for review, 6 September 2026. No application implementation or release verification is complete.
+Status: implemented locally, 6 September 2026. See [verification](verification.md) for executed checks and remaining manual release gates.
 
 Authority: the user's request to implement the proposed searchable resources page, beginning with `grill-with-docs`, with technical decisions delegated to the agent. Product behavior remains governed by [`SPEC.md`](../../SPEC.md), vocabulary by [`CONTEXT.md`](../../CONTEXT.md), and appearance by [`DESIGN.md`](../../DESIGN.md).
 
@@ -176,7 +176,7 @@ Keep `/resources` as a child of `AppFrame`. Moving it into a separate applicatio
 
 Make these bounded changes in `src/app.tsx`:
 
-1. Recognize `/resources` and `/resources/` consistently. Declare the questionnaire session before computing example mode. On resources, derive example mode from the retained session; elsewhere retain the current fixed `?example=1` behavior.
+1. Use the router's own case-sensitive route matcher, including its trailing-slash and decoded-path behavior. Declare the questionnaire session before computing example mode. On resources, derive example mode from the retained session; elsewhere retain the current fixed `?example=1` behavior.
 2. Return early from the one-time initialization effect on resources before setting its initialized ref. Also retain its existing already-initialized guard. Add the resources-route flag to the dependencies. This prevents fresh browsing from loading, migrating, deleting, or restoring saved data.
 3. Skip the example/personal reconciliation effect while on resources. Preserve both the edited example and the personal return session.
 4. Attach the storage-event listener only after the normal app initialization has run. Preserve existing cross-tab handling after initialization.
@@ -194,6 +194,8 @@ Queries can contain financial details even though the interface never asks for t
 
 The existing static SPA fallback supports the new route. No Cloudflare binding, Worker code, configuration change, or deploy is required to implement the page.
 
+Implementation evidence refined two technical details. React Router already reads its own `remix-router-transitions` session key while constructing the router; the passive-entry boundary excludes Profile/Recovery/workspace access and cleanup, not the framework's unrelated transition bookkeeping. The initial production page scored 87 for Lighthouse mobile performance. Use React Router's built-in lazy screen loading for landing, questionnaire and Plan while retaining the existing AppFrame. Child-route load errors must remain inside that frame so a failed module request cannot discard unsaved answers. Source metadata lives in `src/resources/catalogue.ts` separately from search/review logic for readability.
+
 ## File plan
 
 | File | Change |
@@ -201,8 +203,9 @@ The existing static SPA fallback supports the new route. No Cloudflare binding, 
 | `SPEC.md` | Adopt the public resources contract, route, passive-entry behavior, temporary search state, publication boundary, and acceptance checks when implementation begins. |
 | `CONTEXT.md` | Resource term added during planning; keep it a glossary. |
 | `src/resources/index.ts` | Catalogue, classifications, explicit exclusions, integrity checks, source resolution/grouping, review-state derivation, pure search/filter/suggestion functions. Split only if actual readability warrants it. |
+| `src/resources/catalogue.ts` | Authored resource definitions, typed Topic/Task labels and explicit exclusions. |
 | `src/routes/resources.tsx` | The resource page, local date refresh, filter controls, result list, source details, recovery states, and plain return links. |
-| `src/app.tsx` | Route registration, browse-state ownership, initialization/example guards, delayed storage listener, and outlet gate. |
+| `src/app.tsx` | Route registration, browse-state ownership, initialization/example guards, delayed storage listener, outlet gate, and on-demand loading of other screens with a state-preserving route error. |
 | `src/app-context.ts` | Typed browse state and setter in the existing outlet context. |
 | `src/routes/landing.tsx` | Visible resources entry. |
 | `src/routes/plan.tsx` | Visible resources entry across result states. |
@@ -267,7 +270,7 @@ Run `pnpm verify:release` once after the integrated implementation, resolving fa
 
 Run the mounted/browser-console resources check separately; the current release command does not execute browser-console scripts. Use isolated browser contexts and synthetic storage only:
 
-- Direct `/resources` and `/resources/` loads and reloads work with missing, denied, malformed, and legacy storage. Before leaving the public route, verify no attempted reads, writes, cleanup, or migration, including after a synthetic storage event.
+- Direct resource-route variants and reloads work with missing, denied, malformed, and legacy storage. Before leaving the public route, verify no attempted Profile, Recovery or workspace reads, writes, cleanup, or migration, including after a synthetic storage event. Identify React Router's existing transition-key access separately.
 - Enter the normal app from fresh resources and confirm restoration occurs before existing synchronization.
 - Browse and return from incomplete personal answers, complete unsaved plans, a selected workspace with a separate personal draft, and an edited fictional example. Compare in-memory state and stored bytes across Links and Back/Forward. Do not confuse expected cross-tab updates with mutations caused by browsing.
 - Search/filters survive internal route navigation and reset on reload. Source details can reset on route re-entry; they have no saved state.

@@ -1,6 +1,6 @@
 # Verify the complete resources feature
 
-Status: planned. Depends on [navigation integration](04-navigation-and-state.md) and all preceding issues.
+Status: automated and browser checks complete; participant usability and existing public-release gates pending. See [verification](../verification.md) for results and limitations.
 
 ## Result
 

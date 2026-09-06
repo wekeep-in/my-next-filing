@@ -519,7 +519,8 @@ main {
 }
 
 .question-group h1,
-.plan-main .question-heading h1 {
+.plan-main .question-heading h1,
+.reference-page.resources-page h1 {
   font-size: clamp(2rem, 3vw, 3.5rem);
 }
 
@@ -798,9 +799,77 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
   margin: 0 auto;
 }
 
+.reference-page {
+  padding-top: var(--top-bar-height, 0px);
+}
+
 .reference-page h1,
 .stop-state h1 {
   font-size: clamp(2.4rem, 5vw, 4.3rem);
+}
+
+main:has(> .resources-page) {
+  container-type: inline-size;
+  padding-top: clamp(1.5rem, 3vw, 3rem);
+}
+
+.resources-page {
+  display: grid;
+  grid-template-areas:
+    'header header'
+    'sidebar results';
+  grid-template-columns: minmax(17.25rem, 19rem) minmax(0, 1fr);
+  gap: 2.5rem clamp(2rem, 4vw, 4.5rem);
+  width: min(100%, var(--content-max));
+}
+
+.resources-header {
+  grid-area: header;
+}
+
+.resources-sidebar {
+  grid-area: sidebar;
+  min-width: 0;
+  align-self: start;
+}
+
+.resources-results {
+  grid-area: results;
+}
+
+.resource-card details {
+  margin-top: 0.5rem;
+  padding-top: 0;
+  border-top: 0;
+}
+
+@media (min-height: 800px) {
+  @container (min-width: 861px) {
+    .resources-sidebar {
+      position: sticky;
+      top: calc(var(--top-bar-height, 0px) + 1.5rem);
+      max-height: calc(100dvh - var(--top-bar-height, 0px) - 3rem);
+      overflow-y: auto;
+      scrollbar-width: thin;
+      padding: 0.5rem;
+      margin: -0.5rem;
+    }
+  }
+}
+
+@container (max-width: 860px) {
+  .resources-page {
+    grid-template-areas: 'header' 'sidebar' 'results';
+    grid-template-columns: minmax(0, 1fr);
+    width: min(100%, 42rem);
+    gap: 2rem;
+  }
+}
+
+@container (min-width: 350px) and (max-width: 860px) {
+  .resource-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .fact-list {
@@ -1600,7 +1669,8 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
 }
 
 @media (min-width: 1101px) {
-  .app--journey main {
+  .app--journey main,
+  main:has(> .resources-page) {
     padding-top: clamp(3rem, 7vw, 5.5rem);
   }
 

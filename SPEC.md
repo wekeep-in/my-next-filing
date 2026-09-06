@@ -458,7 +458,8 @@ Keep these routes:
 
 - `/` for the generic landing and optional share action;
 - `/check` as the questionnaire index, with static children `/check/tax-year`, `/check/activity`, `/check/receipts`, `/check/clients`, `/check/other-income`, `/check/gst`, and `/check/review`;
-- `/plan` for a transient result or restored workspace; and
+- `/plan` for a transient result or restored workspace;
+- `/resources` for independent public browsing of the reviewed source collection; and
 - the existing not-found route.
 
 Only the questionnaire-group identity enters its path. Selected Tax Year, Profile values, amounts, Evaluation state, Completion state, Recovery state, and save state remain in memory or their exact browser-storage values. They do not enter routes, queries, fragments, titles, logs, clipboard content, Analytics, or external links.
@@ -471,7 +472,23 @@ Use restrained CSS transitions for press, hover, disclosure, and short content e
 
 Navigation feedback is owned by the shared app shell. Pointer-driven links, buttons, and history changes use the same short entry, including opening a different plan at the same path. Initial load, keyboard navigation, hash-only changes, and reduced motion remain immediate. Answer edits, recalculation, and notices do not restart page entry; navigation must not remount content merely to animate it.
 
+Load landing, questionnaire, and Plan screen modules on demand so independent resource browsing does not download every screen. Keep AppFrame and its in-memory state mounted across navigation. A failed screen-module load shows a recoverable message inside that frame and a link to Resources, without discarding answers or exposing an error stack. Initial screen loading has a text status.
+
 Shared questionnaire and result-card containers smoothly resize for pointer-triggered content changes. Newly shown fields, notices, and editors inherit entry feedback. Keyboard interactions and reduced motion remain immediate. Let React remove obsolete or deleted content immediately, and animate only the remaining container's size. Input values and money results are never interpolated.
+
+## Resources
+
+The public Resources page lets visitors find official references and help destinations without entering a Profile. Link it from a landing-page FAQ about browsing without completing the questionnaire and every Plan result state, including unavailable results. It is outside the numbered questionnaire and does not infer applicability, personal deadlines, or eligibility from search or filters.
+
+Browse all publishable resources or search reviewed titles, descriptions, aliases, identifiers, and known periods. Offer one Topic and one Task filter, combined with AND, with unique-resource counts, removable selections, and explicit empty-state recovery. Exact form, section, notification, and year identifiers take priority and are never corrected into a different identifier. Ordinary-word typo suggestions require explicit selection. An Assessment Year is not a Tax Year alias. Show recorded coverage rather than a year filter while the collection has one statutory period.
+
+The local catalogue references existing Source identities and fixed URLs. Keep display metadata outside the statutory Source schema. Explicitly consolidate identical documents without deleting their provenance, retain useful section references, and show the oldest recorded source-review date for grouped material. Publish `starting-link-only` sources as labelled official portals, not approved tutorials. Withhold provisional, deferred, rejected, or invalid entries from results and suggestions. Every registry identity needs a catalogue assignment or documented exclusion.
+
+Preserve safe bibliographic links when Rule review expires, with a visible review warning for the affected area. Root Rule failure removes any claim of available statutory coverage across the dataset; independent group failure affects only its linked areas. A review deadline does not mean the underlying document has legally expired. Invalid links, source display metadata, or inconsistent grouping withhold only the affected resource. Source descriptions and identifiers require a recorded official-source review before publication.
+
+Keep query and filters in memory across internal navigation and reset them on reload. Do not put them in URLs, titles, logs, Analytics, clipboard content, router history payloads, browser storage, or external requests. Search never fetches remote content. A fresh Resources visit does not access, restore, migrate, or clean up Profile, Recovery, or Saved-workspace data. Entering another application route runs normal initialization. Internal resource visits preserve personal answers, edited fictional examples, personal return sessions, and workspace selection, including failed-write states. Normal pending data operations and initialized cross-tab behavior remain available.
+
+Reuse the existing visual system, source-owned controls, and external-link behavior. Search and result changes keep keyboard focus in the edited control, announce the result count, and do not animate the list. Verify catalogue integrity, positive and negative relevance cases, independent review expiry, fresh passive entry, personal/example/workspace round trips, responsive layout, keyboard interaction, query privacy, and representative resource-finding tasks. The [implementation plan](.scratch/resources/implementation-plan.md) defines the initial catalogue and acceptance cases.
 
 ## Privacy, Analytics, and sharing
 

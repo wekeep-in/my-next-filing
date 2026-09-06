@@ -3,6 +3,8 @@ import { useOutletContext } from 'react-router-dom'
 import { indiaDate } from '@/lib/india-date'
 import type { ProfileGroup } from '@/evaluation'
 import type { LoadSavedWorkspaceResult, SavedWorkspace } from '@/workspace'
+import type { Dispatch, SetStateAction } from 'react'
+import type { ResourceFilters } from '@/resources'
 import type {
   QuestionnaireDispatch,
   QuestionnaireState,
@@ -23,6 +25,8 @@ export const latestQuestionnaireDate = (now: Date) => {
 }
 
 export type AppOutletContext = {
+  readonly resourceFilters: ResourceFilters
+  readonly setResourceFilters: Dispatch<SetStateAction<ResourceFilters>>
   readonly session: QuestionnaireState
   readonly personalSession: QuestionnaireState
   readonly dispatch: QuestionnaireDispatch

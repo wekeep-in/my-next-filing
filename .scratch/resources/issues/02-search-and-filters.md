@@ -1,6 +1,6 @@
 # Implement accurate local search and filters
 
-Status: planned. Depends on [catalogue preparation](01-prepare-catalogue.md).
+Status: implemented and verified locally. The relevance and facet assertions pass; see [verification](../verification.md).
 
 ## Result
 

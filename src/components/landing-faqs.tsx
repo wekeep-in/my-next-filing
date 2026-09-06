@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { ExternalLink } from '@/components/external-link'
 import { formatDate } from '@/lib/format'
 import { currentRules } from '@/rules'
@@ -22,6 +23,16 @@ export function LandingFaqs() {
           <p>
             It does not file or pay anything, send reminders, confirm government
             acceptance, or replace a tax professional.
+          </p>
+        </article>
+
+        <article>
+          <h3>Can I browse resources without filling in the form?</h3>
+          <p>
+            Yes. <Link to="/resources">Browse all resources</Link> for official
+            tax references and help portals. Search by topic or task without
+            entering any answers. Fill in the form when you want an estimate and
+            filing dates based on your situation.
           </p>
         </article>
 
