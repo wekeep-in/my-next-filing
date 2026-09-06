@@ -202,3 +202,31 @@ export function updateCompletionRecords(
     ? remaining
     : [...remaining, { obligationId, completedOn }]
 }
+
+// Saved identities are validated by the workspace; retain their original period after a cadence change.
+export function completionLabel(obligationId: string) {
+  const [kind, taxYear, start, end] = obligationId.split(':')
+  const names: Record<string, string> = {
+    'advance-tax': 'Advance tax',
+    'annual-return': 'Income-tax return',
+    'gst-registration': 'GST registration',
+    'gst-lut': 'LUT',
+    'gst-gstr1': 'GSTR-1',
+    'gst-gstr3b': 'GSTR-3B',
+    'gst-qrmp-payment': 'GST payment review',
+  }
+  const name = names[kind]
+  if (!name || !taxYear) return 'Saved action'
+  if (!start || !end) return `${name} for ${taxYear.replace('Tax Year ', '')}`
+  const startDate = new Date(`${start}T00:00:00Z`)
+  const endDate = new Date(`${end}T00:00:00Z`)
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime()))
+    return 'Saved action'
+  const month = new Intl.DateTimeFormat('en-IN', {
+    month: 'long',
+    timeZone: 'UTC',
+  })
+  const firstMonth = month.format(startDate)
+  const lastMonth = month.format(endDate)
+  return `${name} for ${firstMonth === lastMonth ? firstMonth : `${firstMonth}–${lastMonth}`} ${endDate.getUTCFullYear()}`
+}

@@ -7,6 +7,7 @@ import type {
   ForeignGuidanceRules,
   IncomePathRules,
   RuleDataset,
+  RuleValidation,
   TaxYear,
 } from '@/rules'
 
@@ -31,7 +32,7 @@ export type Activity =
   | 'not-sure'
 
 const unsupportedFactLabels = {
-  salary: 'Salary outside the supported domestic branch',
+  salary: 'Salary this version cannot cover',
   houseProperty: 'House-property income',
   dividendsOrGifts: 'Dividend or gift income',
   capitalGains: 'Capital gains',
@@ -137,6 +138,36 @@ export type RegisteredGst = {
   readonly kind: 'registered'
   readonly status: 'one-normal' | 'other' | 'not-sure'
   readonly state: string | null
+  readonly calendar: GstCalendarProfile | null
+}
+
+export type GstCadence = 'monthly' | 'qrmp' | 'not-sure'
+export type GstExportRoute = 'none' | 'lut' | 'igst' | 'other' | 'not-sure'
+export type GstCalendarProfile = {
+  readonly registeredFrom: DateOnly | null
+  readonly continuous: TriState
+  readonly cadences: readonly GstCadence[]
+  readonly exportRoute: GstExportRoute
+  readonly lutConfirmed: TriState | null
+  readonly firstExportDate: DateOnly | null
+}
+
+export function gstQuarterPeriods(taxYear: TaxYear) {
+  const year = Number(taxYear.slice(9, 13))
+  return [3, 6, 9, 12].map((month) => {
+    const start = new Date(Date.UTC(year, month, 1))
+    const end = new Date(Date.UTC(year, month + 3, 0))
+    const shortMonth = (date: Date) =>
+      new Intl.DateTimeFormat('en-IN', {
+        month: 'short',
+        timeZone: 'UTC',
+      }).format(date)
+    return {
+      start: start.toISOString().slice(0, 10) as DateOnly,
+      end: end.toISOString().slice(0, 10) as DateOnly,
+      label: `${shortMonth(start)}–${shortMonth(end)} ${end.getUTCFullYear()}`,
+    }
+  })
 }
 
 export type GstProfile = UnregisteredGst | RegisteredGst
@@ -200,8 +231,13 @@ export type ObligationKind =
   | 'advance-tax'
   | 'annual-return'
   | 'gst-registration'
+  | 'gst-gstr1'
+  | 'gst-gstr3b'
+  | 'gst-qrmp-payment'
+  | 'gst-lut'
 
 export type Obligation = {
+  readonly completionNotBefore?: DateOnly
   readonly id: string
   readonly kind: ObligationKind
   readonly title: string
@@ -224,7 +260,12 @@ export type Obligation = {
 export type ReviewAction = {
   readonly id: string
   readonly title: string
-  readonly area: 'annual-return' | 'gst' | 'foreign-guidance' | 'advance-tax'
+  readonly area:
+    | 'annual-return'
+    | 'gst'
+    | 'lut'
+    | 'foreign-guidance'
+    | 'advance-tax'
   readonly correctionGroup: ProfileGroup
   readonly reason: string
   readonly sourceIds: readonly string[]
@@ -233,7 +274,7 @@ export type ReviewAction = {
 export type CoverageUnavailable = {
   readonly kind: 'unavailable'
   readonly code: string
-  readonly area: 'annual-return' | 'gst' | 'foreign-guidance'
+  readonly area: 'annual-return' | 'gst' | 'lut' | 'foreign-guidance'
   readonly reason: string
   readonly guidance: string
   readonly sourceIds: readonly string[]
@@ -256,12 +297,24 @@ export type AnnualReturnConclusion = {
   readonly formGuidance: 'unavailable'
 }
 
-export type GstConclusion = {
-  readonly status: 'below' | 'at' | 'above'
-  readonly threshold: number
-  readonly difference: number
-  readonly state: string
-  readonly registrationRequired: boolean
+export type GstConclusion =
+  | {
+      readonly status: 'below' | 'at' | 'above'
+      readonly threshold: number
+      readonly difference: number
+      readonly state: string
+      readonly registrationRequired: boolean
+    }
+  | {
+      readonly status: 'calendar'
+      readonly state: string
+      readonly registeredFrom: DateOnly
+      readonly actionCount: number
+    }
+
+export type LutConclusion = {
+  readonly status: 'not-applicable' | 'scheduled'
+  readonly firstExportDate: DateOnly | null
 }
 
 export type ForeignGuidanceConclusion = {
@@ -306,6 +359,7 @@ export type SupportedResult = {
   readonly coverage: {
     readonly annualReturn: Coverage<AnnualReturnConclusion>
     readonly gst: Coverage<GstConclusion>
+    readonly lut: Coverage<LutConclusion>
     readonly foreignGuidance: Coverage<ForeignGuidanceConclusion>
   }
   readonly obligations: readonly Obligation[]
@@ -1097,7 +1151,7 @@ function readProfile(value: unknown) {
     const record =
       checkObject(
         gstRecord,
-        ['kind', 'status', 'state'],
+        ['kind', 'status', 'state', 'calendar'],
         'gst',
         'gst',
         errors,
@@ -1134,7 +1188,16 @@ function readProfile(value: unknown) {
         'gst',
         'Choose a state for the active normal-taxpayer registration.',
       )
-    gst = { kind: 'registered', status, state }
+    const calendar = parseGstCalendar(record.calendar, errors)
+    if (status !== 'one-normal' && calendar !== null)
+      addError(
+        errors,
+        'inconsistent',
+        'gst.calendar',
+        'gst',
+        'Calendar facts need one active normal-taxpayer registration.',
+      )
+    gst = { kind: 'registered', status, state, calendar }
   } else {
     const record =
       checkObject(
@@ -1331,6 +1394,112 @@ function readProfile(value: unknown) {
     unsupportedFacts: facts,
   }
   return { profile, errors }
+}
+
+function parseGstCalendar(
+  value: unknown,
+  errors: ProfileInputError[],
+): GstCalendarProfile | null {
+  if (value === null) return null
+  const path = 'gst.calendar'
+  const record = checkObject(
+    value,
+    [
+      'registeredFrom',
+      'continuous',
+      'cadences',
+      'exportRoute',
+      'lutConfirmed',
+      'firstExportDate',
+    ],
+    path,
+    'gst',
+    errors,
+  )
+  if (!record) return null
+  const date = (key: 'registeredFrom' | 'firstExportDate') => {
+    const raw = record[key]
+    if (raw === null) return null
+    if (
+      !isDate(raw) ||
+      raw > currentRules.effectiveEnd ||
+      raw <
+        (key === 'registeredFrom' ? '2017-07-01' : currentRules.effectiveStart)
+    ) {
+      addError(
+        errors,
+        'invalid',
+        `${path}.${key}`,
+        'gst',
+        'Choose a valid date in the supported period, or leave it blank if unknown.',
+      )
+      return null
+    }
+    return raw
+  }
+  const cadences: GstCadence[] = []
+  if (!Array.isArray(record.cadences) || record.cadences.length !== 4)
+    addError(
+      errors,
+      'invalid',
+      `${path}.cadences`,
+      'gst',
+      'Use one filing frequency for each of the four quarters.',
+    )
+  for (let index = 0; index < 4; index++) {
+    const raw: unknown = Array.isArray(record.cadences)
+      ? record.cadences[index]
+      : undefined
+    if (raw !== 'monthly' && raw !== 'qrmp' && raw !== 'not-sure') {
+      addError(
+        errors,
+        'invalid',
+        `${path}.cadences.${index}`,
+        'gst',
+        'Choose monthly, QRMP or Not sure.',
+      )
+      cadences.push('not-sure')
+    } else cadences.push(raw)
+  }
+  const exportRoute = readText(
+    record,
+    'exportRoute',
+    ['none', 'lut', 'igst', 'other', 'not-sure'],
+    path,
+    'gst',
+    errors,
+  )
+  const firstExportDate = date('firstExportDate')
+  const lutConfirmed =
+    exportRoute === 'lut'
+      ? readTri(record, 'lutConfirmed', path, 'gst', errors)
+      : null
+  if (
+    exportRoute !== 'lut' &&
+    (record.lutConfirmed !== null || record.firstExportDate !== null)
+  )
+    addError(
+      errors,
+      'inconsistent',
+      `${path}.exportRoute`,
+      'gst',
+      'LUT answers do not belong to this export route.',
+    )
+  return {
+    registeredFrom: date('registeredFrom'),
+    continuous: readTri(record, 'continuous', path, 'gst', errors),
+    cadences,
+    exportRoute,
+    firstExportDate,
+    lutConfirmed,
+  }
+}
+
+export function canCompleteObligation(obligation: Obligation, date: DateOnly) {
+  return (
+    !(obligation.kind === 'advance-tax' && (obligation.amountDue ?? 0) > 0) &&
+    (!obligation.completionNotBefore || date >= obligation.completionNotBefore)
+  )
 }
 
 function parseSalary(
@@ -2085,27 +2254,290 @@ type GstAreaResult = {
   readonly obligation: Obligation | null
 }
 
-function calculateGst(
+function registeredGstAreas(
   profile: Profile,
+  validated: Extract<RuleValidation, { valid: true }>,
+  today: DateOnly,
+) {
+  const data = validated.data
+  const gst = profile.gst
+  const facts = gst.kind === 'registered' ? gst.calendar : null
+  const returnSources = sourceIdsForGroup(data, 'gstCalendar')
+  const lutSources = sourceIdsForGroup(data, 'lut')
+  const obligations: Obligation[] = []
+  const review: ReviewAction[] = []
+  const missing: string[] = []
+  const addReview = (
+    id: string,
+    reason: string,
+    area: 'gst' | 'lut' = 'gst',
+  ) => {
+    review.push(
+      reviewAction(
+        id,
+        area === 'gst'
+          ? 'Review GST calendar facts'
+          : 'Review LUT requirements',
+        area,
+        'gst',
+        reason,
+        area === 'gst' ? returnSources : lutSources,
+      ),
+    )
+    return reason
+  }
+  const newObligation = (
+    kind: ObligationKind,
+    id: string,
+    title: string,
+    date: DateOnly,
+    reason: string,
+    completionNotBefore?: DateOnly,
+  ): Obligation => {
+    const group = kind === 'gst-lut' ? data.groups.lut : data.groups.gstCalendar
+    return {
+      kind,
+      id,
+      title,
+      taxYear: profile.taxYear,
+      normalDueDate: date,
+      dueDate: date,
+      operativeDueDate: null,
+      extensionSourceId: null,
+      deadlineStatus: deadlineStatus(today, date),
+      reasons: [reason],
+      amountDue: null,
+      consequence:
+        kind === 'gst-lut'
+          ? 'Submit your LUT before export. If you exported before submitting it, ask your adviser or GST officer how to address the late filing. Acceptance is not automatic. This plan does not calculate tax payable.'
+          : 'These are normal statutory dates. Check the GST portal for notified extensions. Interest or fees may apply; this plan does not calculate them or verify filing.',
+      ruleIds: group.provenance.map(({ ruleId }) => ruleId),
+      statutorySourceIds: kind === 'gst-lut' ? lutSources : returnSources,
+      tutorialSourceId: null,
+      verifiedOn: group.verifiedOn,
+      expiresOn: group.expiresOn,
+      ...(completionNotBefore ? { completionNotBefore } : {}),
+    }
+  }
+  if (!validated.groups['gst-calendar'].valid) {
+    missing.push(
+      addReview(
+        'gst-calendar-rules',
+        'GST dates are unavailable until we update our rules.',
+      ),
+    )
+  } else if (
+    gst.kind !== 'registered' ||
+    gst.status !== 'one-normal' ||
+    facts?.continuous !== 'yes'
+  ) {
+    missing.push(
+      addReview(
+        'gst-calendar-scope',
+        'This calendar covers one normal GST registration that has stayed active in the same state. Check its history and first filing period before relying on the calendar.',
+      ),
+    )
+  } else if (!facts.registeredFrom || facts.registeredFrom > today) {
+    missing.push(
+      addReview(
+        'gst-calendar-start',
+        'Confirm the past or present effective registration date before relying on GST return periods.',
+      ),
+    )
+  } else {
+    const rules = data.groups.gstCalendar.values
+    for (const [index, quarter] of gstQuarterPeriods(
+      profile.taxYear,
+    ).entries()) {
+      if (quarter.end < facts.registeredFrom) continue
+      const cadence = facts.cadences[index]
+      const secondMonth = new Date(`${quarter.start}T00:00:00Z`)
+      secondMonth.setUTCMonth(secondMonth.getUTCMonth() + 1)
+      if (
+        cadence === 'not-sure' ||
+        (cadence === 'qrmp' &&
+          facts.registeredFrom >= secondMonth.toISOString().slice(0, 10) &&
+          facts.registeredFrom <= quarter.end)
+      ) {
+        missing.push(
+          addReview(
+            `gst-quarter-${index}`,
+            `${quarter.label}: confirm the portal's filing frequency and QRMP eligibility for this quarter.`,
+          ),
+        )
+        continue
+      }
+      for (let month = 0; month < 3; month++) {
+        const start = new Date(`${quarter.start}T00:00:00Z`)
+        start.setUTCMonth(start.getUTCMonth() + month)
+        const end = new Date(
+          Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 0),
+        )
+          .toISOString()
+          .slice(0, 10) as DateOnly
+        if (end < facts.registeredFrom) continue
+        const periodStart = (
+          cadence === 'monthly' || month < 2
+            ? start.toISOString().slice(0, 10)
+            : quarter.start
+        ) as DateOnly
+        const periodEnd = cadence === 'monthly' || month < 2 ? end : quarter.end
+        const label =
+          cadence === 'monthly' || month < 2
+            ? new Intl.DateTimeFormat('en-IN', {
+                month: 'short',
+                year: 'numeric',
+                timeZone: 'UTC',
+              }).format(start)
+            : quarter.label
+        const add = (
+          kind: 'gst-gstr1' | 'gst-gstr3b' | 'gst-qrmp-payment',
+          day: number,
+        ) => {
+          const date = addDays(periodEnd, day)
+          const name =
+            kind === 'gst-gstr1'
+              ? 'File GSTR-1'
+              : kind === 'gst-gstr3b'
+                ? 'File GSTR-3B'
+                : 'Check GST payment'
+          const reason =
+            kind === 'gst-qrmp-payment'
+              ? `${label}: check whether a GST payment is due and pay only if required. This plan does not calculate an amount.`
+              : `${label}: ${cadence === 'monthly' ? 'monthly' : 'quarterly'} filing for your active normal registration, including periods without business. Normal date; check for extensions.`
+          obligations.push(
+            newObligation(
+              kind,
+              `${kind}:${profile.taxYear}:${periodStart}:${periodEnd}`,
+              `${name} for ${label}`,
+              date,
+              reason,
+              addDays(periodEnd, 1),
+            ),
+          )
+        }
+        if (cadence === 'qrmp' && month < 2)
+          add('gst-qrmp-payment', rules.qrmpPaymentDay)
+        else {
+          add(
+            'gst-gstr1',
+            cadence === 'monthly'
+              ? rules.monthlyGstr1Day
+              : rules.quarterlyGstr1Day,
+          )
+          add(
+            'gst-gstr3b',
+            cadence === 'monthly'
+              ? rules.monthlyGstr3bDay
+              : rules.quarterlyEarlyStates.includes(gst.state ?? '')
+                ? rules.quarterlyGstr3bEarlyDay
+                : rules.quarterlyGstr3bLateDay,
+          )
+        }
+      }
+    }
+  }
+  const coverage: Coverage<GstConclusion> = missing.length
+    ? coverageUnavailable(
+        'gst',
+        validated.groups['gst-calendar'].valid
+          ? 'gst-calendar-incomplete'
+          : 'gst-calendar-rules',
+        missing.join(' '),
+        !validated.groups['gst-calendar'].valid
+          ? 'Your income-tax estimate is still available. Check current GST dates on the GST portal.'
+          : obligations.length > 0
+            ? 'Dates for confirmed quarters are in your agenda. Check the missing details to add the remaining dates.'
+            : 'No GST return dates are shown yet. Your income-tax estimate is still available.',
+        returnSources,
+      )
+    : {
+        kind: 'available',
+        value: {
+          status: 'calendar',
+          state: gst.kind === 'registered' ? gst.state! : '',
+          registeredFrom: facts!.registeredFrom!,
+          actionCount: obligations.length,
+        },
+        sourceIds: returnSources,
+      }
+
+  let lut: Coverage<LutConclusion>
+  if (facts && (facts.exportRoute === 'none' || facts.exportRoute === 'igst')) {
+    lut = {
+      kind: 'available',
+      value: { status: 'not-applicable', firstExportDate: null },
+      sourceIds: [],
+    }
+  } else {
+    let reason: string | null = null
+    let code = 'gst-lut-facts'
+    if (!validated.groups.lut.valid) {
+      code = 'gst-lut-rules'
+      reason = 'LUT dates are unavailable until we update our rules.'
+    } else if (
+      !facts ||
+      gst.kind !== 'registered' ||
+      gst.status !== 'one-normal' ||
+      facts.continuous !== 'yes' ||
+      facts.exportRoute !== 'lut' ||
+      facts.lutConfirmed !== 'yes' ||
+      profile.clients.kind === 'domestic' ||
+      profile.clients.foreign === null
+    )
+      reason =
+        'We cannot confirm an LUT action from these answers. Check your foreign-client answers, export route and LUT conditions. Bond, SEZ and mixed routes need separate guidance.'
+    else if (
+      !facts.registeredFrom ||
+      facts.registeredFrom > today ||
+      !facts.firstExportDate ||
+      facts.firstExportDate < facts.registeredFrom
+    ) {
+      code = 'gst-lut-date'
+      reason =
+        'Confirm the first service export date in this financial year under this registration, including exports already made. It cannot precede registration.'
+    }
+    if (reason) {
+      addReview(code, reason, 'lut')
+      lut = coverageUnavailable(
+        'lut',
+        code,
+        reason,
+        obligations.length > 0
+          ? 'Your confirmed GST return dates are still in the agenda. This plan does not calculate GST payable or refunds.'
+          : 'Your income-tax estimate is still available. This plan does not calculate GST payable or refunds.',
+        lutSources,
+      )
+    } else {
+      const date = facts!.firstExportDate!
+      obligations.push(
+        newObligation(
+          'gst-lut',
+          `gst-lut:${profile.taxYear}`,
+          `Submit LUT for ${profile.taxYear.replace('Tax Year ', '')}`,
+          date,
+          'Submit this year’s LUT before your first service export under it. If you already submitted it, add the date. Recording that date does not confirm your exports met the LUT conditions.',
+          facts!.registeredFrom!,
+        ),
+      )
+      lut = {
+        kind: 'available',
+        value: { status: 'scheduled', firstExportDate: date },
+        sourceIds: lutSources,
+      }
+    }
+  }
+  return { coverage, lut, obligations, review }
+}
+
+function calculateGst(
+  profile: { readonly gst: UnregisteredGst; readonly taxYear: TaxYear },
   rules: RuleDataset,
   today: DateOnly,
   verifiedOn: DateOnly,
   expiresOn: DateOnly,
   sourceIds: readonly string[],
 ): GstAreaResult {
-  if (profile.gst.kind === 'registered') {
-    return {
-      coverage: coverageUnavailable(
-        'gst',
-        'gst-return-calendar-deferred',
-        'This first release does not calculate GST returns for registered users.',
-        'Use the GST portal or a qualified adviser for registered-return dates.',
-        sourceIds,
-      ),
-      review: [],
-      obligation: null,
-    }
-  }
   if (
     profile.gst.turnoverComplete !== 'yes' ||
     profile.gst.compulsoryRegistration !== 'no'
@@ -2343,10 +2775,19 @@ export function screenProfile(
   const coverage: { code: string; reason: string }[] = []
   if (profile && validated.valid) {
     const data = validated.data
-    if (validated.groups['gst-registration'].valid) {
+    if (profile.gst.kind === 'registered') {
+      const areas = registeredGstAreas(
+        profile,
+        validated,
+        indiaDate(currentDate),
+      )
+      coverage.push(
+        ...areas.review.map(({ id, reason }) => ({ code: id, reason })),
+      )
+    } else if (validated.groups['gst-registration'].valid) {
       const group = data.groups.gstRegistration
       const gst = calculateGst(
-        profile,
+        { gst: profile.gst, taxYear: profile.taxYear },
         data,
         indiaDate(currentDate),
         group.verifiedOn,
@@ -2520,7 +2961,21 @@ export function evaluate(
   reviewActions.push(...annual.review)
 
   let gst: GstAreaResult
-  if (!ruleValidation.groups['gst-registration'].valid) {
+  let lut: Coverage<LutConclusion> = {
+    kind: 'available',
+    value: { status: 'not-applicable', firstExportDate: null },
+    sourceIds: [],
+  }
+  if (current.gst.kind === 'registered') {
+    const calendar = registeredGstAreas(current, ruleValidation, today)
+    gst = {
+      coverage: calendar.coverage,
+      review: calendar.review,
+      obligation: null,
+    }
+    lut = calendar.lut
+    obligations.push(...calendar.obligations)
+  } else if (!ruleValidation.groups['gst-registration'].valid) {
     const sources = sourceIdsForGroup(data, 'gstRegistration')
     gst = {
       coverage: coverageUnavailable(
@@ -2544,7 +2999,7 @@ export function evaluate(
     }
   } else
     gst = calculateGst(
-      current,
+      { gst: current.gst, taxYear: current.taxYear },
       data,
       today,
       data.groups.gstRegistration.verifiedOn,
@@ -2634,6 +3089,7 @@ export function evaluate(
           gstSources,
         ),
       foreignGuidance,
+      lut,
     },
     obligations,
     reviewActions,
@@ -2660,6 +3116,12 @@ export function evaluate(
       ...annualSources,
       ...gstSources,
       ...foreignSources,
+      ...(current.gst.kind === 'registered'
+        ? [
+            ...sourceIdsForGroup(data, 'gstCalendar'),
+            ...sourceIdsForGroup(data, 'lut'),
+          ]
+        : []),
     ]),
   }
 }

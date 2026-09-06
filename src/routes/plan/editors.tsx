@@ -1,10 +1,13 @@
 import { indiaDate } from '@/lib/india-date'
+import { formatDate } from '@/lib/format'
+import { canCompleteObligation } from '@/evaluation'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { DatePicker } from '@/components/date-picker'
 import { Badge } from '@/components/ui/badge'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { QrmpPaymentHelp } from '@/components/gst-help'
 import { parseMoney } from '@/routes/check/model'
 import { AmountInput } from '@/components/amount-input'
 import type { Obligation } from '@/evaluation'
@@ -140,11 +143,33 @@ export function CompletionEditor({
   const [error, setError] = useState('')
   const inputId = `completion-date-${obligation.id.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`
   const errorId = `${inputId}-error`
+  const reviewed = obligation.kind === 'gst-qrmp-payment'
+  const tooEarly = Boolean(
+    obligation.completionNotBefore &&
+    obligation.completionNotBefore > indiaDate(new Date()),
+  )
   return (
     <Card
       className={`inline-editor${embedded ? ' inline-editor--embedded' : ''}`}
     >
-      <p>Choose the date you completed this action. Your plan will update.</p>
+      <p>
+        {reviewed
+          ? 'Choose the date you checked whether GST was due and made any required payment.'
+          : 'Choose the date you completed this action. Your plan will update.'}
+        {reviewed && (
+          <>
+            {' '}
+            <QrmpPaymentHelp />
+          </>
+        )}
+      </p>
+      {tooEarly && (
+        <p>
+          You can record this action from{' '}
+          {formatDate(obligation.completionNotBefore!)} after its filing period
+          ends.
+        </p>
+      )}
       {baseRevision !== workspaceRevision && (
         <p role="status">
           Your saved workspace changed while this date editor was open. Reload
@@ -153,10 +178,13 @@ export function CompletionEditor({
       )}
       <div className="completion-controls">
         <div className="completion-field">
-          <label htmlFor={inputId}>Completion date</label>
+          <label htmlFor={inputId}>
+            {reviewed ? 'Review date' : 'Completion date'}
+          </label>
           <DatePicker
             id={inputId}
             value={date}
+            min={obligation.completionNotBefore}
             max={indiaDate(new Date())}
             describedBy={error ? errorId : undefined}
             invalid={Boolean(error)}
@@ -176,16 +204,24 @@ export function CompletionEditor({
             className="h-12 max-[520px]:w-full"
             variant="outline"
             type="button"
+            disabled={tooEarly}
             onClick={() => {
               if (
                 !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
-                date > indiaDate(new Date())
+                date > indiaDate(new Date()) ||
+                !canCompleteObligation(obligation, date)
               )
-                setError('Choose a valid date no later than today.')
+                setError(
+                  obligation.kind === 'gst-lut'
+                    ? 'Choose a valid date on or after registration and no later than today.'
+                    : obligation.completionNotBefore
+                      ? 'Choose a valid date after the filing period ends and no later than today.'
+                      : 'Choose a valid date no later than today.',
+                )
               else onSubmit(date, baseRevision)
             }}
           >
-            Mark completed
+            {reviewed ? 'Mark reviewed' : 'Mark completed'}
           </Button>
           {onCancel && (
             <Button variant="link" type="button" onClick={onCancel}>

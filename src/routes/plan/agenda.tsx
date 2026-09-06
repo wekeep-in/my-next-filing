@@ -1,7 +1,12 @@
 import { formatDate } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { ExternalLink } from '@/components/external-link'
+import { QrmpPaymentHelp } from '@/components/gst-help'
+import { GST_PORTAL_URL } from '@/rules'
+import { completionLabel } from '@/routes/plan/model'
 import type { Obligation, ProfileGroup, SupportedResult } from '@/evaluation'
+import { canCompleteObligation } from '@/evaluation'
 import type { CompletionRecord, WorkspaceView } from '@/workspace'
 import {
   CompletionStatus,
@@ -69,7 +74,11 @@ export function Agenda({
       </div>
       <div className="agenda-list">
         {ordered.map((obligation) => {
-          const completion = completionFor(obligation)
+          const record = completionFor(obligation)
+          const completion =
+            record && canCompleteObligation(obligation, record.completedOn)
+              ? record
+              : undefined
           const isNext = obligation.id === nextId
           const needsPayment =
             obligation.kind === 'advance-tax' && (obligation.amountDue ?? 0) > 0
@@ -96,12 +105,32 @@ export function Agenda({
                 <div className="agenda-heading">
                   <h3>{obligation.title}</h3>
                   {completion && !needsPayment ? (
-                    <CompletionStatus completedOn={completion.completedOn} />
+                    <CompletionStatus
+                      completedOn={completion.completedOn}
+                      reviewed={obligation.kind === 'gst-qrmp-payment'}
+                    />
                   ) : (
-                    <StatusPill status={obligation.deadlineStatus} />
+                    <StatusPill
+                      status={obligation.deadlineStatus}
+                      beforeExport={obligation.kind === 'gst-lut'}
+                    />
                   )}
                 </div>
-                <p>{obligation.reasons[0]}</p>
+                <p>
+                  {obligation.reasons[0]}
+                  {obligation.kind === 'gst-qrmp-payment' && (
+                    <>
+                      {' '}
+                      <QrmpPaymentHelp />
+                    </>
+                  )}
+                </p>
+                {obligation.kind === 'gst-lut' && (
+                  <p>
+                    Before {formatDate(obligation.dueDate)}, your first export
+                    date.
+                  </p>
+                )}
                 {saved && !completion && !isNext && (
                   <Button
                     variant="link"
@@ -112,7 +141,9 @@ export function Agenda({
                   >
                     {needsPayment
                       ? 'Update amount paid'
-                      : 'Add completion date'}
+                      : obligation.kind === 'gst-qrmp-payment'
+                        ? 'Add review date'
+                        : 'Add completion date'}
                   </Button>
                 )}
                 {saved && completion && !needsPayment && (
@@ -122,14 +153,18 @@ export function Agenda({
                       type="button"
                       onClick={() => onChangeDate(obligation)}
                     >
-                      Change date
+                      {obligation.kind === 'gst-qrmp-payment'
+                        ? 'Change review date'
+                        : 'Change completion date'}
                     </Button>{' '}
                     <Button
                       variant="link"
                       type="button"
                       onClick={() => onUndo(obligation)}
                     >
-                      Remove completion
+                      {obligation.kind === 'gst-qrmp-payment'
+                        ? 'Remove review'
+                        : 'Remove completion'}
                     </Button>
                   </>
                 )}
@@ -156,7 +191,8 @@ export function ReviewAreas({
 }) {
   const areas = [
     ['annualReturn', 'Annual-return check', 'other-income'],
-    ['gst', 'GST registration check', 'gst'],
+    ['gst', 'GST check', 'gst'],
+    ['lut', 'LUT and export check', 'gst'],
     ['foreignGuidance', 'Foreign-receipt check', 'clients'],
   ] as const
   const unavailable = areas.filter(
@@ -188,13 +224,23 @@ export function ReviewAreas({
                 <h3>{title}</h3>
                 <p>{coverage.reason}</p>
                 <p>{coverage.guidance}</p>
-                <Button
-                  variant="link"
-                  type="button"
-                  onClick={() => onReview(group)}
-                >
-                  {reviewLabel(group)}
-                </Button>
+                {[
+                  'gst-calendar-rules',
+                  'gst-lut-rules',
+                  'gst-rules-stale',
+                ].includes(coverage.code) ? (
+                  <ExternalLink href={GST_PORTAL_URL}>
+                    Open GST portal
+                  </ExternalLink>
+                ) : (
+                  <Button
+                    variant="link"
+                    type="button"
+                    onClick={() => onReview(group)}
+                  >
+                    {reviewLabel(group)}
+                  </Button>
+                )}
                 <SourceReferences ids={coverage.sourceIds} />
               </Card>
             )
@@ -238,7 +284,7 @@ export function NeedsReview({
   if (records.length === 0) return null
   return (
     <section className="needs-review" aria-labelledby="needs-review-title">
-      <h2 id="needs-review-title">Completion dates to check</h2>
+      <h2 id="needs-review-title">Saved action dates to check</h2>
       <p>
         These saved dates no longer match an action in your current plan. Remove
         a date if it no longer applies.
@@ -251,11 +297,7 @@ export function NeedsReview({
             key={`${item.taxYear}-${item.record.obligationId}`}
           >
             <div>
-              <h3>
-                {item.record.obligationId
-                  .replace(/:Tax Year .+$/, '')
-                  .replaceAll('-', ' ')}
-              </h3>
+              <h3>{completionLabel(item.record.obligationId)}</h3>
               <p>
                 {item.reason} Declared on {formatDate(item.record.completedOn)}.
               </p>
@@ -266,7 +308,9 @@ export function NeedsReview({
               type="button"
               onClick={() => onDelete(item.record)}
             >
-              Remove completion date
+              {item.record.obligationId.startsWith('gst-qrmp-payment:')
+                ? 'Remove review date'
+                : 'Remove completion date'}
             </Button>
           </Card>
         ))}

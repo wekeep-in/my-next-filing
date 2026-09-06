@@ -1,6 +1,7 @@
 import { ExternalLink } from '@/components/external-link'
 import { formatDate } from '@/lib/format'
 import { currentRules } from '@/rules'
+import { SalaryCoverageHelp } from '@/routes/check/other-income-help'
 
 const openSourceUrl = 'https://github.com/wekeep-in/my-next-filing'
 
@@ -127,7 +128,7 @@ export function LandingFaqs() {
             ordinarily resident in India, uses the new tax regime, and runs one
             solo service practice. It can also include supported domestic
             salary, with one standard deduction of up to ₹75,000 across all
-            employers.
+            employers. <SalaryCoverageHelp />
           </p>
           <p>It stops without showing a personal estimate if you have:</p>
           <ul>
@@ -136,10 +137,10 @@ export function LandingFaqs() {
               surcharge, or another tax regime.
             </li>
             <li>
-              Salary outside the supported domestic branch, house-property
-              income, dividends, gifts, capital gains, crypto, lottery or
-              gaming, agricultural income, unrelated foreign income, or
-              foreign-tax relief.
+              Salary this version cannot cover, house-property income,
+              dividends, gifts, capital gains, crypto, lottery or gaming,
+              agricultural income, unrelated foreign income, or foreign-tax
+              relief.
             </li>
             <li>
               Another business or profession, commission, brokerage, agency
@@ -148,13 +149,23 @@ export function LandingFaqs() {
             </li>
             <li>
               Unsupported deductions, losses or tax credits, employee or
-              deductor duties, compulsory GST-registration facts, or amounts
-              above this version's limits.
+              deductor duties, or amounts above this version's limits.
             </li>
           </ul>
           <p>
+            Some GST facts affect only the GST part of your plan. For example,
+            another reason for compulsory registration or an unknown filing
+            frequency can leave GST guidance incomplete while your income-tax
+            estimate remains available. If a fact also changes your income-tax
+            treatment, the estimate stops.
+          </p>
+          <p>
             It also does not calculate late interest, fees, penalties, GST
-            returns, or choose a tax return form.
+            payable, credits or refunds, or choose a tax return form. For one
+            continuously active normal GST registration, it can show monthly or
+            QRMP return dates and conditional payment reviews. Confirmed service
+            exporters can also receive a before-export LUT action. Unknown
+            quarters or LUT facts leave the other established dates available.
           </p>
         </article>
 

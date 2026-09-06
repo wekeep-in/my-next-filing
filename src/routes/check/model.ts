@@ -1,12 +1,14 @@
 import type {
   Activity,
+  GstCadence,
+  GstExportRoute,
   Profile,
   ProfileGroup,
   ProfileInputError,
   TriState,
   UnsupportedFact,
 } from '@/evaluation'
-import { parseProfile, screenProfile } from '@/evaluation'
+import { gstQuarterPeriods, parseProfile, screenProfile } from '@/evaluation'
 import { TAX_YEAR, currentRules } from '@/rules'
 
 type DraftChoice = '' | TriState
@@ -92,6 +94,15 @@ export type Draft = {
   readonly gstKind: DraftGstKind
   readonly gstStatus: DraftGstStatus
   readonly gstState: string
+  readonly gstRegisteredFrom: string
+  readonly gstContinuous: DraftChoice
+  readonly gstQuarter1: '' | GstCadence
+  readonly gstQuarter2: '' | GstCadence
+  readonly gstQuarter3: '' | GstCadence
+  readonly gstQuarter4: '' | GstCadence
+  readonly gstExportRoute: '' | GstExportRoute
+  readonly gstLutConfirmed: DraftChoice
+  readonly gstFirstExportDate: string
   readonly turnoverComplete: DraftChoice
   readonly compulsoryRegistration: DraftChoice
   readonly thresholdLiabilityDate: string
@@ -197,7 +208,7 @@ export const optionLabels: Readonly<Record<string, string>> = {
 }
 
 export const unsupportedFactLabels: Record<UnsupportedFact, string> = {
-  salary: 'Salary outside the supported domestic branch',
+  salary: 'Salary this version cannot cover',
   houseProperty: 'House-property income',
   dividendsOrGifts: 'Dividend or gift income',
   capitalGains: 'Capital gains',
@@ -226,7 +237,32 @@ const blankAmounts = (): Record<DraftAmountKey, string> =>
     string
   >
 
+export const blankGstCalendarFields = {
+  gstRegisteredFrom: '',
+  gstContinuous: '',
+  gstQuarter1: '',
+  gstQuarter2: '',
+  gstQuarter3: '',
+  gstQuarter4: '',
+  gstExportRoute: '',
+  gstLutConfirmed: '',
+  gstFirstExportDate: '',
+} as const
+export const gstQuarterFields = [
+  'gstQuarter1',
+  'gstQuarter2',
+  'gstQuarter3',
+  'gstQuarter4',
+] as const
+export const gstQuarterQuestions = (draft: Draft) =>
+  gstQuarterPeriods(TAX_YEAR)
+    .map((quarter, index) => ({ ...quarter, field: gstQuarterFields[index] }))
+    .filter(
+      ({ end }) => !draft.gstRegisteredFrom || end >= draft.gstRegisteredFrom,
+    )
+
 export const blankDraft = (): Draft => ({
+  ...blankGstCalendarFields,
   personKind: '',
   adult: '',
   residence: '',
@@ -287,6 +323,8 @@ const choice = (value: TriState): DraftChoice => value
 export function draftFromProfile(profile: Profile): Draft {
   const path = profile.incomePath
   const amounts = blankAmounts()
+  const calendar =
+    profile.gst.kind === 'registered' ? profile.gst.calendar : null
   amounts.grossReceipts = path.grossReceipts.toLocaleString('en-IN')
   amounts.cashReceipts = path.cashReceipts.toLocaleString('en-IN')
   amounts.declaredProfit = path.declaredProfit.toLocaleString('en-IN')
@@ -401,6 +439,15 @@ export function draftFromProfile(profile: Profile): Draft {
       (fact) => fact !== 'unsupportedFactsNotSure',
     ),
     gstKind: profile.gst.kind,
+    gstRegisteredFrom: calendar?.registeredFrom ?? '',
+    gstContinuous: calendar?.continuous ?? '',
+    gstQuarter1: calendar?.cadences[0] ?? '',
+    gstQuarter2: calendar?.cadences[1] ?? '',
+    gstQuarter3: calendar?.cadences[2] ?? '',
+    gstQuarter4: calendar?.cadences[3] ?? '',
+    gstExportRoute: calendar?.exportRoute ?? '',
+    gstLutConfirmed: calendar?.lutConfirmed ?? '',
+    gstFirstExportDate: calendar?.firstExportDate ?? '',
     gstStatus: profile.gst.kind === 'registered' ? profile.gst.status : '',
     gstState:
       profile.gst.kind === 'registered'
@@ -639,9 +686,33 @@ function candidateFromDraft(draft: Draft) {
             status: draft.gstStatus || 'not-sure',
             state:
               draft.gstStatus === 'one-normal' ? draft.gstState || null : null,
+            calendar:
+              draft.gstStatus === 'one-normal'
+                ? {
+                    registeredFrom: draft.gstRegisteredFrom || null,
+                    continuous: draft.gstContinuous || 'not-sure',
+                    cadences: gstQuarterFields.map(
+                      (field) => draft[field] || 'not-sure',
+                    ),
+                    exportRoute: draft.gstExportRoute || 'not-sure',
+                    lutConfirmed:
+                      draft.gstExportRoute === 'lut'
+                        ? draft.gstLutConfirmed || 'not-sure'
+                        : null,
+                    firstExportDate:
+                      draft.gstExportRoute === 'lut'
+                        ? draft.gstFirstExportDate || null
+                        : null,
+                  }
+                : null,
           }
         : draft.gstKind === 'not-sure'
-          ? { kind: 'registered', status: 'not-sure', state: null }
+          ? {
+              kind: 'registered',
+              status: 'not-sure',
+              state: null,
+              calendar: null,
+            }
           : {
               kind: 'unregistered',
               state: draft.gstState,
@@ -672,7 +743,7 @@ export const questionnaireGroups = [
   { id: 'receipts', label: 'Receipts and profit' },
   { id: 'clients', label: 'Clients and payments' },
   { id: 'other-income', label: 'Other income and tax paid' },
-  { id: 'gst', label: 'GST registration' },
+  { id: 'gst', label: 'GST registration and filings' },
   { id: 'review', label: 'Review your answers' },
 ] as const satisfies readonly {
   readonly id: ProfileGroup
@@ -826,6 +897,22 @@ function errorStep(key: string) {
 }
 
 function profileErrorKey(error: ProfileInputError) {
+  if (error.path.startsWith('gst.calendar')) {
+    const aliases: Record<string, string> = {
+      registeredFrom: 'gstRegisteredFrom',
+      continuous: 'gstContinuous',
+      exportRoute: 'gstExportRoute',
+      lutConfirmed: 'gstLutConfirmed',
+      firstExportDate: 'gstFirstExportDate',
+    }
+    const last = error.path.split('.').at(-1) ?? ''
+    return (
+      aliases[last] ??
+      (error.path.includes('.cadences.')
+        ? gstQuarterFields[Number(last)]
+        : 'gstContinuous')
+    )
+  }
   if (error.path.startsWith('otherIncome.salary'))
     return error.path.endsWith('.grossSalary')
       ? 'grossSalary'
@@ -1038,6 +1125,34 @@ function validateDraftGroup(
         nextErrors.gstStatus = 'Choose what describes your GST registration.'
       if (draft.gstStatus === 'one-normal' && !draft.gstState)
         nextErrors.gstState = 'Choose where your active GSTIN is registered.'
+      if (draft.gstStatus === 'one-normal') {
+        if (!draft.gstContinuous)
+          nextErrors.gstContinuous =
+            'Confirm the registration history and first filing period.'
+        for (const { field } of gstQuarterQuestions(draft))
+          if (!draft[field])
+            nextErrors[field] =
+              'Choose the portal-confirmed frequency, or Not sure.'
+        if (!draft.gstExportRoute)
+          nextErrors.gstExportRoute = 'Choose your export route, or Not sure.'
+        if (draft.gstExportRoute === 'lut' && !draft.gstLutConfirmed)
+          nextErrors.gstLutConfirmed =
+            'Confirm LUT eligibility, or choose Not sure.'
+        if (
+          draft.gstRegisteredFrom &&
+          (draft.gstRegisteredFrom < '2017-07-01' ||
+            draft.gstRegisteredFrom > latestThresholdDate)
+        )
+          nextErrors.gstRegisteredFrom =
+            'Choose a past or present effective registration date from 1 July 2017 onward.'
+        if (
+          draft.gstFirstExportDate &&
+          (draft.gstFirstExportDate < currentRules.effectiveStart ||
+            draft.gstFirstExportDate > currentRules.effectiveEnd)
+        )
+          nextErrors.gstFirstExportDate =
+            'Choose the first export date in this Tax Year.'
+      }
     }
   }
   return Object.entries(nextErrors).map(([field, message]): DraftError => ({
@@ -1168,8 +1283,26 @@ function draftFeedback(draft: Draft, latestDate: string) {
   const coverage: DraftError[] = []
   for (const notice of screening.coverage) {
     let field: string | undefined
-    if (notice.code === 'gst-return-calendar-deferred' && draft.gstKind)
-      field = 'gstKind'
+    if (draft.gstKind === 'registered') {
+      if (notice.code === 'gst-calendar-rules') field = 'gstKind'
+      if (
+        notice.code === 'gst-calendar-scope' &&
+        (draft.gstStatus !== 'one-normal' || draft.gstContinuous)
+      )
+        field = draft.gstStatus === 'one-normal' ? 'gstContinuous' : 'gstStatus'
+      if (notice.code === 'gst-calendar-start' && draft.gstContinuous)
+        field = 'gstRegisteredFrom'
+      if (notice.code.startsWith('gst-quarter-')) {
+        const quarterField = gstQuarterFields[Number(notice.code.slice(-1))]
+        if (draft[quarterField]) field = quarterField
+      }
+      if (notice.code === 'gst-lut-rules') field = 'gstExportRoute'
+      if (notice.code === 'gst-lut-facts' && draft.gstExportRoute)
+        field =
+          draft.gstExportRoute === 'lut' ? 'gstLutConfirmed' : 'gstExportRoute'
+      if (notice.code === 'gst-lut-date' && draft.gstLutConfirmed)
+        field = 'gstFirstExportDate'
+    }
     if (notice.code === 'gst-fact-uncertain' && isUnregisteredGst(draft)) {
       if (draft.turnoverComplete && draft.turnoverComplete !== 'yes')
         field = 'turnoverComplete'

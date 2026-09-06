@@ -3,9 +3,12 @@ import type { Draft, DraftAmountKey } from '@/routes/check/model'
 import {
   amountKeys,
   blankDraft,
+  blankGstCalendarFields,
   completeDraft,
   creditTriggerMayApply,
   draftFromProfile,
+  gstQuarterFields,
+  gstQuarterQuestions,
   hasForeignClients,
   hasPlatformWork,
   isBusinessPath,
@@ -127,6 +130,17 @@ export function clearInactiveDraft(draft: Draft): Draft {
     next.thresholdLiabilityDate = ''
   }
   if (draft.gstKind !== 'registered') next.gstStatus = ''
+  if (draft.gstKind !== 'registered' || draft.gstStatus !== 'one-normal')
+    Object.assign(next, blankGstCalendarFields)
+  else {
+    const activeFields = gstQuarterQuestions(draft).map(({ field }) => field)
+    for (const field of gstQuarterFields)
+      if (!activeFields.includes(field)) next[field] = ''
+    if (draft.gstExportRoute !== 'lut') {
+      next.gstLutConfirmed = ''
+      next.gstFirstExportDate = ''
+    }
+  }
   if (
     !isUnregisteredGst(draft) &&
     (draft.gstKind !== 'registered' || draft.gstStatus !== 'one-normal')

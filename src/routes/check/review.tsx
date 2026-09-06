@@ -1,4 +1,5 @@
 import { taxYearShort } from '@/lib/tax-period'
+import { SalaryCoverageHelp } from '@/routes/check/other-income-help'
 import type {
   QuestionnaireDispatch,
   QuestionnaireEvent,
@@ -7,6 +8,7 @@ import {
   activityOptions,
   creditTriggerMayApply,
   groupStep,
+  gstQuarterQuestions,
   hasForeignClients,
   hasPlatformWork,
   isBusinessPath,
@@ -120,6 +122,12 @@ export function UnsupportedFactsField({
           )
         })}
       </div>
+      {draft.unsupportedFacts.includes('salary') && (
+        <p className="field-help">
+          Check which salary situations this version can cover.{' '}
+          <SalaryCoverageHelp />
+        </p>
+      )}
       <RadioGroup
         aria-labelledby="unsupportedCertainty-legend"
         className="choice-grid unsupported-alternatives"
@@ -421,7 +429,7 @@ function GroupSummary({
         ...(draft.hasSalary === 'yes'
           ? [
               {
-                label: 'Domestic salary conditions confirmed',
+                label: 'Salary conditions confirmed',
                 value: answer(draft.salaryConfirmed),
               },
               {
@@ -466,8 +474,8 @@ function GroupSummary({
       ],
     },
     {
-      title: 'GST registration',
-      editLabel: 'Edit GST registration answers',
+      title: 'GST registration and filings',
+      editLabel: 'Edit GST registration and filing answers',
       step: groupStep('gst'),
       answers: [
         { label: 'Ever had a GSTIN', value: answer(draft.gstKind) },
@@ -478,7 +486,45 @@ function GroupSummary({
                 value: answer(draft.gstStatus),
               },
               ...(draft.gstStatus === 'one-normal'
-                ? [{ label: 'GSTIN registered in', value: draft.gstState }]
+                ? [
+                    { label: 'GSTIN registered in', value: draft.gstState },
+                    {
+                      label: 'Effective registration date',
+                      value: date(draft.gstRegisteredFrom),
+                    },
+                    {
+                      label: 'Registration history and first period checked',
+                      value: answer(draft.gstContinuous),
+                    },
+                    ...gstQuarterQuestions(draft).map(({ field, label }) => ({
+                      label: `Filing frequency for ${label}`,
+                      value: answer(draft[field], {
+                        monthly: 'Monthly',
+                        qrmp: 'Quarterly returns (QRMP)',
+                      }),
+                    })),
+                    {
+                      label: 'Export route',
+                      value: answer(draft.gstExportRoute, {
+                        none: 'No exports or SEZ supplies',
+                        lut: 'LUT: without IGST',
+                        igst: 'With IGST payment',
+                        other: 'Bond, SEZ or mixed routes',
+                      }),
+                    },
+                    ...(draft.gstExportRoute === 'lut'
+                      ? [
+                          {
+                            label: 'LUT conditions confirmed',
+                            value: answer(draft.gstLutConfirmed),
+                          },
+                          {
+                            label: 'First service export date',
+                            value: date(draft.gstFirstExportDate),
+                          },
+                        ]
+                      : []),
+                  ]
                 : []),
             ]
           : []),

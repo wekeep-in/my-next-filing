@@ -1,5 +1,5 @@
 import { indiaDate } from '@/lib/india-date'
-import { parseProfile } from '@/evaluation'
+import { canCompleteObligation, parseProfile } from '@/evaluation'
 import type { EvaluationResult, Obligation, Profile } from '@/evaluation'
 import { TAX_YEAR } from '@/rules'
 import type { DateOnly, TaxYear } from '@/rules'
@@ -38,7 +38,7 @@ export type ArchivedPriorYearRecord = {
 export type PriorYearRecord = OpenPriorYearRecord | ArchivedPriorYearRecord
 
 export type SavedWorkspace = {
-  readonly schemaVersion: 3
+  readonly schemaVersion: 4
   readonly revision: number
   readonly noticeVersion: 2
   readonly consentDecidedAt: string
@@ -150,11 +150,45 @@ const isIsoTimestamp = (value: unknown) =>
 const isCompletionId = (value: unknown, taxYear?: TaxYear): value is string => {
   if (typeof value !== 'string') return false
   const match =
-    /^(?:advance-tax|annual-return|gst-registration):(Tax Year \d{4}-\d{2})$/.exec(
+    /^(?:advance-tax|annual-return|gst-registration|gst-lut):(Tax Year \d{4}-\d{2})$/.exec(
       value,
     )
-  if (!match) return false
-  return isTaxYear(match[1]) && (!taxYear || match[1] === taxYear)
+  if (match) return isTaxYear(match[1]) && (!taxYear || match[1] === taxYear)
+  const period =
+    /^(gst-gstr1|gst-gstr3b|gst-qrmp-payment):(Tax Year \d{4}-\d{2}):(\d{4}-\d{2}-\d{2}):(\d{4}-\d{2}-\d{2})$/.exec(
+      value,
+    )
+  if (
+    !period ||
+    !isTaxYear(period[2]) ||
+    (taxYear && period[2] !== taxYear) ||
+    !isDate(period[3]) ||
+    !isDate(period[4])
+  )
+    return false
+  const year = Number(period[2].slice(9, 13))
+  const start = new Date(`${period[3]}T00:00:00Z`)
+  const end = new Date(`${period[4]}T00:00:00Z`)
+  const months =
+    (end.getUTCFullYear() - start.getUTCFullYear()) * 12 +
+    end.getUTCMonth() -
+    start.getUTCMonth()
+  const monthEnd = new Date(
+    Date.UTC(end.getUTCFullYear(), end.getUTCMonth() + 1, 0),
+  )
+    .toISOString()
+    .slice(0, 10)
+  return (
+    period[3] >= `${year}-04-01` &&
+    period[4] <= `${year + 1}-03-31` &&
+    start.getUTCDate() === 1 &&
+    period[4] === monthEnd &&
+    (months === 0 ||
+      (months === 2 &&
+        start.getUTCMonth() % 3 === 0 &&
+        period[1] !== 'gst-qrmp-payment')) &&
+    (period[1] !== 'gst-qrmp-payment' || start.getUTCMonth() % 3 !== 2)
+  )
 }
 
 function validCompletions(value: unknown, today: DateOnly, taxYear: TaxYear) {
@@ -241,6 +275,48 @@ function decodeWorkspace(
   value: unknown,
   today: DateOnly,
 ): SavedWorkspace | null {
+  if (isRecord(value) && value.schemaVersion === 3) {
+    const migrateRecord = (record: unknown) => {
+      if (
+        !isRecord(record) ||
+        !isRecord(record.profile) ||
+        !isRecord(record.profile.gst) ||
+        Object.hasOwn(record.profile.gst, 'calendar') ||
+        !Array.isArray(record.completions) ||
+        record.completions.some(
+          (item) =>
+            !isRecord(item) ||
+            typeof item.obligationId !== 'string' ||
+            !/^(advance-tax|annual-return|gst-registration):Tax Year \d{4}-\d{2}$/.test(
+              item.obligationId,
+            ),
+        )
+      )
+        return null
+      return {
+        ...record,
+        profile: {
+          ...record.profile,
+          gst:
+            record.profile.gst.kind === 'registered'
+              ? { ...record.profile.gst, calendar: null }
+              : record.profile.gst,
+        },
+      }
+    }
+    if (!Array.isArray(value.priorYears)) return null
+    const active = value.active === null ? null : migrateRecord(value.active)
+    if (value.active !== null && active === null) return null
+    return decodeWorkspace(
+      {
+        ...value,
+        schemaVersion: 4,
+        active,
+        priorYears: value.priorYears.map(migrateRecord),
+      },
+      today,
+    )
+  }
   if (isRecord(value) && value.schemaVersion === 2) {
     const migrateRecord = (record: unknown) => {
       if (record === null) return null
@@ -293,7 +369,7 @@ function decodeWorkspace(
       'priorYears',
       'updatedAt',
     ]) ||
-    value.schemaVersion !== 3 ||
+    value.schemaVersion !== 4 ||
     !isSafeInteger(value.revision) ||
     value.noticeVersion !== STORAGE_NOTICE_VERSION ||
     !isIsoTimestamp(value.consentDecidedAt) ||
@@ -365,7 +441,7 @@ function withRevision(
   now: Date,
 ): SavedWorkspace {
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     revision,
     noticeVersion: STORAGE_NOTICE_VERSION,
     consentDecidedAt: draft.consentDecidedAt,
@@ -569,11 +645,7 @@ function currentYearView(
   const openObligations: Obligation[] = []
   for (const obligation of obligations) {
     const completion = completionById.get(obligation.id)
-    const needsPaymentReconciliation =
-      obligation.kind === 'advance-tax' &&
-      obligation.amountDue !== null &&
-      obligation.amountDue > 0
-    if (completion && !needsPaymentReconciliation)
+    if (completion && canCompleteObligation(obligation, completion.completedOn))
       completed.push({ kind: 'complete', record: completion, obligation })
     else openObligations.push(obligation)
   }
@@ -583,12 +655,11 @@ function currentYearView(
         !obligations.some(
           (obligation) => obligation.id === completion.obligationId,
         ) ||
-        (obligations.find(
-          (obligation) => obligation.id === completion.obligationId,
-        )?.kind === 'advance-tax' &&
-          (obligations.find(
-            (obligation) => obligation.id === completion.obligationId,
-          )?.amountDue ?? 0) > 0),
+        obligations.some(
+          (obligation) =>
+            obligation.id === completion.obligationId &&
+            !canCompleteObligation(obligation, completion.completedOn),
+        ),
     )
     .map((completion) => ({
       kind: 'needs-review' as const,

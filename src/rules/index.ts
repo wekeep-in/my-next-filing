@@ -2,6 +2,7 @@ import { indiaDate } from '@/lib/india-date'
 export type DateOnly = `${number}-${number}-${number}`
 
 export const TAX_YEAR = 'Tax Year 2026-27' as const
+export const GST_PORTAL_URL = 'https://www.gst.gov.in/'
 export type TaxYear = `Tax Year ${number}-${number}`
 
 export type StatutorySource = {
@@ -44,6 +45,8 @@ export type RuleGroupId =
   | 'annual-return'
   | 'gst-registration'
   | 'foreign-guidance'
+  | 'gst-calendar'
+  | 'lut'
 
 export type RuleProvenanceRole =
   | 'applicability'
@@ -127,6 +130,19 @@ export type ForeignGuidanceRules = {
   readonly message: string
 }
 
+export type GstCalendarRules = {
+  readonly monthlyGstr1Day: number
+  readonly quarterlyGstr1Day: number
+  readonly monthlyGstr3bDay: number
+  readonly quarterlyGstr3bEarlyDay: number
+  readonly quarterlyGstr3bLateDay: number
+  readonly qrmpPaymentDay: number
+  readonly qrmpTurnoverLimit: number
+  readonly quarterlyEarlyStates: readonly string[]
+}
+
+export type LutRules = { readonly prosecutionThreshold: number }
+
 export type RuleDataset = {
   readonly id: string
   readonly schemaVersion: 1
@@ -144,6 +160,8 @@ export type RuleDataset = {
     readonly annualReturn: RuleGroup<AnnualReturnRules>
     readonly gstRegistration: RuleGroup<GstRegistrationRules>
     readonly foreignGuidance: RuleGroup<ForeignGuidanceRules>
+    readonly gstCalendar: RuleGroup<GstCalendarRules>
+    readonly lut: RuleGroup<LutRules>
   }
 }
 
@@ -165,7 +183,98 @@ const effectiveEnd = '2027-03-31' as DateOnly
 const reviewedOn = '2026-09-03' as DateOnly
 const expiresOn = '2027-08-31' as DateOnly
 
+const quarterlyEarlyStates = [
+  'Chhattisgarh',
+  'Madhya Pradesh',
+  'Gujarat',
+  'Maharashtra',
+  'Karnataka',
+  'Goa',
+  'Kerala',
+  'Tamil Nadu',
+  'Telangana',
+  'Andhra Pradesh',
+  'Dadra and Nagar Haveli and Daman and Diu',
+  'Puducherry',
+  'Andaman and Nicobar Islands',
+  'Lakshadweep',
+] as const
+
 export const sourceRegistry: readonly Source[] = [
+  ...(
+    [
+      [
+        'gst-notification-82-2020',
+        'Notification 82/2020: GST return periods, GSTR-3B dates and QRMP payment dates',
+        '2024-05/notfctn-82-central-tax-english-2020.pdf',
+        '2020-11-10',
+        ['gst-return-periods', 'gst-gstr3b-dates', 'gst-qrmp-payment-date'],
+      ],
+      [
+        'gst-notification-83-2020',
+        'Notification 83/2020: monthly and quarterly GSTR-1 dates',
+        '2024-05/notfctn-83-central-tax-english-2020.pdf',
+        '2020-11-10',
+        ['gst-gstr1-dates'],
+      ],
+      [
+        'gst-notification-84-2020',
+        'Notification 84/2020: QRMP eligibility and changes',
+        '2024-05/notfctn-84-central-tax-english-2020.pdf',
+        '2020-11-10',
+        ['gst-qrmp-eligibility'],
+      ],
+      [
+        'gst-circular-143-2020',
+        'Circular 143/13/2020: quarter elections, new registrations and conditional payments',
+        '2024-06/circular_refund_143_11_2020.pdf',
+        '2020-11-10',
+        ['gst-cadence', 'gst-qrmp-payment-review'],
+      ],
+      [
+        'gst-notification-37-2017',
+        'Notification 37/2017: LUT eligibility and financial-year validity',
+        '2024-04/notfctn-37-central-tax-english.pdf',
+        '2017-10-04',
+        ['lut-eligibility'],
+      ],
+    ] as const
+  ).map(
+    ([id, title, path, publicationDate, coveredRuleIds]): StatutorySource => ({
+      id,
+      kind: 'statutory',
+      publisher: 'Central Board of Indirect Taxes and Customs',
+      title,
+      url: `https://gstcouncil.gov.in/sites/default/files/${path}`,
+      publicationDate,
+      reviewDate: '2026-09-06',
+      taxPeriod: TAX_YEAR,
+      coveredRuleIds,
+    }),
+  ),
+  {
+    id: 'gst-circular-8-2017',
+    kind: 'statutory',
+    publisher: 'Central Board of Indirect Taxes and Customs',
+    title: 'Circular 8/8/2017: annual LUT before export',
+    url: 'https://cbic-gst.gov.in/pdf/Final_Master_circular_LUT_Bond_04102017.pdf',
+    publicationDate: '2017-10-04',
+    reviewDate: '2026-09-06',
+    taxPeriod: TAX_YEAR,
+    coveredRuleIds: ['lut-annual-validity'],
+  },
+  {
+    id: 'gst-circular-125-2019',
+    kind: 'statutory',
+    publisher: 'Central Board of Indirect Taxes and Customs',
+    title:
+      'Circular 125/44/2019: LUT before export and review of late furnishing',
+    url: 'https://cbic-gst.gov.in/pdf/circular-cgst-125.pdf',
+    publicationDate: '2019-11-18',
+    reviewDate: '2026-09-06',
+    taxPeriod: TAX_YEAR,
+    coveredRuleIds: ['lut-before-export'],
+  },
   {
     id: 'domestic-salary-2026',
     kind: 'statutory',
@@ -376,6 +485,16 @@ export const sourceRegistry: readonly Source[] = [
     status: 'starting-link-only',
   },
   {
+    id: 'gst-portal',
+    kind: 'tutorial',
+    publisher: 'Goods and Services Tax',
+    title: 'GST portal: current filing dates and services',
+    url: GST_PORTAL_URL,
+    reviewDate: '2026-09-06',
+    coveredObligation: 'gst-calendar',
+    status: 'starting-link-only',
+  },
+  {
     id: 'return-identification',
     kind: 'tutorial',
     publisher: 'Income Tax Department',
@@ -402,7 +521,7 @@ const group = <T>(
 })
 
 export const currentRules: RuleDataset = {
-  id: 'my-next-filing-2026-27-v4',
+  id: 'my-next-filing-2026-27-v5',
   schemaVersion: 1,
   taxPeriod: TAX_YEAR,
   effectiveStart,
@@ -410,6 +529,7 @@ export const currentRules: RuleDataset = {
   verifiedOn: '2026-09-06',
   expiresOn,
   changeNotes: [
+    'GST return calendars and independent LUT guidance reviewed on 6 September 2026, expiring on 30 September pending another extension review. Dates are normal statutory dates; the current extension inventory is incomplete.',
     'Domestic salary and one capped standard deduction added after review on 6 September 2026; the presumptive advance-tax schedule and business-income return date continue to apply.',
     'Tax Year 2026-27 Rule groups reviewed on 3 September 2026.',
     'The dataset separates the two presumptive paths and independently reviewed annual-return, GST, and foreign-transition areas.',
@@ -417,6 +537,81 @@ export const currentRules: RuleDataset = {
   ],
   sources: sourceRegistry,
   groups: {
+    gstCalendar: {
+      ...group(
+        'gst-calendar',
+        {
+          monthlyGstr1Day: 11,
+          quarterlyGstr1Day: 13,
+          monthlyGstr3bDay: 20,
+          quarterlyGstr3bEarlyDay: 22,
+          quarterlyGstr3bLateDay: 24,
+          qrmpPaymentDay: 25,
+          qrmpTurnoverLimit: 50_000_000,
+          quarterlyEarlyStates,
+        },
+        [
+          {
+            ruleId: 'gst-return-periods',
+            sourceId: 'gst-notification-82-2020',
+            role: 'applicability',
+          },
+          {
+            ruleId: 'gst-gstr1-dates',
+            sourceId: 'gst-notification-83-2020',
+            role: 'date',
+          },
+          {
+            ruleId: 'gst-gstr3b-dates',
+            sourceId: 'gst-notification-82-2020',
+            role: 'date',
+          },
+          {
+            ruleId: 'gst-qrmp-payment-date',
+            sourceId: 'gst-notification-82-2020',
+            role: 'date',
+          },
+          {
+            ruleId: 'gst-qrmp-eligibility',
+            sourceId: 'gst-notification-84-2020',
+            role: 'threshold',
+          },
+          {
+            ruleId: 'gst-cadence',
+            sourceId: 'gst-circular-143-2020',
+            role: 'applicability',
+          },
+          {
+            ruleId: 'gst-qrmp-payment-review',
+            sourceId: 'gst-circular-143-2020',
+            role: 'guidance',
+          },
+        ],
+      ),
+      verifiedOn: '2026-09-06',
+      expiresOn: '2026-09-30',
+    },
+    lut: {
+      ...group('lut', { prosecutionThreshold: 25_000_000 }, [
+        {
+          ruleId: 'lut-eligibility',
+          sourceId: 'gst-notification-37-2017',
+          role: 'applicability',
+        },
+        {
+          ruleId: 'lut-before-export',
+          sourceId: 'gst-circular-125-2019',
+          role: 'date',
+        },
+        {
+          ruleId: 'lut-annual-validity',
+          sourceId: 'gst-circular-8-2017',
+          role: 'applicability',
+        },
+      ]),
+      verifiedOn: '2026-09-06',
+      expiresOn: '2026-09-30',
+    },
     incomePaths: group(
       'income-paths',
       {
@@ -627,6 +822,8 @@ export const currentRules: RuleDataset = {
 export const ruleDatasets: readonly RuleDataset[] = [currentRules]
 
 const groupKeys: readonly (keyof RuleDataset['groups'])[] = [
+  'gstCalendar',
+  'lut',
   'incomePaths',
   'commonIncomeTax',
   'advanceTax',
@@ -636,6 +833,8 @@ const groupKeys: readonly (keyof RuleDataset['groups'])[] = [
 ]
 
 const groupIds: readonly RuleGroupId[] = [
+  'gst-calendar',
+  'lut',
   'income-paths',
   'common-income-tax',
   'advance-tax',
@@ -697,7 +896,8 @@ function validateDates(
   const today = indiaDate(now)
   if (start > end) errors.push(`${prefix} has an invalid effective interval.`)
   if (verified > today) errors.push(`${prefix} has a future review date.`)
-  if (expires < end || expires < verified || expires < today)
+  // A review deadline may fall before the end of the earning period.
+  if (expires < start || expires < verified || expires < today)
     errors.push(`${prefix} is outside its review window.`)
 }
 
@@ -916,6 +1116,24 @@ function validateValues(
   values: Record<string, unknown>,
   errors: string[],
 ) {
+  if (
+    id === 'gst-calendar' &&
+    (values.monthlyGstr1Day !== 11 ||
+      values.quarterlyGstr1Day !== 13 ||
+      values.monthlyGstr3bDay !== 20 ||
+      values.quarterlyGstr3bEarlyDay !== 22 ||
+      values.quarterlyGstr3bLateDay !== 24 ||
+      values.qrmpPaymentDay !== 25 ||
+      values.qrmpTurnoverLimit !== 50_000_000 ||
+      !Array.isArray(values.quarterlyEarlyStates) ||
+      JSON.stringify(values.quarterlyEarlyStates) !==
+        JSON.stringify(quarterlyEarlyStates))
+  )
+    errors.push(
+      'GST calendar values do not match the reviewed statutory schedules.',
+    )
+  if (id === 'lut' && values.prosecutionThreshold !== 25_000_000)
+    errors.push('LUT eligibility does not match the reviewed notification.')
   if (id === 'income-paths') {
     const rates = [
       values.professionMinimumProfitRate,
@@ -1166,6 +1384,17 @@ export function validateRules(
 
   const expectedValues: Record<keyof RuleDataset['groups'], readonly string[]> =
     {
+      gstCalendar: [
+        'monthlyGstr1Day',
+        'quarterlyGstr1Day',
+        'monthlyGstr3bDay',
+        'quarterlyGstr3bEarlyDay',
+        'quarterlyGstr3bLateDay',
+        'qrmpPaymentDay',
+        'qrmpTurnoverLimit',
+        'quarterlyEarlyStates',
+      ],
+      lut: ['prosecutionThreshold'],
       incomePaths: [
         'professionMinimumProfitRate',
         'professionCashReceiptRate',
@@ -1214,6 +1443,16 @@ export function validateRules(
     }
   const requiredRules: Record<keyof RuleDataset['groups'], readonly string[]> =
     {
+      gstCalendar: [
+        'gst-return-periods',
+        'gst-gstr1-dates',
+        'gst-gstr3b-dates',
+        'gst-qrmp-payment-date',
+        'gst-qrmp-eligibility',
+        'gst-cadence',
+        'gst-qrmp-payment-review',
+      ],
+      lut: ['lut-eligibility', 'lut-before-export', 'lut-annual-validity'],
       incomePaths: [
         'specified-profession',
         'profession-receipt-limit',

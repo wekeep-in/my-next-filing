@@ -244,6 +244,12 @@ const recovery = recoveryFromSession(session, TAX_YEAR)
 assert.ok(recovery)
 assert.deepEqual(parseRecoveryDraft(recovery, TAX_YEAR), recovery)
 const oldDraft = structuredClone(draftFromProfile(exampleProfile))
+for (const key of Object.keys(oldDraft).filter(
+  (field) =>
+    field.startsWith('gst') &&
+    !['gstKind', 'gstStatus', 'gstState'].includes(field),
+))
+  Reflect.deleteProperty(oldDraft, key)
 Reflect.deleteProperty(oldDraft, 'hasSalary')
 Reflect.deleteProperty(oldDraft, 'salaryConfirmed')
 Reflect.deleteProperty(oldDraft.amounts, 'grossSalary')
@@ -298,7 +304,7 @@ const raw = JSON.stringify(oldWorkspace)
 storage.setItem(WORKSPACE_KEY, raw)
 const restored = loadSavedWorkspace(storage, now)
 assert.ok(restored.kind === 'ready')
-assert.equal(restored.workspace.schemaVersion, 3)
+assert.equal(restored.workspace.schemaVersion, 4)
 assert.deepEqual(restored.workspace.active?.profile.otherIncome.salary, {
   kind: 'none',
 })

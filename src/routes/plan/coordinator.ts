@@ -4,7 +4,7 @@ import { browserStorage, latestQuestionnaireDate } from '@/app-context'
 import type { AppOutletContext } from '@/app-context'
 import { currentRules } from '@/rules'
 import type { DateOnly } from '@/rules'
-import { evaluate, parseProfile } from '@/evaluation'
+import { canCompleteObligation, evaluate, parseProfile } from '@/evaluation'
 import type { Obligation, Profile } from '@/evaluation'
 import { STORAGE_NOTICE_VERSION, saveSavedWorkspace } from '@/workspace'
 import type { CompletionRecord, SavedWorkspaceDraft } from '@/workspace'
@@ -244,10 +244,7 @@ export function usePlanCoordinator(app: AppOutletContext) {
       const current = evaluation.obligations.find(
         ({ id }) => id === obligationId,
       )
-      if (
-        !current ||
-        (current.kind === 'advance-tax' && (current.amountDue ?? 0) > 0)
-      ) {
+      if (!current || !canCompleteObligation(current, date)) {
         error('This action cannot be marked complete from the current plan.')
         return
       }

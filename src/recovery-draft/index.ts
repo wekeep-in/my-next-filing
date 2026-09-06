@@ -7,6 +7,7 @@ import {
   activityOptions,
   amountKeys,
   blankDraft,
+  blankGstCalendarFields,
   statesAndUnionTerritories,
   unsupportedFactLabels,
 } from '@/routes/check/model'
@@ -15,7 +16,7 @@ import { clearInactiveDraft } from '@/routes/check/session'
 
 export const RECOVERY_KEY = 'my-next-filing:recovery-draft'
 export type RecoveryDraftEnvelope = {
-  readonly schemaVersion: 2
+  readonly schemaVersion: 3
   readonly taxYear: TaxYear
   readonly origin: 'personal' | 'saved-edit'
   readonly baseWorkspaceRevision: number | null
@@ -82,13 +83,24 @@ const choices = {
   gstKind: ['', 'unregistered', 'registered', 'not-sure'],
   gstStatus: ['', 'one-normal', 'other', 'not-sure'],
   gstState: ['', ...statesAndUnionTerritories],
+  gstContinuous: triState,
+  gstQuarter1: ['', 'monthly', 'qrmp', 'not-sure'],
+  gstQuarter2: ['', 'monthly', 'qrmp', 'not-sure'],
+  gstQuarter3: ['', 'monthly', 'qrmp', 'not-sure'],
+  gstQuarter4: ['', 'monthly', 'qrmp', 'not-sure'],
+  gstExportRoute: ['', 'none', 'lut', 'igst', 'other', 'not-sure'],
+  gstLutConfirmed: triState,
   turnoverComplete: triState,
   compulsoryRegistration: triState,
 } satisfies {
   readonly [
     K in Exclude<
       keyof Draft,
-      'amounts' | 'unsupportedFacts' | 'thresholdLiabilityDate'
+      | 'amounts'
+      | 'unsupportedFacts'
+      | 'thresholdLiabilityDate'
+      | 'gstRegisteredFrom'
+      | 'gstFirstExportDate'
     >
   ]: readonly Draft[K][]
 }
@@ -104,6 +116,23 @@ export function parseRecoveryDraft(
   taxYear: TaxYear,
 ): RecoveryDraftEnvelope | null {
   try {
+    if (isRecord(value) && value.schemaVersion === 2) {
+      if (
+        !isRecord(value.draft) ||
+        Object.keys(blankGstCalendarFields).some((key) =>
+          Object.hasOwn(value.draft as object, key),
+        )
+      )
+        return null
+      return parseRecoveryDraft(
+        {
+          ...value,
+          schemaVersion: 3,
+          draft: { ...blankGstCalendarFields, ...value.draft },
+        },
+        taxYear,
+      )
+    }
     if (isRecord(value) && value.schemaVersion === 1) {
       const draft = value.draft
       if (
@@ -137,7 +166,7 @@ export function parseRecoveryDraft(
         'baseWorkspaceRevision',
         'draft',
       ]) ||
-      value.schemaVersion !== 2 ||
+      value.schemaVersion !== 3 ||
       value.taxYear !== taxYear
     )
       return null
@@ -170,12 +199,16 @@ export function parseRecoveryDraft(
       )
     )
       return null
-    if (
-      typeof draft.thresholdLiabilityDate !== 'string' ||
-      (draft.thresholdLiabilityDate !== '' &&
-        !/^\d{4}-\d{2}-\d{2}$/.test(draft.thresholdLiabilityDate))
-    )
-      return null
+    for (const key of [
+      'thresholdLiabilityDate',
+      'gstRegisteredFrom',
+      'gstFirstExportDate',
+    ])
+      if (
+        typeof draft[key] !== 'string' ||
+        (draft[key] !== '' && !/^\d{4}-\d{2}-\d{2}$/.test(draft[key]))
+      )
+        return null
     const facts = draft.unsupportedFacts
     if (
       !Array.isArray(facts) ||
@@ -194,7 +227,7 @@ export function parseRecoveryDraft(
     if (JSON.stringify(clearInactiveDraft(parsed)) !== JSON.stringify(parsed))
       return null
     return {
-      schemaVersion: 2,
+      schemaVersion: 3,
       taxYear,
       origin: value.origin,
       baseWorkspaceRevision: value.baseWorkspaceRevision as number | null,
@@ -325,7 +358,7 @@ export function recoveryFromSession(
 ): RecoveryDraftEnvelope | null {
   if (!session || session.origin.kind === 'example') return null
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     taxYear,
     origin: session.origin.kind,
     baseWorkspaceRevision:

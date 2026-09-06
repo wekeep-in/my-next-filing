@@ -1,6 +1,7 @@
 import { indiaDate } from '@/lib/india-date'
 import { useId } from 'react'
 import { ExternalLink } from '@/components/external-link'
+import { GstFrequencyHelp, QrmpPaymentHelp } from '@/components/gst-help'
 import { Alert } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -11,6 +12,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import type { Obligation, SupportedResult, TaxEstimate } from '@/evaluation'
+import { canCompleteObligation } from '@/evaluation'
 import { formatDate, formatMoney } from '@/lib/format'
 import { sourceRegistry } from '@/rules'
 import type { DateOnly } from '@/rules'
@@ -25,8 +27,16 @@ import type { PlanEditor } from '@/routes/plan/editors'
 const cardKickerClass =
   'mb-[.45rem] flex border-0 bg-transparent p-0 [font-size:.72rem] leading-[1.6] font-extrabold tracking-[.04em] text-muted-foreground uppercase'
 
-function formatDeadline(date: DateOnly) {
-  return `Due ${formatDate(date)}`
+function formatDeadline(obligation: Obligation) {
+  const prefix =
+    obligation.kind === 'gst-lut'
+      ? 'Before'
+      : obligation.kind === 'gst-qrmp-payment'
+        ? 'Normal review date'
+        : obligation.kind === 'gst-gstr1' || obligation.kind === 'gst-gstr3b'
+          ? 'Normal due date'
+          : 'Due'
+  return `${prefix} ${formatDate(obligation.dueDate)}`
 }
 
 export function SourceLinks({ ids }: { readonly ids: readonly string[] }) {
@@ -60,8 +70,10 @@ export function SourceReferences({ ids }: { readonly ids: readonly string[] }) {
 
 export function StatusPill({
   status,
+  beforeExport = false,
 }: {
   readonly status: Obligation['deadlineStatus']
+  readonly beforeExport?: boolean
 }) {
   const labels = {
     upcoming: 'Upcoming',
@@ -73,16 +85,24 @@ export function StatusPill({
     'due-today': 'warning',
     'deadline-passed': 'destructive',
   } as const
-  return <Badge variant={variants[status]}>{labels[status]}</Badge>
+  return (
+    <Badge variant={variants[status]}>
+      {beforeExport && status === 'due-today'
+        ? 'Before export today'
+        : labels[status]}
+    </Badge>
+  )
 }
 
 export function CompletionStatus({
   completedOn,
+  reviewed = false,
 }: {
   readonly completedOn: DateOnly
+  readonly reviewed?: boolean
 }) {
   const descriptionId = useId()
-  const description = `You marked this complete on ${formatDate(completedOn)}. My Next Filing cannot verify government acceptance.`
+  const description = `You marked this ${reviewed ? 'reviewed' : 'complete'} on ${formatDate(completedOn)}. My Next Filing cannot verify ${reviewed ? 'whether a payment was required or made' : 'government acceptance'}.`
   return (
     <>
       <Tooltip>
@@ -95,7 +115,7 @@ export function CompletionStatus({
             />
           }
         >
-          Completed
+          {reviewed ? 'Marked reviewed by you' : 'Completed'}
         </TooltipTrigger>
         <TooltipContent>{description}</TooltipContent>
       </Tooltip>
@@ -234,6 +254,25 @@ export function GstCard({
 }) {
   if (coverage.kind === 'unavailable') return null
   const gst = coverage.value
+  if (gst.status === 'calendar')
+    return (
+      <Card as="article" className="coverage-card min-w-0" variant="result">
+        <Badge variant="outline" className={cardKickerClass}>
+          GST filing calendar
+        </Badge>
+        <h2>Your GST return dates are in the agenda</h2>
+        <p>
+          {gst.actionCount} return and payment-review actions for your confirmed
+          filing periods in {gst.state}.
+        </p>
+        <p>
+          Dates follow the normal statutory schedule. Check the GST portal for
+          notified extensions. This plan does not calculate GST payable, credits
+          or refunds. <GstFrequencyHelp />
+        </p>
+        <SourceReferences ids={coverage.sourceIds} />
+      </Card>
+    )
   const title =
     gst.status === 'below'
       ? 'Your turnover is below the GST registration threshold'
@@ -305,9 +344,15 @@ export function AttentionCard({
   readonly onChangeDate: (obligation: Obligation) => void
   readonly onUndo: (obligation: Obligation) => void
 }) {
-  const completion = next
+  const savedCompletion = next
     ? completions.find((record) => record.obligationId === next.id)
     : undefined
+  const completion =
+    savedCompletion &&
+    next &&
+    canCompleteObligation(next, savedCompletion.completedOn)
+      ? savedCompletion
+      : undefined
   const today = indiaDate(new Date())
   const needsPayment = next?.kind === 'advance-tax' && (next.amountDue ?? 0) > 0
   const actions = (editor ||
@@ -411,7 +456,15 @@ export function AttentionCard({
         Next action
       </Badge>
       <h2 id="attention-title">{next.title}</h2>
-      <p>{next.reasons[0]}</p>
+      <p>
+        {next.reasons[0]}
+        {next.kind === 'gst-qrmp-payment' && (
+          <>
+            {' '}
+            <QrmpPaymentHelp />
+          </>
+        )}
+      </p>
       <div className="attention-meta">
         {next.kind === 'advance-tax' && (
           <span className="text-[1.1rem] font-extrabold text-foreground">
@@ -421,16 +474,20 @@ export function AttentionCard({
           </span>
         )}
         <span className="text-[1.1rem] font-extrabold text-foreground">
-          {formatDeadline(next.dueDate)}
+          {formatDeadline(next)}
         </span>
       </div>
       {completion && !needsPayment && !editor ? (
         <div className="completion-state">
           <p>
             <strong>
-              You marked this complete on {formatDate(completion.completedOn)}.
+              You marked this{' '}
+              {next.kind === 'gst-qrmp-payment' ? 'reviewed' : 'complete'} on{' '}
+              {formatDate(completion.completedOn)}.
             </strong>{' '}
-            My Next Filing cannot verify government acceptance.
+            {next.kind === 'gst-qrmp-payment'
+              ? 'My Next Filing cannot verify whether a payment was required or made.'
+              : 'My Next Filing cannot verify government acceptance.'}
           </p>
           <div className="button-row">
             <Button
@@ -439,10 +496,14 @@ export function AttentionCard({
               type="button"
               onClick={() => onChangeDate(next)}
             >
-              Change date
+              {next.kind === 'gst-qrmp-payment'
+                ? 'Change review date'
+                : 'Change completion date'}
             </Button>
             <Button variant="link" type="button" onClick={() => onUndo(next)}>
-              Remove completion
+              {next.kind === 'gst-qrmp-payment'
+                ? 'Remove review'
+                : 'Remove completion'}
             </Button>
           </div>
         </div>

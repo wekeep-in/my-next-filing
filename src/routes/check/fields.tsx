@@ -95,9 +95,9 @@ export function ChoiceField({
     >
       <legend id={`${id}-legend`}>{label}</legend>
       {help && (
-        <p className="field-help" id={`${id}-help`}>
+        <div className="field-help text-muted-foreground" id={`${id}-help`}>
           {help}
-        </p>
+        </div>
       )}
       <RadioGroup
         aria-labelledby={`${id}-legend`}
@@ -139,7 +139,7 @@ export function SelectField({
 }: {
   readonly id: string
   readonly label: string
-  readonly help?: string
+  readonly help?: ReactNode
   readonly value: string
   readonly options: readonly {
     readonly value: string

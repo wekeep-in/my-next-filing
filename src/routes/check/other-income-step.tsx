@@ -7,6 +7,7 @@ import { creditTriggerMayApply } from '@/routes/check/model'
 import { UnsupportedFactsField } from '@/routes/check/review'
 import {
   InterestHelp,
+  SalaryCoverageHelp,
   SalaryHelp,
   TcsHelp,
   TdsHelp,
@@ -52,15 +53,32 @@ export function OtherIncomeStep({
             label="Does all your salary meet these conditions?"
             help={
               <>
-                Your employers are in India and you performed all employment
-                work in India. Your records resolve the full year's salary,
-                taxable benefits and any exemptions under the new regime.
-                <br />
-                You have no pension, retirement or termination payout,
-                leave-encashment settlement, arrears, advance salary,
-                share-based pay, foreign salary, unresolved fund tax adjustment,
-                tax relief or deduction other than the standard deduction. This
-                excludes employer NPS and Agniveer deductions.
+                <ul className="mb-3 list-disc space-y-2 pl-5">
+                  <li>
+                    Your employers are in India and you performed all
+                    job-related work in India.
+                  </li>
+                  <li>
+                    Your records confirm the full year's salary, taxable
+                    benefits and new-regime exemptions.
+                  </li>
+                  <li>
+                    You have no pension, retirement or termination payout, or
+                    leave-encashment settlement.
+                  </li>
+                  <li>
+                    You have no arrears, advance salary, share-based pay or
+                    foreign salary.
+                  </li>
+                  <li>
+                    You have no unresolved tax adjustments for retirement funds.
+                  </li>
+                  <li>
+                    You claim no tax relief or deduction beyond the standard
+                    deduction, including employer NPS or Agniveer deductions.
+                  </li>
+                </ul>
+                <SalaryCoverageHelp />
               </>
             }
             value={draft.salaryConfirmed}

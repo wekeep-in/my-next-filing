@@ -49,7 +49,7 @@ The generic public-site share action is optional finishing work. Its failure can
 
 The next Tax Year slice adds rollover, Open prior years, and read-only archives before users need the next Rule dataset. It moves ahead of the GST slice when the calendar requires it.
 
-The later registered-exporter slice adds the narrow GST calendar defined below only after its own current statutory review.
+The GST calendar slice adds the registered-freelancer calendar defined below, with separate return and LUT review boundaries.
 
 Each slice uses the same Profile, Evaluation, Rules, workspace, and Completion models. It must not create a second calculator or workspace.
 
@@ -178,7 +178,7 @@ An unregistered user supplies state or Union territory, complete GST aggregate t
 
 GST aggregate turnover is the all-India value for the same PAN defined in `CONTEXT.md`; it is not copied from professional receipts or bank interest. A threshold-liability date must fall within the Tax Year and cannot be later than the current India date. A definite or uncertain compulsory-registration fact makes the turnover-only GST conclusion unavailable unless it also changes the core income path or receipts.
 
-A user with one active normal-taxpayer GSTIN can receive the income-tax result without storing the GSTIN value. GST-return Coverage is unavailable in the first successor release.
+A user with one active normal-taxpayer GSTIN can receive the income-tax result and the supported GST calendar without storing the GSTIN value. Calendar facts include effective registration date, continuous normal-registration status, the portal-confirmed cadence for each applicable financial quarter, and the export/LUT branch. Unknown calendar facts do not stop the income-tax estimate.
 
 Another or uncertain registration state, multiple GSTINs, composition, suspension, cancellation, reverse charge, or uncertain GST facts makes GST Coverage unavailable when those facts do not change the income path or receipts. If they can change the core tax calculation, the Profile is Unsupported.
 
@@ -197,6 +197,8 @@ The groups are:
 7. Review.
 
 Every uncertainty that can stop or reduce Coverage offers "Not sure". The interface explains uncommon legal confirmations. It does not infer a favorable answer to save a click.
+
+Keep salary, registration-history and LUT conditions visible as short checklists. Use the shared Learn more modal for definitions, record checks, salary examples, GST filing frequency, export routes and QRMP payment reviews. The filing-frequency introduction stays directly below its section heading, with a 16px gap; quarter fields follow it. Short export options must preserve the distinction between LUT without IGST and IGST payment on narrow screens.
 
 Questionnaire drafts use display strings and may be incomplete. They are not Profile values. A separate Evaluation screening function may inspect normalized incomplete input to return support reasons and input errors only. It never returns an estimate. Calculation still requires fresh completion and `parseProfile`.
 
@@ -324,7 +326,7 @@ Before the first Saved-workspace write, show this standalone notice, subject to 
 
 Actions are `Save data` and `Cancel`. Store accepted notice version 2. The landing-page FAQ explains saved-data behavior. The questionnaire confirms the user is eighteen or older before a supported result can be saved. Canceling the notice leaves the save action available in the same unsaved session.
 
-The one stable key is `my-next-filing:workspace`. Its version-3 envelope contains only:
+The one stable key is `my-next-filing:workspace`. Its version-4 envelope contains only:
 
 - schema version and revision;
 - accepted notice version and local ISO decision timestamp;
@@ -347,7 +349,9 @@ Treat storage as untrusted input. The workspace module:
 5. selects and validates exact matching Rules; and
 6. runs fresh Evaluation before deriving the workspace view.
 
-Version 3 migrates version 2 in memory, validates the complete result, and preserves revision, consent, all Profile values and Completion records. It adds the explicit no-salary branch to old Profiles that excluded salary; an old salary exclusion becomes uncertain and remains Unsupported. A later ordinary save writes version 3 with the normal revision check. Mixed schemas or unknown fields are invalid.
+The version-2-to-3 migration runs in memory, validates the complete result, and preserves revision, consent, all Profile values and Completion records. It adds the explicit no-salary branch to old Profiles that excluded salary; an old salary exclusion becomes uncertain and remains Unsupported. The subsequent migration reaches the current version before a normal save. Mixed schemas or unknown fields are invalid.
+
+Version 4 continues that migration chain and adds a nullable, unanswered calendar to version-3 registered Profiles. Unregistered Profiles and all prior values and Completion records remain unchanged. Recovery version 3 adds unanswered GST calendar fields after the version-1-to-2 salary migration. Validate the entire resulting envelope, reject mixed schemas, and persist the latest version only through normal writes and revision checks. No migration infers a filing frequency or export route.
 
 The earlier version-1 deletion policy remains. When the Application encounters a parsed JSON object whose top-level schema version is 1, it rereads the exact key, confirms that version, removes only that key, verifies absence, and shows: `Your previously saved answers and completion dates were removed because this version uses a new workspace.` It repeats verified removal if version 1 reappears, but shows the notice at most once per loaded document. It creates no backup and offers no recovery.
 
@@ -384,6 +388,8 @@ Advance tax cannot be marked complete while its estimated remaining amount is po
 A record matches by composite identity, never title, order, date, or copy. A changed due date or Source retains the match. Changed applicability, period, cadence, or a positive advance-tax balance preserves the record as Needs review and returns the current Obligation to what remains. Needs review is derived, not stored.
 
 A Needs-review record offers deletion. If later current Evaluation reproduces the same identity, it can match again automatically unless an amount reconciliation still fails.
+
+Saved-action labels retain the form and original month or quarter when the current plan no longer matches. QRMP actions consistently use review-date controls, including Change review date and Remove review. Unavailable-rule messages must not claim that withheld GST dates remain in the agenda. Offer the fixed official GST portal link for stale GST/LUT Rules; editing Profile answers cannot refresh Rules.
 
 ## Tax Year rollover and archive
 
@@ -510,7 +516,7 @@ Use independent groups for:
 - advance tax;
 - annual return;
 - GST registration; and
-- the later GST calendar and LUT Rules only when that slice ships.
+- independently expiring GST calendar and LUT Rules.
 
 Each group has identity, effective interval, verification and expiry dates, values, conditions, and direct statutory Source identities. The validator rejects unsafe values, unknown versions, duplicate identities, invalid or overlapping dates, missing required values, inconsistent thresholds or rates, unreferenced Rules, missing or non-HTTPS Sources, invalid review chronology, expired groups, and operative dates without direct extension provenance.
 
@@ -518,9 +524,9 @@ The Source registry distinguishes statutory and Tutorial Sources. Every personal
 
 The release compliance review must cover every item listed in [Define verification and release gates](.scratch/my-next-filing-solo-freelancer/issues/14-define-verification-and-release-gates.md), including the 1 October 2026 FEMA transition and the then-current status of the intermediary place-of-supply amendment.
 
-## Later registered-exporter calendar
+## Registered-freelancer GST calendar
 
-The later slice may support one active normal-taxpayer GSTIN in one Indian state after the user confirms cadence and all export conditions. It adds only:
+Support one active normal-taxpayer GSTIN in one Indian state or Union territory, with domestic, export or mixed clients. The registration must have remained continuously active as a normal taxpayer for the supported period, with no composition, suspension, cancellation or other registration history. Confirm that the effective date agrees with the first GST filing period in the portal; retrospective or unresolved first-period facts require review. It adds only:
 
 - Furnish LUT before the first planned export when eligible and exporting without payment of IGST;
 - monthly GSTR-1 on the 11th day of the next month;
@@ -529,7 +535,15 @@ The later slice may support one active normal-taxpayer GSTIN in one Indian state
 - quarterly GSTR-3B on the applicable 22nd or 24th day after the quarter; and
 - conditional QRMP monthly payment review on the 25th day of the next month for the first two months of a quarter.
 
-An unknown first-export date or LUT eligibility produces a Review action. IFF remains optional and never becomes an Obligation. More than one GSTIN, composition, suspension, cancellation, a non-normal taxpayer type, or unknown cadence is outside the calendar.
+Collect cadence separately for April–June, July–September, October–December and January–March. Do not infer it from receipts, registration status or another quarter. Only quarters overlapping registration need answers; unknown future cadence is allowed and withholds that quarter alone. Include the month or quarter containing the confirmed effective registration date, even when registration begins partway through it. A new registration beginning after a quarter's first month with QRMP declared for that same quarter needs review. Keep other established quarters in the agenda. Periods with no business still have return actions.
+
+LUT Coverage is separate from GST-return Coverage. Collect a declared export route: no service exports, LUT, IGST, bond, or uncertain. LUT eligibility requires confirmed qualifying service exports outside India, no prosecution involving tax evasion exceeding ₹2.5 crore, and no withdrawal or restriction of the LUT facility. SEZ supplies, bond management, mixed LUT/IGST routes and unknown eligibility require independent LUT review. No-export and confirmed IGST routes have no LUT action. Neither conclusion establishes export/refund eligibility.
+
+An unknown first-export date or LUT eligibility produces a Review action. A known first-export date must be within the Tax Year and no earlier than the effective registration date. Show that date with an explicit requirement to furnish LUT before export, never a universal 31 March deadline. If exports already occurred without an LUT, direct the user to review regularisation; do not infer automatic acceptance or tax liability. LUT completion is user-declared and does not establish timely coverage. IFF remains optional and never becomes an Obligation. More than one GSTIN, composition, suspension, cancellation, or a non-normal taxpayer type remains outside the calendar.
+
+Generate stable period-specific identities for GSTR-1, GSTR-3B and QRMP payment review. Monthly and quarterly return identities differ. Completion may not precede the end of the applicable return/review period; this is a product recording constraint, not a claim that early deposits are prohibited. LUT completion may not precede the effective registration date. A changed cadence preserves unmatched dates as Needs review. QRMP completion controls and status say reviewed, not paid, because liability and ledger sufficiency are unknown. Keep the calendar in the existing next-action and agenda views.
+
+Calendar and LUT Rules expire independently on 30 September 2026 pending another review. Show normal statutory dates and explain that official extensions may change them. Do not fabricate operative dates. The [research](.scratch/gst-filing-calendar/map.md) records an incomplete current extension inventory; recheck it before public release. Stale calendar Rules withhold GST return dates only; stale LUT Rules withhold LUT guidance only. Persist workspace version 4 and Recovery version 3, with explicit migrations retaining existing data and leaving new calendar facts unanswered.
 
 This slice calculates no GST payable, ledger balance, input-tax credit, refund, interest, fee, or penalty. It excludes return preparation and submission. GSTR-9 for 2026-27 remains excluded until period-specific forms and exemptions are officially available and reviewed.
 

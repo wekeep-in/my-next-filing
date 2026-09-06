@@ -1057,6 +1057,7 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
 
 .field-stack {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 2.5rem;
 }
 
@@ -1106,12 +1107,14 @@ details[open]:has(> summary:not(:focus-visible))::details-content {
 
 .question-sections {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: clamp(3rem, 4vw, 4.5rem);
   margin-top: 3rem;
 }
 
 .question-section {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 2rem;
 }
 

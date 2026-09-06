@@ -71,7 +71,7 @@ export async function verifyQuestionnaire() {
     location.pathname === '/check/clients',
     'Continue must use the assessed next group',
   )
-  step('7. GST registration').click()
+  step('7. GST registration and filings').click()
   await wait()
   const uncertainGst = [
     ...document.querySelectorAll<HTMLLabelElement>(
