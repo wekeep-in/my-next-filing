@@ -878,9 +878,11 @@ main:has(> .resources-page) {
   }
 }
 
-@container (min-width: 350px) and (max-width: 860px) {
-  .resource-filters {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+@media (min-width: 640px) {
+  @container (min-width: 350px) and (max-width: 860px) {
+    .resource-filters {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
 }
 

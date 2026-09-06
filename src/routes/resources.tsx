@@ -48,7 +48,7 @@ function ResourceLabel({
     return () => media.removeEventListener('change', update)
   }, [help])
   return (
-    <div className="mb-2 flex min-h-7 items-center gap-1">
+    <div className="mb-1 flex min-h-7 items-center gap-1 sm:mb-2">
       <label htmlFor={id}>{label}</label>
       {help && (
         <>
