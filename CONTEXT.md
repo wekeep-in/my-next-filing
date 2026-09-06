@@ -110,5 +110,9 @@ _Avoid_: Tutorial
 A reviewed external page that explains how to perform an action without establishing the underlying rule.
 _Avoid_: Statutory authority
 
+**Resource**:
+A document or official help destination presented for independent reading, with a description of what it covers. Relevance to a topic or task does not establish that an Obligation applies to the reader.
+_Avoid_: Personalized recommendation, eligibility result
+
 **Review date**:
 The date on which a human checked a Source or Rule dataset.
