@@ -529,7 +529,7 @@ Cancellation changes no state. The Application does not measure sharing or appen
 
 Deploy the Vite build through Cloudflare Workers Static Assets with SPA fallback and the existing custom domain. Use no Worker script, binding, backend, database, secret, queue, AI product, Workflow, Durable Object, KV, D1, or R2 bucket.
 
-Site-wide static-asset headers must include a same-origin Content Security Policy for scripts, styles, fonts, images, media, and connections, plus `frame-ancestors 'none'`, `base-uri 'none'`, `object-src 'none'`, no-referrer policy, MIME sniffing protection, framing protection, and a restrictive Permissions Policy. Preserve the HLS content type.
+Site-wide static-asset headers must include a same-origin Content Security Policy for scripts, stylesheets, fonts, images, media, and connections, plus `frame-ancestors 'none'`, `base-uri 'none'`, `object-src 'none'`, no-referrer policy, MIME sniffing protection, framing protection, and a restrictive Permissions Policy. Allow inline CSS for bundled component styles and blob media for the HLS player's in-browser video buffer. Inline scripts and off-origin runtime requests remain blocked. Preserve the HLS content type.
 
 External statutory and Tutorial Sources are fixed registry URLs. They open with `noopener noreferrer`, are not prefetched, and contain no user-built value.
 
