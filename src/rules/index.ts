@@ -91,6 +91,7 @@ export type CommonIncomeTaxRules = {
   readonly equityLongTermRate: number
   readonly equityLongTermThreshold: number
   readonly equityBasicExemption: number
+  readonly rentalStandardDeductionRate: number
   readonly salaryStandardDeduction: number
   readonly employerNpsRate: number
   readonly employerRetirementFundLimit: number
@@ -208,6 +209,42 @@ const quarterlyEarlyStates = [
 ] as const
 
 export const sourceRegistry: readonly Source[] = [
+  {
+    id: 'domestic-rental-income-2026',
+    kind: 'statutory',
+    publisher: 'Income Tax Department',
+    title:
+      'Income-tax Act, 2025 as amended: house property, sections 20–22, 202, 263 and 408',
+    url: 'https://www.incometaxindia.gov.in/documents/d/guest/income_tax_act_2025_as_amended_by_fa_act_2026-pdf',
+    publicationDate: '2025-08-21',
+    reviewDate: '2026-09-08',
+    taxPeriod: TAX_YEAR,
+    coveredRuleIds: ['domestic-rental-income', 'rental-standard-deduction'],
+  },
+  {
+    id: 'gst-residential-rent-exemption',
+    kind: 'statutory',
+    publisher: 'Central Board of Indirect Taxes and Customs',
+    title:
+      'Notification 12/2017, entry 12: residential dwelling for use as residence',
+    url: 'https://cbic-gst.gov.in/hindi/pdf/central-tax-rate/Notification12-CGST.pdf',
+    publicationDate: '2017-06-28',
+    reviewDate: '2026-09-08',
+    taxPeriod: TAX_YEAR,
+    coveredRuleIds: ['rental-gst-exemption'],
+  },
+  {
+    id: 'gst-residential-rent-tenants',
+    kind: 'statutory',
+    publisher: 'Central Board of Indirect Taxes and Customs',
+    title:
+      'Notification 04/2022: registered-tenant exclusion from residential-rent exemption',
+    url: 'https://cbic-gst.gov.in/pdf/central-tax-rate/04_2022-ctr-eng.pdf',
+    publicationDate: '2022-07-13',
+    reviewDate: '2026-09-08',
+    taxPeriod: TAX_YEAR,
+    coveredRuleIds: ['rental-gst-tenants'],
+  },
   {
     id: 'domestic-equity-gains-2026',
     kind: 'statutory',
@@ -636,7 +673,11 @@ const group = <T>(
   id,
   effectiveStart,
   effectiveEnd,
-  verifiedOn: ['common-income-tax', 'annual-return'].includes(id)
+  verifiedOn: [
+    'common-income-tax',
+    'annual-return',
+    'gst-registration',
+  ].includes(id)
     ? '2026-09-08'
     : id === 'gst-registration'
       ? '2026-09-06'
@@ -647,7 +688,7 @@ const group = <T>(
 })
 
 export const currentRules: RuleDataset = {
-  id: 'my-next-filing-2026-27-v10',
+  id: 'my-next-filing-2026-27-v11',
   schemaVersion: 1,
   taxPeriod: TAX_YEAR,
   effectiveStart,
@@ -655,6 +696,7 @@ export const currentRules: RuleDataset = {
   verifiedOn: '2026-09-08',
   expiresOn,
   changeNotes: [
+    'Added bounded domestic rental income with the 30% net-annual-value deduction and eligible current interest, preserving independent rental GST review. Verified 8 September 2026.',
     'Current-year domestic equity loss set-off and conditional carry-forward filing guidance reviewed on 8 September 2026. Capital losses do not reduce ordinary income. The mixed-gain basic-exemption restriction is evaluated after loss adjustment.',
     'GST calendar and LUT authority refreshed on 7 September 2026 through 31 October 2026. Normal dates, eligibility and completion identities are unchanged. The public CBIC 2026 listing contains no applicable current-period extension; the wider state-extension inventory still requires release-time review.',
     'Domestic equity gains reviewed on 7 September 2026: separate 20% and 12.5% tax, ₹1,25,000 long-term threshold, bounded basic-exemption adjustment, and ordinary-income-only deductions and rebate.',
@@ -682,6 +724,16 @@ export const currentRules: RuleDataset = {
           quarterlyEarlyStates,
         },
         [
+          {
+            ruleId: 'rental-gst-exemption',
+            sourceId: 'gst-residential-rent-exemption',
+            role: 'applicability',
+          },
+          {
+            ruleId: 'rental-gst-tenants',
+            sourceId: 'gst-residential-rent-tenants',
+            role: 'applicability',
+          },
           {
             ruleId: 'gst-return-periods',
             sourceId: 'gst-notification-82-2020',
@@ -719,7 +771,7 @@ export const currentRules: RuleDataset = {
           },
         ],
       ),
-      verifiedOn: '2026-09-07',
+      verifiedOn: '2026-09-08',
       expiresOn: '2026-10-31',
     },
     lut: {
@@ -802,6 +854,7 @@ export const currentRules: RuleDataset = {
         equityLongTermRate: 0.125,
         equityLongTermThreshold: 125_000,
         equityBasicExemption: 400_000,
+        rentalStandardDeductionRate: 0.3,
         salaryStandardDeduction: 75_000,
         employerNpsRate: 0.14,
         employerRetirementFundLimit: 750_000,
@@ -822,6 +875,16 @@ export const currentRules: RuleDataset = {
         roundingUnit: 10,
       },
       [
+        {
+          ruleId: 'domestic-rental-income',
+          sourceId: 'domestic-rental-income-2026',
+          role: 'applicability',
+        },
+        {
+          ruleId: 'rental-standard-deduction',
+          sourceId: 'domestic-rental-income-2026',
+          role: 'rate',
+        },
         {
           ruleId: 'equity-current-year-loss-set-off',
           sourceId: 'domestic-equity-gains-2026',
@@ -977,6 +1040,16 @@ export const currentRules: RuleDataset = {
         registrationWindowDays: 30,
       },
       [
+        {
+          ruleId: 'rental-gst-exemption',
+          sourceId: 'gst-residential-rent-exemption',
+          role: 'applicability',
+        },
+        {
+          ruleId: 'rental-gst-tenants',
+          sourceId: 'gst-residential-rent-tenants',
+          role: 'applicability',
+        },
         {
           ruleId: 'gst-aggregate-turnover',
           sourceId: 'gst-act-2017',
@@ -1378,6 +1451,10 @@ function validateValues(
       errors.push('Rules contain income-path values outside the reviewed set.')
   }
   if (id === 'common-income-tax') {
+    if (values.rentalStandardDeductionRate !== 0.3)
+      errors.push(
+        'Rules contain a rental standard deduction outside the reviewed set.',
+      )
     if (
       values.equityShortTermRate !== 0.2 ||
       values.equityLongTermRate !== 0.125 ||
@@ -1621,6 +1698,7 @@ export function validateRules(
         'equityLongTermRate',
         'equityLongTermThreshold',
         'equityBasicExemption',
+        'rentalStandardDeductionRate',
         'salaryStandardDeduction',
         'employerNpsRate',
         'employerRetirementFundLimit',
@@ -1660,6 +1738,8 @@ export function validateRules(
   const requiredRules: Record<keyof RuleDataset['groups'], readonly string[]> =
     {
       gstCalendar: [
+        'rental-gst-exemption',
+        'rental-gst-tenants',
         'gst-return-periods',
         'gst-gstr1-dates',
         'gst-gstr3b-dates',
@@ -1679,6 +1759,8 @@ export function validateRules(
         'business-five-year-exclusion',
       ],
       commonIncomeTax: [
+        'domestic-rental-income',
+        'rental-standard-deduction',
         'equity-current-year-loss-set-off',
         'domestic-equity-gains',
         'equity-short-term-rate',
@@ -1707,6 +1789,8 @@ export function validateRules(
         'annual-return-date',
       ],
       gstRegistration: [
+        'rental-gst-exemption',
+        'rental-gst-tenants',
         'gst-aggregate-turnover',
         'gst-registration-threshold',
         'gst-registration-window',

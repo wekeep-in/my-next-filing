@@ -48,6 +48,7 @@ const baseCandidate = {
     foreign: null,
   },
   otherIncome: {
+    rentalIncome: { kind: 'none' },
     salary: { kind: 'none' },
     additionalIncome: { kind: 'none' },
     equityGains: { kind: 'none' },
@@ -746,7 +747,7 @@ test('saves reconciles and deletes workspaces through storage failures', () => {
     WORKSPACE_KEY,
     JSON.stringify({
       ...workspaceDraft,
-      schemaVersion: 8,
+      schemaVersion: 9,
       revision: 0,
       updatedAt: '2026-09-03T06:30:00.000Z',
     }),

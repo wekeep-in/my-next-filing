@@ -12,6 +12,7 @@ import {
   isUnregisteredGst,
   optionLabels,
   parseMoney,
+  rentalIncomeFields,
   unsupportedFactLabels,
 } from '@/routes/check/model'
 import { Button } from '@/components/ui/button'
@@ -299,6 +300,23 @@ function GroupSummary({
                 label,
                 value: money(draft.amounts[key]),
               })),
+            ]
+          : []),
+        { label: 'Rental income', value: answer(draft.hasRentalIncome) },
+        ...(draft.hasRentalIncome === 'yes'
+          ? [
+              {
+                label: 'Rental conditions confirmed',
+                value: answer(draft.rentalIncomeConfirmed),
+              },
+              ...rentalIncomeFields.map(({ key, label }) => ({
+                label,
+                value: money(draft.amounts[key]),
+              })),
+              {
+                label: 'Rental GST conditions confirmed',
+                value: answer(draft.rentalGstConfirmed),
+              },
             ]
           : []),
         {

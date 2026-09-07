@@ -155,12 +155,13 @@ The Profile supports only:
 - the domestic salary branch below, alongside either supported presumptive practice;
 - the confirmed ordinary domestic dividend and additional-interest branch below;
 - the domestic equity-gains branch below;
+- the domestic rental-income branch below;
 - taxable bank or deposit interest before TDS;
 - actual Indian TDS for included income;
 - actual Indian TCS; and
 - advance tax already paid for the Tax Year.
 
-House property, gifts, unsupported dividends or distributions, capital gains outside the domestic equity branch, crypto, gaming, lottery, agricultural income, unrelated foreign income, foreign tax, disputed credits, deductions other than the supported salary standard deduction and employer NPS deduction, losses outside the domestic equity branch, other special-rate income, and another business or profession are Unsupported.
+House property outside the domestic rental branch, gifts, unsupported dividends or distributions, capital gains outside the domestic equity branch, crypto, gaming, lottery, agricultural income, unrelated foreign income, foreign tax, disputed credits, deductions other than the supported salary, employer NPS and rental deductions, losses outside the domestic equity branch, other special-rate income, and another business or profession are Unsupported.
 
 ### Ordinary domestic dividends and additional interest
 
@@ -219,6 +220,18 @@ Migrate workspace version 6 to 7 in memory with an absent equity branch only whe
 Current-year loss support migrates workspace 7 to 8 in memory, retaining earlier migrations. Old confirmed domestic equity Profiles explicitly excluded current-year losses and receive zero loss fields. An uncertain scope or retained legacy gain/loss stop remains uncertain or blocked; zero placeholders in such a blocked branch do not grant eligibility. Preserve existing amounts, revision, consent and Completion records. Reject old/new mixed fields. Recovery 6 migrates to 7 with both loss fields blank and equity confirmation cleared; a former No to gains becomes unanswered because the question now also covers pure losses. Preserve an existing Yes and its gain amounts. Branch deselection clears all four amounts. No new storage key or future-year loss ledger is introduced.
 
 If a capital loss remains unused, show its amount and category beside the estimate even when tax is zero. The independently validated annual-return conclusion includes conditional carry-forward guidance. To preserve the option to claim carry-forward, the plan includes the existing annual-return action with explicit conditional wording, including when no other filing trigger is established. Its `required` conclusion then means filing is required to claim carry-forward, not that merely realising a loss unconditionally requires a return. Sections 111, 121 and 263 require timely filing and determination of the loss; do not promise an approved balance. Explain the maximum eight immediately following Tax Years and that ST loss can offset future capital gains but LT loss only future LT gains. This version does not apply brought-forward losses. Stale/missing annual-return evidence withholds its deadline and carry-forward conclusion while preserving core loss set-off, the unused-loss amounts and an explicit guidance-review notice. Preserve the existing conditional advance-tax timing guidance. See the [loss-support plan and research](.scratch/domestic-equity-losses/map.md).
+
+### Domestic rental income alongside freelancing
+
+Ask Yes, No or Not sure about rental income. Yes requires confirmation of one wholly owned Indian residential property let for residential use, with annual value and tax-record amounts resolved. Exclude co-ownership, deemed ownership or clubbing, foreign property, commercial or business-style letting, subletting, self-occupied/deemed-let-out property, unresolved vacancy/unrealised rent, arrears/recovered rent, pre-construction interest and brought-forward property losses. The separate freelance-practice condition still applies; this passive property income does not select or change its presumptive path.
+
+Collect three non-negative safe-integer annual rupee amounts: established annual value before municipal-tax deduction, qualifying local-authority property taxes actually paid by the owner this Tax Year, and eligible current-year borrowed-capital interest. Interest must relate to the completed let property, be supported by records, payable in India and not deducted elsewhere. Exclude principal, total EMI, personal-loan interest unrelated to the property and pre-construction instalments. Annual value is not assumed to equal bank receipts. Municipal taxes cannot exceed the declared annual value in this slice.
+
+Subtract municipal taxes, deduct 30% of the resulting net annual value, then subtract eligible interest. Preserve fractional intermediate amounts and round combined income once using the existing rule. A negative property result is Unsupported, never silently capped at zero or deducted from salary/practice income. Add a non-negative property result once to ordinary income before employer NPS; include it in the existing rebate, marginal relief, income ceiling, annual-return and advance-tax calculations. Count actual Indian rental TDS once in the combined credit input. Keep the presumptive payment schedule and current unavailable return-form guidance. Show annual value, municipal taxes, net annual value, standard deduction, interest and taxable property income separately in the calculation.
+
+Require a separate rental GST confirmation for established coverage: the dwelling and rental supply are in the same state/UT as the existing practice/registration, used only as a residence, and every tenant is unregistered for GST throughout the letting. This is a deliberately narrow product boundary, not a claim that all other rentals are taxable. No/Not sure preserves the income-tax estimate but withholds GST registration/return conclusions and dates pending review. Independent LUT and income-tax actions remain. Require an explicit answer; blank is incomplete. Keep rental GST authority in the independent GST rule groups. Include exempt rental supply value in independently declared all-India GST aggregate turnover; never copy taxable property income or annual value into GST turnover. No GST liability or ITC calculation.
+
+Workspace 8 migrates to 9 in memory: add absent rental income only where legacy facts excluded property income and unresolved deductions/other situations. Retain all stop facts; uncertain legacy facts get a Not sure rental branch. Preserve revision, consent, other amounts and Completion records. Recovery 7 migrates to 8 with rental choices and amounts blank; do not infer an answer. Reject mixed schemas, unknown fields and hidden amounts. Deselection clears rental confirmations and amounts. Writes use the new schema through existing validation and storage keys. See [.scratch/domestic-rental-income/map.md](.scratch/domestic-rental-income/map.md).
 
 ### GST branch
 
@@ -297,7 +310,7 @@ For the Eligible business path, presumptive income is the greater of declared pr
 - 6 percent of qualifying banking or online receipts; and
 - 8 percent of all other receipts.
 
-Add supported taxable salary after its single capped standard deduction, taxable bank or deposit interest, and supported dividends, distributions and additional interest to presumptive income. Subtract the supported employer NPS deduction, limited to this ordinary income. Add supported equity gains separately as described below. Round combined total income to the nearest ₹10 before applying slab tax. Apply the Tax Year 2026-27 new-regime bands:
+Add supported taxable salary after its single capped standard deduction, taxable bank or deposit interest, supported dividends, distributions and additional interest, and non-negative supported rental income to presumptive income. Subtract the supported employer NPS deduction, limited to this ordinary income. Add supported equity gains separately as described below. Round combined total income to the nearest ₹10 before applying slab tax. Apply the Tax Year 2026-27 new-regime bands:
 
 | Rounded total-income band | Rate |
 | --- | ---: |
@@ -313,7 +326,7 @@ For ordinary slab-tax income no higher than ₹12 lakh, the rebate is the lower 
 
 Calculate Health and Education Cess at 4 percent after rebate or marginal relief. Subtract actual Indian TDS and TCS. The rounded non-negative result before advance tax paid is estimated advance-tax liability. Subtract advance tax already paid to produce the estimated remaining amount or refund, rounded to the nearest ₹10.
 
-The Application stops when rounded total income after the employer NPS deduction exceeds ₹50 lakh. It calculates no surcharge, deduction other than the supported salary standard deduction and employer NPS deduction, losses outside the domestic equity branch, special-rate tax other than the domestic equity branch, foreign-tax relief, interest, fee, or penalty.
+The Application stops when rounded total income after the employer NPS deduction exceeds ₹50 lakh. It calculates no surcharge, deduction other than the supported salary, employer NPS and rental deductions, losses outside the domestic equity branch, special-rate tax other than the domestic equity branch, foreign-tax relief, interest, fee, or penalty.
 
 ## First-release Obligation catalog
 

@@ -35,19 +35,19 @@ const withSources = (change: (source: Source) => Source): RuleDataset => ({
 
 test('publishes unique resources with complete provenance', () => {
   assert.deepEqual(catalogue.errors, [])
-  assert.equal(catalogue.resources.length, 29)
+  assert.equal(catalogue.resources.length, 31)
   assert.equal(
     new Set(catalogue.resources.map((resource) => resource.url)).size,
-    29,
+    31,
   )
   assert.equal(
     new Set(catalogue.resources.flatMap((resource) => resource.sourceIds)).size,
-    34,
+    37,
   )
 })
 
 test('ranks exact titles identifiers and reviewed aliases', () => {
-  assert.equal(ids('').length, 29)
+  assert.equal(ids('').length, 31)
   sameMatches('', '   ')
   assert.equal(ids('how do I').length, 0)
   assert.deepEqual(
@@ -140,7 +140,7 @@ test('distinguishes Tax Years Assessment Years and publication years', () => {
       .sort(),
   )
   sameMatches('advance tax Tax Year 2026-27', 'advance tax Tax Year 2026-2027')
-  assert.equal(ids('Tax Year 2026-27').length, 19)
+  assert.equal(ids('Tax Year 2026-27').length, 21)
   const gstPeriod = search('GST Tax Year 2026-27')
   assert.ok(gstPeriod.results.length > 0)
   assert.ok(
@@ -196,7 +196,7 @@ test('combines filters and counts unique resources in every facet', () => {
 })
 
 test('consolidates source descriptions and oldest review dates', () => {
-  assert.equal(act.sources.length, 6)
+  assert.equal(act.sources.length, 7)
   assert.equal(act.reviewDate, '2026-09-03')
   assert.ok(act.references?.some((reference) => reference.includes('156')))
   assert.ok(act.references?.some((reference) => reference.includes('salary')))
@@ -217,7 +217,7 @@ test('warns at independent review boundaries without hiding documents', () => {
       new Date(`${date}T12:00:00+05:30`),
     )
     assert.deepEqual(result.errors, [])
-    assert.equal(result.resources.length, 29)
+    assert.equal(result.resources.length, 31)
     assert.equal(
       result.resources.find(
         (resource) => resource.id === 'gst-notification-82-2020',
@@ -243,7 +243,7 @@ test('retains bibliography when the root review expires', () => {
     currentRules,
     new Date('2027-09-01T12:00:00+05:30'),
   )
-  assert.equal(expired.resources.length, 29)
+  assert.equal(expired.resources.length, 31)
   assert.ok(
     expired.resources
       .filter((resource) => resource.taxPeriod)
@@ -296,7 +296,7 @@ test('withholds malformed or future source review dates', () => {
       ),
       now,
     )
-    assert.equal(result.resources.length, 28)
+    assert.equal(result.resources.length, 30)
     assert.ok(result.errors.length > 0)
     assert.ok(
       !result.resources.some((resource) => resource.id === 'section-58'),
@@ -320,7 +320,7 @@ test('withholds unsafe source URLs', () => {
       ),
       now,
     )
-    assert.equal(result.resources.length, 28)
+    assert.equal(result.resources.length, 30)
     assert.ok(result.errors.length > 0)
   }
 })
@@ -348,7 +348,7 @@ test('excludes unapproved tutorials from search', () => {
       ),
       now,
     )
-    assert.equal(result.resources.length, 28)
+    assert.equal(result.resources.length, 30)
     assert.equal(
       searchResources(result.resources, {
         ...emptyResourceFilters,
@@ -416,6 +416,6 @@ test('rejects unclassified duplicate missing and malformed catalogue entries', (
           : entry,
       ),
     ).resources.length,
-    28,
+    30,
   )
 })

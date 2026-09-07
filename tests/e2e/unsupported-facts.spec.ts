@@ -11,7 +11,7 @@ test('card selections block navigation, survive reload, and clear through the gl
   const next = page.getByRole('button', { name: 'Continue', exact: true })
   const gift = field.getByRole('checkbox', { name: 'Gift income', exact: true })
   const property = field.getByRole('checkbox', {
-    name: 'Income from house property',
+    name: 'House-property income needing a separate review',
     exact: true,
   })
   const none = field.getByRole('radio', {

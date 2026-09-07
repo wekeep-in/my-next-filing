@@ -253,6 +253,34 @@ export function TaxSummary({
                 <dd>{formatMoney(tax.additionalIncome![key])}</dd>
               </div>
             ))}
+          {tax.rentalIncome && (
+            <>
+              <div>
+                <dt>Property annual value before municipal taxes</dt>
+                <dd>{formatMoney(tax.rentalIncome.rentalAnnualValue)}</dd>
+              </div>
+              <div>
+                <dt>Municipal taxes paid</dt>
+                <dd>{formatMoney(tax.rentalIncome.rentalMunicipalTaxes)}</dd>
+              </div>
+              <div>
+                <dt>Net annual value</dt>
+                <dd>{formatMoney(tax.rentalIncome.netAnnualValue)}</dd>
+              </div>
+              <div>
+                <dt>Property standard deduction</dt>
+                <dd>{formatMoney(tax.rentalIncome.standardDeduction)}</dd>
+              </div>
+              <div>
+                <dt>Eligible property-loan interest</dt>
+                <dd>{formatMoney(tax.rentalIncome.rentalInterest)}</dd>
+              </div>
+              <div>
+                <dt>Taxable rental income</dt>
+                <dd>{formatMoney(tax.rentalIncome.taxableIncome)}</dd>
+              </div>
+            </>
+          )}
           {tax.equityGains && (
             <>
               <div>
@@ -426,6 +454,7 @@ export function TaxSummary({
           'finance-act-2026',
           ...(tax.salary ? ['domestic-salary-2026'] : []),
           ...(tax.additionalIncome ? ['domestic-investment-income-2026'] : []),
+          ...(tax.rentalIncome ? ['domestic-rental-income-2026'] : []),
           ...(tax.equityGains ? ['domestic-equity-gains-2026'] : []),
         ]}
       />

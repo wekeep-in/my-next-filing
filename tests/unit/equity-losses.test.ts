@@ -525,7 +525,7 @@ test('migrates captured workspace without deleting gains consent revisions or co
   if (loaded.kind !== 'ready')
     throw Error('Expected captured workspace to migrate')
   expect(loaded.workspace).toMatchObject({
-    schemaVersion: 8,
+    schemaVersion: 9,
     revision: workspaceV7.revision,
     consentDecidedAt: workspaceV7.consentDecidedAt,
     active: {
@@ -594,7 +594,7 @@ test('preserves legacy loss exclusions and requires the expanded Recovery answer
   )
   const recovery = parseRecoveryDraft(recoveryV6, TAX_YEAR)
   expect(recovery).toMatchObject({
-    schemaVersion: 7,
+    schemaVersion: 8,
     draft: {
       hasEquityGains: 'yes',
       equityGainsConfirmed: '',

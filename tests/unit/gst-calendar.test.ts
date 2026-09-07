@@ -139,8 +139,8 @@ test('keeps renewed GST and LUT coverage past September and preserves saved comp
     )
     assert.ok(
       gstActions(refreshed).every(
-        ({ verifiedOn, expiresOn, operativeDueDate }) =>
-          verifiedOn === '2026-09-07' &&
+        ({ kind, verifiedOn, expiresOn, operativeDueDate }) =>
+          verifiedOn === (kind === 'gst-lut' ? '2026-09-07' : '2026-09-08') &&
           expiresOn === '2026-10-31' &&
           operativeDueDate === null,
       ),

@@ -53,8 +53,8 @@ const explanations: Partial<
     help: 'Review the dividend fields above. Select any gift income separately before clearing this older combined answer.',
   },
   houseProperty: {
-    title: 'Income from house property',
-    help: 'For example, rental income.',
+    title: 'House-property income needing a separate review',
+    help: 'Property income outside the rental conditions above, such as co-owned or foreign property, or a property loss. If this answer was restored, review your rental income before clearing it.',
   },
   capitalGains: {
     title: 'Capital gains needing a separate review',
@@ -70,7 +70,7 @@ const explanations: Partial<
   },
   deductionsLossesOrSpecialRate: {
     title: 'Other deductions, losses, or special-rate income',
-    help: 'Deductions outside the supported salary conditions, losses outside the current-year domestic equity conditions, or other unsupported special-rate income.',
+    help: 'Deductions outside the supported salary, employer NPS and rental conditions, losses outside the current-year domestic equity conditions, or other unsupported special-rate income.',
   },
   employeesOrDeductorDuties: {
     title: 'Employees or TDS filing requirements',

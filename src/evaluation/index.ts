@@ -34,7 +34,8 @@ export type Activity =
 const unsupportedFactLabels = {
   salary:
     'Salary outside the supported conditions, such as foreign salary, pension, arrears, or employee shares',
-  houseProperty: 'Income from house property, such as rent',
+  houseProperty:
+    'House-property income outside the supported rental conditions',
   dividendsOrGifts: 'Dividends or gifts selected in an earlier version',
   gifts: 'Gift income',
   unsupportedDividends:
@@ -49,7 +50,7 @@ const unsupportedFactLabels = {
   foreignTaxOrRelief:
     'Tax owed or paid abroad, or a claim for foreign-tax relief',
   deductionsLossesOrSpecialRate:
-    'Deductions other than the supported salary and employer NPS deductions, losses outside the current-year domestic equity conditions, or other unsupported special-rate income',
+    'Deductions other than the supported salary, employer NPS and rental deductions, losses outside the current-year domestic equity conditions, or other unsupported special-rate income',
   disputedCredit: 'A dispute about your TDS or TCS tax credit',
   anotherBusinessOrProfession:
     'A business or profession in addition to the freelance work entered here',
@@ -96,6 +97,19 @@ export type EquityGains =
       readonly shortTermLosses: number
       readonly longTermLosses: number
     }
+
+export type RentalIncomeAmounts = {
+  readonly rentalAnnualValue: number
+  readonly rentalMunicipalTaxes: number
+  readonly rentalInterest: number
+}
+export type RentalIncome =
+  | { readonly kind: 'none' | 'not-sure' }
+  | (RentalIncomeAmounts & {
+      readonly kind: 'domestic'
+      readonly confirmed: TriState
+      readonly gstConfirmed: TriState
+    })
 
 export type AdditionalIncomeAmounts = {
   readonly dividends: number
@@ -244,6 +258,7 @@ export type Profile = {
   readonly clients: ClientProfile
   readonly otherIncome: {
     readonly salary: SalaryIncome
+    readonly rentalIncome: RentalIncome
     readonly additionalIncome: AdditionalIncome
     readonly equityGains: EquityGains
     readonly taxableBankInterest: number
@@ -371,6 +386,13 @@ export type ForeignGuidanceConclusion = {
 }
 
 export type TaxEstimate = {
+  readonly rentalIncome:
+    | (RentalIncomeAmounts & {
+        readonly netAnnualValue: number
+        readonly standardDeduction: number
+        readonly taxableIncome: number
+      })
+    | null
   readonly path: IncomePath['kind']
   readonly presumptive: {
     readonly grossReceipts: number
@@ -1155,6 +1177,7 @@ function readProfile(value: unknown) {
     [
       'salary',
       'additionalIncome',
+      'rentalIncome',
       'equityGains',
       'taxableBankInterest',
       'tds',
@@ -1168,6 +1191,7 @@ function readProfile(value: unknown) {
     errors,
   )
   const otherIncome = {
+    rentalIncome: parseRentalIncome(otherRecord?.rentalIncome, errors),
     equityGains: parseEquityGains(otherRecord?.equityGains, errors),
     salary: parseSalary(otherRecord?.salary, errors),
     additionalIncome: parseAdditionalIncome(
@@ -1472,6 +1496,9 @@ function readProfile(value: unknown) {
         (otherIncome.salary.kind === 'domestic'
           ? otherIncome.salary.grossSalary
           : 0) +
+        (otherIncome.rentalIncome.kind === 'domestic'
+          ? otherIncome.rentalIncome.rentalAnnualValue
+          : 0) +
         additionalIncomeTotal(otherIncome.additionalIncome) +
         otherIncome.taxableBankInterest +
         gainTotal,
@@ -1704,6 +1731,105 @@ function parseEquityGains(
       'The combined gains or losses exceed the supported whole-rupee range.',
     )
   return gains
+}
+
+function parseRentalIncome(
+  value: unknown,
+  errors: ProfileInputError[],
+): RentalIncome {
+  const path = 'otherIncome.rentalIncome'
+  if (!isRecord(value)) {
+    addError(
+      errors,
+      'invalid',
+      path,
+      'other-income',
+      'Choose whether you have rental income.',
+    )
+    return { kind: 'not-sure' }
+  }
+  if (value.kind !== 'domestic') {
+    checkObject(value, ['kind'], path, 'other-income', errors)
+    return {
+      kind: readText(
+        value,
+        'kind',
+        ['none', 'not-sure'],
+        path,
+        'other-income',
+        errors,
+      ),
+    }
+  }
+  checkObject(
+    value,
+    [
+      'kind',
+      'confirmed',
+      'gstConfirmed',
+      'rentalAnnualValue',
+      'rentalMunicipalTaxes',
+      'rentalInterest',
+    ],
+    path,
+    'other-income',
+    errors,
+  )
+  const income: RentalIncome = {
+    kind: 'domestic',
+    confirmed: readTri(value, 'confirmed', path, 'other-income', errors),
+    gstConfirmed: readTri(value, 'gstConfirmed', path, 'other-income', errors),
+    rentalAnnualValue: readAmount(
+      value,
+      'rentalAnnualValue',
+      path,
+      'other-income',
+      errors,
+    ),
+    rentalMunicipalTaxes: readAmount(
+      value,
+      'rentalMunicipalTaxes',
+      path,
+      'other-income',
+      errors,
+    ),
+    rentalInterest: readAmount(
+      value,
+      'rentalInterest',
+      path,
+      'other-income',
+      errors,
+    ),
+  }
+  if (income.rentalMunicipalTaxes > income.rentalAnnualValue)
+    addError(
+      errors,
+      'inconsistent',
+      `${path}.rentalMunicipalTaxes`,
+      'other-income',
+      'This version needs municipal taxes no higher than annual value. Check the amounts; a property loss needs separate review.',
+    )
+  return income
+}
+
+function calculateRentalIncome(
+  income: RentalIncome,
+  rules: CommonIncomeTaxRules,
+): TaxEstimate['rentalIncome'] {
+  if (income.kind !== 'domestic') return null
+  const netAnnualValue = income.rentalAnnualValue - income.rentalMunicipalTaxes
+  const standardDeduction = percentage(
+    netAnnualValue,
+    rules.rentalStandardDeductionRate,
+  )
+  return {
+    rentalAnnualValue: income.rentalAnnualValue,
+    rentalMunicipalTaxes: income.rentalMunicipalTaxes,
+    rentalInterest: income.rentalInterest,
+    netAnnualValue,
+    standardDeduction,
+    taxableIncome: netAnnualValue - standardDeduction - income.rentalInterest,
+  }
 }
 
 function parseAdditionalIncome(
@@ -2080,9 +2206,14 @@ function calculateTax(
         ) + percentage(path.otherReceipts, pathRules.businessOtherReceiptRate)
   const usedIncome = Math.max(minimumIncome, path.declaredProfit)
   const salary = calculateSalary(profile.otherIncome.salary, taxRules)
+  const rentalIncome = calculateRentalIncome(
+    profile.otherIncome.rentalIncome,
+    taxRules,
+  )
   const ordinaryBeforeNps =
     usedIncome +
     (salary?.taxableSalary ?? 0) +
+    (rentalIncome?.taxableIncome ?? 0) +
     additionalIncomeTotal(profile.otherIncome.additionalIncome) +
     profile.otherIncome.taxableBankInterest
   const gains = profile.otherIncome.equityGains
@@ -2189,6 +2320,7 @@ function calculateTax(
         path.kind === 'eligible-business' ? path.otherReceipts : null,
     },
     salary,
+    rentalIncome,
     taxableBankInterest: profile.otherIncome.taxableBankInterest,
     additionalIncome:
       profile.otherIncome.additionalIncome.kind === 'domestic'
@@ -2835,6 +2967,15 @@ type GstAreaResult = {
   readonly obligation: Obligation | null
 }
 
+const rentalGstReason =
+  'Confirm the rental GST conditions, including tenant registration and the state of supply. Other or uncertain arrangements need a separate GST review; no GST registration or return dates are shown.'
+function rentalNeedsGstReview(profile: Pick<Profile, 'otherIncome'>) {
+  return (
+    profile.otherIncome.rentalIncome.kind === 'domestic' &&
+    profile.otherIncome.rentalIncome.gstConfirmed !== 'yes'
+  )
+}
+
 function registeredGstAreas(
   profile: Profile,
   validated: Extract<RuleValidation, { valid: true }>,
@@ -2860,7 +3001,7 @@ function registeredGstAreas(
           ? 'Review GST calendar facts'
           : 'Review LUT requirements',
         area,
-        'gst',
+        id === 'rental-gst-review' ? 'other-income' : 'gst',
         reason,
         area === 'gst' ? returnSources : lutSources,
       ),
@@ -2907,6 +3048,8 @@ function registeredGstAreas(
         'GST dates are unavailable until we update our rules.',
       ),
     )
+  } else if (rentalNeedsGstReview(profile)) {
+    missing.push(addReview('rental-gst-review', rentalGstReason))
   } else if (
     gst.kind !== 'registered' ||
     gst.status !== 'one-normal' ||
@@ -3112,13 +3255,36 @@ function registeredGstAreas(
 }
 
 function calculateGst(
-  profile: { readonly gst: UnregisteredGst; readonly taxYear: TaxYear },
+  profile: Pick<Profile, 'otherIncome' | 'taxYear'> & {
+    readonly gst: UnregisteredGst
+  },
   rules: RuleDataset,
   today: DateOnly,
   verifiedOn: DateOnly,
   expiresOn: DateOnly,
   sourceIds: readonly string[],
 ): GstAreaResult {
+  if (rentalNeedsGstReview(profile))
+    return {
+      coverage: coverageUnavailable(
+        'gst',
+        'rental-gst-review',
+        rentalGstReason,
+        'Your income-tax estimate remains available. Review rental GST treatment before relying on GST dates.',
+        sourceIds,
+      ),
+      review: [
+        reviewAction(
+          'rental-gst-review',
+          'Review rental GST treatment',
+          'gst',
+          'other-income',
+          rentalGstReason,
+          sourceIds,
+        ),
+      ],
+      obligation: null,
+    }
   if (
     profile.gst.turnoverComplete !== 'yes' ||
     profile.gst.compulsoryRegistration !== 'no'
@@ -3280,6 +3446,35 @@ function coreSupportFacts(
     ...factForPath(current, rules.groups.incomePaths.values, sourceIds),
     ...factForClients(current, sourceIds),
   ]
+  const rental = current.otherIncome.rentalIncome
+  if (
+    rental.kind === 'not-sure' ||
+    (rental.kind === 'domestic' && rental.confirmed !== 'yes')
+  )
+    coreFacts.push(
+      unsupported(
+        'rental-income-scope',
+        'income-tax',
+        'other-income',
+        'Domestic rental income',
+        'Confirm the supported property conditions and resolved annual amounts. Other or uncertain property income needs separate review.',
+        sourceIds,
+      ),
+    )
+  if (
+    (calculateRentalIncome(rental, rules.groups.commonIncomeTax.values)
+      ?.taxableIncome ?? 0) < 0
+  )
+    coreFacts.push(
+      unsupported(
+        'rental-income-loss',
+        'income-tax',
+        'other-income',
+        'House-property loss',
+        'Interest exceeds property income after municipal taxes and the standard deduction. This version does not calculate property losses. Check the amounts or get a separate review.',
+        sourceIds,
+      ),
+    )
   const gains = current.otherIncome.equityGains
   if (
     gains.kind === 'not-sure' ||
@@ -3449,7 +3644,11 @@ export function screenProfile(
     } else if (validated.groups['gst-registration'].valid) {
       const group = data.groups.gstRegistration
       const gst = calculateGst(
-        { gst: profile.gst, taxYear: profile.taxYear },
+        {
+          gst: profile.gst,
+          taxYear: profile.taxYear,
+          otherIncome: profile.otherIncome,
+        },
         data,
         indiaDate(currentDate),
         group.verifiedOn,
@@ -3677,7 +3876,11 @@ export function evaluate(
     }
   } else
     gst = calculateGst(
-      { gst: current.gst, taxYear: current.taxYear },
+      {
+        gst: current.gst,
+        taxYear: current.taxYear,
+        otherIncome: current.otherIncome,
+      },
       data,
       today,
       data.groups.gstRegistration.verifiedOn,
@@ -3774,7 +3977,7 @@ export function evaluate(
     assumptions: [
       'This estimate is for one adult who is resident and ordinarily resident in India and runs one individual practice.',
       'The amounts you entered are complete, non-negative whole-rupee values from your tax records.',
-      'This is a best-effort estimate. It does not calculate deductions other than the salary standard deduction and supported employer NPS contributions, surcharge, losses other than supported current-year domestic equity losses, special-rate tax other than supported domestic equity gains, foreign-tax relief, interest, fees, or penalties.',
+      'This is a best-effort estimate. It does not calculate deductions other than the supported salary, employer NPS and rental deductions, surcharge, losses other than supported current-year domestic equity losses, special-rate tax other than supported domestic equity gains, foreign-tax relief, interest, fees, or penalties.',
     ],
     explanations: [
       current.incomePath.kind === 'specified-profession'
@@ -3788,6 +3991,11 @@ export function evaluate(
       ...(tax.employerNpsContributions !== null
         ? [
             'Employer NPS is already included in your salary amount. Its separate deduction uses each contributing employer’s basic pay and eligible DA and cannot exceed ordinary income excluding equity gains. The annual-return income trigger is checked before this deduction.',
+          ]
+        : []),
+      ...(tax.rentalIncome
+        ? [
+            'Rental income uses the established annual value less qualifying municipal taxes, the 30% standard deduction and eligible current-year interest. Rental TDS is included only through your combined Indian TDS entry. Rental supply value remains part of independently declared GST turnover even when exempt.',
           ]
         : []),
       ...(tax.additionalIncome

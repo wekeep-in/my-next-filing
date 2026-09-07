@@ -84,7 +84,7 @@ test('keeps employer NPS through Recovery, review, saving and reload', async ({
     WORKSPACE_KEY,
   )
   expect(saved).toMatchObject({
-    schemaVersion: 8,
+    schemaVersion: 9,
     active: {
       profile: {
         otherIncome: {
@@ -122,6 +122,13 @@ test('keeps NPS fields and help usable across viewports and clears deselected co
     .locator('#hasSalary')
     .getByRole('radio', { name: 'Yes', exact: true })
     .click()
+  // The temporary Recovery banner changes page geometry when it disappears.
+  const recoveryNotice = page.getByText(
+    'Your answers will stay available if you refresh this tab. Closing the tab may remove them.',
+    { exact: true },
+  )
+  await expect(recoveryNotice).toBeVisible()
+  await expect(recoveryNotice).toHaveCount(0)
   await page
     .locator('#hasEmployerNps')
     .getByRole('radio', { name: 'Yes', exact: true })
@@ -249,6 +256,18 @@ test('keeps NPS fields and help usable across viewports and clears deselected co
     .locator('#hasSalary')
     .getByRole('radio', { name: 'No', exact: true })
     .click()
+  // Recovery writes follow the React commit; reload only after this answer is stored.
+  await expect
+    .poll(async () => {
+      const raw = await page.evaluate(
+        (key) => sessionStorage.getItem(key),
+        RECOVERY_KEY,
+      )
+      return raw ? (JSON.parse(raw) as unknown) : null
+    })
+    .toMatchObject({
+      draft: { hasSalary: 'no', hasEmployerNps: '', employerNpsEmployers: [] },
+    })
   await page.reload()
   await expect(page.locator('#hasEmployerNps')).toHaveCount(0)
 })
@@ -284,7 +303,7 @@ test('migrates the captured salary workspace without changing consent or complet
     WORKSPACE_KEY,
   )
   expect(saved).toMatchObject({
-    schemaVersion: 8,
+    schemaVersion: 9,
     consentDecidedAt: workspaceV5.consentDecidedAt,
     active: {
       completions: workspaceV5.active.completions,

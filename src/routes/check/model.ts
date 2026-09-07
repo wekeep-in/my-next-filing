@@ -6,6 +6,7 @@ import type {
   Profile,
   ProfileGroup,
   ProfileInputError,
+  RentalIncomeAmounts,
   TriState,
   UnsupportedFact,
 } from '@/evaluation'
@@ -23,6 +24,7 @@ export type DraftAmountKey =
   | 'longTermGains'
   | 'shortTermLosses'
   | 'longTermLosses'
+  | keyof RentalIncomeAmounts
   | keyof AdditionalIncomeAmounts
   | 'grossReceipts'
   | 'cashReceipts'
@@ -101,6 +103,9 @@ export type Draft = {
   }[]
   readonly hasEquityGains: DraftChoice
   readonly equityGainsConfirmed: DraftChoice
+  readonly hasRentalIncome: DraftChoice
+  readonly rentalIncomeConfirmed: DraftChoice
+  readonly rentalGstConfirmed: DraftChoice
   readonly hasAdditionalIncome: DraftChoice
   readonly additionalIncomeConfirmed: DraftChoice
   readonly ageSixtyOrOlder: DraftChoice
@@ -132,6 +137,16 @@ export const equityGainFields = [
 ] as const
 export const equityGainKeys = equityGainFields.map(({ key }) => key)
 
+export const rentalIncomeFields = [
+  { key: 'rentalAnnualValue', label: 'Annual value before municipal taxes' },
+  { key: 'rentalMunicipalTaxes', label: 'Municipal taxes paid by you' },
+  { key: 'rentalInterest', label: 'Eligible interest on the property loan' },
+] as const satisfies readonly {
+  readonly key: keyof RentalIncomeAmounts
+  readonly label: string
+}[]
+export const rentalIncomeKeys = rentalIncomeFields.map(({ key }) => key)
+
 export const additionalIncomeFields = [
   { key: 'dividends', label: 'Indian-company dividends' },
   { key: 'mutualFundDistributions', label: 'Indian mutual-fund distributions' },
@@ -157,6 +172,7 @@ export const amountKeys: readonly DraftAmountKey[] = [
   'grossSalary',
   ...additionalIncomeKeys,
   ...equityGainKeys,
+  ...rentalIncomeKeys,
 ]
 
 export const statesAndUnionTerritories = [
@@ -247,7 +263,8 @@ export const optionLabels: Readonly<Record<string, string>> = {
 export const unsupportedFactLabels: Record<UnsupportedFact, string> = {
   salary:
     'Salary outside the supported conditions, such as foreign salary, pension, arrears, or employee shares',
-  houseProperty: 'Income from house property, such as rent',
+  houseProperty:
+    'House-property income outside the supported rental conditions',
   dividendsOrGifts: 'Dividends or gifts selected in an earlier version',
   gifts: 'Gift income',
   unsupportedDividends:
@@ -262,7 +279,7 @@ export const unsupportedFactLabels: Record<UnsupportedFact, string> = {
   foreignTaxOrRelief:
     'Tax owed or paid abroad, or a claim for foreign-tax relief',
   deductionsLossesOrSpecialRate:
-    'Deductions other than the supported salary and employer NPS deductions, losses outside the current-year domestic equity conditions, or other unsupported special-rate income',
+    'Deductions other than the supported salary, employer NPS and rental deductions, losses outside the current-year domestic equity conditions, or other unsupported special-rate income',
   disputedCredit: 'A dispute about your TDS or TCS tax credit',
   anotherBusinessOrProfession:
     'A business or profession in addition to the freelance work entered here',
@@ -357,6 +374,9 @@ export const blankDraft = (): Draft => ({
   employerNpsEmployers: [],
   hasEquityGains: '',
   equityGainsConfirmed: '',
+  hasRentalIncome: '',
+  rentalIncomeConfirmed: '',
+  rentalGstConfirmed: '',
   hasAdditionalIncome: '',
   additionalIncomeConfirmed: '',
   ageSixtyOrOlder: '',
@@ -392,6 +412,10 @@ export function draftFromProfile(profile: Profile): Draft {
   if (gains.kind === 'domestic')
     for (const key of equityGainKeys)
       amounts[key] = gains[key].toLocaleString('en-IN')
+  const rental = profile.otherIncome.rentalIncome
+  if (rental.kind === 'domestic')
+    for (const key of rentalIncomeKeys)
+      amounts[key] = rental[key].toLocaleString('en-IN')
   const additional = profile.otherIncome.additionalIncome
   if (additional.kind === 'domestic')
     for (const key of additionalIncomeKeys)
@@ -454,6 +478,14 @@ export function draftFromProfile(profile: Profile): Draft {
           ? 'yes'
           : 'not-sure',
     equityGainsConfirmed: gains.kind === 'domestic' ? gains.confirmed : '',
+    hasRentalIncome:
+      rental.kind === 'domestic'
+        ? 'yes'
+        : rental.kind === 'none'
+          ? 'no'
+          : 'not-sure',
+    rentalIncomeConfirmed: rental.kind === 'domestic' ? rental.confirmed : '',
+    rentalGstConfirmed: rental.kind === 'domestic' ? rental.gstConfirmed : '',
     hasAdditionalIncome:
       additional.kind === 'none'
         ? 'no'
@@ -611,6 +643,7 @@ const exampleCandidate = {
     salary: { kind: 'none' },
     equityGains: { kind: 'none' },
     additionalIncome: { kind: 'none' },
+    rentalIncome: { kind: 'none' },
     taxableBankInterest: 10_000,
     tds: 40_000,
     tcs: 0,
@@ -673,6 +706,7 @@ function candidateFromDraft(draft: Draft) {
     ...amountKeys.slice(5, 9),
     ...(draft.hasSalary === 'yes' ? ['grossSalary' as const] : []),
     ...(draft.hasAdditionalIncome === 'yes' ? additionalIncomeKeys : []),
+    ...(draft.hasRentalIncome === 'yes' ? rentalIncomeKeys : []),
     ...(draft.hasEquityGains === 'yes' ? equityGainKeys : []),
     ...(isUnregisteredGst(draft) ? ['aggregateTurnover' as const] : []),
   ]
@@ -763,6 +797,17 @@ function candidateFromDraft(draft: Draft) {
         : null,
     },
     otherIncome: {
+      rentalIncome:
+        draft.hasRentalIncome === 'yes'
+          ? {
+              kind: 'domestic',
+              confirmed: draft.rentalIncomeConfirmed || 'not-sure',
+              gstConfirmed: draft.rentalGstConfirmed || 'not-sure',
+              rentalAnnualValue: amountValues.rentalAnnualValue,
+              rentalMunicipalTaxes: amountValues.rentalMunicipalTaxes,
+              rentalInterest: amountValues.rentalInterest,
+            }
+          : { kind: draft.hasRentalIncome === 'no' ? 'none' : 'not-sure' },
       equityGains:
         draft.hasEquityGains === 'yes'
           ? {
@@ -1031,6 +1076,10 @@ function errorStep(key: string) {
       'hasEquityGains',
       'equityGainsConfirmed',
       ...equityGainKeys,
+      'hasRentalIncome',
+      'rentalIncomeConfirmed',
+      'rentalGstConfirmed',
+      ...rentalIncomeKeys,
       'hasAdditionalIncome',
       'additionalIncomeConfirmed',
       ...additionalIncomeKeys,
@@ -1049,6 +1098,16 @@ function errorStep(key: string) {
 }
 
 function profileErrorKey(error: ProfileInputError) {
+  if (error.path.startsWith('otherIncome.rentalIncome')) {
+    const last = error.path.split('.').at(-1) ?? ''
+    return last === 'confirmed'
+      ? 'rentalIncomeConfirmed'
+      : last === 'gstConfirmed'
+        ? 'rentalGstConfirmed'
+        : rentalIncomeKeys.includes(last as keyof RentalIncomeAmounts)
+          ? last
+          : 'hasRentalIncome'
+  }
   if (error.path.startsWith('otherIncome.salary.employerNps')) {
     if (error.path.includes('.employers'))
       return error.path.replace(
@@ -1265,6 +1324,18 @@ function validateDraftGroup(
         'Choose whether these payments involve a foreign account or similar arrangement.'
   }
   if (group === 'other-income') {
+    if (!draft.hasRentalIncome)
+      nextErrors.hasRentalIncome = 'Choose whether you have rental income.'
+    if (draft.hasRentalIncome === 'yes') {
+      if (!draft.rentalIncomeConfirmed)
+        nextErrors.rentalIncomeConfirmed =
+          'Confirm the property conditions, or choose Not sure.'
+      if (!draft.rentalGstConfirmed)
+        nextErrors.rentalGstConfirmed =
+          'Choose whether the rental GST conditions apply.'
+      for (const key of rentalIncomeKeys) requiredAmount(nextErrors, draft, key)
+    }
+
     if (!draft.hasEquityGains)
       nextErrors.hasEquityGains =
         'Choose whether you have domestic equity gains or losses.'
@@ -1450,6 +1521,11 @@ function draftFeedback(draft: Draft, latestDate: string) {
       ...equityGainKeys,
       ...receipts,
     ],
+    'rental-income-scope':
+      draft.hasRentalIncome === 'yes'
+        ? ['rentalIncomeConfirmed']
+        : ['hasRentalIncome'],
+    'rental-income-loss': ['rentalIncomeConfirmed', ...rentalIncomeKeys],
     'additional-income-scope':
       draft.hasAdditionalIncome === 'yes'
         ? ['additionalIncomeConfirmed']
@@ -1524,6 +1600,13 @@ function draftFeedback(draft: Draft, latestDate: string) {
       )
       if (positive) field = positive
     }
+    if (
+      fact.code === 'income-ceiling' &&
+      fact.correctionGroup === 'other-income' &&
+      draft.hasRentalIncome === 'yes'
+    )
+      field = 'rentalAnnualValue'
+    if (fact.code === 'rental-income-loss') field = 'rentalInterest'
     if (fact.code === 'client-branch-uncertain')
       field = draft.clientKind === 'not-sure' ? 'clientKind' : 'delivery'
     warnings.push({
@@ -1546,6 +1629,8 @@ function draftFeedback(draft: Draft, latestDate: string) {
   const coverage: DraftError[] = []
   for (const notice of screening.coverage) {
     let field: string | undefined
+    if (notice.code === 'rental-gst-review' && draft.rentalGstConfirmed)
+      field = 'rentalGstConfirmed'
     if (draft.gstKind === 'registered') {
       if (notice.code === 'gst-calendar-rules') field = 'gstKind'
       if (

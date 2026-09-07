@@ -46,6 +46,28 @@ export type ResourceDefinition = {
 // URLs, statutory periods, publishers and source-review dates stay in the Rule registry.
 export const resourceDefinitions: readonly ResourceDefinition[] = [
   {
+    sourceIds: ['gst-residential-rent-exemption'],
+    title: 'Residential-rent GST exemption',
+    description:
+      'The original service-exemption notification. Entry 12 covers a residential dwelling used as a residence; read it with the later tenant-registration amendments.',
+    documentType: 'Notification',
+    topics: ['gst'],
+    tasks: ['gst-registration', 'gst-returns'],
+    aliases: ['rent rental dwelling residence exempt supply'],
+    identifiers: ['Notification 12/2017'],
+  },
+  {
+    sourceIds: ['gst-residential-rent-tenants'],
+    title: 'Residential rent and GST-registered tenants',
+    description:
+      'The 2022 amendment excludes registered tenants from the original residential-rent exemption. This version establishes coverage only for unregistered tenants; other arrangements need separate review.',
+    documentType: 'Notification',
+    topics: ['gst'],
+    tasks: ['gst-registration', 'gst-returns'],
+    aliases: ['rent rental dwelling tenant registration'],
+    identifiers: ['Notification 04/2022'],
+  },
+  {
     sourceIds: ['mutual-fund-idcw-guide'],
     title: 'Mutual-fund IDCW distributions',
     description:
@@ -226,12 +248,13 @@ export const resourceDefinitions: readonly ResourceDefinition[] = [
       'domestic-salary-2026',
       'domestic-investment-income-2026',
       'domestic-equity-gains-2026',
+      'domestic-rental-income-2026',
       'section-156',
       'section-263',
     ],
     title: 'Income-tax Act: income, rebate and return requirements',
     description:
-      'The amended Act used for freelance income, salary, employer NPS, dividends, mutual-fund distributions, interest, domestic equity capital gains and current-year losses, rebate and enacted return-filing requirements.',
+      'The amended Act used for freelance income, salary, employer NPS, dividends, mutual-fund distributions, interest, rental income, domestic equity capital gains and current-year losses, rebate and enacted return-filing requirements.',
     documentType: 'Act',
     topics: ['income-tax'],
     tasks: [
@@ -242,6 +265,7 @@ export const resourceDefinitions: readonly ResourceDefinition[] = [
     ],
     aliases: [
       'salary standard deduction',
+      'rental income house property annual value municipal taxes loan interest',
       'employer NPS National Pension System basic pay DA 14% section 124',
       'dividends mutual fund IDCW distributions post office refund interest',
       'domestic equity capital gains losses short term long term STT set off carry forward',
@@ -254,6 +278,7 @@ export const resourceDefinitions: readonly ResourceDefinition[] = [
       'Section 263: enacted return-filing requirements and due dates',
       'Sections 7, 92, 93 and 276: taxable ordinary dividends, distributions and interest',
       'Sections 15–19: salary and deductions',
+      'Sections 20–22 and 202: house-property annual value and deductions under the new regime',
       'Sections 196 and 198: domestic equity gains, rates, thresholds and deduction restrictions',
       'Sections 108–109, 111, 121 and 263: current-year capital-loss set-off and conditional carry-forward filing',
       'Section 156: rebate',

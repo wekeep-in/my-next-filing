@@ -15,6 +15,7 @@ import {
   hasPlatformWork,
   isBusinessPath,
   isUnregisteredGst,
+  rentalIncomeKeys,
 } from '@/routes/check/model'
 
 export type DraftOrigin =
@@ -131,6 +132,11 @@ export function clearInactiveDraft(draft: Draft): Draft {
   if (draft.hasEquityGains !== 'yes') {
     next.equityGainsConfirmed = ''
     for (const key of equityGainKeys) next.amounts[key] = ''
+  }
+  if (draft.hasRentalIncome !== 'yes') {
+    next.rentalIncomeConfirmed = ''
+    next.rentalGstConfirmed = ''
+    for (const key of rentalIncomeKeys) next.amounts[key] = ''
   }
   if (draft.hasAdditionalIncome !== 'yes') {
     next.additionalIncomeConfirmed = ''

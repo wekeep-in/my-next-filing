@@ -226,7 +226,7 @@ export function TdsHelp() {
     <HelpModal
       topic="Indian TDS credit"
       title="Which TDS amount?"
-      description="TDS is tax withheld by a payer. Enter the actual Indian credit for all income included in this estimate, including supported dividends, distributions and interest."
+      description="TDS is tax withheld by a payer. Enter the actual Indian credit for all income included in this estimate, including supported rental income, dividends, distributions and interest."
     >
       <p>
         Match payer certificates with AIS tax-credit entries for{' '}

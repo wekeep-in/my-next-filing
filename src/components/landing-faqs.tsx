@@ -154,6 +154,13 @@ export function LandingFaqs() {
             <AdditionalIncomeHelp buttonText="About dividends and interest" />{' '}
             <EquityGainsHelp buttonText="About equity gains and losses" />
           </p>
+          <p>
+            It also supports one wholly owned Indian home let for residential
+            use, with resolved annual-value records and a non-negative
+            property-income result. Municipal taxes, the standard deduction and
+            eligible loan interest are included. Rental GST treatment is checked
+            separately.
+          </p>
           <p>It stops without showing a personal estimate if you have:</p>
           <ul>
             <li>
@@ -161,10 +168,11 @@ export function LandingFaqs() {
               surcharge, or another tax regime.
             </li>
             <li>
-              Salary this version cannot cover, house-property income, gifts,
-              unsupported dividends or distributions, gains outside the domestic
-              equity conditions, crypto, lottery or gaming, agricultural income,
-              unrelated foreign income, or foreign-tax relief.
+              Salary or house-property income outside the supported conditions,
+              gifts, unsupported dividends or distributions, gains outside the
+              domestic equity conditions, crypto, lottery or gaming,
+              agricultural income, unrelated foreign income, or foreign-tax
+              relief.
             </li>
             <li>
               Another business or profession, commission, brokerage, agency
@@ -204,7 +212,7 @@ export function LandingFaqs() {
             <li>
               Adds supported salary after its standard deduction, taxable bank
               interest, and supported dividends, distributions and additional
-              interest, plus supported domestic equity gains.
+              interest, plus supported rental income and domestic equity gains.
             </li>
             <li>
               Subtracts the supported employer NPS deduction, limited to

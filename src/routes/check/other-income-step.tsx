@@ -9,6 +9,7 @@ import {
   equityGainFields,
 } from '@/routes/check/model'
 import { UnsupportedFactsField } from '@/routes/check/unsupported-facts-field'
+import { RentalIncomeFields } from '@/routes/check/rental-income-fields'
 import { EmployerNpsFields } from '@/routes/check/employer-nps-fields'
 import {
   AdditionalIncomeHelp,
@@ -230,6 +231,12 @@ export function OtherIncomeStep({
             )}
           </div>
         </section>
+        <RentalIncomeFields
+          draft={draft}
+          errors={errors}
+          dispatch={dispatch}
+          setAmount={setAmount}
+        />
         <section
           className="question-section"
           aria-labelledby="equity-gains-title"

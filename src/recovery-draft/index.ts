@@ -10,6 +10,7 @@ import {
   blankDraft,
   blankGstCalendarFields,
   equityGainKeys,
+  rentalIncomeKeys,
   statesAndUnionTerritories,
   unsupportedFactLabels,
 } from '@/routes/check/model'
@@ -18,7 +19,7 @@ import { clearInactiveDraft } from '@/routes/check/session'
 
 export const RECOVERY_KEY = 'my-next-filing:recovery-draft'
 export type RecoveryDraftEnvelope = {
-  readonly schemaVersion: 7
+  readonly schemaVersion: 8
   readonly taxYear: TaxYear
   readonly origin: 'personal' | 'saved-edit'
   readonly baseWorkspaceRevision: number | null
@@ -83,6 +84,9 @@ const choices = {
   employerNpsConfirmed: triState,
   hasEquityGains: triState,
   equityGainsConfirmed: triState,
+  hasRentalIncome: triState,
+  rentalIncomeConfirmed: triState,
+  rentalGstConfirmed: triState,
   hasAdditionalIncome: triState,
   additionalIncomeConfirmed: triState,
   ageSixtyOrOlder: triState,
@@ -125,6 +129,39 @@ export function parseRecoveryDraft(
   taxYear: TaxYear,
 ): RecoveryDraftEnvelope | null {
   try {
+    if (isRecord(value) && value.schemaVersion === 7) {
+      const draft = value.draft
+      if (
+        !isRecord(draft) ||
+        !isRecord(draft.amounts) ||
+        ['hasRentalIncome', 'rentalIncomeConfirmed', 'rentalGstConfirmed'].some(
+          (key) => Object.hasOwn(draft, key),
+        ) ||
+        rentalIncomeKeys.some((key) =>
+          Object.hasOwn(draft.amounts as object, key),
+        )
+      )
+        return null
+      return parseRecoveryDraft(
+        {
+          ...value,
+          schemaVersion: 8,
+          draft: {
+            ...draft,
+            hasRentalIncome: '',
+            rentalIncomeConfirmed: '',
+            rentalGstConfirmed: '',
+            amounts: {
+              ...draft.amounts,
+              rentalAnnualValue: '',
+              rentalMunicipalTaxes: '',
+              rentalInterest: '',
+            },
+          },
+        },
+        taxYear,
+      )
+    }
     if (isRecord(value) && value.schemaVersion === 6) {
       const draft = value.draft
       if (
@@ -287,7 +324,7 @@ export function parseRecoveryDraft(
         'baseWorkspaceRevision',
         'draft',
       ]) ||
-      value.schemaVersion !== 7 ||
+      value.schemaVersion !== 8 ||
       value.taxYear !== taxYear
     )
       return null
@@ -361,7 +398,7 @@ export function parseRecoveryDraft(
     if (JSON.stringify(clearInactiveDraft(parsed)) !== JSON.stringify(parsed))
       return null
     return {
-      schemaVersion: 7,
+      schemaVersion: 8,
       taxYear,
       origin: value.origin,
       baseWorkspaceRevision: value.baseWorkspaceRevision as number | null,
@@ -492,7 +529,7 @@ export function recoveryFromSession(
 ): RecoveryDraftEnvelope | null {
   if (!session || session.origin.kind === 'example') return null
   return {
-    schemaVersion: 7,
+    schemaVersion: 8,
     taxYear,
     origin: session.origin.kind,
     baseWorkspaceRevision:
