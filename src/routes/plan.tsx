@@ -340,6 +340,7 @@ export function PlanRoute() {
             <Button onClick={saveCurrent}>Save changes</Button>
           )}
           {c.interaction.kind !== 'delete-confirmation' &&
+            model.kind !== 'saved-data-unavailable' &&
             app.savedWorkspace.kind !== 'absent' && (
               <Button variant="destructive" onClick={c.openDelete}>
                 Delete saved data
