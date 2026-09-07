@@ -125,15 +125,7 @@ export function LandingRoute() {
           disableTracking
           noMutedPref
           noVolumePref
-        >
-          <track
-            default
-            kind="captions"
-            label="English"
-            src="/video/my-next-filing.en.vtt"
-            srcLang="en"
-          />
-        </MuxPlayer>
+        />
       </figure>
 
       <LandingFaqs />
