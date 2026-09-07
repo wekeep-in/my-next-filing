@@ -50,6 +50,7 @@ const baseCandidate = {
   otherIncome: {
     salary: { kind: 'none' },
     additionalIncome: { kind: 'none' },
+    equityGains: { kind: 'none' },
     taxableBankInterest: 10_000,
     tds: 40_000,
     tcs: 0,
@@ -745,7 +746,7 @@ test('saves reconciles and deletes workspaces through storage failures', () => {
     WORKSPACE_KEY,
     JSON.stringify({
       ...workspaceDraft,
-      schemaVersion: 5,
+      schemaVersion: 7,
       revision: 0,
       updatedAt: '2026-09-03T06:30:00.000Z',
     }),

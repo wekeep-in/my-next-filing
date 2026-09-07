@@ -42,7 +42,7 @@ test('publishes unique resources with complete provenance', () => {
   )
   assert.equal(
     new Set(catalogue.resources.flatMap((resource) => resource.sourceIds)).size,
-    33,
+    34,
   )
 })
 
@@ -79,6 +79,9 @@ test('ranks exact titles identifiers and reviewed aliases', () => {
       'gst-lut-guide',
     ]),
   )
+  assert.ok(
+    ids('domestic equity capital gains').includes('income-tax-act-2025-2026'),
+  )
   assert.equal(ids('notification 83/2020')[0], 'gst-notification-83-2020')
   sameMatches('notification 83/2020', 'Notification No. 83 / 2020')
   sameMatches('notification 83/2020', 'notification 83-2020')
@@ -93,7 +96,6 @@ test('ranks exact titles identifiers and reviewed aliases', () => {
 test('protects unsupported identifiers and suggests only unambiguous typos', () => {
   for (const query of [
     'foreign salary',
-    'capital gains',
     'company incorporation',
     'GSTR-9',
     'section 59',
@@ -194,7 +196,7 @@ test('combines filters and counts unique resources in every facet', () => {
 })
 
 test('consolidates source descriptions and oldest review dates', () => {
-  assert.equal(act.sources.length, 5)
+  assert.equal(act.sources.length, 6)
   assert.equal(act.reviewDate, '2026-09-03')
   assert.ok(act.references?.some((reference) => reference.includes('156')))
   assert.ok(act.references?.some((reference) => reference.includes('salary')))

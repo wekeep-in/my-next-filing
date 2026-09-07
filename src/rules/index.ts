@@ -87,6 +87,10 @@ export type IncomePathRules = {
 }
 
 export type CommonIncomeTaxRules = {
+  readonly equityShortTermRate: number
+  readonly equityLongTermRate: number
+  readonly equityLongTermThreshold: number
+  readonly equityBasicExemption: number
   readonly salaryStandardDeduction: number
   readonly employerNpsRate: number
   readonly employerRetirementFundLimit: number
@@ -203,6 +207,24 @@ const quarterlyEarlyStates = [
 ] as const
 
 export const sourceRegistry: readonly Source[] = [
+  {
+    id: 'domestic-equity-gains-2026',
+    kind: 'statutory',
+    publisher: 'Income Tax Department',
+    title:
+      'Income-tax Act, 2025 as amended in 2026: equity gains, deductions, rebate and advance tax',
+    url: 'https://www.incometaxindia.gov.in/documents/d/guest/income_tax_act_2025_as_amended_by_fa_act_2026-pdf',
+    publicationDate: '2025-08-21',
+    reviewDate: '2026-09-07',
+    taxPeriod: TAX_YEAR,
+    coveredRuleIds: [
+      'domestic-equity-gains',
+      'equity-short-term-rate',
+      'equity-long-term-rate',
+      'equity-long-term-threshold',
+      'equity-basic-exemption',
+    ],
+  },
   {
     id: 'mutual-fund-idcw-guide',
     kind: 'tutorial',
@@ -623,7 +645,7 @@ const group = <T>(
 })
 
 export const currentRules: RuleDataset = {
-  id: 'my-next-filing-2026-27-v7',
+  id: 'my-next-filing-2026-27-v8',
   schemaVersion: 1,
   taxPeriod: TAX_YEAR,
   effectiveStart,
@@ -631,6 +653,7 @@ export const currentRules: RuleDataset = {
   verifiedOn: '2026-09-07',
   expiresOn,
   changeNotes: [
+    'Domestic equity gains reviewed on 7 September 2026: separate 20% and 12.5% tax, ₹1,25,000 long-term threshold, bounded basic-exemption adjustment, and ordinary-income-only deductions and rebate.',
     'Employer NPS reviewed on 7 September 2026: 14% new-regime deduction, separate employer inputs, restricted retirement-fund scope and annual-return income before Chapter VIII deductions.',
     'Ordinary domestic dividends, taxable Indian mutual-fund distributions, post-office and income-tax refund interest added after review on 6 September 2026. Preserve established annual-return and GST-threshold conclusions despite independent uncertainty; annual triggers and dates now cite enacted authority.',
     'GST return calendars and independent LUT guidance reviewed on 6 September 2026, expiring on 30 September pending another extension review. Dates are normal statutory dates; the current extension inventory is incomplete.',
@@ -771,6 +794,10 @@ export const currentRules: RuleDataset = {
     commonIncomeTax: group(
       'common-income-tax',
       {
+        equityShortTermRate: 0.2,
+        equityLongTermRate: 0.125,
+        equityLongTermThreshold: 125_000,
+        equityBasicExemption: 400_000,
         salaryStandardDeduction: 75_000,
         employerNpsRate: 0.14,
         employerRetirementFundLimit: 750_000,
@@ -791,6 +818,31 @@ export const currentRules: RuleDataset = {
         roundingUnit: 10,
       },
       [
+        {
+          ruleId: 'domestic-equity-gains',
+          sourceId: 'domestic-equity-gains-2026',
+          role: 'applicability',
+        },
+        {
+          ruleId: 'equity-short-term-rate',
+          sourceId: 'domestic-equity-gains-2026',
+          role: 'rate',
+        },
+        {
+          ruleId: 'equity-long-term-rate',
+          sourceId: 'domestic-equity-gains-2026',
+          role: 'rate',
+        },
+        {
+          ruleId: 'equity-long-term-threshold',
+          sourceId: 'domestic-equity-gains-2026',
+          role: 'threshold',
+        },
+        {
+          ruleId: 'equity-basic-exemption',
+          sourceId: 'domestic-equity-gains-2026',
+          role: 'threshold',
+        },
         {
           ruleId: 'domestic-salary',
           sourceId: 'domestic-salary-2026',
@@ -1312,6 +1364,13 @@ function validateValues(
   }
   if (id === 'common-income-tax') {
     if (
+      values.equityShortTermRate !== 0.2 ||
+      values.equityLongTermRate !== 0.125 ||
+      values.equityLongTermThreshold !== 125_000 ||
+      values.equityBasicExemption !== 400_000
+    )
+      errors.push('Rules contain equity-gain values outside the reviewed set.')
+    if (
       values.employerNpsRate !== 0.14 ||
       values.employerRetirementFundLimit !== 750_000
     )
@@ -1539,6 +1598,10 @@ export function validateRules(
         'businessLowCashReceiptLimit',
       ],
       commonIncomeTax: [
+        'equityShortTermRate',
+        'equityLongTermRate',
+        'equityLongTermThreshold',
+        'equityBasicExemption',
         'salaryStandardDeduction',
         'employerNpsRate',
         'employerRetirementFundLimit',
@@ -1596,6 +1659,11 @@ export function validateRules(
         'business-five-year-exclusion',
       ],
       commonIncomeTax: [
+        'domestic-equity-gains',
+        'equity-short-term-rate',
+        'equity-long-term-rate',
+        'equity-long-term-threshold',
+        'equity-basic-exemption',
         'domestic-salary',
         'employer-nps-deduction',
         'employer-retirement-fund-limit',

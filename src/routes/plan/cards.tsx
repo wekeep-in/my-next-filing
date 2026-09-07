@@ -203,6 +203,18 @@ export function TaxSummary({ tax }: { readonly tax: TaxEstimate }) {
                 <dd>{formatMoney(tax.additionalIncome![key])}</dd>
               </div>
             ))}
+          {tax.equityGains && (
+            <>
+              <div>
+                <dt>Short-term equity gains</dt>
+                <dd>{formatMoney(tax.equityGains.shortTermGains)}</dd>
+              </div>
+              <div>
+                <dt>Long-term equity gains before threshold</dt>
+                <dd>{formatMoney(tax.equityGains.longTermGains)}</dd>
+              </div>
+            </>
+          )}
           {tax.salary && (
             <>
               <div>
@@ -241,6 +253,30 @@ export function TaxSummary({ tax }: { readonly tax: TaxEstimate }) {
             <dt>Rounded total income</dt>
             <dd>{formatMoney(tax.roundedTotalIncome)}</dd>
           </div>
+          {tax.equityGains && (
+            <>
+              <div>
+                <dt>Ordinary income for slab tax</dt>
+                <dd>{formatMoney(tax.ordinaryIncome)}</dd>
+              </div>
+              <div>
+                <dt>Basic exemption used against equity gains</dt>
+                <dd>{formatMoney(tax.equityGains.basicExemptionUsed)}</dd>
+              </div>
+              <div>
+                <dt>Long-term gains within the annual threshold</dt>
+                <dd>{formatMoney(tax.equityGains.longTermThresholdUsed)}</dd>
+              </div>
+              <div>
+                <dt>Short-term equity tax at 20%</dt>
+                <dd>{formatMoney(tax.equityGains.shortTermTax)}</dd>
+              </div>
+              <div>
+                <dt>Long-term equity tax at 12.5%</dt>
+                <dd>{formatMoney(tax.equityGains.longTermTax)}</dd>
+              </div>
+            </>
+          )}
           <div>
             <dt>Slab tax</dt>
             <dd>{formatMoney(tax.slabTax)}</dd>
@@ -278,6 +314,7 @@ export function TaxSummary({ tax }: { readonly tax: TaxEstimate }) {
           'finance-act-2026',
           ...(tax.salary ? ['domestic-salary-2026'] : []),
           ...(tax.additionalIncome ? ['domestic-investment-income-2026'] : []),
+          ...(tax.equityGains ? ['domestic-equity-gains-2026'] : []),
         ]}
       />
     </Card>

@@ -38,7 +38,7 @@ export type ArchivedPriorYearRecord = {
 export type PriorYearRecord = OpenPriorYearRecord | ArchivedPriorYearRecord
 
 export type SavedWorkspace = {
-  readonly schemaVersion: 6
+  readonly schemaVersion: 7
   readonly revision: number
   readonly noticeVersion: 2
   readonly consentDecidedAt: string
@@ -275,6 +275,48 @@ function decodeWorkspace(
   value: unknown,
   today: DateOnly,
 ): SavedWorkspace | null {
+  if (isRecord(value) && value.schemaVersion === 6) {
+    const migrateRecord = (record: unknown) => {
+      if (
+        !isRecord(record) ||
+        !isRecord(record.profile) ||
+        !isRecord(record.profile.otherIncome) ||
+        Object.hasOwn(record.profile.otherIncome, 'equityGains') ||
+        !Array.isArray(record.profile.unsupportedFacts)
+      )
+        return null
+      const unknown = record.profile.unsupportedFacts.some((fact: unknown) =>
+        [
+          'capitalGains',
+          'deductionsLossesOrSpecialRate',
+          'otherUnsupportedFacts',
+          'unsupportedFactsNotSure',
+        ].includes(String(fact)),
+      )
+      return {
+        ...record,
+        profile: {
+          ...record.profile,
+          otherIncome: {
+            ...record.profile.otherIncome,
+            equityGains: { kind: unknown ? 'not-sure' : 'none' },
+          },
+        },
+      }
+    }
+    if (!Array.isArray(value.priorYears)) return null
+    const active = value.active === null ? null : migrateRecord(value.active)
+    if (value.active !== null && active === null) return null
+    return decodeWorkspace(
+      {
+        ...value,
+        schemaVersion: 7,
+        active,
+        priorYears: value.priorYears.map(migrateRecord),
+      },
+      today,
+    )
+  }
   if (isRecord(value) && value.schemaVersion === 5) {
     const migrateRecord = (record: unknown) => {
       if (
@@ -465,7 +507,7 @@ function decodeWorkspace(
       'priorYears',
       'updatedAt',
     ]) ||
-    value.schemaVersion !== 6 ||
+    value.schemaVersion !== 7 ||
     !isSafeInteger(value.revision) ||
     value.noticeVersion !== STORAGE_NOTICE_VERSION ||
     !isIsoTimestamp(value.consentDecidedAt) ||
@@ -537,7 +579,7 @@ function withRevision(
   now: Date,
 ): SavedWorkspace {
   return {
-    schemaVersion: 6,
+    schemaVersion: 7,
     revision,
     noticeVersion: STORAGE_NOTICE_VERSION,
     consentDecidedAt: draft.consentDecidedAt,

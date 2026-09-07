@@ -6,11 +6,13 @@ import type { Draft, DraftAmountKey } from '@/routes/check/model'
 import {
   additionalIncomeFields,
   creditTriggerMayApply,
+  equityGainFields,
 } from '@/routes/check/model'
 import { UnsupportedFactsField } from '@/routes/check/unsupported-facts-field'
 import { EmployerNpsFields } from '@/routes/check/employer-nps-fields'
 import {
   AdditionalIncomeHelp,
+  EquityGainsHelp,
   InterestHelp,
   SalaryCoverageHelp,
   SalaryHelp,
@@ -187,10 +189,9 @@ export function OtherIncomeStep({
                           already resolved.
                         </li>
                         <li>
-                          You have no special distributions, buybacks, capital
-                          gains, foreign income, disputed or adjusted amounts,
-                          or expense, deduction or relief claims for these
-                          amounts.
+                          You have no special distributions, buybacks, foreign
+                          income, disputed or adjusted amounts, or expense,
+                          deduction or relief claims for these amounts.
                         </li>
                       </ul>
                       <AdditionalIncomeHelp />
@@ -219,6 +220,94 @@ export function OtherIncomeStep({
                           : key === 'postOfficeInterest'
                             ? 'Enter the confirmed taxable part before TDS. Exclude principal and exempt interest. Use 0 if none.'
                             : 'Enter only the taxable interest component, not the refund principal. Use 0 if none.'
+                    }
+                    value={draft.amounts[key]}
+                    error={errors[key]}
+                    onChange={(value) => setAmount(key, value)}
+                  />
+                ))}
+              </>
+            )}
+          </div>
+        </section>
+        <section
+          className="question-section"
+          aria-labelledby="equity-gains-title"
+        >
+          <h2 id="equity-gains-title">Domestic equity gains</h2>
+          <div className="field-stack">
+            <ChoiceField
+              id="hasEquityGains"
+              label="Did you realise gains from Indian shares or equity mutual funds?"
+              help={
+                <>
+                  Include gains from selling investments or redeeming eligible
+                  fund units. Keep dividends in the fields above.{' '}
+                  <EquityGainsHelp />
+                </>
+              }
+              value={draft.hasEquityGains}
+              error={errors.hasEquityGains}
+              onChange={(value) =>
+                dispatch({
+                  type: 'field-changed',
+                  field: 'hasEquityGains',
+                  value: value as TriState,
+                })
+              }
+            />
+            {draft.hasEquityGains === 'yes' && (
+              <>
+                <ChoiceField
+                  id="equityGainsConfirmed"
+                  label="Do your equity gains meet these conditions?"
+                  help={
+                    <>
+                      <ul className="mb-3 list-disc space-y-2 pl-5">
+                        <li>
+                          Only Indian listed shares and qualifying Indian
+                          equity-oriented mutual funds held as investments, with
+                          the required STT conditions met.
+                        </li>
+                        <li>
+                          Your tax records confirm the complete annual gains
+                          across all brokers and funds, with costs, ownership
+                          and short-term or long-term treatment resolved.
+                        </li>
+                        <li>
+                          No current or earlier losses, foreign investments,
+                          business trading, employee shares, buybacks, exemption
+                          claims or other excluded transactions.
+                        </li>
+                      </ul>
+                      <p>
+                        Enter gains before the long-term threshold or
+                        basic-exemption adjustment. Both gain types with
+                        ordinary income below ₹4 lakh after deductions need
+                        separate review.
+                      </p>
+                      <EquityGainsHelp />
+                    </>
+                  }
+                  value={draft.equityGainsConfirmed}
+                  error={errors.equityGainsConfirmed}
+                  onChange={(value) =>
+                    dispatch({
+                      type: 'field-changed',
+                      field: 'equityGainsConfirmed',
+                      value: value as TriState,
+                    })
+                  }
+                />
+                {equityGainFields.map(({ key, label }) => (
+                  <MoneyField
+                    key={key}
+                    id={key}
+                    label={label}
+                    help={
+                      key === 'shortTermGains'
+                        ? 'Enter confirmed gains under section 196, not sale proceeds. Use 0 if none.'
+                        : 'Enter confirmed gains under section 198 before the ₹1,25,000 threshold. Use 0 if none.'
                     }
                     value={draft.amounts[key]}
                     error={errors[key]}

@@ -40,7 +40,7 @@ const unsupportedFactLabels = {
   unsupportedDividends:
     'Dividends or distributions outside the supported conditions, such as foreign dividends or REIT payouts',
   capitalGains:
-    'Capital gains, such as profits from selling shares or property',
+    'Capital gains outside the supported domestic equity conditions',
   cryptoLotteryGaming: 'Crypto, lottery, or gaming income',
   agriculturalIncome: 'Agricultural income',
   unrelatedForeignIncome:
@@ -49,7 +49,7 @@ const unsupportedFactLabels = {
   foreignTaxOrRelief:
     'Tax owed or paid abroad, or a claim for foreign-tax relief',
   deductionsLossesOrSpecialRate:
-    'Deductions other than the supported salary and employer NPS deductions, losses, or income taxed at special rates',
+    'Deductions other than the supported salary and employer NPS deductions, losses, or special-rate income other than supported domestic equity gains',
   disputedCredit: 'A dispute about your TDS or TCS tax credit',
   anotherBusinessOrProfession:
     'A business or profession in addition to the freelance work entered here',
@@ -84,6 +84,15 @@ export type SalaryIncome =
       readonly confirmed: TriState
       readonly grossSalary: number
       readonly employerNps: EmployerNps
+    }
+
+export type EquityGains =
+  | { readonly kind: 'none' | 'not-sure' }
+  | {
+      readonly kind: 'domestic'
+      readonly confirmed: TriState
+      readonly shortTermGains: number
+      readonly longTermGains: number
     }
 
 export type AdditionalIncomeAmounts = {
@@ -234,6 +243,7 @@ export type Profile = {
   readonly otherIncome: {
     readonly salary: SalaryIncome
     readonly additionalIncome: AdditionalIncome
+    readonly equityGains: EquityGains
     readonly taxableBankInterest: number
     readonly tds: number
     readonly tcs: number
@@ -374,6 +384,15 @@ export type TaxEstimate = {
   } | null
   readonly taxableBankInterest: number
   readonly additionalIncome: AdditionalIncomeAmounts | null
+  readonly equityGains: {
+    readonly shortTermGains: number
+    readonly longTermGains: number
+    readonly basicExemptionUsed: number
+    readonly longTermThresholdUsed: number
+    readonly shortTermTax: number
+    readonly longTermTax: number
+  } | null
+  readonly ordinaryIncome: number
   readonly roundedTotalIncome: number
   readonly incomeBeforeNpsDeduction: number
   readonly employerNpsDeduction: number
@@ -1122,6 +1141,7 @@ function readProfile(value: unknown) {
     [
       'salary',
       'additionalIncome',
+      'equityGains',
       'taxableBankInterest',
       'tds',
       'tcs',
@@ -1134,6 +1154,7 @@ function readProfile(value: unknown) {
     errors,
   )
   const otherIncome = {
+    equityGains: parseEquityGains(otherRecord?.equityGains, errors),
     salary: parseSalary(otherRecord?.salary, errors),
     additionalIncome: parseAdditionalIncome(
       otherRecord?.additionalIncome,
@@ -1426,6 +1447,42 @@ function readProfile(value: unknown) {
       'Choose a state or Union territory.',
     )
 
+  const gainTotal =
+    otherIncome.equityGains.kind === 'domestic'
+      ? otherIncome.equityGains.shortTermGains +
+        otherIncome.equityGains.longTermGains
+      : 0
+  if (
+    !Number.isSafeInteger(
+      incomePath.declaredProfit +
+        (otherIncome.salary.kind === 'domestic'
+          ? otherIncome.salary.grossSalary
+          : 0) +
+        additionalIncomeTotal(otherIncome.additionalIncome) +
+        otherIncome.taxableBankInterest +
+        gainTotal,
+    )
+  )
+    addError(
+      errors,
+      'invalid',
+      'otherIncome.total',
+      'other-income',
+      'The combined income exceeds the supported whole-rupee range.',
+    )
+  if (
+    !Number.isSafeInteger(
+      otherIncome.tds + otherIncome.tcs + otherIncome.advanceTaxPaid,
+    )
+  )
+    addError(
+      errors,
+      'invalid',
+      'otherIncome.tds',
+      'other-income',
+      'The combined tax credits and payments exceed the supported whole-rupee range.',
+    )
+
   const profile: Profile = {
     taxYear,
     person,
@@ -1545,6 +1602,70 @@ export function canCompleteObligation(obligation: Obligation, date: DateOnly) {
     !(obligation.kind === 'advance-tax' && (obligation.amountDue ?? 0) > 0) &&
     (!obligation.completionNotBefore || date >= obligation.completionNotBefore)
   )
+}
+
+function parseEquityGains(
+  value: unknown,
+  errors: ProfileInputError[],
+): EquityGains {
+  const path = 'otherIncome.equityGains'
+  if (!isRecord(value)) {
+    addError(
+      errors,
+      'invalid',
+      path,
+      'other-income',
+      'Choose whether you have domestic equity gains.',
+    )
+    return { kind: 'not-sure' }
+  }
+  if (value.kind !== 'domestic') {
+    checkObject(value, ['kind'], path, 'other-income', errors)
+    return {
+      kind: readText(
+        value,
+        'kind',
+        ['none', 'not-sure'],
+        path,
+        'other-income',
+        errors,
+      ),
+    }
+  }
+  checkObject(
+    value,
+    ['kind', 'confirmed', 'shortTermGains', 'longTermGains'],
+    path,
+    'other-income',
+    errors,
+  )
+  const gains: EquityGains = {
+    kind: 'domestic',
+    confirmed: readTri(value, 'confirmed', path, 'other-income', errors),
+    shortTermGains: readAmount(
+      value,
+      'shortTermGains',
+      path,
+      'other-income',
+      errors,
+    ),
+    longTermGains: readAmount(
+      value,
+      'longTermGains',
+      path,
+      'other-income',
+      errors,
+    ),
+  }
+  if (!Number.isSafeInteger(gains.shortTermGains + gains.longTermGains))
+    addError(
+      errors,
+      'invalid',
+      `${path}.total`,
+      'other-income',
+      'The combined gains exceed the supported whole-rupee range.',
+    )
+  return gains
 }
 
 function parseAdditionalIncome(
@@ -1818,7 +1939,7 @@ function roundMoney(amount: number, unit: number) {
 }
 
 function percentage(amount: number, rate: number) {
-  return (amount * Math.round(rate * 100)) / 100
+  return (amount * Math.round(rate * 10_000)) / 10_000
 }
 
 function addDays(date: DateOnly, days: number): DateOnly {
@@ -1921,17 +2042,22 @@ function calculateTax(
         ) + percentage(path.otherReceipts, pathRules.businessOtherReceiptRate)
   const usedIncome = Math.max(minimumIncome, path.declaredProfit)
   const salary = calculateSalary(profile.otherIncome.salary, taxRules)
-  const incomeBeforeNpsDeduction =
+  const ordinaryBeforeNps =
     usedIncome +
     (salary?.taxableSalary ?? 0) +
     additionalIncomeTotal(profile.otherIncome.additionalIncome) +
     profile.otherIncome.taxableBankInterest
+  const gains = profile.otherIncome.equityGains
+  const shortTermGains = gains.kind === 'domestic' ? gains.shortTermGains : 0
+  const longTermGains = gains.kind === 'domestic' ? gains.longTermGains : 0
+  const incomeBeforeNpsDeduction =
+    ordinaryBeforeNps + shortTermGains + longTermGains
   const nps =
     profile.otherIncome.salary.kind === 'domestic'
       ? profile.otherIncome.salary.employerNps
       : null
   const employerNpsDeduction = Math.min(
-    incomeBeforeNpsDeduction,
+    ordinaryBeforeNps,
     nps?.kind === 'contributions'
       ? nps.employers.reduce(
           (sum, employer) =>
@@ -1948,17 +2074,44 @@ function calculateTax(
     incomeBeforeNpsDeduction - employerNpsDeduction,
     taxRules.roundingUnit,
   )
-  const slabTax = calculateSlabTax(roundedTotalIncome, taxRules)
+  const ordinaryIncome = Math.max(
+    0,
+    roundedTotalIncome - shortTermGains - longTermGains,
+  )
+  const basicExemption = taxRules.equityBasicExemption
+  // Mixed positive gains with unused basic exemption are withheld by coreSupportFacts.
+  const singleGainBase = Math.max(0, roundedTotalIncome - basicExemption)
+  const shortTermBase =
+    longTermGains === 0 && ordinaryIncome < basicExemption
+      ? Math.min(shortTermGains, singleGainBase)
+      : shortTermGains
+  const longTermBase =
+    shortTermGains === 0 && ordinaryIncome < basicExemption
+      ? Math.min(longTermGains, singleGainBase)
+      : longTermGains
+  const shortTermTax = percentage(shortTermBase, taxRules.equityShortTermRate)
+  const longTermTax = percentage(
+    Math.max(0, longTermBase - taxRules.equityLongTermThreshold),
+    taxRules.equityLongTermRate,
+  )
+  const slabTax = calculateSlabTax(ordinaryIncome, taxRules)
+  const taxBeforeRelief = slabTax + shortTermTax + longTermTax
   const rebate =
     roundedTotalIncome <= taxRules.rebateLimit
       ? Math.min(slabTax, taxRules.rebateMaximum)
       : 0
   const marginalRelief =
-    roundedTotalIncome > taxRules.marginalReliefLimit &&
-    slabTax > roundedTotalIncome - taxRules.marginalReliefLimit
-      ? slabTax - (roundedTotalIncome - taxRules.marginalReliefLimit)
+    roundedTotalIncome > taxRules.marginalReliefLimit
+      ? Math.min(
+          slabTax,
+          Math.max(
+            0,
+            taxBeforeRelief -
+              (roundedTotalIncome - taxRules.marginalReliefLimit),
+          ),
+        )
       : 0
-  const taxAfterRelief = slabTax - rebate - marginalRelief
+  const taxAfterRelief = taxBeforeRelief - rebate - marginalRelief
   const cess = percentage(taxAfterRelief, taxRules.cessRate)
   const grossTax = taxAfterRelief + cess
   const credits = profile.otherIncome.tds + profile.otherIncome.tcs
@@ -1991,6 +2144,22 @@ function calculateTax(
               profile.otherIncome.additionalIncome.incomeTaxRefundInterest,
           }
         : null,
+    equityGains:
+      gains.kind === 'domestic'
+        ? {
+            shortTermGains,
+            longTermGains,
+            basicExemptionUsed:
+              shortTermGains + longTermGains - shortTermBase - longTermBase,
+            longTermThresholdUsed: Math.min(
+              longTermBase,
+              taxRules.equityLongTermThreshold,
+            ),
+            shortTermTax,
+            longTermTax,
+          }
+        : null,
+    ordinaryIncome,
     incomeBeforeNpsDeduction,
     employerNpsDeduction,
     employerNpsContributions:
@@ -3018,6 +3187,21 @@ function coreSupportFacts(
     ...factForPath(current, rules.groups.incomePaths.values, sourceIds),
     ...factForClients(current, sourceIds),
   ]
+  const gains = current.otherIncome.equityGains
+  if (
+    gains.kind === 'not-sure' ||
+    (gains.kind === 'domestic' && gains.confirmed !== 'yes')
+  )
+    coreFacts.push(
+      unsupported(
+        'equity-gains-scope',
+        'income-tax',
+        'other-income',
+        'Domestic equity gains',
+        'Confirm the eligible equity gains and complete annual amounts. Other gains, losses or uncertain treatment need separate review.',
+        sourceIds,
+      ),
+    )
   const salary = current.otherIncome.salary
   const additionalIncome = current.otherIncome.additionalIncome
   if (
@@ -3110,6 +3294,24 @@ function coreSupportFacts(
     rules.groups.incomePaths.values,
     rules.groups.commonIncomeTax.values,
   )
+  // ponytail: no assumed exemption allocation between gain categories; expand after primary-source verification.
+  if (
+    gains.kind === 'domestic' &&
+    gains.shortTermGains > 0 &&
+    gains.longTermGains > 0 &&
+    estimate.ordinaryIncome <
+      rules.groups.commonIncomeTax.values.equityBasicExemption
+  )
+    coreFacts.push(
+      unsupported(
+        'equity-basic-exemption-allocation',
+        'income-tax',
+        'other-income',
+        'Basic exemption across equity gains',
+        'You have both short-term and long-term gains with ordinary income below ₹4 lakh after deductions. This version needs a separate review of how the unused basic exemption applies.',
+        sourceIds,
+      ),
+    )
   const minimumIncome = estimate.presumptive.minimumIncome
   const roundedIncome = estimate.roundedTotalIncome
   if (roundedIncome > rules.groups.commonIncomeTax.values.incomeCeiling)
@@ -3479,7 +3681,7 @@ export function evaluate(
     assumptions: [
       'This estimate is for one adult who is resident and ordinarily resident in India and runs one individual practice.',
       'The amounts you entered are complete, non-negative whole-rupee values from your tax records.',
-      'This is a best-effort estimate. It does not calculate deductions other than the salary standard deduction and supported employer NPS contributions, surcharge, losses, special-rate tax, foreign-tax relief, interest, fees, or penalties.',
+      'This is a best-effort estimate. It does not calculate deductions other than the salary standard deduction and supported employer NPS contributions, surcharge, losses, special-rate tax other than supported domestic equity gains, foreign-tax relief, interest, fees, or penalties.',
     ],
     explanations: [
       current.incomePath.kind === 'specified-profession'
@@ -3492,12 +3694,18 @@ export function evaluate(
         : []),
       ...(tax.employerNpsContributions !== null
         ? [
-            'Employer NPS is already included in your salary amount. Its separate deduction uses each contributing employer’s basic pay and eligible DA and cannot exceed combined income. The annual-return income trigger is checked before this deduction.',
+            'Employer NPS is already included in your salary amount. Its separate deduction uses each contributing employer’s basic pay and eligible DA and cannot exceed ordinary income excluding equity gains. The annual-return income trigger is checked before this deduction.',
           ]
         : []),
       ...(tax.additionalIncome
         ? [
             'Supported dividends, mutual-fund distributions and additional interest are included once at their confirmed annual taxable amounts before TDS. No dividend or distribution expenses are deducted.',
+          ]
+        : []),
+      ...(tax.equityGains
+        ? [
+            'Domestic equity gains are included once, separately from dividends and freelance receipts. Employer NPS and the rebate do not reduce their special-rate tax. The long-term threshold does not remove gains from total income.',
+            'Unexpected capital gains may require a separate review of advance-tax payment timing, including the conditional 31 March provision. This estimate does not calculate interest or confirm eligibility for that relief.',
           ]
         : []),
       'Total income is rounded to the nearest ₹10 before slab tax, relief, cess, and credits.',

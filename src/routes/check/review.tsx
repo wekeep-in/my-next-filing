@@ -3,6 +3,7 @@ import {
   activityOptions,
   additionalIncomeFields,
   creditTriggerMayApply,
+  equityGainFields,
   groupStep,
   gstQuarterQuestions,
   hasForeignClients,
@@ -295,6 +296,19 @@ function GroupSummary({
                 value: answer(draft.additionalIncomeConfirmed),
               },
               ...additionalIncomeFields.map(({ key, label }) => ({
+                label,
+                value: money(draft.amounts[key]),
+              })),
+            ]
+          : []),
+        { label: 'Domestic equity gains', value: answer(draft.hasEquityGains) },
+        ...(draft.hasEquityGains === 'yes'
+          ? [
+              {
+                label: 'Equity conditions confirmed',
+                value: answer(draft.equityGainsConfirmed),
+              },
+              ...equityGainFields.map(({ key, label }) => ({
                 label,
                 value: money(draft.amounts[key]),
               })),

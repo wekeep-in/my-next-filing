@@ -8,6 +8,7 @@ import {
   completeDraft,
   creditTriggerMayApply,
   draftFromProfile,
+  equityGainKeys,
   gstQuarterFields,
   gstQuarterQuestions,
   hasForeignClients,
@@ -126,6 +127,10 @@ export function clearInactiveDraft(draft: Draft): Draft {
   if (next.hasEmployerNps !== 'yes') {
     next.employerNpsConfirmed = ''
     next.employerNpsEmployers = []
+  }
+  if (draft.hasEquityGains !== 'yes') {
+    next.equityGainsConfirmed = ''
+    for (const key of equityGainKeys) next.amounts[key] = ''
   }
   if (draft.hasAdditionalIncome !== 'yes') {
     next.additionalIncomeConfirmed = ''

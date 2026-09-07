@@ -154,12 +154,13 @@ The Profile supports only:
 
 - the domestic salary branch below, alongside either supported presumptive practice;
 - the confirmed ordinary domestic dividend and additional-interest branch below;
+- the domestic equity-gains branch below;
 - taxable bank or deposit interest before TDS;
 - actual Indian TDS for included income;
 - actual Indian TCS; and
 - advance tax already paid for the Tax Year.
 
-House property, gifts, unsupported dividends or distributions, capital gains, crypto, gaming, lottery, agricultural income, unrelated foreign income, foreign tax, disputed credits, deductions other than the supported salary standard deduction and employer NPS deduction, losses, special-rate income, and another business or profession are Unsupported.
+House property, gifts, unsupported dividends or distributions, capital gains outside the domestic equity branch, crypto, gaming, lottery, agricultural income, unrelated foreign income, foreign tax, disputed credits, deductions other than the supported salary standard deduction and employer NPS deduction, losses, other special-rate income, and another business or profession are Unsupported.
 
 ### Ordinary domestic dividends and additional interest
 
@@ -193,11 +194,27 @@ The existing gross salary amount must include the full employer NPS contribution
 
 Require confirmed total employer contributions across recognised PF, NPS and approved superannuation funds, across every employer, no higher than ₹7,50,000 for the year. No taxable annual accretion from current or earlier excess contributions or unresolved fund adjustments is supported. Tier II, Vatsalya, UPS-specific treatment, withdrawals, transfers, pension payouts and other unsupported deductions remain outside this branch. Personal NPS contributions may exist but are not deducted.
 
-For a single contributing employer, deduct the lower of its contribution and 14% of its eligible salary. For multiple contributing employers, this slice requires each contribution within its own 14% limit. An over-cap multi-employer case needs separate review; do not infer cross-employer pooling. Sum the allowed contributions and cap the deduction at combined income before NPS, not merely taxable salary. Subtract before rounding total income. The resulting amount cannot be negative. Keep freelance income and GST turnover separate.
+For a single contributing employer, deduct the lower of its contribution and 14% of its eligible salary. For multiple contributing employers, this slice requires each contribution within its own 14% limit. An over-cap multi-employer case needs separate review; do not infer cross-employer pooling. Sum the allowed contributions and cap the deduction at ordinary income before NPS, excluding equity gains but including eligible freelance and other ordinary income. Subtract before rounding total income. The resulting amount cannot be negative. Keep freelance income and GST turnover separate.
 
 Show the employer contribution already included in salary, combined income before NPS, the allowed employer NPS deduction and rounded taxable total income. Annual-return income tests use the rounded pre-NPS amount because Chapter VIII deductions are disregarded for that test. Preserve independent triggers even where taxable income or tax becomes nil. The [research and implementation plan](.scratch/employer-nps/map.md) record the authority and the multi-employer boundary.
 
 Migrate workspace version 5 to 6 in memory. A previously confirmed supported domestic salary excluded employer NPS, so add the explicit absent branch. Unconfirmed salary or legacy unsupported facts about salary, deductions or unknown treatment must remain uncertain or blocked. Preserve revision, consent, amounts and Completion records. Reject mixed schemas. Migrate Recovery version 4 to 5 with the new NPS answer blank and no rows; never infer a new questionnaire answer. Clear rows and NPS confirmation when NPS is deselected; clear the NPS branch when salary is deselected. Preserve actual historical schema fixtures and persist only through normal validated writes.
+
+### Domestic equity capital gains alongside freelancing
+
+Support confirmed investment gains from Indian listed equity shares and qualifying Indian equity-oriented mutual funds under sections 196 and 198 alongside either existing presumptive path. Ask Yes, No or Not sure. Yes requires a scope confirmation and separate non-negative whole-rupee annual short-term and long-term gain amounts. All records must resolve ownership, holding periods, cost basis, eligible expenses and any older acquisition-cost treatment; enter gains rather than sale proceeds, bank credits or unrealised appreciation. Include all brokers/funds once. Enter long-term gains before the annual ₹1,25,000 threshold and basic-exemption adjustment. Do not deduct STT.
+
+Require the applicable STT conditions: sale chargeable to STT for short-term gains, acquisition and transfer STT paid for long-term shares, and transfer STT paid for long-term fund units. Notification-based acquisition exceptions and IFSC transactions remain outside this branch. Exclude all current or brought-forward losses, including netted losses within annual reports; exemption/reinvestment claims, foreign or unlisted shares, property, debt or other nonqualifying funds, REIT/InvIT/AIF/ULIP income, derivatives, intraday/business trading, employee shares, buybacks, clubbing and unresolved corporate actions. Keep other gains and broad special-rate facts as explicit stop facts.
+
+Cap employer NPS at ordinary income excluding both gain categories. Add both full gains to combined income, including long-term gains within the tax threshold, for total-income, rebate, ceiling and annual-return tests. Annual-return tests remain before Chapter VIII deductions. Round combined total income once to ₹10, then subtract the entered gains for the non-negative ordinary slab-tax balance. Do not independently round each income category.
+
+Calculate short-term tax at 20% and long-term tax at 12.5% on gains above ₹1,25,000. When only one gain category is positive and ordinary income is below ₹4 lakh, use the non-negative rounded total above ₹4 lakh as that category's base, capped at its entered gain; apply the long-term threshold afterward where applicable. When both categories are positive and the ordinary balance is below ₹4 lakh, return Unsupported for basic-exemption allocation review. This is a product scope boundary pending primary-source verification, not denial of a statutory entitlement.
+
+For combined total income up to ₹12 lakh, rebate is limited to ordinary slab tax and ₹60,000. Above ₹12 lakh, calculate marginal relief from total pre-relief tax less income exceeding ₹12 lakh, floored at zero and capped at ordinary slab tax. Neither relief reduces special-rate tax. Apply existing cess, actual credits and final rounding once. Preserve the ₹50 lakh total-income ceiling.
+
+Show entered gains, ordinary income for slab tax, basic exemption used, long-term threshold used and both equity-tax components in the existing calculation breakdown. Preserve independent GST facts; never copy gains or proceeds into GST turnover. Keep the presumptive 15 March advance-tax date, with explicit guidance that unexpected gains may require separate payment-timing review including the conditional 31 March provision. Do not calculate interest or promise relief. Return-form selection stays unavailable.
+
+Migrate workspace version 6 to 7 in memory with an absent equity branch only where legacy facts excluded gains; uncertain or unsupported gains/special-rate facts retain the uncertain branch and original stop facts. Preserve revisions, consent, amounts and completions. Recovery version 5 migrates to 6 with the new answer and fields blank. Never clear legacy `capitalGains` automatically. Reject mixed schema shapes and hidden amounts; deselecting gains clears their amounts and confirmation. Current writes use these versions after validation. The [plan and research](.scratch/domestic-equity-gains/map.md) record evidence and limits.
 
 ### GST branch
 
@@ -276,7 +293,7 @@ For the Eligible business path, presumptive income is the greater of declared pr
 - 6 percent of qualifying banking or online receipts; and
 - 8 percent of all other receipts.
 
-Add supported taxable salary after its single capped standard deduction, taxable bank or deposit interest, and supported dividends, distributions and additional interest to presumptive income. Subtract the supported employer NPS deduction, limited to this combined income. Round total income to the nearest ₹10 before applying slab tax. Apply the Tax Year 2026-27 new-regime bands:
+Add supported taxable salary after its single capped standard deduction, taxable bank or deposit interest, and supported dividends, distributions and additional interest to presumptive income. Subtract the supported employer NPS deduction, limited to this ordinary income. Add supported equity gains separately as described below. Round combined total income to the nearest ₹10 before applying slab tax. Apply the Tax Year 2026-27 new-regime bands:
 
 | Rounded total-income band | Rate |
 | --- | ---: |
@@ -292,7 +309,7 @@ For ordinary slab-tax income no higher than ₹12 lakh, the rebate is the lower 
 
 Calculate Health and Education Cess at 4 percent after rebate or marginal relief. Subtract actual Indian TDS and TCS. The rounded non-negative result before advance tax paid is estimated advance-tax liability. Subtract advance tax already paid to produce the estimated remaining amount or refund, rounded to the nearest ₹10.
 
-The Application stops when rounded total income after the employer NPS deduction exceeds ₹50 lakh. It calculates no surcharge, deduction other than the supported salary standard deduction and employer NPS deduction, loss, special-rate tax, foreign-tax relief, interest, fee, or penalty.
+The Application stops when rounded total income after the employer NPS deduction exceeds ₹50 lakh. It calculates no surcharge, deduction other than the supported salary standard deduction and employer NPS deduction, loss, special-rate tax other than the domestic equity branch, foreign-tax relief, interest, fee, or penalty.
 
 ## First-release Obligation catalog
 
@@ -632,7 +649,7 @@ At least four of five representative Solo freelancers must complete the full ent
 - Email, SMS, WhatsApp, push, browser, or calendar reminders.
 - Personal sharing, public records, referrals, streaks, community counts, or leaderboards.
 - Government credentials, OTPs, APIs, portal integration, filing, payment, or acceptance verification.
-- Foreign-tax credit, foreign salary, investments, property, capital gains, foreign-asset guidance, and unrelated foreign-source income.
+- Foreign-tax credit, foreign salary, foreign investments or property, gains outside the supported domestic equity branch, foreign-asset guidance, and unrelated foreign-source income.
 - GST liability, input-tax credit, refunds, preparation, validation, upload, or submission.
 - Historical backfill or recalculation under superseded Rules.
 - Companies, LLPs, partnerships, HUFs, trusts, non-residents, employers, payroll, or deductor duties.

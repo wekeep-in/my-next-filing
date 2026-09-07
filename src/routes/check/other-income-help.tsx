@@ -40,9 +40,9 @@ export function AdditionalIncomeHelp() {
         This version does not cover foreign or deemed dividends, buybacks,
         company loans, liquidation or capital reductions, REIT/InvIT or other
         business-trust distributions, AIF income, special certificates/bonds,
-        capital gains, losses, or expense/deduction claims. These are product
-        limits. If you cannot confirm the categories and amounts, choose Not
-        sure.
+        gains outside the separate domestic-equity section, losses, or
+        expense/deduction claims. These are product limits. If you cannot
+        confirm the categories and amounts, choose Not sure.
       </p>
       <p>
         The normal presumptive advance-tax date stays 15 March. Unexpected
@@ -169,10 +169,11 @@ export function EmployerNpsHelp() {
         limits between employers.
       </p>
       <p>
-        The combined deduction cannot exceed your total income before the NPS
-        deduction. It is separate from the salary standard deduction. A lower
-        taxable income does not necessarily remove the requirement to file a
-        return; the income trigger is checked before this deduction.
+        The combined deduction cannot exceed your ordinary income before the NPS
+        deduction. Domestic equity gains do not increase this limit. It is
+        separate from the salary standard deduction. A lower taxable income does
+        not necessarily remove the requirement to file a return; the income
+        trigger is checked before this deduction.
       </p>
       <p>
         Check total employer contributions across recognised PF, NPS and
@@ -253,6 +254,58 @@ export function TcsHelp() {
       </p>
       <ExternalLink href="https://www.incometaxindia.gov.in/documents/d/guest/fn-168">
         Official TCS credit guide, PDF
+      </ExternalLink>
+    </HelpModal>
+  )
+}
+
+export function EquityGainsHelp() {
+  return (
+    <HelpModal
+      topic="domestic equity gains"
+      title="Which equity gains can I include?"
+      description={`Use your tax records for ${currentRules.taxPeriod}. Enter realised gains from investments, not sale proceeds or changes in portfolio value.`}
+    >
+      <p>
+        Include Indian listed shares and Indian mutual funds confirmed as
+        equity-oriented for tax purposes. Your records must confirm the
+        short-term or long-term classification and all applicable securities
+        transaction tax, or STT.
+      </p>
+      <p>
+        Short-term sales must be chargeable to STT. For long-term shares, STT
+        must have been paid on acquisition and sale; for long-term fund units,
+        on transfer. This version does not assess exceptions for acquisitions
+        without STT or IFSC transactions.
+      </p>
+      <p>
+        Combine all brokers and funds once. Your gain amounts must already
+        resolve costs, eligible transfer expenses, ownership, holding periods
+        and any older acquisition-cost rules. Do not deduct STT. Enter long-term
+        gains before the annual ₹1,25,000 threshold and before any
+        basic-exemption adjustment.
+      </p>
+      <p>
+        Losses, including losses offset within a broker report, need separate
+        review. This section excludes foreign or unlisted shares, debt and other
+        nonqualifying funds, derivatives, intraday or business trading, employee
+        shares, buybacks, property, REIT/InvIT/AIF/ULIP income, clubbing,
+        reinvestment exemptions and unresolved corporate actions.
+      </p>
+      <p>
+        If you have both short-term and long-term gains and ordinary income
+        after deductions below ₹4 lakh, this version withholds the estimate
+        pending review of how unused basic exemption applies. A single gain
+        category can use the supported adjustment.
+      </p>
+      <p>
+        The normal presumptive advance-tax date remains 15 March. Unexpected
+        gains can require a separate payment-timing review, including the
+        conditional 31 March provision. This plan does not calculate interest,
+        promise relief or select your return form.
+      </p>
+      <ExternalLink href="https://www.incometaxindia.gov.in/documents/d/guest/income_tax_act_2025_as_amended_by_fa_act_2026-pdf">
+        Official equity-gains rules, sections 196 and 198
       </ExternalLink>
     </HelpModal>
   )

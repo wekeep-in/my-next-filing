@@ -57,8 +57,8 @@ const explanations: Partial<
     help: 'For example, rental income.',
   },
   capitalGains: {
-    title: 'Capital gains',
-    help: 'For example, profits from selling shares or property.',
+    title: 'Capital gains needing a separate review',
+    help: 'Gains outside the domestic equity conditions above, such as property or foreign-share gains. If this answer was restored, review your equity gains before clearing it.',
   },
   salary: {
     title: 'Salary needing a separate review',
@@ -70,7 +70,7 @@ const explanations: Partial<
   },
   deductionsLossesOrSpecialRate: {
     title: 'Other deductions, losses, or special-rate income',
-    help: 'Deductions outside the supported salary conditions, losses, or income taxed at special rates.',
+    help: 'Deductions outside the supported salary conditions, losses, or special-rate income outside the supported domestic equity conditions.',
   },
   employeesOrDeductorDuties: {
     title: 'Employees or TDS filing requirements',

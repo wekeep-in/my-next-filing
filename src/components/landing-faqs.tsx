@@ -4,6 +4,7 @@ import { formatDate } from '@/lib/format'
 import { currentRules } from '@/rules'
 import {
   AdditionalIncomeHelp,
+  EquityGainsHelp,
   SalaryCoverageHelp,
 } from '@/routes/check/other-income-help'
 
@@ -146,10 +147,11 @@ export function LandingFaqs() {
             <SalaryCoverageHelp />
           </p>
           <p>
-            It can also include ordinary Indian-company dividends, taxable
-            Indian mutual-fund distributions, taxable post-office interest and
-            income-tax refund interest when your records confirm the amounts.{' '}
-            <AdditionalIncomeHelp />
+            It can also include confirmed domestic equity gains, ordinary
+            Indian-company dividends, taxable Indian mutual-fund distributions,
+            taxable post-office interest and income-tax refund interest when
+            your records confirm the amounts. <AdditionalIncomeHelp />{' '}
+            <EquityGainsHelp />
           </p>
           <p>It stops without showing a personal estimate if you have:</p>
           <ul>
@@ -159,9 +161,9 @@ export function LandingFaqs() {
             </li>
             <li>
               Salary this version cannot cover, house-property income, gifts,
-              unsupported dividends or distributions, capital gains, crypto,
-              lottery or gaming, agricultural income, unrelated foreign income,
-              or foreign-tax relief.
+              unsupported dividends or distributions, gains outside the domestic
+              equity conditions, crypto, lottery or gaming, agricultural income,
+              unrelated foreign income, or foreign-tax relief.
             </li>
             <li>
               Another business or profession, commission, brokerage, agency
@@ -200,15 +202,18 @@ export function LandingFaqs() {
             <li>
               Adds supported salary after its standard deduction, taxable bank
               interest, and supported dividends, distributions and additional
-              interest.
+              interest, plus supported domestic equity gains.
             </li>
             <li>
               Subtracts the supported employer NPS deduction, limited to
-              combined income, then rounds total income to the nearest ₹10.
+              ordinary income excluding equity gains, then rounds combined total
+              income to the nearest ₹10.
             </li>
             <li>
               Applies the {currentRules.taxPeriod} new-regime slabs, rebate or
-              marginal relief, and 4% Health and Education Cess.
+              marginal relief to ordinary-income tax. Equity gains use their
+              separate rates and thresholds. It then adds 4% Health and
+              Education Cess.
             </li>
             <li>
               Subtracts TDS, TCS, and advance tax already paid, then rounds the

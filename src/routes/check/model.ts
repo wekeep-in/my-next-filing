@@ -19,6 +19,8 @@ export type DraftDelivery = '' | 'direct' | 'platform' | 'both' | 'not-sure'
 export type DraftGstKind = '' | 'unregistered' | 'registered' | 'not-sure'
 export type DraftGstStatus = '' | 'one-normal' | 'other' | 'not-sure'
 export type DraftAmountKey =
+  | 'shortTermGains'
+  | 'longTermGains'
   | keyof AdditionalIncomeAmounts
   | 'grossReceipts'
   | 'cashReceipts'
@@ -95,6 +97,8 @@ export type Draft = {
     readonly contribution: string
     readonly eligibleSalary: string
   }[]
+  readonly hasEquityGains: DraftChoice
+  readonly equityGainsConfirmed: DraftChoice
   readonly hasAdditionalIncome: DraftChoice
   readonly additionalIncomeConfirmed: DraftChoice
   readonly ageSixtyOrOlder: DraftChoice
@@ -117,6 +121,12 @@ export type Draft = {
   readonly compulsoryRegistration: DraftChoice
   readonly thresholdLiabilityDate: string
 }
+
+export const equityGainFields = [
+  { key: 'shortTermGains', label: 'Short-term equity gains' },
+  { key: 'longTermGains', label: 'Long-term equity gains' },
+] as const
+export const equityGainKeys = equityGainFields.map(({ key }) => key)
 
 export const additionalIncomeFields = [
   { key: 'dividends', label: 'Indian-company dividends' },
@@ -142,6 +152,7 @@ export const amountKeys: readonly DraftAmountKey[] = [
   'aggregateTurnover',
   'grossSalary',
   ...additionalIncomeKeys,
+  ...equityGainKeys,
 ]
 
 export const statesAndUnionTerritories = [
@@ -238,7 +249,7 @@ export const unsupportedFactLabels: Record<UnsupportedFact, string> = {
   unsupportedDividends:
     'Dividends or distributions outside the supported conditions, such as foreign dividends or REIT payouts',
   capitalGains:
-    'Capital gains, such as profits from selling shares or property',
+    'Capital gains outside the supported domestic equity conditions',
   cryptoLotteryGaming: 'Crypto, lottery, or gaming income',
   agriculturalIncome: 'Agricultural income',
   unrelatedForeignIncome:
@@ -247,7 +258,7 @@ export const unsupportedFactLabels: Record<UnsupportedFact, string> = {
   foreignTaxOrRelief:
     'Tax owed or paid abroad, or a claim for foreign-tax relief',
   deductionsLossesOrSpecialRate:
-    'Deductions other than the supported salary and employer NPS deductions, losses, or income taxed at special rates',
+    'Deductions other than the supported salary and employer NPS deductions, losses, or special-rate income other than supported domestic equity gains',
   disputedCredit: 'A dispute about your TDS or TCS tax credit',
   anotherBusinessOrProfession:
     'A business or profession in addition to the freelance work entered here',
@@ -340,6 +351,8 @@ export const blankDraft = (): Draft => ({
   hasEmployerNps: '',
   employerNpsConfirmed: '',
   employerNpsEmployers: [],
+  hasEquityGains: '',
+  equityGainsConfirmed: '',
   hasAdditionalIncome: '',
   additionalIncomeConfirmed: '',
   ageSixtyOrOlder: '',
@@ -371,6 +384,10 @@ export function draftFromProfile(profile: Profile): Draft {
   amounts.advanceTaxPaid =
     profile.otherIncome.advanceTaxPaid.toLocaleString('en-IN')
   const salary = profile.otherIncome.salary
+  const gains = profile.otherIncome.equityGains
+  if (gains.kind === 'domestic')
+    for (const key of equityGainKeys)
+      amounts[key] = gains[key].toLocaleString('en-IN')
   const additional = profile.otherIncome.additionalIncome
   if (additional.kind === 'domestic')
     for (const key of additionalIncomeKeys)
@@ -426,6 +443,13 @@ export function draftFromProfile(profile: Profile): Draft {
             eligibleSalary: employer.eligibleSalary.toLocaleString('en-IN'),
           }))
         : [],
+    hasEquityGains:
+      gains.kind === 'none'
+        ? 'no'
+        : gains.kind === 'domestic'
+          ? 'yes'
+          : 'not-sure',
+    equityGainsConfirmed: gains.kind === 'domestic' ? gains.confirmed : '',
     hasAdditionalIncome:
       additional.kind === 'none'
         ? 'no'
@@ -581,6 +605,7 @@ const exampleCandidate = {
   },
   otherIncome: {
     salary: { kind: 'none' },
+    equityGains: { kind: 'none' },
     additionalIncome: { kind: 'none' },
     taxableBankInterest: 10_000,
     tds: 40_000,
@@ -644,6 +669,7 @@ function candidateFromDraft(draft: Draft) {
     ...amountKeys.slice(5, 9),
     ...(draft.hasSalary === 'yes' ? ['grossSalary' as const] : []),
     ...(draft.hasAdditionalIncome === 'yes' ? additionalIncomeKeys : []),
+    ...(draft.hasEquityGains === 'yes' ? equityGainKeys : []),
     ...(isUnregisteredGst(draft) ? ['aggregateTurnover' as const] : []),
   ]
   for (const key of requiredKeys) {
@@ -733,6 +759,15 @@ function candidateFromDraft(draft: Draft) {
         : null,
     },
     otherIncome: {
+      equityGains:
+        draft.hasEquityGains === 'yes'
+          ? {
+              kind: 'domestic',
+              confirmed: draft.equityGainsConfirmed || 'not-sure',
+              shortTermGains: amountValues.shortTermGains,
+              longTermGains: amountValues.longTermGains,
+            }
+          : { kind: draft.hasEquityGains === 'no' ? 'none' : 'not-sure' },
       additionalIncome:
         draft.hasAdditionalIncome === 'yes'
           ? {
@@ -987,6 +1022,9 @@ function errorStep(key: string) {
       'taxableBankInterest',
       'hasSalary',
       'hasEmployerNps',
+      'hasEquityGains',
+      'equityGainsConfirmed',
+      ...equityGainKeys,
       'hasAdditionalIncome',
       'additionalIncomeConfirmed',
       ...additionalIncomeKeys,
@@ -1014,6 +1052,14 @@ function profileErrorKey(error: ProfileInputError) {
     return error.path.endsWith('.confirmed')
       ? 'employerNpsConfirmed'
       : 'hasEmployerNps'
+  }
+  if (error.path.startsWith('otherIncome.equityGains')) {
+    const last = error.path.split('.').at(-1)
+    return last === 'confirmed' || last === 'total'
+      ? 'equityGainsConfirmed'
+      : last === 'shortTermGains' || last === 'longTermGains'
+        ? last
+        : 'hasEquityGains'
   }
   if (error.path.startsWith('otherIncome.additionalIncome')) {
     const last = error.path.split('.').at(-1) ?? ''
@@ -1064,6 +1110,7 @@ function profileErrorKey(error: ProfileInputError) {
     practice: 'onePractice',
     incomePath: 'otherReceipts',
     otherIncome: 'otherAnnualReturnTrigger',
+    total: 'taxableBankInterest',
     gst: 'gstKind',
     unsupportedFacts: 'unsupportedCertainty',
   }
@@ -1209,6 +1256,15 @@ function validateDraftGroup(
         'Choose whether these payments involve a foreign account or similar arrangement.'
   }
   if (group === 'other-income') {
+    if (!draft.hasEquityGains)
+      nextErrors.hasEquityGains =
+        'Choose whether you have domestic equity gains.'
+    if (draft.hasEquityGains === 'yes') {
+      if (!draft.equityGainsConfirmed)
+        nextErrors.equityGainsConfirmed =
+          'Confirm the equity conditions and annual gains, or choose Not sure.'
+      for (const key of equityGainKeys) requiredAmount(nextErrors, draft, key)
+    }
     if (!draft.hasAdditionalIncome)
       nextErrors.hasAdditionalIncome =
         'Choose whether you have dividends or additional interest.'
@@ -1376,6 +1432,15 @@ function draftFeedback(draft: Draft, latestDate: string) {
         ? ['employerNpsConfirmed']
         : ['hasEmployerNps'],
     'employer-nps-allocation': ['employerNpsConfirmed'],
+    'equity-gains-scope':
+      draft.hasEquityGains === 'yes'
+        ? ['equityGainsConfirmed']
+        : ['hasEquityGains'],
+    'equity-basic-exemption-allocation': [
+      'equityGainsConfirmed',
+      ...equityGainKeys,
+      ...receipts,
+    ],
     'additional-income-scope':
       draft.hasAdditionalIncome === 'yes'
         ? ['additionalIncomeConfirmed']
@@ -1436,6 +1501,17 @@ function draftFeedback(draft: Draft, latestDate: string) {
         return 'value' in amount && amount.value > 0
       })
       if (extra) field = extra
+    }
+    if (
+      fact.code === 'income-ceiling' &&
+      fact.correctionGroup === 'other-income' &&
+      draft.hasEquityGains === 'yes'
+    ) {
+      const positive = equityGainKeys.find((key) => {
+        const amount = parseMoney(draft.amounts[key])
+        return 'value' in amount && amount.value > 0
+      })
+      if (positive) field = positive
     }
     if (fact.code === 'client-branch-uncertain')
       field = draft.clientKind === 'not-sure' ? 'clientKind' : 'delivery'
