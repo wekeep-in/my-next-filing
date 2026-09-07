@@ -245,7 +245,10 @@ export function PlanRoute() {
               </TopBar>
             )}
             <div className="plan-summary">
-              <TaxSummary tax={supported.tax} />
+              <TaxSummary
+                tax={supported.tax}
+                annualReturn={supported.coverage.annualReturn}
+              />
               <GstCard coverage={supported.coverage.gst} />
             </div>
             <Agenda

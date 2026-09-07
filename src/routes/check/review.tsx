@@ -301,7 +301,10 @@ function GroupSummary({
               })),
             ]
           : []),
-        { label: 'Domestic equity gains', value: answer(draft.hasEquityGains) },
+        {
+          label: 'Domestic equity gains and losses',
+          value: answer(draft.hasEquityGains),
+        },
         ...(draft.hasEquityGains === 'yes'
           ? [
               {

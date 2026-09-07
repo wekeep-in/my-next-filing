@@ -18,7 +18,7 @@ import { clearInactiveDraft } from '@/routes/check/session'
 
 export const RECOVERY_KEY = 'my-next-filing:recovery-draft'
 export type RecoveryDraftEnvelope = {
-  readonly schemaVersion: 6
+  readonly schemaVersion: 7
   readonly taxYear: TaxYear
   readonly origin: 'personal' | 'saved-edit'
   readonly baseWorkspaceRevision: number | null
@@ -125,6 +125,34 @@ export function parseRecoveryDraft(
   taxYear: TaxYear,
 ): RecoveryDraftEnvelope | null {
   try {
+    if (isRecord(value) && value.schemaVersion === 6) {
+      const draft = value.draft
+      if (
+        !isRecord(draft) ||
+        !isRecord(draft.amounts) ||
+        Object.hasOwn(draft.amounts, 'shortTermLosses') ||
+        Object.hasOwn(draft.amounts, 'longTermLosses')
+      )
+        return null
+      return parseRecoveryDraft(
+        {
+          ...value,
+          schemaVersion: 7,
+          draft: {
+            ...draft,
+            hasEquityGains:
+              draft.hasEquityGains === 'no' ? '' : draft.hasEquityGains,
+            equityGainsConfirmed: '',
+            amounts: {
+              ...draft.amounts,
+              shortTermLosses: '',
+              longTermLosses: '',
+            },
+          },
+        },
+        taxYear,
+      )
+    }
     if (isRecord(value) && value.schemaVersion === 5) {
       const draft = value.draft
       if (
@@ -259,7 +287,7 @@ export function parseRecoveryDraft(
         'baseWorkspaceRevision',
         'draft',
       ]) ||
-      value.schemaVersion !== 6 ||
+      value.schemaVersion !== 7 ||
       value.taxYear !== taxYear
     )
       return null
@@ -333,7 +361,7 @@ export function parseRecoveryDraft(
     if (JSON.stringify(clearInactiveDraft(parsed)) !== JSON.stringify(parsed))
       return null
     return {
-      schemaVersion: 6,
+      schemaVersion: 7,
       taxYear,
       origin: value.origin,
       baseWorkspaceRevision: value.baseWorkspaceRevision as number | null,
@@ -464,7 +492,7 @@ export function recoveryFromSession(
 ): RecoveryDraftEnvelope | null {
   if (!session || session.origin.kind === 'example') return null
   return {
-    schemaVersion: 6,
+    schemaVersion: 7,
     taxYear,
     origin: session.origin.kind,
     baseWorkspaceRevision:

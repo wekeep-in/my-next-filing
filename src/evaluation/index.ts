@@ -49,7 +49,7 @@ const unsupportedFactLabels = {
   foreignTaxOrRelief:
     'Tax owed or paid abroad, or a claim for foreign-tax relief',
   deductionsLossesOrSpecialRate:
-    'Deductions other than the supported salary and employer NPS deductions, losses, or special-rate income other than supported domestic equity gains',
+    'Deductions other than the supported salary and employer NPS deductions, losses outside the current-year domestic equity conditions, or other unsupported special-rate income',
   disputedCredit: 'A dispute about your TDS or TCS tax credit',
   anotherBusinessOrProfession:
     'A business or profession in addition to the freelance work entered here',
@@ -93,6 +93,8 @@ export type EquityGains =
       readonly confirmed: TriState
       readonly shortTermGains: number
       readonly longTermGains: number
+      readonly shortTermLosses: number
+      readonly longTermLosses: number
     }
 
 export type AdditionalIncomeAmounts = {
@@ -340,6 +342,7 @@ export type AnnualReturnConclusion = {
   readonly operativeDueDate: DateOnly | null
   readonly dueDate: DateOnly
   readonly formGuidance: 'unavailable'
+  readonly lossCarryForward: { readonly maximumYears: number } | null
 }
 
 export type GstConclusion =
@@ -387,6 +390,17 @@ export type TaxEstimate = {
   readonly equityGains: {
     readonly shortTermGains: number
     readonly longTermGains: number
+    readonly shortTermLosses: number
+    readonly longTermLosses: number
+    readonly shortTermLossAgainstShortTerm: number
+    readonly shortTermLossAgainstLongTerm: number
+    readonly longTermLossAgainstLongTerm: number
+    readonly netShortTermGains: number
+    readonly netLongTermGains: number
+    readonly unusedShortTermLoss: number
+    readonly unusedLongTermLoss: number
+    readonly taxableShortTermGains: number
+    readonly taxableLongTermGains: number
     readonly basicExemptionUsed: number
     readonly longTermThresholdUsed: number
     readonly shortTermTax: number
@@ -1615,7 +1629,7 @@ function parseEquityGains(
       'invalid',
       path,
       'other-income',
-      'Choose whether you have domestic equity gains.',
+      'Choose whether you have domestic equity gains or losses.',
     )
     return { kind: 'not-sure' }
   }
@@ -1634,7 +1648,14 @@ function parseEquityGains(
   }
   checkObject(
     value,
-    ['kind', 'confirmed', 'shortTermGains', 'longTermGains'],
+    [
+      'kind',
+      'confirmed',
+      'shortTermGains',
+      'longTermGains',
+      'shortTermLosses',
+      'longTermLosses',
+    ],
     path,
     'other-income',
     errors,
@@ -1642,6 +1663,20 @@ function parseEquityGains(
   const gains: EquityGains = {
     kind: 'domestic',
     confirmed: readTri(value, 'confirmed', path, 'other-income', errors),
+    shortTermLosses: readAmount(
+      value,
+      'shortTermLosses',
+      path,
+      'other-income',
+      errors,
+    ),
+    longTermLosses: readAmount(
+      value,
+      'longTermLosses',
+      path,
+      'other-income',
+      errors,
+    ),
     shortTermGains: readAmount(
       value,
       'shortTermGains',
@@ -1657,13 +1692,16 @@ function parseEquityGains(
       errors,
     ),
   }
-  if (!Number.isSafeInteger(gains.shortTermGains + gains.longTermGains))
+  if (
+    !Number.isSafeInteger(gains.shortTermGains + gains.longTermGains) ||
+    !Number.isSafeInteger(gains.shortTermLosses + gains.longTermLosses)
+  )
     addError(
       errors,
       'invalid',
       `${path}.total`,
       'other-income',
-      'The combined gains exceed the supported whole-rupee range.',
+      'The combined gains or losses exceed the supported whole-rupee range.',
     )
   return gains
 }
@@ -2050,8 +2088,28 @@ function calculateTax(
   const gains = profile.otherIncome.equityGains
   const shortTermGains = gains.kind === 'domestic' ? gains.shortTermGains : 0
   const longTermGains = gains.kind === 'domestic' ? gains.longTermGains : 0
+  const shortTermLosses = gains.kind === 'domestic' ? gains.shortTermLosses : 0
+  const longTermLosses = gains.kind === 'domestic' ? gains.longTermLosses : 0
+  // Section 108: LT losses have only an LT destination; ST losses use ST gains then remaining LT gains.
+  const longTermLossAgainstLongTerm = Math.min(longTermLosses, longTermGains)
+  const shortTermLossAgainstShortTerm = Math.min(
+    shortTermLosses,
+    shortTermGains,
+  )
+  const shortTermLossAgainstLongTerm = Math.min(
+    shortTermLosses - shortTermLossAgainstShortTerm,
+    longTermGains - longTermLossAgainstLongTerm,
+  )
+  const netShortTermGains = shortTermGains - shortTermLossAgainstShortTerm
+  const netLongTermGains =
+    longTermGains - longTermLossAgainstLongTerm - shortTermLossAgainstLongTerm
+  const unusedShortTermLoss =
+    shortTermLosses -
+    shortTermLossAgainstShortTerm -
+    shortTermLossAgainstLongTerm
+  const unusedLongTermLoss = longTermLosses - longTermLossAgainstLongTerm
   const incomeBeforeNpsDeduction =
-    ordinaryBeforeNps + shortTermGains + longTermGains
+    ordinaryBeforeNps + netShortTermGains + netLongTermGains
   const nps =
     profile.otherIncome.salary.kind === 'domestic'
       ? profile.otherIncome.salary.employerNps
@@ -2076,19 +2134,19 @@ function calculateTax(
   )
   const ordinaryIncome = Math.max(
     0,
-    roundedTotalIncome - shortTermGains - longTermGains,
+    roundedTotalIncome - netShortTermGains - netLongTermGains,
   )
   const basicExemption = taxRules.equityBasicExemption
   // Mixed positive gains with unused basic exemption are withheld by coreSupportFacts.
   const singleGainBase = Math.max(0, roundedTotalIncome - basicExemption)
   const shortTermBase =
-    longTermGains === 0 && ordinaryIncome < basicExemption
-      ? Math.min(shortTermGains, singleGainBase)
-      : shortTermGains
+    netLongTermGains === 0 && ordinaryIncome < basicExemption
+      ? Math.min(netShortTermGains, singleGainBase)
+      : netShortTermGains
   const longTermBase =
-    shortTermGains === 0 && ordinaryIncome < basicExemption
-      ? Math.min(longTermGains, singleGainBase)
-      : longTermGains
+    netShortTermGains === 0 && ordinaryIncome < basicExemption
+      ? Math.min(netLongTermGains, singleGainBase)
+      : netLongTermGains
   const shortTermTax = percentage(shortTermBase, taxRules.equityShortTermRate)
   const longTermTax = percentage(
     Math.max(0, longTermBase - taxRules.equityLongTermThreshold),
@@ -2149,8 +2207,25 @@ function calculateTax(
         ? {
             shortTermGains,
             longTermGains,
+            shortTermLosses,
+            longTermLosses,
+            shortTermLossAgainstShortTerm,
+            shortTermLossAgainstLongTerm,
+            longTermLossAgainstLongTerm,
+            netShortTermGains,
+            netLongTermGains,
+            unusedShortTermLoss,
+            unusedLongTermLoss,
+            taxableShortTermGains: shortTermBase,
+            taxableLongTermGains: Math.max(
+              0,
+              longTermBase - taxRules.equityLongTermThreshold,
+            ),
             basicExemptionUsed:
-              shortTermGains + longTermGains - shortTermBase - longTermBase,
+              netShortTermGains +
+              netLongTermGains -
+              shortTermBase -
+              longTermBase,
             longTermThresholdUsed: Math.min(
               longTermBase,
               taxRules.equityLongTermThreshold,
@@ -2620,12 +2695,23 @@ function annualReturnUncertainty(
     : null
 }
 
+function hasUnusedEquityLoss(tax: TaxEstimate) {
+  return (
+    (tax.equityGains?.unusedShortTermLoss ?? 0) > 0 ||
+    (tax.equityGains?.unusedLongTermLoss ?? 0) > 0
+  )
+}
+
 function annualReturnTriggers(
   profile: Profile,
   tax: TaxEstimate,
   rules: AnnualReturnRules,
 ) {
   const triggers: string[] = []
+  if (hasUnusedEquityLoss(tax))
+    triggers.push(
+      'To claim carry-forward of unused capital losses, file a return reporting them by the due date. This action preserves that option even if no other filing condition applies.',
+    )
   if (tax.roundedIncomeBeforeNpsDeduction > rules.filingIncomeThreshold)
     triggers.push(
       tax.employerNpsDeduction > 0
@@ -2699,6 +2785,9 @@ function calculateAnnualReturn(
     operativeDueDate: rules.operativeDueDate,
     dueDate,
     formGuidance: 'unavailable',
+    lossCarryForward: hasUnusedEquityLoss(tax)
+      ? { maximumYears: rules.capitalLossCarryForwardYears }
+      : null,
   }
   const obligation: Obligation | null =
     triggers.length === 0
@@ -2706,7 +2795,9 @@ function calculateAnnualReturn(
       : {
           id: `annual-return:${profile.taxYear}`,
           kind: 'annual-return',
-          title: 'File the annual income-tax return',
+          title: hasUnusedEquityLoss(tax)
+            ? 'File a return to claim capital-loss carry-forward'
+            : 'File the annual income-tax return',
           taxYear: profile.taxYear,
           normalDueDate: rules.normalDueDate,
           operativeDueDate: rules.operativeDueDate,
@@ -2714,8 +2805,9 @@ function calculateAnnualReturn(
           dueDate,
           deadlineStatus: deadlineStatus(today, dueDate),
           reasons: triggers,
-          consequence:
-            'A filing fee or other effect can apply after the deadline. My Next Filing does not calculate those amounts.',
+          consequence: hasUnusedEquityLoss(tax)
+            ? 'Carry-forward requires a timely return and determination of the loss. A late return does not automatically preserve it. Saving a completion here does not verify filing or an approved loss balance.'
+            : 'A filing fee or other effect can apply after the deadline. My Next Filing does not calculate those amounts.',
           amountDue: null,
           ruleIds: [
             'annual-return-income-threshold',
@@ -2723,6 +2815,7 @@ function calculateAnnualReturn(
             'annual-return-business-threshold',
             'annual-return-tds-tcs-threshold',
             'annual-return-date',
+            ...(hasUnusedEquityLoss(tax) ? ['capital-loss-carry-forward'] : []),
           ],
           statutorySourceIds: sourceIds,
           tutorialSourceId: null,
@@ -3198,7 +3291,7 @@ function coreSupportFacts(
         'income-tax',
         'other-income',
         'Domestic equity gains',
-        'Confirm the eligible equity gains and complete annual amounts. Other gains, losses or uncertain treatment need separate review.',
+        'Confirm the eligible equity gains and complete annual amounts. Other gains, brought-forward losses or uncertain treatment need separate review.',
         sourceIds,
       ),
     )
@@ -3297,8 +3390,8 @@ function coreSupportFacts(
   // ponytail: no assumed exemption allocation between gain categories; expand after primary-source verification.
   if (
     gains.kind === 'domestic' &&
-    gains.shortTermGains > 0 &&
-    gains.longTermGains > 0 &&
+    (estimate.equityGains?.netShortTermGains ?? 0) > 0 &&
+    (estimate.equityGains?.netLongTermGains ?? 0) > 0 &&
     estimate.ordinaryIncome <
       rules.groups.commonIncomeTax.values.equityBasicExemption
   )
@@ -3308,7 +3401,7 @@ function coreSupportFacts(
         'income-tax',
         'other-income',
         'Basic exemption across equity gains',
-        'You have both short-term and long-term gains with ordinary income below ₹4 lakh after deductions. This version needs a separate review of how the unused basic exemption applies.',
+        'You have both short-term and long-term gains remaining after loss adjustment, with ordinary income below ₹4 lakh after deductions. This version needs a separate review of how the unused basic exemption applies.',
         sourceIds,
       ),
     )
@@ -3681,7 +3774,7 @@ export function evaluate(
     assumptions: [
       'This estimate is for one adult who is resident and ordinarily resident in India and runs one individual practice.',
       'The amounts you entered are complete, non-negative whole-rupee values from your tax records.',
-      'This is a best-effort estimate. It does not calculate deductions other than the salary standard deduction and supported employer NPS contributions, surcharge, losses, special-rate tax other than supported domestic equity gains, foreign-tax relief, interest, fees, or penalties.',
+      'This is a best-effort estimate. It does not calculate deductions other than the salary standard deduction and supported employer NPS contributions, surcharge, losses other than supported current-year domestic equity losses, special-rate tax other than supported domestic equity gains, foreign-tax relief, interest, fees, or penalties.',
     ],
     explanations: [
       current.incomePath.kind === 'specified-profession'
@@ -3704,7 +3797,8 @@ export function evaluate(
         : []),
       ...(tax.equityGains
         ? [
-            'Domestic equity gains are included once, separately from dividends and freelance receipts. Employer NPS and the rebate do not reduce their special-rate tax. The long-term threshold does not remove gains from total income.',
+            'Domestic equity gains are included once after permitted current-year loss adjustment, separately from dividends and freelance receipts. Employer NPS and the rebate do not reduce their special-rate tax. The long-term threshold does not remove gains from total income.',
+            'Long-term losses offset long-term gains. Short-term losses offset short-term gains first, then remaining long-term gains. Capital losses never reduce salary, freelance income or other ordinary income. Loss adjustment precedes the basic exemption and long-term threshold.',
             'Unexpected capital gains may require a separate review of advance-tax payment timing, including the conditional 31 March provision. This estimate does not calculate interest or confirm eligibility for that relief.',
           ]
         : []),

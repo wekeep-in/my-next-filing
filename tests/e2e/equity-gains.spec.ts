@@ -37,6 +37,8 @@ test('combines salary dividends and equity gains through review save reload and 
     ['incomeTaxRefundInterest', '0'],
     ['shortTermGains', '100000'],
     ['longTermGains', '200000'],
+    ['shortTermLosses', '0'],
+    ['longTermLosses', '0'],
   ])
     await page.locator(`#${id}`).fill(value)
   await page.reload()
@@ -86,7 +88,7 @@ test('combines salary dividends and equity gains through review save reload and 
     WORKSPACE_KEY,
   )
   expect(saved).toMatchObject({
-    schemaVersion: 7,
+    schemaVersion: 8,
     active: {
       profile: {
         otherIncome: {
@@ -125,12 +127,10 @@ test('keeps equity help keyboard accessible and fields usable at desktop tablet 
   await help.focus()
   await page.keyboard.press('Enter')
   const dialog = page.getByRole('dialog', {
-    name: 'Which equity gains can I include?',
+    name: 'Which equity gains and losses can I include?',
   })
   await expect(dialog.getByRole('heading')).toBeFocused()
-  await expect(dialog).toContainText(
-    'Losses, including losses offset within a broker report',
-  )
+  await expect(dialog).toContainText('Do not subtract losses twice')
   await page.keyboard.press('Escape')
   await expect(help).toBeFocused()
   for (const width of [1440, 1024, 320]) {
@@ -208,6 +208,8 @@ test('withholds uncertain equity treatment and mixed gains with unused basic exe
     .click()
   await page.locator('#shortTermGains').fill('100000')
   await page.locator('#longTermGains').fill('200000')
+  await page.locator('#shortTermLosses').fill('0')
+  await page.locator('#longTermLosses').fill('0')
   await expect(page.locator('#equityGainsConfirmed-unsupported')).toContainText(
     'unused basic exemption',
   )
@@ -258,7 +260,7 @@ test('restores the captured workspace and writes the new schema only on an ordin
       WORKSPACE_KEY,
     ),
   ).toMatchObject({
-    schemaVersion: 7,
+    schemaVersion: 8,
     consentDecidedAt: workspaceV6.consentDecidedAt,
     active: {
       completions: workspaceV6.active.completions,

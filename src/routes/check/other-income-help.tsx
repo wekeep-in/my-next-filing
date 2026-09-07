@@ -3,10 +3,15 @@ import { HelpModal } from '@/components/help-modal'
 import { currentRules } from '@/rules'
 
 // Reviewed 2026-09-06: amended Act sections 7, 92, 93, 276, 408 and 425; SEBI circular 2020/194.
-export function AdditionalIncomeHelp() {
+export function AdditionalIncomeHelp({
+  buttonText,
+}: {
+  readonly buttonText?: string
+}) {
   return (
     <HelpModal
       topic="dividends and additional interest"
+      buttonText={buttonText}
       title="Which dividends and interest can I include?"
       description={`Use the amounts taxable for ${currentRules.taxPeriod} from your tax records, before TDS. The total credited to your bank may be different.`}
     >
@@ -40,7 +45,7 @@ export function AdditionalIncomeHelp() {
         This version does not cover foreign or deemed dividends, buybacks,
         company loans, liquidation or capital reductions, REIT/InvIT or other
         business-trust distributions, AIF income, special certificates/bonds,
-        gains outside the separate domestic-equity section, losses, or
+        gains or losses outside the separate domestic-equity section, or
         expense/deduction claims. These are product limits. If you cannot
         confirm the categories and amounts, choose Not sure.
       </p>
@@ -259,12 +264,17 @@ export function TcsHelp() {
   )
 }
 
-export function EquityGainsHelp() {
+export function EquityGainsHelp({
+  buttonText,
+}: {
+  readonly buttonText?: string
+}) {
   return (
     <HelpModal
       topic="domestic equity gains"
-      title="Which equity gains can I include?"
-      description={`Use your tax records for ${currentRules.taxPeriod}. Enter realised gains from investments, not sale proceeds or changes in portfolio value.`}
+      buttonText={buttonText}
+      title="Which equity gains and losses can I include?"
+      description={`Use your tax records for ${currentRules.taxPeriod}. Enter realised gains and allowable losses from investments, not sale proceeds or changes in portfolio value.`}
     >
       <p>
         Include Indian listed shares and Indian mutual funds confirmed as
@@ -279,24 +289,37 @@ export function EquityGainsHelp() {
         without STT or IFSC transactions.
       </p>
       <p>
-        Combine all brokers and funds once. Your gain amounts must already
-        resolve costs, eligible transfer expenses, ownership, holding periods
-        and any older acquisition-cost rules. Do not deduct STT. Enter long-term
-        gains before the annual ₹1,25,000 threshold and before any
+        Combine all brokers and funds once. Your gain and loss amounts must
+        already resolve costs, eligible transfer expenses, ownership, holding
+        periods and any older acquisition-cost rules. Do not deduct STT. Enter
+        long-term gains before the annual ₹1,25,000 threshold and before any
         basic-exemption adjustment.
       </p>
       <p>
-        Losses, including losses offset within a broker report, need separate
-        review. This section excludes foreign or unlisted shares, debt and other
+        Enter gains from profitable sales and allowable losses from loss-making
+        sales separately for each holding-period category. If a broker report
+        gives only a net amount, obtain the separate totals before continuing.
+        Do not subtract losses twice. Your records must already resolve any
+        dividend or bonus stripping restriction. This section excludes
+        brought-forward losses, foreign or unlisted shares, debt and other
         nonqualifying funds, derivatives, intraday or business trading, employee
         shares, buybacks, property, REIT/InvIT/AIF/ULIP income, clubbing,
         reinvestment exemptions and unresolved corporate actions.
       </p>
       <p>
-        If you have both short-term and long-term gains and ordinary income
-        after deductions below ₹4 lakh, this version withholds the estimate
-        pending review of how unused basic exemption applies. A single gain
-        category can use the supported adjustment.
+        If you have both short-term and long-term gains remaining after loss
+        adjustment and ordinary income after deductions below ₹4 lakh, this
+        version withholds the estimate pending review of how unused basic
+        exemption applies. A single gain category can use the supported
+        adjustment.
+      </p>
+      <p>
+        Long-term losses reduce only long-term gains. Short-term losses reduce
+        short-term gains first, then remaining long-term gains. They cannot
+        reduce salary, freelance income or bank interest. The plan shows the
+        amounts used and any unused loss. A return filed by the applicable due
+        date and determination of the loss are needed to claim carry-forward; a
+        saved completion is not proof of either.
       </p>
       <p>
         The normal presumptive advance-tax date remains 15 March. Unexpected
@@ -305,7 +328,8 @@ export function EquityGainsHelp() {
         promise relief or select your return form.
       </p>
       <ExternalLink href="https://www.incometaxindia.gov.in/documents/d/guest/income_tax_act_2025_as_amended_by_fa_act_2026-pdf">
-        Official equity-gains rules, sections 196 and 198
+        Official equity gains and losses rules, sections 108–109, 111, 121, 196
+        and 198
       </ExternalLink>
     </HelpModal>
   )

@@ -25,7 +25,7 @@ import {
 } from '../../src/workspace/index.ts'
 import { TestStorage } from '../helpers/storage'
 
-const today = '2026-09-07'
+const today = '2026-09-08'
 const now = new Date(`${today}T12:00:00+05:30`)
 const withSalary = (grossSalary: number) => ({
   ...exampleProfile,
@@ -241,7 +241,7 @@ test('stops calculation on invalid missing or expired salary rules', () => {
   const expired = structuredClone(currentRules)
   Object.assign(expired.groups.commonIncomeTax, { expiresOn: '2026-09-06' })
   assert.equal(
-    evaluate(salaryProfile, new Date('2026-09-07T12:00:00+05:30'), expired)
+    evaluate(salaryProfile, new Date('2026-09-08T12:00:00+05:30'), expired)
       .kind,
     'stale-rules',
   )
@@ -342,7 +342,7 @@ test('migrates old workspaces in memory and preserves Completion records', () =>
   storage.setItem(WORKSPACE_KEY, raw)
   const restored = loadSavedWorkspace(storage, now)
   assert.ok(restored.kind === 'ready')
-  assert.equal(restored.workspace.schemaVersion, 7)
+  assert.equal(restored.workspace.schemaVersion, 8)
   assert.deepEqual(restored.workspace.active?.profile.otherIncome.salary, {
     kind: 'none',
   })

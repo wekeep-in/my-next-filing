@@ -24,3 +24,7 @@ Add a GST calendar for one active normal-taxpayer registration, alongside the ex
 ## Status
 
 Implemented locally and verified, including the [UX-copy fixes](issues/02-ux-copy.md). The user requested committing the completed changes. The current-extension inventory remains a public-release check. Deployment was not requested.
+
+## Authority refresh
+
+On 7 September 2026 the normal-calendar and LUT authorities were re-reviewed and their independent maintenance deadlines renewed to 31 October 2026 in dataset v9. The public CBIC 2026 listing was retrieved; exhaustive state/UT extension coverage remains a release item. Formatting, lint, types, live Rules, all 159 unit tests and build pass. See [review evidence](research/authority-refresh-2026-09-07.md) and [implementation](issues/03-authority-refresh.md). This supersedes the original 30 September expiry recorded in the earlier research and implementation issue.

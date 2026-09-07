@@ -25,7 +25,7 @@ import { TestStorage } from '../helpers/storage'
 import workspaceV6 from '../fixtures/workspace-v6.json' with { type: 'json' }
 import recoveryV5 from '../fixtures/recovery-v5.json' with { type: 'json' }
 
-const today = '2026-09-07'
+const today = '2026-09-08'
 const now = new Date(`${today}T12:00:00+05:30`)
 
 test('places unsafe combined credits on a visible field even when equity gains are absent', () => {
@@ -93,6 +93,8 @@ function profile(
         confirmed: 'yes',
         shortTermGains,
         longTermGains,
+        shortTermLosses: 0,
+        longTermLosses: 0,
       },
     },
   }
@@ -314,6 +316,8 @@ test('rejects unsafe combined income and withholds all uncertain and retained st
       confirmed: 'not-sure',
       shortTermGains: 1,
       longTermGains: 0,
+      shortTermLosses: 0,
+      longTermLosses: 0,
     },
   ])
     expect(
@@ -385,7 +389,7 @@ test('migrates captured workspaces without writing or changing consent and compl
   if (result.kind !== 'ready')
     throw Error('Expected migrated historical workspace')
   expect(result.workspace).toMatchObject({
-    schemaVersion: 7,
+    schemaVersion: 8,
     revision: workspaceV6.revision,
     consentDecidedAt: workspaceV6.consentDecidedAt,
     active: {
@@ -427,7 +431,7 @@ test('restores historical Recovery with equity unanswered and preserves legacy c
   }
   const result = parseRecoveryDraft(legacy, TAX_YEAR)
   expect(result).toMatchObject({
-    schemaVersion: 6,
+    schemaVersion: 7,
     draft: {
       hasEquityGains: '',
       equityGainsConfirmed: '',

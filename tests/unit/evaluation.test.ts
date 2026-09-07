@@ -13,7 +13,7 @@ import {
 } from '../../src/workspace/index.ts'
 import type { SavedWorkspaceDraft } from '../../src/workspace/index.ts'
 
-const now = new Date('2026-09-07T12:00:00+05:30')
+const now = new Date('2026-09-08T12:00:00+05:30')
 
 const baseCandidate = {
   taxYear: 'Tax Year 2026-27',
@@ -746,7 +746,7 @@ test('saves reconciles and deletes workspaces through storage failures', () => {
     WORKSPACE_KEY,
     JSON.stringify({
       ...workspaceDraft,
-      schemaVersion: 7,
+      schemaVersion: 8,
       revision: 0,
       updatedAt: '2026-09-03T06:30:00.000Z',
     }),

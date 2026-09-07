@@ -231,7 +231,7 @@ export const resourceDefinitions: readonly ResourceDefinition[] = [
     ],
     title: 'Income-tax Act: income, rebate and return requirements',
     description:
-      'The amended Act used for freelance income, salary, employer NPS, dividends, mutual-fund distributions, interest, domestic equity capital gains, rebate and enacted return-filing requirements.',
+      'The amended Act used for freelance income, salary, employer NPS, dividends, mutual-fund distributions, interest, domestic equity capital gains and current-year losses, rebate and enacted return-filing requirements.',
     documentType: 'Act',
     topics: ['income-tax'],
     tasks: [
@@ -244,7 +244,7 @@ export const resourceDefinitions: readonly ResourceDefinition[] = [
       'salary standard deduction',
       'employer NPS National Pension System basic pay DA 14% section 124',
       'dividends mutual fund IDCW distributions post office refund interest',
-      'domestic equity capital gains short term long term STT',
+      'domestic equity capital gains losses short term long term STT set off carry forward',
       'rebate marginal relief',
       'presumptive income',
       'ITR',
@@ -255,6 +255,7 @@ export const resourceDefinitions: readonly ResourceDefinition[] = [
       'Sections 7, 92, 93 and 276: taxable ordinary dividends, distributions and interest',
       'Sections 15–19: salary and deductions',
       'Sections 196 and 198: domestic equity gains, rates, thresholds and deduction restrictions',
+      'Sections 108–109, 111, 121 and 263: current-year capital-loss set-off and conditional carry-forward filing',
       'Section 156: rebate',
       'Section 408: advance tax',
     ],

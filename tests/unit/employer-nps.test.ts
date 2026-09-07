@@ -25,7 +25,7 @@ import { TestStorage } from '../helpers/storage'
 import workspaceV5 from '../fixtures/workspace-v5.json' with { type: 'json' }
 import recoveryV4 from '../fixtures/recovery-v4.json' with { type: 'json' }
 
-const today = '2026-09-07'
+const today = '2026-09-08'
 const now = new Date(`${today}T12:00:00+05:30`)
 function withNps(
   grossSalary = 1_275_000,
@@ -409,7 +409,7 @@ test('migrates captured salary workspaces in memory and preserves consent and co
   if (loaded.kind !== 'ready') return
   expect(storage.getItem(WORKSPACE_KEY)).toBe(raw)
   expect(loaded.workspace).toMatchObject({
-    schemaVersion: 7,
+    schemaVersion: 8,
     consentDecidedAt: workspaceV5.consentDecidedAt,
     active: {
       completions: workspaceV5.active.completions,
@@ -446,7 +446,7 @@ test('migrates captured salary workspaces in memory and preserves consent and co
 test('restores captured Recovery with NPS unanswered and rejects mixed schemas and hidden rows', () => {
   const migrated = parseRecoveryDraft(recoveryV4, TAX_YEAR)
   expect(migrated).toMatchObject({
-    schemaVersion: 6,
+    schemaVersion: 7,
     draft: {
       hasSalary: 'yes',
       hasEmployerNps: '',

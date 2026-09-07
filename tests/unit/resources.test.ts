@@ -10,7 +10,7 @@ import {
 } from '../../src/resources/index.ts'
 import type { ResourceFilters } from '../../src/resources/index.ts'
 
-const now = new Date('2026-09-07T12:00:00+05:30')
+const now = new Date('2026-09-08T12:00:00+05:30')
 const catalogue = resolveResources(currentRules, now)
 
 const search = (query: string, filters: Partial<ResourceFilters> = {}) =>
@@ -208,7 +208,9 @@ test('consolidates source descriptions and oldest review dates', () => {
 test('warns at independent review boundaries without hiding documents', () => {
   for (const [date, stale] of [
     ['2026-09-30', false],
-    ['2026-10-01', true],
+    ['2026-10-01', false],
+    ['2026-10-31', false],
+    ['2026-11-01', true],
   ] as const) {
     const result = resolveResources(
       currentRules,
@@ -287,7 +289,7 @@ test('scopes malformed and expired groups to their own resources', () => {
 })
 
 test('withholds malformed or future source review dates', () => {
-  for (const reviewDate of ['2026-02-30', '2026-09-08'] as const) {
+  for (const reviewDate of ['2026-02-30', '2026-09-09'] as const) {
     const result = resolveResources(
       withSources((source) =>
         source.id === 'section-58' ? { ...source, reviewDate } : source,

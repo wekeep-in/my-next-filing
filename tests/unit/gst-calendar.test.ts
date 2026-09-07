@@ -37,7 +37,7 @@ import {
 import { TestStorage } from '../helpers/storage'
 import { completionLabel } from '../../src/routes/plan/model.ts'
 
-const today = '2026-09-07'
+const today = '2026-09-08'
 const now = new Date(`${today}T12:00:00+05:30`)
 const calendar: GstCalendarProfile = {
   registeredFrom: '2025-10-15',
@@ -103,11 +103,81 @@ const exporter: Profile = {
   clients: foreign,
 }
 
+test('keeps renewed GST and LUT coverage past September and preserves saved completions', () => {
+  const before = resultFor(exporter)
+  const completed = before.obligations.find(({ kind }) => kind === 'gst-lut')!
+  const storage = new TestStorage()
+  const saved = saveSavedWorkspace(
+    storage,
+    null,
+    {
+      noticeVersion: 2,
+      consentDecidedAt: now.toISOString(),
+      activeTaxYear: TAX_YEAR,
+      priorYears: [],
+      active: {
+        profile: exporter,
+        ruleDatasetId: currentRules.id,
+        completions: [
+          { obligationId: completed.id, completedOn: '2026-04-14' },
+        ],
+      },
+    },
+    now,
+  )
+  assert.ok(saved.kind === 'saved')
+  const raw = storage.getItem(WORKSPACE_KEY)
+  for (const date of ['2026-10-01T12:00:00+05:30', '2026-10-31T18:29:59Z']) {
+    const refreshed = evaluate(exporter, new Date(date), currentRules)
+    assert.ok(refreshed.kind === 'supported')
+    assert.equal(refreshed.coverage.gst.kind, 'available')
+    assert.equal(refreshed.coverage.lut.kind, 'available')
+    assert.deepEqual(refreshed.tax, before.tax)
+    assert.deepEqual(
+      gstActions(refreshed).map(({ id, dueDate }) => ({ id, dueDate })),
+      gstActions(before).map(({ id, dueDate }) => ({ id, dueDate })),
+    )
+    assert.ok(
+      gstActions(refreshed).every(
+        ({ verifiedOn, expiresOn, operativeDueDate }) =>
+          verifiedOn === '2026-09-07' &&
+          expiresOn === '2026-10-31' &&
+          operativeDueDate === null,
+      ),
+    )
+    assert.equal(
+      deriveWorkspaceView(saved.workspace, { [TAX_YEAR]: refreshed })
+        .completedCount,
+      1,
+    )
+  }
+  const expired = evaluate(
+    exporter,
+    new Date('2026-10-31T18:30:00Z'),
+    currentRules,
+  )
+  assert.ok(expired.kind === 'supported')
+  assert.equal(expired.coverage.gst.kind, 'unavailable')
+  assert.equal(expired.coverage.lut.kind, 'unavailable')
+  assert.equal(gstActions(expired).length, 0)
+  assert.deepEqual(expired.tax, before.tax)
+  assert.equal(storage.getItem(WORKSPACE_KEY), raw)
+  const restored = loadSavedWorkspace(
+    storage,
+    new Date('2026-11-01T12:00:00+05:30'),
+  )
+  assert.ok(restored.kind === 'ready')
+  assert.deepEqual(
+    restored.workspace.active?.completions,
+    saved.workspace.active?.completions,
+  )
+})
+
 test('derives monthly periods and withholds expired calendar rules', () => {
   const monthly = resultFor()
   const expiredCalendar = evaluate(
     registered(),
-    new Date('2026-10-01T12:00:00+05:30'),
+    new Date('2026-11-01T12:00:00+05:30'),
     currentRules,
   )
   assert.ok(expiredCalendar.kind === 'supported')
@@ -122,7 +192,7 @@ test('derives monthly periods and withholds expired calendar rules', () => {
   }
   const expiryDay = evaluate(
     registered(),
-    new Date('2026-09-30T12:00:00+05:30'),
+    new Date('2026-10-31T12:00:00+05:30'),
     currentRules,
   )
   assert.ok(expiryDay.kind === 'supported')
@@ -257,7 +327,7 @@ test('derives LUT dates and renders independent expiry guidance', () => {
   const exportResult = resultFor(exporter)
   const expiredExport = evaluate(
     exporter,
-    new Date('2026-10-01T12:00:00+05:30'),
+    new Date('2026-11-01T12:00:00+05:30'),
     currentRules,
   )
   assert.ok(

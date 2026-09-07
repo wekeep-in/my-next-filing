@@ -9,11 +9,13 @@ export function HelpModal({
   topic,
   title,
   description,
+  buttonText,
   children,
 }: {
   readonly topic: string
   readonly title: string
   readonly description: string
+  readonly buttonText?: string
   readonly children: ReactNode
 }) {
   const heading = useRef<HTMLHeadingElement>(null)
@@ -22,9 +24,9 @@ export function HelpModal({
     <Dialog.Root>
       <Dialog.Trigger
         render={<Button variant="link" className="font-semibold" />}
-        aria-label={`Learn more about ${topic}`}
+        aria-label={buttonText ?? `Learn more about ${topic}`}
       >
-        Learn more.
+        {buttonText ?? 'Learn more.'}
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Backdrop className="fixed inset-0 z-400 bg-foreground/30 backdrop-blur-sm" />

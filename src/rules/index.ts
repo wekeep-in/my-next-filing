@@ -114,6 +114,7 @@ export type AdvanceTaxRules = {
 }
 
 export type AnnualReturnRules = {
+  readonly capitalLossCarryForwardYears: number
   readonly filingIncomeThreshold: number
   readonly professionReceiptThreshold: number
   readonly businessReceiptThreshold: number
@@ -212,10 +213,10 @@ export const sourceRegistry: readonly Source[] = [
     kind: 'statutory',
     publisher: 'Income Tax Department',
     title:
-      'Income-tax Act, 2025 as amended in 2026: equity gains, deductions, rebate and advance tax',
+      'Income-tax Act, 2025 as amended in 2026: equity gains and losses, deductions, rebate, carry-forward and filing',
     url: 'https://www.incometaxindia.gov.in/documents/d/guest/income_tax_act_2025_as_amended_by_fa_act_2026-pdf',
     publicationDate: '2025-08-21',
-    reviewDate: '2026-09-07',
+    reviewDate: '2026-09-08',
     taxPeriod: TAX_YEAR,
     coveredRuleIds: [
       'domestic-equity-gains',
@@ -223,6 +224,8 @@ export const sourceRegistry: readonly Source[] = [
       'equity-long-term-rate',
       'equity-long-term-threshold',
       'equity-basic-exemption',
+      'equity-current-year-loss-set-off',
+      'capital-loss-carry-forward',
     ],
   },
   {
@@ -292,7 +295,7 @@ export const sourceRegistry: readonly Source[] = [
       title,
       url: `https://gstcouncil.gov.in/sites/default/files/${path}`,
       publicationDate,
-      reviewDate: '2026-09-06',
+      reviewDate: '2026-09-07',
       taxPeriod: TAX_YEAR,
       coveredRuleIds,
     }),
@@ -304,7 +307,7 @@ export const sourceRegistry: readonly Source[] = [
     title: 'Circular 8/8/2017: annual LUT before export',
     url: 'https://cbic-gst.gov.in/pdf/Final_Master_circular_LUT_Bond_04102017.pdf',
     publicationDate: '2017-10-04',
-    reviewDate: '2026-09-06',
+    reviewDate: '2026-09-07',
     taxPeriod: TAX_YEAR,
     coveredRuleIds: ['lut-annual-validity'],
   },
@@ -316,7 +319,7 @@ export const sourceRegistry: readonly Source[] = [
       'Circular 125/44/2019: LUT before export and review of late furnishing',
     url: 'https://cbic-gst.gov.in/pdf/circular-cgst-125.pdf',
     publicationDate: '2019-11-18',
-    reviewDate: '2026-09-06',
+    reviewDate: '2026-09-07',
     taxPeriod: TAX_YEAR,
     coveredRuleIds: ['lut-before-export'],
   },
@@ -633,30 +636,31 @@ const group = <T>(
   id,
   effectiveStart,
   effectiveEnd,
-  verifiedOn:
-    id === 'common-income-tax'
-      ? '2026-09-07'
-      : ['annual-return', 'gst-registration'].includes(id)
-        ? '2026-09-06'
-        : reviewedOn,
+  verifiedOn: ['common-income-tax', 'annual-return'].includes(id)
+    ? '2026-09-08'
+    : id === 'gst-registration'
+      ? '2026-09-06'
+      : reviewedOn,
   expiresOn,
   values,
   provenance,
 })
 
 export const currentRules: RuleDataset = {
-  id: 'my-next-filing-2026-27-v8',
+  id: 'my-next-filing-2026-27-v10',
   schemaVersion: 1,
   taxPeriod: TAX_YEAR,
   effectiveStart,
   effectiveEnd,
-  verifiedOn: '2026-09-07',
+  verifiedOn: '2026-09-08',
   expiresOn,
   changeNotes: [
+    'Current-year domestic equity loss set-off and conditional carry-forward filing guidance reviewed on 8 September 2026. Capital losses do not reduce ordinary income. The mixed-gain basic-exemption restriction is evaluated after loss adjustment.',
+    'GST calendar and LUT authority refreshed on 7 September 2026 through 31 October 2026. Normal dates, eligibility and completion identities are unchanged. The public CBIC 2026 listing contains no applicable current-period extension; the wider state-extension inventory still requires release-time review.',
     'Domestic equity gains reviewed on 7 September 2026: separate 20% and 12.5% tax, ₹1,25,000 long-term threshold, bounded basic-exemption adjustment, and ordinary-income-only deductions and rebate.',
     'Employer NPS reviewed on 7 September 2026: 14% new-regime deduction, separate employer inputs, restricted retirement-fund scope and annual-return income before Chapter VIII deductions.',
     'Ordinary domestic dividends, taxable Indian mutual-fund distributions, post-office and income-tax refund interest added after review on 6 September 2026. Preserve established annual-return and GST-threshold conclusions despite independent uncertainty; annual triggers and dates now cite enacted authority.',
-    'GST return calendars and independent LUT guidance reviewed on 6 September 2026, expiring on 30 September pending another extension review. Dates are normal statutory dates; the current extension inventory is incomplete.',
+    'GST return calendars and independent LUT guidance initially reviewed on 6 September 2026 with a 30 September review deadline, superseded by the 7 September refresh. Dates are normal statutory dates; the current extension inventory is incomplete.',
     'Domestic salary and one capped standard deduction added after review on 6 September 2026; the presumptive advance-tax schedule and business-income return date continue to apply.',
     'Tax Year 2026-27 Rule groups reviewed on 3 September 2026.',
     'The dataset separates the two presumptive paths and independently reviewed annual-return, GST, and foreign-transition areas.',
@@ -715,8 +719,8 @@ export const currentRules: RuleDataset = {
           },
         ],
       ),
-      verifiedOn: '2026-09-06',
-      expiresOn: '2026-09-30',
+      verifiedOn: '2026-09-07',
+      expiresOn: '2026-10-31',
     },
     lut: {
       ...group('lut', { prosecutionThreshold: 25_000_000 }, [
@@ -736,8 +740,8 @@ export const currentRules: RuleDataset = {
           role: 'applicability',
         },
       ]),
-      verifiedOn: '2026-09-06',
-      expiresOn: '2026-09-30',
+      verifiedOn: '2026-09-07',
+      expiresOn: '2026-10-31',
     },
     incomePaths: group(
       'income-paths',
@@ -818,6 +822,11 @@ export const currentRules: RuleDataset = {
         roundingUnit: 10,
       },
       [
+        {
+          ruleId: 'equity-current-year-loss-set-off',
+          sourceId: 'domestic-equity-gains-2026',
+          role: 'applicability',
+        },
         {
           ruleId: 'domestic-equity-gains',
           sourceId: 'domestic-equity-gains-2026',
@@ -916,6 +925,7 @@ export const currentRules: RuleDataset = {
     annualReturn: group(
       'annual-return',
       {
+        capitalLossCarryForwardYears: 8,
         filingIncomeThreshold: 400_000,
         professionReceiptThreshold: 1_000_000,
         businessReceiptThreshold: 6_000_000,
@@ -926,6 +936,11 @@ export const currentRules: RuleDataset = {
         extensionSourceId: null,
       },
       [
+        {
+          ruleId: 'capital-loss-carry-forward',
+          sourceId: 'domestic-equity-gains-2026',
+          role: 'applicability',
+        },
         {
           ruleId: 'annual-return-income-threshold',
           sourceId: 'section-263',
@@ -1435,6 +1450,10 @@ function validateValues(
         errors.push('Rules contain income-tax values outside the reviewed set.')
     }
   }
+  if (id === 'annual-return' && values.capitalLossCarryForwardYears !== 8)
+    errors.push(
+      'Rules contain a capital-loss carry-forward period outside the reviewed set.',
+    )
   if (id === 'advance-tax' || id === 'annual-return')
     validateObligationValues(
       values,
@@ -1620,6 +1639,7 @@ export function validateRules(
         'extensionSourceId',
       ],
       annualReturn: [
+        'capitalLossCarryForwardYears',
         'filingIncomeThreshold',
         'professionReceiptThreshold',
         'businessReceiptThreshold',
@@ -1659,6 +1679,7 @@ export function validateRules(
         'business-five-year-exclusion',
       ],
       commonIncomeTax: [
+        'equity-current-year-loss-set-off',
         'domestic-equity-gains',
         'equity-short-term-rate',
         'equity-long-term-rate',
@@ -1678,6 +1699,7 @@ export function validateRules(
       ],
       advanceTax: ['advance-tax-threshold', 'advance-tax-date'],
       annualReturn: [
+        'capital-loss-carry-forward',
         'annual-return-income-threshold',
         'annual-return-profession-threshold',
         'annual-return-business-threshold',

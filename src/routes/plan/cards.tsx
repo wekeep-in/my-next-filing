@@ -139,7 +139,13 @@ export function CompletionStatus({
   )
 }
 
-export function TaxSummary({ tax }: { readonly tax: TaxEstimate }) {
+export function TaxSummary({
+  tax,
+  annualReturn,
+}: {
+  readonly tax: TaxEstimate
+  readonly annualReturn: SupportedResult['coverage']['annualReturn']
+}) {
   const label =
     tax.outcome === 'payable'
       ? 'Estimated tax left to pay'
@@ -157,6 +163,50 @@ export function TaxSummary({ tax }: { readonly tax: TaxEstimate }) {
       </Badge>
       <h2>{formatMoney(tax.finalAmount)}</h2>
       <p>{note}</p>
+      {tax.equityGains &&
+        (tax.equityGains.unusedShortTermLoss > 0 ||
+          tax.equityGains.unusedLongTermLoss > 0) && (
+          <section
+            className="mt-6 border-t border-border pt-4"
+            aria-labelledby="unused-equity-loss-title"
+          >
+            <h3 id="unused-equity-loss-title">Unused capital losses</h3>
+            <p>
+              Short-term: {formatMoney(tax.equityGains.unusedShortTermLoss)}.
+              Long-term: {formatMoney(tax.equityGains.unusedLongTermLoss)}.
+              These amounts do not reduce your salary, freelance income or other
+              ordinary income.
+            </p>
+            {annualReturn.kind === 'available' &&
+            annualReturn.value.lossCarryForward ? (
+              <>
+                <p>
+                  To claim carry-forward, file a return reporting these losses
+                  by {formatDate(annualReturn.value.dueDate)} and complete the
+                  required return verification. Carry-forward also depends on
+                  determination of the loss.
+                </p>
+                <p>
+                  Unused short-term losses may offset future capital gains;
+                  unused long-term losses may offset only future long-term
+                  gains, for up to{' '}
+                  {annualReturn.value.lossCarryForward.maximumYears} tax years
+                  immediately following this Tax Year. This is an estimate, not
+                  an approved loss balance. This version does not apply
+                  brought-forward losses.
+                </p>
+              </>
+            ) : (
+              <p>
+                Review the filing deadline and carry-forward conditions using
+                the official return guidance. This part of your plan is
+                unavailable; zero capital-gains tax does not establish that your
+                losses can be carried forward.
+              </p>
+            )}
+            <SourceReferences ids={annualReturn.sourceIds} />
+          </section>
+        )}
       <details className="calculation-details">
         <summary>How this estimate was calculated</summary>
         <dl className="calculation-list">
@@ -206,13 +256,67 @@ export function TaxSummary({ tax }: { readonly tax: TaxEstimate }) {
           {tax.equityGains && (
             <>
               <div>
-                <dt>Short-term equity gains</dt>
+                <dt>Short-term equity gains before loss adjustment</dt>
                 <dd>{formatMoney(tax.equityGains.shortTermGains)}</dd>
               </div>
               <div>
-                <dt>Long-term equity gains before threshold</dt>
+                <dt>Long-term equity gains before loss adjustment</dt>
                 <dd>{formatMoney(tax.equityGains.longTermGains)}</dd>
               </div>
+              {(tax.equityGains.shortTermLosses > 0 ||
+                tax.equityGains.longTermLosses > 0) && (
+                <>
+                  <div>
+                    <dt>Current-year short-term losses available</dt>
+                    <dd>{formatMoney(tax.equityGains.shortTermLosses)}</dd>
+                  </div>
+                  <div>
+                    <dt>Current-year long-term losses available</dt>
+                    <dd>{formatMoney(tax.equityGains.longTermLosses)}</dd>
+                  </div>
+                  <div>
+                    <dt>Long-term losses used against long-term gains</dt>
+                    <dd>
+                      −
+                      {formatMoney(tax.equityGains.longTermLossAgainstLongTerm)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Short-term losses used against short-term gains</dt>
+                    <dd>
+                      −
+                      {formatMoney(
+                        tax.equityGains.shortTermLossAgainstShortTerm,
+                      )}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Short-term losses used against long-term gains</dt>
+                    <dd>
+                      −
+                      {formatMoney(
+                        tax.equityGains.shortTermLossAgainstLongTerm,
+                      )}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Short-term gains after loss adjustment</dt>
+                    <dd>{formatMoney(tax.equityGains.netShortTermGains)}</dd>
+                  </div>
+                  <div>
+                    <dt>Long-term gains after loss adjustment</dt>
+                    <dd>{formatMoney(tax.equityGains.netLongTermGains)}</dd>
+                  </div>
+                  <div>
+                    <dt>Unused short-term capital loss</dt>
+                    <dd>{formatMoney(tax.equityGains.unusedShortTermLoss)}</dd>
+                  </div>
+                  <div>
+                    <dt>Unused long-term capital loss</dt>
+                    <dd>{formatMoney(tax.equityGains.unusedLongTermLoss)}</dd>
+                  </div>
+                </>
+              )}
             </>
           )}
           {tax.salary && (
@@ -266,6 +370,14 @@ export function TaxSummary({ tax }: { readonly tax: TaxEstimate }) {
               <div>
                 <dt>Long-term gains within the annual threshold</dt>
                 <dd>{formatMoney(tax.equityGains.longTermThresholdUsed)}</dd>
+              </div>
+              <div>
+                <dt>Short-term gains taxed at 20%</dt>
+                <dd>{formatMoney(tax.equityGains.taxableShortTermGains)}</dd>
+              </div>
+              <div>
+                <dt>Long-term gains taxed at 12.5%</dt>
+                <dd>{formatMoney(tax.equityGains.taxableLongTermGains)}</dd>
               </div>
               <div>
                 <dt>Short-term equity tax at 20%</dt>

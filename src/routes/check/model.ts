@@ -21,6 +21,8 @@ export type DraftGstStatus = '' | 'one-normal' | 'other' | 'not-sure'
 export type DraftAmountKey =
   | 'shortTermGains'
   | 'longTermGains'
+  | 'shortTermLosses'
+  | 'longTermLosses'
   | keyof AdditionalIncomeAmounts
   | 'grossReceipts'
   | 'cashReceipts'
@@ -125,6 +127,8 @@ export type Draft = {
 export const equityGainFields = [
   { key: 'shortTermGains', label: 'Short-term equity gains' },
   { key: 'longTermGains', label: 'Long-term equity gains' },
+  { key: 'shortTermLosses', label: 'Current-year short-term equity losses' },
+  { key: 'longTermLosses', label: 'Current-year long-term equity losses' },
 ] as const
 export const equityGainKeys = equityGainFields.map(({ key }) => key)
 
@@ -258,7 +262,7 @@ export const unsupportedFactLabels: Record<UnsupportedFact, string> = {
   foreignTaxOrRelief:
     'Tax owed or paid abroad, or a claim for foreign-tax relief',
   deductionsLossesOrSpecialRate:
-    'Deductions other than the supported salary and employer NPS deductions, losses, or special-rate income other than supported domestic equity gains',
+    'Deductions other than the supported salary and employer NPS deductions, losses outside the current-year domestic equity conditions, or other unsupported special-rate income',
   disputedCredit: 'A dispute about your TDS or TCS tax credit',
   anotherBusinessOrProfession:
     'A business or profession in addition to the freelance work entered here',
@@ -766,6 +770,8 @@ function candidateFromDraft(draft: Draft) {
               confirmed: draft.equityGainsConfirmed || 'not-sure',
               shortTermGains: amountValues.shortTermGains,
               longTermGains: amountValues.longTermGains,
+              shortTermLosses: amountValues.shortTermLosses,
+              longTermLosses: amountValues.longTermLosses,
             }
           : { kind: draft.hasEquityGains === 'no' ? 'none' : 'not-sure' },
       additionalIncome:
@@ -1057,7 +1063,10 @@ function profileErrorKey(error: ProfileInputError) {
     const last = error.path.split('.').at(-1)
     return last === 'confirmed' || last === 'total'
       ? 'equityGainsConfirmed'
-      : last === 'shortTermGains' || last === 'longTermGains'
+      : last === 'shortTermGains' ||
+          last === 'longTermGains' ||
+          last === 'shortTermLosses' ||
+          last === 'longTermLosses'
         ? last
         : 'hasEquityGains'
   }
@@ -1258,7 +1267,7 @@ function validateDraftGroup(
   if (group === 'other-income') {
     if (!draft.hasEquityGains)
       nextErrors.hasEquityGains =
-        'Choose whether you have domestic equity gains.'
+        'Choose whether you have domestic equity gains or losses.'
     if (draft.hasEquityGains === 'yes') {
       if (!draft.equityGainsConfirmed)
         nextErrors.equityGainsConfirmed =
@@ -1507,10 +1516,12 @@ function draftFeedback(draft: Draft, latestDate: string) {
       fact.correctionGroup === 'other-income' &&
       draft.hasEquityGains === 'yes'
     ) {
-      const positive = equityGainKeys.find((key) => {
-        const amount = parseMoney(draft.amounts[key])
-        return 'value' in amount && amount.value > 0
-      })
+      const positive = (['shortTermGains', 'longTermGains'] as const).find(
+        (key) => {
+          const amount = parseMoney(draft.amounts[key])
+          return 'value' in amount && amount.value > 0
+        },
+      )
       if (positive) field = positive
     }
     if (fact.code === 'client-branch-uncertain')

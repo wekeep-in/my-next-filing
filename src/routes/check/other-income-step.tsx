@@ -234,15 +234,15 @@ export function OtherIncomeStep({
           className="question-section"
           aria-labelledby="equity-gains-title"
         >
-          <h2 id="equity-gains-title">Domestic equity gains</h2>
+          <h2 id="equity-gains-title">Domestic equity gains and losses</h2>
           <div className="field-stack">
             <ChoiceField
               id="hasEquityGains"
-              label="Did you realise gains from Indian shares or equity mutual funds?"
+              label="Did you realise gains or losses from Indian shares or equity mutual funds?"
               help={
                 <>
-                  Include gains from selling investments or redeeming eligible
-                  fund units. Keep dividends in the fields above.{' '}
+                  Include gains and losses from selling investments or redeeming
+                  eligible fund units. Keep dividends in the fields above.{' '}
                   <EquityGainsHelp />
                 </>
               }
@@ -260,7 +260,7 @@ export function OtherIncomeStep({
               <>
                 <ChoiceField
                   id="equityGainsConfirmed"
-                  label="Do your equity gains meet these conditions?"
+                  label="Do your equity gains and losses meet these conditions?"
                   help={
                     <>
                       <ul className="mb-3 list-disc space-y-2 pl-5">
@@ -270,21 +270,23 @@ export function OtherIncomeStep({
                           the required STT conditions met.
                         </li>
                         <li>
-                          Your tax records confirm the complete annual gains
-                          across all brokers and funds, with costs, ownership
-                          and short-term or long-term treatment resolved.
+                          Your tax records confirm the full year’s gains and
+                          allowable current-year losses across all brokers and
+                          funds, with costs, ownership, holding periods and any
+                          loss disallowance resolved.
                         </li>
                         <li>
-                          No current or earlier losses, foreign investments,
+                          No brought-forward losses, foreign investments,
                           business trading, employee shares, buybacks, exemption
                           claims or other excluded transactions.
                         </li>
                       </ul>
                       <p>
-                        Enter gains before the long-term threshold or
-                        basic-exemption adjustment. Both gain types with
-                        ordinary income below ₹4 lakh after deductions need
-                        separate review.
+                        Enter gains and losses separately before loss
+                        adjustment, the long-term threshold or basic exemption.
+                        Both gain types remaining after adjustment with ordinary
+                        income below ₹4 lakh after deductions need separate
+                        review.
                       </p>
                       <EquityGainsHelp />
                     </>
@@ -306,8 +308,10 @@ export function OtherIncomeStep({
                     label={label}
                     help={
                       key === 'shortTermGains'
-                        ? 'Enter confirmed gains under section 196, not sale proceeds. Use 0 if none.'
-                        : 'Enter confirmed gains under section 198 before the ₹1,25,000 threshold. Use 0 if none.'
+                        ? 'Total gains from profitable short-term sales before subtracting losses. Do not enter sale proceeds. Use 0 if none.'
+                        : key === 'longTermGains'
+                          ? 'Total gains from profitable long-term sales before losses and the ₹1,25,000 threshold. Use 0 if none.'
+                          : 'Enter the total allowable losses as a positive amount, before set-off. Include only this Tax Year, not earlier losses. Use 0 if none.'
                     }
                     value={draft.amounts[key]}
                     error={errors[key]}

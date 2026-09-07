@@ -147,11 +147,12 @@ export function LandingFaqs() {
             <SalaryCoverageHelp />
           </p>
           <p>
-            It can also include confirmed domestic equity gains, ordinary
-            Indian-company dividends, taxable Indian mutual-fund distributions,
-            taxable post-office interest and income-tax refund interest when
-            your records confirm the amounts. <AdditionalIncomeHelp />{' '}
-            <EquityGainsHelp />
+            It can also include confirmed domestic equity gains and current-year
+            losses, ordinary Indian-company dividends, taxable Indian
+            mutual-fund distributions, taxable post-office interest and
+            income-tax refund interest when your records confirm the amounts.{' '}
+            <AdditionalIncomeHelp buttonText="About dividends and interest" />{' '}
+            <EquityGainsHelp buttonText="About equity gains and losses" />
           </p>
           <p>It stops without showing a personal estimate if you have:</p>
           <ul>
@@ -171,8 +172,9 @@ export function LandingFaqs() {
               arrangement.
             </li>
             <li>
-              Unsupported deductions, losses or tax credits, employee or
-              deductor duties, or amounts above this version's limits.
+              Unsupported deductions, losses outside the domestic equity
+              conditions or tax credits, employee or deductor duties, or amounts
+              above this version's limits.
             </li>
           </ul>
           <p>

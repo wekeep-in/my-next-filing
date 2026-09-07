@@ -70,7 +70,7 @@ const explanations: Partial<
   },
   deductionsLossesOrSpecialRate: {
     title: 'Other deductions, losses, or special-rate income',
-    help: 'Deductions outside the supported salary conditions, losses, or special-rate income outside the supported domestic equity conditions.',
+    help: 'Deductions outside the supported salary conditions, losses outside the current-year domestic equity conditions, or other unsupported special-rate income.',
   },
   employeesOrDeductorDuties: {
     title: 'Employees or TDS filing requirements',
