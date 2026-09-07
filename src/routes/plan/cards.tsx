@@ -221,6 +221,22 @@ export function TaxSummary({ tax }: { readonly tax: TaxEstimate }) {
               </div>
             </>
           )}
+          {tax.employerNpsContributions !== null && (
+            <>
+              <div>
+                <dt>Employer NPS already included in salary</dt>
+                <dd>{formatMoney(tax.employerNpsContributions)}</dd>
+              </div>
+              <div>
+                <dt>Income before employer NPS deduction</dt>
+                <dd>{formatMoney(tax.incomeBeforeNpsDeduction)}</dd>
+              </div>
+              <div>
+                <dt>Employer NPS deduction</dt>
+                <dd>−{formatMoney(tax.employerNpsDeduction)}</dd>
+              </div>
+            </>
+          )}
           <div>
             <dt>Rounded total income</dt>
             <dd>{formatMoney(tax.roundedTotalIncome)}</dd>

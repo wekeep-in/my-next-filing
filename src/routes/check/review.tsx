@@ -1,13 +1,5 @@
 import { taxYearShort } from '@/lib/tax-period'
 import {
-  AdditionalIncomeHelp,
-  SalaryCoverageHelp,
-} from '@/routes/check/other-income-help'
-import type {
-  QuestionnaireDispatch,
-  QuestionnaireEvent,
-} from '@/routes/check/session'
-import {
   activityOptions,
   additionalIncomeFields,
   creditTriggerMayApply,
@@ -21,15 +13,10 @@ import {
   parseMoney,
   unsupportedFactLabels,
 } from '@/routes/check/model'
-import { useRef } from 'react'
-import type { UnsupportedFact } from '@/evaluation'
-import { flushSync } from 'react-dom'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Checkbox } from '@/components/ui/checkbox'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import type { Draft } from '@/routes/check/model'
-import { CheckHeading, FieldError } from '@/routes/check/fields'
+import { CheckHeading } from '@/routes/check/fields'
 
 function ErrorSummary({ errors }: { readonly errors: Record<string, string> }) {
   const entries = Object.entries(errors)
@@ -43,147 +30,6 @@ function ErrorSummary({ errors }: { readonly errors: Record<string, string> }) {
         ))}
       </ul>
     </div>
-  )
-}
-
-export function UnsupportedFactsField({
-  draft,
-  dispatch,
-  error,
-}: {
-  readonly draft: Draft
-  readonly dispatch: QuestionnaireDispatch
-  readonly error?: string
-}) {
-  const options = (
-    Object.entries(unsupportedFactLabels) as [UnsupportedFact, string][]
-  ).filter(
-    ([value]) =>
-      value !== 'unsupportedFactsNotSure' &&
-      (value !== 'dividendsOrGifts' || draft.unsupportedFacts.includes(value)),
-  )
-  const warningId = 'unsupportedCertainty-unsupported'
-  const pointerSelection = useRef(false)
-  const updateDraft = (event: QuestionnaireEvent) => {
-    const apply = () => dispatch(event)
-    const animate = pointerSelection.current
-    pointerSelection.current = false
-    if (
-      !animate ||
-      !document.startViewTransition ||
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    ) {
-      apply()
-      return
-    }
-    document.startViewTransition(() => flushSync(apply))
-  }
-  return (
-    <fieldset
-      id="unsupportedCertainty"
-      tabIndex={-1}
-      className="field choice-field unsupported-facts"
-      aria-invalid={Boolean(error)}
-      aria-describedby={`unsupportedCertainty-help${error ? ' unsupportedCertainty-error' : ''}`}
-      onPointerDown={() => {
-        pointerSelection.current = true
-      }}
-      onKeyDown={() => {
-        pointerSelection.current = false
-      }}
-    >
-      <legend id="unsupportedCertainty-legend">
-        Do any of these situations apply to you?
-      </legend>
-      <p className="field-help" id="unsupportedCertainty-help">
-        Select every situation that applies. If none apply, choose None of
-        these. Choose Not sure if you cannot confirm.
-      </p>
-      <div className="choice-grid unsupported-options">
-        {options.map(([value, label]) => {
-          const checked = draft.unsupportedFacts.includes(value)
-          return (
-            <label
-              className={`choice-card unsupported-option has-focus-visible:outline-[.2rem] has-focus-visible:outline-offset-[.2rem]${checked ? ' choice-card--unsupported' : ''}`}
-              key={value}
-              style={{
-                outlineColor: 'var(--ring)',
-                viewTransitionName: `unsupported-${value}`,
-              }}
-            >
-              <Checkbox
-                className="absolute! size-px! overflow-hidden! border-0! p-0! whitespace-nowrap! [clip:rect(0,0,0,0)]"
-                name="unsupportedFacts"
-                value={value}
-                checked={checked}
-                aria-describedby={checked ? warningId : undefined}
-                onCheckedChange={(nextChecked) => {
-                  updateDraft({
-                    type: 'unsupported-fact-toggled',
-                    fact: value,
-                    checked: nextChecked,
-                  })
-                }}
-              />
-              <span>{label}</span>
-            </label>
-          )
-        })}
-      </div>
-      {draft.unsupportedFacts.includes('salary') && (
-        <p className="field-help">
-          Check which salary situations this version can cover.{' '}
-          <SalaryCoverageHelp />
-        </p>
-      )}
-      {(draft.unsupportedFacts.includes('unsupportedDividends') ||
-        draft.unsupportedFacts.includes('dividendsOrGifts')) && (
-        <p className="field-help">
-          Review the dividend and interest fields above. If an older answer
-          combined dividends and gifts, select any gift income separately before
-          clearing that answer. <AdditionalIncomeHelp />
-        </p>
-      )}
-      <RadioGroup
-        aria-labelledby="unsupportedCertainty-legend"
-        className="choice-grid unsupported-alternatives"
-        name="unsupportedCertainty"
-        value={
-          draft.unsupportedCertainty === 'none' ||
-          draft.unsupportedCertainty === 'not-sure'
-            ? draft.unsupportedCertainty
-            : ''
-        }
-        onValueChange={(value) =>
-          updateDraft({
-            type: 'unsupportedCertainty-changed',
-            value: value as Draft['unsupportedCertainty'],
-          })
-        }
-      >
-        {[
-          ['none', 'None of these'],
-          ['not-sure', 'Not sure'],
-        ].map(([value, label]) => {
-          const warning =
-            value === 'not-sure' && draft.unsupportedCertainty === value
-          return (
-            <label
-              className={`choice-card${warning ? ' choice-card--unsupported' : ''}`}
-              key={value}
-            >
-              <RadioGroupItem
-                value={value}
-                tone={warning ? 'warning' : 'default'}
-                aria-describedby={value === 'not-sure' ? warningId : undefined}
-              />
-              <span>{label}</span>
-            </label>
-          )
-        })}
-      </RadioGroup>
-      <FieldError id="unsupportedCertainty-error" error={error} />
-    </fieldset>
   )
 }
 
@@ -468,6 +314,28 @@ function GroupSummary({
                 label: 'Annual salary before standard deduction',
                 value: money(draft.amounts.grossSalary),
               },
+              {
+                label: 'Employer NPS contributions',
+                value: answer(draft.hasEmployerNps),
+              },
+              ...(draft.hasEmployerNps === 'yes'
+                ? [
+                    {
+                      label: 'NPS and retirement-fund conditions confirmed',
+                      value: answer(draft.employerNpsConfirmed),
+                    },
+                    ...draft.employerNpsEmployers.flatMap((employer, index) => [
+                      {
+                        label: `Employer ${index + 1} NPS contribution`,
+                        value: money(employer.contribution),
+                      },
+                      {
+                        label: `Employer ${index + 1} basic pay and eligible DA`,
+                        value: money(employer.eligibleSalary),
+                      },
+                    ]),
+                  ]
+                : []),
             ]
           : []),
         {
@@ -500,7 +368,7 @@ function GroupSummary({
                   .map((fact) => unsupportedFactLabels[fact])
                   .join(', ')
               : answer(draft.unsupportedCertainty, {
-                  none: 'None of these',
+                  none: 'None of these apply',
                 }),
         },
       ],

@@ -37,7 +37,7 @@ import {
 import { TestStorage } from '../helpers/storage'
 import { completionLabel } from '../../src/routes/plan/model.ts'
 
-const today = '2026-09-06'
+const today = '2026-09-07'
 const now = new Date(`${today}T12:00:00+05:30`)
 const calendar: GstCalendarProfile = {
   registeredFrom: '2025-10-15',

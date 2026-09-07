@@ -10,7 +10,7 @@ import {
 } from '../../src/resources/index.ts'
 import type { ResourceFilters } from '../../src/resources/index.ts'
 
-const now = new Date('2026-09-06T12:00:00+05:30')
+const now = new Date('2026-09-07T12:00:00+05:30')
 const catalogue = resolveResources(currentRules, now)
 
 const search = (query: string, filters: Partial<ResourceFilters> = {}) =>
@@ -285,7 +285,7 @@ test('scopes malformed and expired groups to their own resources', () => {
 })
 
 test('withholds malformed or future source review dates', () => {
-  for (const reviewDate of ['2026-02-30', '2026-09-07'] as const) {
+  for (const reviewDate of ['2026-02-30', '2026-09-08'] as const) {
     const result = resolveResources(
       withSources((source) =>
         source.id === 'section-58' ? { ...source, reviewDate } : source,

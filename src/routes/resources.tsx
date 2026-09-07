@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Info, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import { useApp } from '@/app-context'
 import { ExternalLink } from '@/components/external-link'
+import { FieldHelp } from '@/components/field-help'
 import { Badge } from '@/components/ui/badge'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -14,11 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
 import { formatDate } from '@/lib/format'
 import {
   emptyResourceFilters,
@@ -37,51 +33,13 @@ function ResourceLabel({
   readonly label: string
   readonly help?: string
 }) {
-  const [open, setOpen] = useState(false)
-  const [wide, setWide] = useState(false)
-  useEffect(() => {
-    if (!help) return
-    const media = window.matchMedia('(min-width: 861px)')
-    const update = () => setWide(media.matches)
-    update()
-    media.addEventListener('change', update)
-    return () => media.removeEventListener('change', update)
-  }, [help])
   return (
     <div className="mb-1 flex min-h-7 items-center gap-1 sm:mb-2">
       <label htmlFor={id}>{label}</label>
       {help && (
-        <>
-          <Tooltip open={open} onOpenChange={setOpen}>
-            <TooltipTrigger
-              aria-label={`${label} help`}
-              aria-describedby={open ? `${id}-tooltip` : `${id}-help`}
-              closeOnClick={false}
-              onClick={() => setOpen((previous) => !previous)}
-              render={
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="relative size-7 min-h-7 text-muted-foreground after:absolute after:-inset-2 after:content-['']"
-                />
-              }
-            >
-              <Info className="size-4" aria-hidden="true" />
-            </TooltipTrigger>
-            <TooltipContent
-              id={`${id}-tooltip`}
-              role="tooltip"
-              side={wide ? 'right' : 'top'}
-              sideOffset={8}
-            >
-              {help}
-            </TooltipContent>
-          </Tooltip>
-          <span id={`${id}-help`} className="sr-only">
-            {help}
-          </span>
-        </>
+        <FieldHelp id={id} label={label}>
+          {help}
+        </FieldHelp>
       )}
     </div>
   )

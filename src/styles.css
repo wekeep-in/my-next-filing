@@ -1187,6 +1187,35 @@ main:has(> .resources-page) {
   margin: 0;
 }
 
+.employer-nps-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: 1.5rem;
+}
+
+.employer-nps-fields > .field {
+  min-width: 0;
+  margin: 0;
+}
+
+/* Employer-card density trial: remove these overrides to restore sizing. */
+.employer-nps-fields label {
+  font-size: 0.9375rem;
+}
+
+.employer-nps-fields .field > div:first-child {
+  margin-bottom: 0.625rem;
+}
+
+.employer-nps-fields input {
+  min-height: 2.75rem;
+  padding-block: 0.55rem;
+}
+
+.employer-nps-fields .field-error {
+  font-size: 0.875rem;
+}
+
 .question-sections {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -1237,37 +1266,6 @@ main:has(> .resources-page) {
 .choice-card--unsupported,
 .choice-card--unsupported:has([data-checked]) {
   border-color: var(--warning-border-strong);
-}
-
-.unsupported-options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.65rem 0.55rem;
-  margin-top: 0.8rem;
-}
-
-.choice-card.unsupported-option {
-  max-width: 100%;
-  border-radius: 999px;
-  padding-inline: 0.8rem;
-  transition:
-    border-color 160ms var(--ease-app-out),
-    background-color 160ms var(--ease-app-out),
-    color 160ms var(--ease-app-out),
-    transform 160ms var(--ease-app-out);
-}
-
-.unsupported-option.choice-card--unsupported,
-.unsupported-option.choice-card--unsupported:has([data-checked]) {
-  border-color: var(--warning);
-  color: var(--card);
-  background: var(--warning);
-}
-
-.unsupported-alternatives {
-  border-top: 1px solid var(--page-divider);
-  margin-top: 1rem;
-  padding-top: 1rem;
 }
 
 .choice-card:active {

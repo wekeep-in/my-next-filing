@@ -89,6 +89,12 @@ export type Draft = {
   readonly foreignCurrencyResolved: DraftChoice
   readonly hasSalary: DraftChoice
   readonly salaryConfirmed: DraftChoice
+  readonly hasEmployerNps: DraftChoice
+  readonly employerNpsConfirmed: DraftChoice
+  readonly employerNpsEmployers: readonly {
+    readonly contribution: string
+    readonly eligibleSalary: string
+  }[]
   readonly hasAdditionalIncome: DraftChoice
   readonly additionalIncomeConfirmed: DraftChoice
   readonly ageSixtyOrOlder: DraftChoice
@@ -224,25 +230,32 @@ export const optionLabels: Readonly<Record<string, string>> = {
 }
 
 export const unsupportedFactLabels: Record<UnsupportedFact, string> = {
-  salary: 'Salary this version cannot cover',
-  houseProperty: 'House-property income',
-  dividendsOrGifts: 'Dividend or gift income to review from an earlier version',
+  salary:
+    'Salary outside the supported conditions, such as foreign salary, pension, arrears, or employee shares',
+  houseProperty: 'Income from house property, such as rent',
+  dividendsOrGifts: 'Dividends or gifts selected in an earlier version',
   gifts: 'Gift income',
-  unsupportedDividends: 'Dividends or distributions this version cannot cover',
-  capitalGains: 'Capital gains',
+  unsupportedDividends:
+    'Dividends or distributions outside the supported conditions, such as foreign dividends or REIT payouts',
+  capitalGains:
+    'Capital gains, such as profits from selling shares or property',
   cryptoLotteryGaming: 'Crypto, lottery, or gaming income',
   agriculturalIncome: 'Agricultural income',
-  unrelatedForeignIncome: 'Unrelated foreign-source income',
-  foreignAssets: 'A foreign asset or financial interest',
-  foreignTaxOrRelief: 'Foreign tax or foreign-tax relief',
+  unrelatedForeignIncome:
+    'Foreign income other than the freelance receipts entered here',
+  foreignAssets: 'Assets or financial interests outside India',
+  foreignTaxOrRelief:
+    'Tax owed or paid abroad, or a claim for foreign-tax relief',
   deductionsLossesOrSpecialRate:
-    'A deduction, loss, or special-rate item this version does not cover',
-  disputedCredit: 'A disputed TDS or TCS credit',
-  anotherBusinessOrProfession: 'Another business or profession',
-  employeesOrDeductorDuties: 'Employees or deductor filing duties',
-  auditRequirement: 'An audit requirement under tax law or another law',
-  surchargeCase: 'A surcharge case',
-  goodsSales: 'Goods sales',
+    'Deductions other than the supported salary and employer NPS deductions, losses, or income taxed at special rates',
+  disputedCredit: 'A dispute about your TDS or TCS tax credit',
+  anotherBusinessOrProfession:
+    'A business or profession in addition to the freelance work entered here',
+  employeesOrDeductorDuties:
+    'Employees, or a requirement to deduct tax and file TDS returns',
+  auditRequirement: 'A required audit under tax law or another law',
+  surchargeCase: 'Income tax that requires surcharge',
+  goodsSales: 'Income from selling goods',
   agencyCommissionBrokerage: 'Agency, commission, or brokerage income',
   royaltyOrLicensing: 'Royalty or licensing income',
   otherUnsupportedFacts: 'Another income or tax situation not listed here',
@@ -324,6 +337,9 @@ export const blankDraft = (): Draft => ({
   foreignCurrencyResolved: '',
   hasSalary: '',
   salaryConfirmed: '',
+  hasEmployerNps: '',
+  employerNpsConfirmed: '',
+  employerNpsEmployers: [],
   hasAdditionalIncome: '',
   additionalIncomeConfirmed: '',
   ageSixtyOrOlder: '',
@@ -391,6 +407,25 @@ export function draftFromProfile(profile: Profile): Draft {
           ? 'yes'
           : 'not-sure',
     salaryConfirmed: salary.kind === 'domestic' ? salary.confirmed : '',
+    hasEmployerNps:
+      salary.kind !== 'domestic'
+        ? ''
+        : salary.employerNps.kind === 'none'
+          ? 'no'
+          : salary.employerNps.kind === 'contributions'
+            ? 'yes'
+            : 'not-sure',
+    employerNpsConfirmed:
+      salary.kind === 'domestic' && salary.employerNps.kind === 'contributions'
+        ? salary.employerNps.confirmed
+        : '',
+    employerNpsEmployers:
+      salary.kind === 'domestic' && salary.employerNps.kind === 'contributions'
+        ? salary.employerNps.employers.map((employer) => ({
+            contribution: employer.contribution.toLocaleString('en-IN'),
+            eligibleSalary: employer.eligibleSalary.toLocaleString('en-IN'),
+          }))
+        : [],
     hasAdditionalIncome:
       additional.kind === 'none'
         ? 'no'
@@ -715,6 +750,29 @@ function candidateFromDraft(draft: Draft) {
               kind: 'domestic',
               confirmed: draft.salaryConfirmed || 'not-sure',
               grossSalary: amountValues.grossSalary,
+              employerNps:
+                draft.hasEmployerNps === 'yes'
+                  ? {
+                      kind: 'contributions',
+                      confirmed: draft.employerNpsConfirmed || 'not-sure',
+                      employers: draft.employerNpsEmployers.map((employer) => {
+                        const contribution = parseMoney(employer.contribution)
+                        const eligibleSalary = parseMoney(
+                          employer.eligibleSalary,
+                        )
+                        return {
+                          contribution:
+                            'value' in contribution ? contribution.value : 0,
+                          eligibleSalary:
+                            'value' in eligibleSalary
+                              ? eligibleSalary.value
+                              : 0,
+                        }
+                      }),
+                    }
+                  : {
+                      kind: draft.hasEmployerNps === 'no' ? 'none' : 'not-sure',
+                    },
             }
           : { kind: draft.hasSalary === 'no' ? 'none' : 'not-sure' },
       taxableBankInterest: amountValues.taxableBankInterest,
@@ -826,8 +884,8 @@ export const isBlankDraft = (draft: Draft) =>
   Object.entries(draft).every(([key, value]) =>
     key === 'amounts'
       ? Object.values(draft.amounts).every((amount) => amount === '')
-      : key === 'unsupportedFacts'
-        ? draft.unsupportedFacts.length === 0
+      : Array.isArray(value)
+        ? value.length === 0
         : value === '',
   )
 
@@ -924,9 +982,11 @@ function errorStep(key: string) {
   )
     return groupStep('clients')
   if (
+    key.startsWith('employerNps') ||
     [
       'taxableBankInterest',
       'hasSalary',
+      'hasEmployerNps',
       'hasAdditionalIncome',
       'additionalIncomeConfirmed',
       ...additionalIncomeKeys,
@@ -945,6 +1005,16 @@ function errorStep(key: string) {
 }
 
 function profileErrorKey(error: ProfileInputError) {
+  if (error.path.startsWith('otherIncome.salary.employerNps')) {
+    if (error.path.includes('.employers'))
+      return error.path.replace(
+        'otherIncome.salary.employerNps.employers',
+        'employerNpsEmployers',
+      )
+    return error.path.endsWith('.confirmed')
+      ? 'employerNpsConfirmed'
+      : 'hasEmployerNps'
+  }
   if (error.path.startsWith('otherIncome.additionalIncome')) {
     const last = error.path.split('.').at(-1) ?? ''
     return last === 'confirmed'
@@ -1156,6 +1226,24 @@ function validateDraftGroup(
         nextErrors.salaryConfirmed =
           'Confirm whether your salary meets these conditions.'
       requiredAmount(nextErrors, draft, 'grossSalary')
+      if (!draft.hasEmployerNps)
+        nextErrors.hasEmployerNps =
+          'Choose whether your employers contribute to NPS.'
+      if (draft.hasEmployerNps === 'yes') {
+        if (!draft.employerNpsConfirmed)
+          nextErrors.employerNpsConfirmed =
+            'Confirm the NPS and retirement-fund conditions, or choose Not sure.'
+        if (draft.employerNpsEmployers.length === 0)
+          nextErrors.employerNpsEmployers =
+            'Add the NPS amounts for at least one employer.'
+        draft.employerNpsEmployers.forEach((employer, index) => {
+          for (const key of ['contribution', 'eligibleSalary'] as const) {
+            const parsed = parseMoney(employer[key])
+            if ('error' in parsed)
+              nextErrors[`employerNpsEmployers.${index}.${key}`] = parsed.error
+          }
+        })
+      }
     }
     for (const key of amountKeys.slice(5, 9))
       requiredAmount(nextErrors, draft, key)
@@ -1166,7 +1254,7 @@ function validateDraftGroup(
         'Choose whether another income-tax return trigger applies.'
     if (!draft.unsupportedCertainty)
       nextErrors.unsupportedCertainty =
-        'Select any situations that apply, or choose None of these or Not sure.'
+        "Select any situations that apply, or choose None of these apply or I'm not sure."
   }
   if (group === 'gst') {
     if (!draft.gstKind)
@@ -1283,6 +1371,11 @@ function draftFeedback(draft: Draft, latestDate: string) {
     'income-ceiling': receipts,
     'salary-scope':
       draft.hasSalary === 'yes' ? ['salaryConfirmed'] : ['hasSalary'],
+    'employer-nps-scope':
+      draft.hasEmployerNps === 'yes'
+        ? ['employerNpsConfirmed']
+        : ['hasEmployerNps'],
+    'employer-nps-allocation': ['employerNpsConfirmed'],
     'additional-income-scope':
       draft.hasAdditionalIncome === 'yes'
         ? ['additionalIncomeConfirmed']

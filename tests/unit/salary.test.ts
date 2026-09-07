@@ -25,7 +25,7 @@ import {
 } from '../../src/workspace/index.ts'
 import { TestStorage } from '../helpers/storage'
 
-const today = '2026-09-06'
+const today = '2026-09-07'
 const now = new Date(`${today}T12:00:00+05:30`)
 const withSalary = (grossSalary: number) => ({
   ...exampleProfile,
@@ -40,6 +40,7 @@ const withSalary = (grossSalary: number) => ({
       kind: 'domestic' as const,
       confirmed: 'yes' as const,
       grossSalary,
+      employerNps: { kind: 'none' as const },
     },
     taxableBankInterest: 0,
     tds: 0,
@@ -190,8 +191,18 @@ test('rejects malformed salary amounts and branches', () => {
 test('stops uncertain or unconfirmed salary calculations', () => {
   for (const salary of [
     { kind: 'not-sure' },
-    { kind: 'domestic', confirmed: 'no', grossSalary: 1_000_000 },
-    { kind: 'domestic', confirmed: 'not-sure', grossSalary: 1_000_000 },
+    {
+      kind: 'domestic',
+      confirmed: 'no',
+      grossSalary: 1_000_000,
+      employerNps: { kind: 'none' },
+    },
+    {
+      kind: 'domestic',
+      confirmed: 'not-sure',
+      grossSalary: 1_000_000,
+      employerNps: { kind: 'none' },
+    },
   ] as const)
     assert.equal(
       evaluate(
@@ -331,7 +342,7 @@ test('migrates old workspaces in memory and preserves Completion records', () =>
   storage.setItem(WORKSPACE_KEY, raw)
   const restored = loadSavedWorkspace(storage, now)
   assert.ok(restored.kind === 'ready')
-  assert.equal(restored.workspace.schemaVersion, 5)
+  assert.equal(restored.workspace.schemaVersion, 6)
   assert.deepEqual(restored.workspace.active?.profile.otherIncome.salary, {
     kind: 'none',
   })

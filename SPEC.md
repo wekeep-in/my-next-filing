@@ -159,7 +159,7 @@ The Profile supports only:
 - actual Indian TCS; and
 - advance tax already paid for the Tax Year.
 
-House property, gifts, unsupported dividends or distributions, capital gains, crypto, gaming, lottery, agricultural income, unrelated foreign income, foreign tax, disputed credits, deductions other than the supported salary standard deduction, losses, special-rate income, and another business or profession are Unsupported.
+House property, gifts, unsupported dividends or distributions, capital gains, crypto, gaming, lottery, agricultural income, unrelated foreign income, foreign tax, disputed credits, deductions other than the supported salary standard deduction and employer NPS deduction, losses, special-rate income, and another business or profession are Unsupported.
 
 ### Ordinary domestic dividends and additional interest
 
@@ -175,15 +175,29 @@ Preserve workspace version 4 through a version-5 migration. Its supported Profil
 
 ### Domestic salary alongside freelancing
 
-Ask whether salary exists, with Yes, No, and Not sure. Yes reveals a scope confirmation and one annual salary amount. No stores an explicit no-salary branch; uncertainty stops calculation.
+Ask whether salary exists, with Yes, No, and Not sure. Yes reveals a scope confirmation, one annual salary amount and the employer NPS question below. No stores an explicit no-salary branch; uncertainty stops calculation.
 
 The user confirms that all employment is with employers in India for work performed in India, and that their records resolve the complete Tax Year salary under the new regime. The amount combines all employers, includes taxable allowances, bonuses and employer-valued benefits, and excludes only confirmed new-regime exemptions. It is before the standard deduction and TDS, not CTC, take-home pay, or the sum of employer figures after separate standard deductions.
 
-Foreign employment, pension, retirement or termination payouts, leave-encashment settlements, arrears, advance salary, share-based pay, unresolved fund tax adjustments, benefits or exemptions, tax relief, and deductions other than the standard deduction, including employer NPS and Agniveer deductions, remain Unsupported in this slice. These are product exclusions, not claims that the income or deduction is unlawful. Salary is separate from freelance receipts and employment salary is not included in GST aggregate turnover. Include current-year salary due even when not yet paid; do not subtract employee PF, professional tax or personal NPS contributions.
+Foreign employment, pension, retirement or termination payouts, leave-encashment settlements, arrears, advance salary, share-based pay, unresolved fund tax adjustments, benefits or exemptions, tax relief, and deductions other than the standard deduction and supported employer NPS, including Agniveer deductions, remain Unsupported. These are product exclusions, not claims that the income or deduction is unlawful. Salary is separate from freelance receipts and employment salary is not included in GST aggregate turnover. Include current-year salary due even when not yet paid; do not subtract employee PF, professional tax or personal NPS contributions.
 
-Deduct the lower of ₹75,000 and aggregate salary once per individual and Tax Year. Add the resulting taxable salary to presumptive income and taxable bank interest. Include actual Indian employer TDS in the existing combined TDS input, counted once. The combined income controls rebate, marginal relief, the ₹50 lakh ceiling, and annual-return income triggers. The presumptive advance-tax date remains 15 March 2027. Return-form selection remains unavailable.
+Deduct the lower of ₹75,000 and aggregate salary once per individual and Tax Year. Add the resulting taxable salary to presumptive income and supported other income. Include actual Indian employer TDS in the existing combined TDS input, counted once. Combined income after the employer NPS deduction controls rebate, marginal relief and the ₹50 lakh ceiling; annual-return income triggers use income before that deduction. The presumptive advance-tax date remains 15 March 2027. Return-form selection remains unavailable.
 
 The [salary research](.scratch/salary-plus-freelancing/research/domestic-salary.md) records the Tax Year 2026-27 authority and exclusions. Preserve existing workspace version-2 records through an explicit version-3 migration adding no salary where the old facts declared none. Recovery version 1 migrates to version 2 with salary unanswered, preserving other answers and requiring confirmation. Neither migration deletes data or grants new salary eligibility. Clear salary amount and confirmation when the salary branch is deselected.
+
+### Employer NPS alongside salary and freelancing
+
+Within the existing Salary section, ask whether employers contribute to the user's NPS Tier I account for this Tax Year. No stores an explicit absent branch. Not sure withholds the core estimate. Yes requires a scope confirmation and separate contribution and eligible-salary amounts for each contributing employer. Collect no employer names or account identifiers. Include each employer once, without repeating earlier employment carried into a later employer's statement.
+
+The existing gross salary amount must include the full employer NPS contributions once, before the standard deduction and NPS deduction. Never add the contribution to salary again. Eligible salary means that employer's basic pay plus DA where the terms of employment provide for it. Exclude other allowances, bonuses, benefits, the employer contribution itself and freelance income from this base. The sum of all entered contributions and eligible salary must fit within declared gross salary; reject unsafe sums, missing amounts and unknown fields.
+
+Require confirmed total employer contributions across recognised PF, NPS and approved superannuation funds, across every employer, no higher than ₹7,50,000 for the year. No taxable annual accretion from current or earlier excess contributions or unresolved fund adjustments is supported. Tier II, Vatsalya, UPS-specific treatment, withdrawals, transfers, pension payouts and other unsupported deductions remain outside this branch. Personal NPS contributions may exist but are not deducted.
+
+For a single contributing employer, deduct the lower of its contribution and 14% of its eligible salary. For multiple contributing employers, this slice requires each contribution within its own 14% limit. An over-cap multi-employer case needs separate review; do not infer cross-employer pooling. Sum the allowed contributions and cap the deduction at combined income before NPS, not merely taxable salary. Subtract before rounding total income. The resulting amount cannot be negative. Keep freelance income and GST turnover separate.
+
+Show the employer contribution already included in salary, combined income before NPS, the allowed employer NPS deduction and rounded taxable total income. Annual-return income tests use the rounded pre-NPS amount because Chapter VIII deductions are disregarded for that test. Preserve independent triggers even where taxable income or tax becomes nil. The [research and implementation plan](.scratch/employer-nps/map.md) record the authority and the multi-employer boundary.
+
+Migrate workspace version 5 to 6 in memory. A previously confirmed supported domestic salary excluded employer NPS, so add the explicit absent branch. Unconfirmed salary or legacy unsupported facts about salary, deductions or unknown treatment must remain uncertain or blocked. Preserve revision, consent, amounts and Completion records. Reject mixed schemas. Migrate Recovery version 4 to 5 with the new NPS answer blank and no rows; never infer a new questionnaire answer. Clear rows and NPS confirmation when NPS is deselected; clear the NPS branch when salary is deselected. Preserve actual historical schema fixtures and persist only through normal validated writes.
 
 ### GST branch
 
@@ -210,6 +224,8 @@ The groups are:
 7. Review.
 
 Every uncertainty that can stop or reduce Coverage offers "Not sure". The interface explains uncommon legal confirmations. It does not infer a favorable answer to save a click.
+
+Show the other-tax-situation exclusions as four stacked cards: Other income, Salary and investments, Overseas income and assets, and Business and tax requirements. Keep all cards visible. Only the checkboxes change selections; their text remains an accessible name without toggling on click. Place extra explanations in the shared info tooltip beside each label. Use one unselected-by-default pair of None of these apply and I'm not sure after all four cards. Either alternative clears the selected situations; selecting a situation clears the alternative. Preserve restored answers and show the legacy combined dividend/gift choice only while selected. Retain normal validation, immediate scope warnings and forward-navigation blocking.
 
 Keep salary, registration-history and LUT conditions visible as short checklists. Use the shared Learn more modal for definitions, record checks, salary examples, GST filing frequency, export routes and QRMP payment reviews. The filing-frequency introduction stays directly below its section heading, with a 16px gap; quarter fields follow it. Short export options must preserve the distinction between LUT without IGST and IGST payment on narrow screens.
 
@@ -260,7 +276,7 @@ For the Eligible business path, presumptive income is the greater of declared pr
 - 6 percent of qualifying banking or online receipts; and
 - 8 percent of all other receipts.
 
-Add supported taxable salary after its single capped standard deduction and taxable bank or deposit interest to presumptive income. Round total income to the nearest ₹10 before applying slab tax. Apply the Tax Year 2026-27 new-regime bands:
+Add supported taxable salary after its single capped standard deduction, taxable bank or deposit interest, and supported dividends, distributions and additional interest to presumptive income. Subtract the supported employer NPS deduction, limited to this combined income. Round total income to the nearest ₹10 before applying slab tax. Apply the Tax Year 2026-27 new-regime bands:
 
 | Rounded total-income band | Rate |
 | --- | ---: |
@@ -276,7 +292,7 @@ For ordinary slab-tax income no higher than ₹12 lakh, the rebate is the lower 
 
 Calculate Health and Education Cess at 4 percent after rebate or marginal relief. Subtract actual Indian TDS and TCS. The rounded non-negative result before advance tax paid is estimated advance-tax liability. Subtract advance tax already paid to produce the estimated remaining amount or refund, rounded to the nearest ₹10.
 
-The Application stops when rounded total income exceeds ₹50 lakh. It calculates no surcharge, deduction other than the supported salary standard deduction, loss, special-rate tax, foreign-tax relief, interest, fee, or penalty.
+The Application stops when rounded total income after the employer NPS deduction exceeds ₹50 lakh. It calculates no surcharge, deduction other than the supported salary standard deduction and employer NPS deduction, loss, special-rate tax, foreign-tax relief, interest, fee, or penalty.
 
 ## First-release Obligation catalog
 
@@ -343,7 +359,7 @@ Actions are `Save data` and `Cancel`. Store accepted notice version 2. The landi
 
 Keep the entire notice visible before consent. Escape cancels and returns focus to the save action. Saving errors and conflict recovery stay inside the dialog; no failure may be hidden behind it.
 
-The one stable key is `my-next-filing:workspace`. Its version-5 envelope contains only:
+The one stable key is `my-next-filing:workspace`. Its version-6 envelope contains only:
 
 - schema version and revision;
 - accepted notice version and local ISO decision timestamp;
@@ -577,7 +593,7 @@ An unknown first-export date or LUT eligibility produces a Review action. A know
 
 Generate stable period-specific identities for GSTR-1, GSTR-3B and QRMP payment review. Monthly and quarterly return identities differ. Completion may not precede the end of the applicable return/review period; this is a product recording constraint, not a claim that early deposits are prohibited. LUT completion may not precede the effective registration date. A changed cadence preserves unmatched dates as Needs review. QRMP completion controls and status say reviewed, not paid, because liability and ledger sufficiency are unknown. Keep the calendar in the existing next-action and agenda views.
 
-Calendar and LUT Rules expire independently on 30 September 2026 pending another review. Show normal statutory dates and explain that official extensions may change them. Do not fabricate operative dates. The [research](.scratch/gst-filing-calendar/map.md) records an incomplete current extension inventory; recheck it before public release. Stale calendar Rules withhold GST return dates only; stale LUT Rules withhold LUT guidance only. Persist workspace version 4 and Recovery version 3, with explicit migrations retaining existing data and leaving new calendar facts unanswered.
+Calendar and LUT Rules expire independently on 30 September 2026 pending another review. Show normal statutory dates and explain that official extensions may change them. Do not fabricate operative dates. The [research](.scratch/gst-filing-calendar/map.md) records an incomplete current extension inventory; recheck it before public release. Stale calendar Rules withhold GST return dates only; stale LUT Rules withhold LUT guidance only. The calendar migrations introduced workspace version 4 and Recovery version 3, retaining existing data and leaving new calendar facts unanswered. Continue those migrations to the current workspace and Recovery versions before normal writes.
 
 This slice calculates no GST payable, ledger balance, input-tax credit, refund, interest, fee, or penalty. It excludes return preparation and submission. GSTR-9 for 2026-27 remains excluded until period-specific forms and exemptions are officially available and reviewed.
 

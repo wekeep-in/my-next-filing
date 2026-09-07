@@ -142,7 +142,8 @@ export function LandingFaqs() {
             ordinarily resident in India, uses the new tax regime, and runs one
             solo service practice. It can also include supported domestic
             salary, with one standard deduction of up to ₹75,000 across all
-            employers. <SalaryCoverageHelp />
+            employers, and supported employer NPS contributions.{' '}
+            <SalaryCoverageHelp />
           </p>
           <p>
             It can also include ordinary Indian-company dividends, taxable
@@ -201,7 +202,10 @@ export function LandingFaqs() {
               interest, and supported dividends, distributions and additional
               interest.
             </li>
-            <li>Rounds total income to the nearest ₹10.</li>
+            <li>
+              Subtracts the supported employer NPS deduction, limited to
+              combined income, then rounds total income to the nearest ₹10.
+            </li>
             <li>
               Applies the {currentRules.taxPeriod} new-regime slabs, rebate or
               marginal relief, and 4% Health and Education Cess.

@@ -13,7 +13,7 @@ import {
 } from '../../src/workspace/index.ts'
 import type { SavedWorkspaceDraft } from '../../src/workspace/index.ts'
 
-const now = new Date('2026-09-06T12:00:00+05:30')
+const now = new Date('2026-09-07T12:00:00+05:30')
 
 const baseCandidate = {
   taxYear: 'Tax Year 2026-27',

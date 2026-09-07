@@ -85,11 +85,11 @@ export function SalaryCoverageHelp() {
         this version.
       </p>
       <p>
-        The only deduction this version calculates is the salary standard
-        deduction. It does not cover tax-relief claims or other deductions,
-        including employer contributions claimed under the National Pension
-        System, or NPS, and the Agniveer scheme. These are limits of this
-        version, not a statement that the deductions are disallowed by law.
+        This version calculates the salary standard deduction and supported
+        employer contributions to the National Pension System, or NPS. It does
+        not cover tax-relief claims, personal NPS deduction claims, Agniveer
+        deductions or other deductions. These are product limits, not a
+        statement that every excluded deduction is disallowed by law.
       </p>
       <p>
         If any condition does not fit, choose No. If you cannot confirm it,
@@ -114,7 +114,8 @@ export function SalaryHelp() {
         Include salary due for this year even if it has not reached your bank,
         taxable allowances, bonuses and employer-valued benefits. Subtract only
         exemptions confirmed under the new regime. Do not subtract employee PF,
-        professional tax or personal NPS contributions.
+        professional tax or personal NPS contributions. Include employer NPS
+        contributions once, before the employer NPS deduction.
       </p>
       <p>
         If an employer's figure already subtracts a standard deduction, add that
@@ -135,6 +136,59 @@ export function SalaryHelp() {
       </p>
       <ExternalLink href="https://www.incometaxindia.gov.in/w/section-19-199">
         Official salary deduction rules
+      </ExternalLink>
+    </HelpModal>
+  )
+}
+
+// Reviewed 2026-09-07: amended Act sections 16, 17, 122, 124, 202 and 263.
+export function EmployerNpsHelp() {
+  return (
+    <HelpModal
+      topic="employer NPS"
+      title="Which NPS amounts are covered?"
+      description="Employer NPS is money your employer contributes to your National Pension System Tier I account. Your own contributions are different, even when payroll deducts them from your pay."
+    >
+      <p>
+        Under the new regime, the employer deduction is up to 14% of basic pay
+        plus eligible dearness allowance, or DA. DA counts only where your
+        employment terms provide for it. Other allowances, bonuses, benefits,
+        CTC and freelance income do not increase this limit.
+      </p>
+      <p>
+        Use each employer's records for this tax year. Enter every contributing
+        employer once. A new employer's statement may include your previous
+        job's amounts; do not enter those amounts again. Keep the full employer
+        contribution in annual salary, even if only part can be deducted.
+      </p>
+      <p>
+        For one employer with ₹10,00,000 of basic pay and eligible DA, a
+        ₹1,50,000 contribution gives a maximum deduction of ₹1,40,000. If more
+        than one employer contributes, this version covers only cases where each
+        contribution is within its own 14% limit. It does not transfer unused
+        limits between employers.
+      </p>
+      <p>
+        The combined deduction cannot exceed your total income before the NPS
+        deduction. It is separate from the salary standard deduction. A lower
+        taxable income does not necessarily remove the requirement to file a
+        return; the income trigger is checked before this deduction.
+      </p>
+      <p>
+        Check total employer contributions across recognised PF, NPS and
+        approved superannuation funds, including all jobs. Amounts above
+        ₹7,50,000 and taxable growth linked to excess contributions can need
+        extra salary-tax calculations. This version does not cover those cases,
+        even where the excess arose in an earlier year.
+      </p>
+      <p>
+        Do not enter transfers, investment growth, withdrawals, pension payouts,
+        NPS Vatsalya, Tier II or Unified Pension Scheme amounts here. You can
+        have personal NPS contributions, but this estimate does not deduct them.
+        Choose Not sure if your records do not confirm the amounts or treatment.
+      </p>
+      <ExternalLink href="https://www.incometaxindia.gov.in/documents/d/guest/income_tax_act_2025_as_amended_by_fa_act_2026-pdf">
+        Official employer NPS and new-regime rules
       </ExternalLink>
     </HelpModal>
   )

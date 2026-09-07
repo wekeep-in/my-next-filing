@@ -100,7 +100,7 @@ test('includes additional income and preserves established filing and GST conclu
     WORKSPACE_KEY,
   )
   expect(workspace).toMatchObject({
-    schemaVersion: 5,
+    schemaVersion: 6,
     active: {
       profile: {
         otherIncome: { additionalIncome: { mutualFundDistributions: 20_000 } },
@@ -213,7 +213,7 @@ test('loads the published workspace and upgrades it on an ordinary save', async 
     WORKSPACE_KEY,
   )
   expect(saved).toMatchObject({
-    schemaVersion: 5,
+    schemaVersion: 6,
     active: {
       profile: { otherIncome: { additionalIncome: { kind: 'none' } } },
       completions: workspaceV4.active.completions,

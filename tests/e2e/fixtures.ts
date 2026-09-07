@@ -8,7 +8,7 @@ import { WORKSPACE_KEY, saveSavedWorkspace } from '../../src/workspace'
 import { TestStorage } from '../helpers/storage'
 
 export { expect, RECOVERY_KEY, WORKSPACE_KEY }
-export const now = new Date('2026-09-06T12:00:00+05:30')
+export const now = new Date('2026-09-07T12:00:00+05:30')
 
 export const test = base.extend({
   page: async ({ page }, run) => {
@@ -24,7 +24,7 @@ export async function seedPersonal(page: Page, withWorkspace = false) {
       incomePath: { ...exampleProfile.incomePath, grossReceipts: 2_000_000 },
     },
     { kind: 'personal' },
-    '2026-09-06',
+    '2026-09-07',
   )
   const recovery = recoveryFromSession(personal, TAX_YEAR)
   const saved = saveSavedWorkspace(

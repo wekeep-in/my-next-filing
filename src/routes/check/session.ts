@@ -121,6 +121,11 @@ export function clearInactiveDraft(draft: Draft): Draft {
   if (draft.hasSalary !== 'yes') {
     next.salaryConfirmed = ''
     next.amounts.grossSalary = ''
+    next.hasEmployerNps = ''
+  }
+  if (next.hasEmployerNps !== 'yes') {
+    next.employerNpsConfirmed = ''
+    next.employerNpsEmployers = []
   }
   if (draft.hasAdditionalIncome !== 'yes') {
     next.additionalIncomeConfirmed = ''

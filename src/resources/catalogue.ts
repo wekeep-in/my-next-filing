@@ -230,7 +230,7 @@ export const resourceDefinitions: readonly ResourceDefinition[] = [
     ],
     title: 'Income-tax Act: income, rebate and return requirements',
     description:
-      'The amended Act used for freelance income, salary, dividends, mutual-fund distributions, interest, rebate and enacted return-filing requirements.',
+      'The amended Act used for freelance income, salary, employer NPS, dividends, mutual-fund distributions, interest, rebate and enacted return-filing requirements.',
     documentType: 'Act',
     topics: ['income-tax'],
     tasks: [
@@ -241,6 +241,7 @@ export const resourceDefinitions: readonly ResourceDefinition[] = [
     ],
     aliases: [
       'salary standard deduction',
+      'employer NPS National Pension System basic pay DA 14% section 124',
       'dividends mutual fund IDCW distributions post office refund interest',
       'rebate marginal relief',
       'presumptive income',

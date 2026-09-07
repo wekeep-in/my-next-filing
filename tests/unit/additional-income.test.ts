@@ -23,8 +23,8 @@ import { TestStorage } from '../helpers/storage'
 import recoveryV3 from '../fixtures/recovery-v3.json' with { type: 'json' }
 import workspaceV4 from '../fixtures/workspace-v4.json' with { type: 'json' }
 
-const now = new Date('2026-09-06T12:00:00+05:30')
-const today = '2026-09-06'
+const now = new Date('2026-09-07T12:00:00+05:30')
+const today = '2026-09-07'
 const zero: AdditionalIncomeAmounts = {
   dividends: 0,
   mutualFundDistributions: 0,
@@ -216,7 +216,7 @@ test('migrates the published workspace without deleting amounts or completion da
   expect(loaded.kind).toBe('ready')
   if (loaded.kind !== 'ready' || !loaded.workspace.active)
     throw Error('Fixture did not migrate')
-  expect(loaded.workspace.schemaVersion).toBe(5)
+  expect(loaded.workspace.schemaVersion).toBe(6)
   expect(loaded.workspace.active.profile.otherIncome.additionalIncome).toEqual({
     kind: 'none',
   })
@@ -246,7 +246,7 @@ test('restores historical Recovery answers but requires the new income answer', 
   const recovery = parseRecoveryDraft(recoveryV3, TAX_YEAR)
   expect(recovery).not.toBeNull()
   if (!recovery) throw Error('Fixture did not migrate')
-  expect(recovery.schemaVersion).toBe(4)
+  expect(recovery.schemaVersion).toBe(5)
   expect(recovery.draft.hasAdditionalIncome).toBe('')
   expect(recovery.draft.amounts.grossReceipts).toBe(
     recoveryV3.draft.amounts.grossReceipts,
@@ -434,7 +434,7 @@ test('retains an exceeded GST threshold with date review and no invented deadlin
   expect(
     supported({
       ...profile,
-      gst: { ...profile.gst, thresholdLiabilityDate: '2026-09-07' },
+      gst: { ...profile.gst, thresholdLiabilityDate: '2026-09-08' },
     }).coverage.gst.kind,
   ).toBe('unavailable')
   expect(

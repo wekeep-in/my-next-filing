@@ -17,7 +17,7 @@ import { clearInactiveDraft } from '@/routes/check/session'
 
 export const RECOVERY_KEY = 'my-next-filing:recovery-draft'
 export type RecoveryDraftEnvelope = {
-  readonly schemaVersion: 4
+  readonly schemaVersion: 5
   readonly taxYear: TaxYear
   readonly origin: 'personal' | 'saved-edit'
   readonly baseWorkspaceRevision: number | null
@@ -78,6 +78,8 @@ const choices = {
   foreignCurrencyResolved: triState,
   hasSalary: triState,
   salaryConfirmed: triState,
+  hasEmployerNps: triState,
+  employerNpsConfirmed: triState,
   hasAdditionalIncome: triState,
   additionalIncomeConfirmed: triState,
   ageSixtyOrOlder: triState,
@@ -100,6 +102,7 @@ const choices = {
     K in Exclude<
       keyof Draft,
       | 'amounts'
+      | 'employerNpsEmployers'
       | 'unsupportedFacts'
       | 'thresholdLiabilityDate'
       | 'gstRegisteredFrom'
@@ -119,6 +122,29 @@ export function parseRecoveryDraft(
   taxYear: TaxYear,
 ): RecoveryDraftEnvelope | null {
   try {
+    if (isRecord(value) && value.schemaVersion === 4) {
+      const draft = value.draft
+      if (
+        !isRecord(draft) ||
+        ['hasEmployerNps', 'employerNpsConfirmed', 'employerNpsEmployers'].some(
+          (key) => Object.hasOwn(draft, key),
+        )
+      )
+        return null
+      return parseRecoveryDraft(
+        {
+          ...value,
+          schemaVersion: 5,
+          draft: {
+            ...draft,
+            hasEmployerNps: '',
+            employerNpsConfirmed: '',
+            employerNpsEmployers: [],
+          },
+        },
+        taxYear,
+      )
+    }
     if (isRecord(value) && value.schemaVersion === 3) {
       const draft = value.draft
       if (
@@ -200,7 +226,7 @@ export function parseRecoveryDraft(
         'baseWorkspaceRevision',
         'draft',
       ]) ||
-      value.schemaVersion !== 4 ||
+      value.schemaVersion !== 5 ||
       value.taxYear !== taxYear
     )
       return null
@@ -225,6 +251,19 @@ export function parseRecoveryDraft(
         return null
     }
     const amounts = draft.amounts
+    if (
+      !Array.isArray(draft.employerNpsEmployers) ||
+      !draft.employerNpsEmployers.every(
+        (employer: unknown) =>
+          isRecord(employer) &&
+          exactKeys(employer, ['contribution', 'eligibleSalary']) &&
+          ['contribution', 'eligibleSalary'].every(
+            (key) =>
+              typeof employer[key] === 'string' && employer[key].length <= 32,
+          ),
+      )
+    )
+      return null
     if (
       !isRecord(amounts) ||
       !exactKeys(amounts, amountKeys) ||
@@ -261,7 +300,7 @@ export function parseRecoveryDraft(
     if (JSON.stringify(clearInactiveDraft(parsed)) !== JSON.stringify(parsed))
       return null
     return {
-      schemaVersion: 4,
+      schemaVersion: 5,
       taxYear,
       origin: value.origin,
       baseWorkspaceRevision: value.baseWorkspaceRevision as number | null,
@@ -392,7 +431,7 @@ export function recoveryFromSession(
 ): RecoveryDraftEnvelope | null {
   if (!session || session.origin.kind === 'example') return null
   return {
-    schemaVersion: 4,
+    schemaVersion: 5,
     taxYear,
     origin: session.origin.kind,
     baseWorkspaceRevision:

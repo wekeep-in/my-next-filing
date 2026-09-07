@@ -7,7 +7,8 @@ import {
   additionalIncomeFields,
   creditTriggerMayApply,
 } from '@/routes/check/model'
-import { UnsupportedFactsField } from '@/routes/check/review'
+import { UnsupportedFactsField } from '@/routes/check/unsupported-facts-field'
+import { EmployerNpsFields } from '@/routes/check/employer-nps-fields'
 import {
   AdditionalIncomeHelp,
   InterestHelp,
@@ -84,8 +85,8 @@ export function OtherIncomeStep({
                         </li>
                         <li>
                           You claim no tax relief or deduction beyond the
-                          standard deduction, including employer NPS or Agniveer
-                          deductions.
+                          standard deduction and supported employer NPS
+                          deduction. Agniveer deductions are not covered.
                         </li>
                       </ul>
                       <SalaryCoverageHelp />
@@ -107,13 +108,20 @@ export function OtherIncomeStep({
                   help={
                     <>
                       Combine all employers and enter salary before TDS and the
-                      standard deduction, not CTC or take-home pay. We apply the
-                      standard deduction once, up to ₹75,000. <SalaryHelp />
+                      standard deduction, not CTC or take-home pay. Include
+                      employer NPS contributions before any NPS deduction. We
+                      apply the standard deduction once, up to ₹75,000.{' '}
+                      <SalaryHelp />
                     </>
                   }
                   value={draft.amounts.grossSalary}
                   error={errors.grossSalary}
                   onChange={(value) => setAmount('grossSalary', value)}
+                />
+                <EmployerNpsFields
+                  draft={draft}
+                  errors={errors}
+                  dispatch={dispatch}
                 />
               </div>
             )}

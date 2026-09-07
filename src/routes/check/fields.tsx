@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import { SelectControl } from '@/components/select-control'
 import { Badge } from '@/components/ui/badge'
 import { AmountInput } from '@/components/amount-input'
+import { FieldHelp } from '@/components/field-help'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { TAX_YEAR } from '@/rules'
 import type { DraftAmountKey } from '@/routes/check/model'
@@ -181,13 +182,17 @@ export function MoneyField({
   id,
   label,
   help,
+  tooltipLabel,
   value,
   error,
   onChange,
 }: {
-  readonly id: DraftAmountKey
-  readonly label: string
+  readonly id:
+    | DraftAmountKey
+    | `employerNpsEmployers.${number}.${'contribution' | 'eligibleSalary'}`
+  readonly label: ReactNode
   readonly help: ReactNode
+  readonly tooltipLabel?: string
   readonly value: string
   readonly error?: string
   readonly onChange: (value: string) => void
@@ -195,10 +200,21 @@ export function MoneyField({
   const warning = useContext(FieldWarnings)[id]
   return (
     <div className="field">
-      <label htmlFor={id}>{label}</label>
-      <p className="field-help" id={`${id}-help`}>
-        {help}
-      </p>
+      {tooltipLabel ? (
+        <div className="mb-3 flex min-h-7 items-center gap-1">
+          <label htmlFor={id}>{label}</label>
+          <FieldHelp id={id} label={tooltipLabel}>
+            {help}
+          </FieldHelp>
+        </div>
+      ) : (
+        <>
+          <label htmlFor={id}>{label}</label>
+          <p className="field-help" id={`${id}-help`}>
+            {help}
+          </p>
+        </>
+      )}
       <div className="flex items-center overflow-hidden rounded-control border border-input bg-card focus-within:border-ring focus-within:ring-[.2rem] focus-within:ring-ring/15">
         <span className="pl-[.9rem] text-muted-foreground" aria-hidden="true">
           ₹

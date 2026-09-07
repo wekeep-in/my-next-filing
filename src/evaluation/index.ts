@@ -32,25 +32,32 @@ export type Activity =
   | 'not-sure'
 
 const unsupportedFactLabels = {
-  salary: 'Salary this version cannot cover',
-  houseProperty: 'House-property income',
-  dividendsOrGifts: 'Dividend or gift income to review from an earlier version',
+  salary:
+    'Salary outside the supported conditions, such as foreign salary, pension, arrears, or employee shares',
+  houseProperty: 'Income from house property, such as rent',
+  dividendsOrGifts: 'Dividends or gifts selected in an earlier version',
   gifts: 'Gift income',
-  unsupportedDividends: 'Dividends or distributions this version cannot cover',
-  capitalGains: 'Capital gains',
+  unsupportedDividends:
+    'Dividends or distributions outside the supported conditions, such as foreign dividends or REIT payouts',
+  capitalGains:
+    'Capital gains, such as profits from selling shares or property',
   cryptoLotteryGaming: 'Crypto, lottery, or gaming income',
   agriculturalIncome: 'Agricultural income',
-  unrelatedForeignIncome: 'Unrelated foreign-source income',
-  foreignAssets: 'A foreign asset or financial interest',
-  foreignTaxOrRelief: 'Foreign tax or foreign-tax relief',
+  unrelatedForeignIncome:
+    'Foreign income other than the freelance receipts entered here',
+  foreignAssets: 'Assets or financial interests outside India',
+  foreignTaxOrRelief:
+    'Tax owed or paid abroad, or a claim for foreign-tax relief',
   deductionsLossesOrSpecialRate:
-    'A deduction, loss, or special-rate item this version does not cover',
-  disputedCredit: 'A disputed TDS or TCS credit',
-  anotherBusinessOrProfession: 'Another business or profession',
-  employeesOrDeductorDuties: 'Employees or deductor filing duties',
-  auditRequirement: 'An audit requirement under tax law or another law',
-  surchargeCase: 'A surcharge case',
-  goodsSales: 'Goods sales',
+    'Deductions other than the supported salary and employer NPS deductions, losses, or income taxed at special rates',
+  disputedCredit: 'A dispute about your TDS or TCS tax credit',
+  anotherBusinessOrProfession:
+    'A business or profession in addition to the freelance work entered here',
+  employeesOrDeductorDuties:
+    'Employees, or a requirement to deduct tax and file TDS returns',
+  auditRequirement: 'A required audit under tax law or another law',
+  surchargeCase: 'Income tax that requires surcharge',
+  goodsSales: 'Income from selling goods',
   agencyCommissionBrokerage: 'Agency, commission, or brokerage income',
   royaltyOrLicensing: 'Royalty or licensing income',
   otherUnsupportedFacts: 'Another income or tax situation not listed',
@@ -59,12 +66,24 @@ const unsupportedFactLabels = {
 
 export type UnsupportedFact = keyof typeof unsupportedFactLabels
 
+export type EmployerNps =
+  | { readonly kind: 'none' | 'not-sure' }
+  | {
+      readonly kind: 'contributions'
+      readonly confirmed: TriState
+      readonly employers: readonly {
+        readonly contribution: number
+        readonly eligibleSalary: number
+      }[]
+    }
+
 export type SalaryIncome =
   | { readonly kind: 'none' | 'not-sure' }
   | {
       readonly kind: 'domestic'
       readonly confirmed: TriState
       readonly grossSalary: number
+      readonly employerNps: EmployerNps
     }
 
 export type AdditionalIncomeAmounts = {
@@ -356,6 +375,10 @@ export type TaxEstimate = {
   readonly taxableBankInterest: number
   readonly additionalIncome: AdditionalIncomeAmounts | null
   readonly roundedTotalIncome: number
+  readonly incomeBeforeNpsDeduction: number
+  readonly employerNpsDeduction: number
+  readonly employerNpsContributions: number | null
+  readonly roundedIncomeBeforeNpsDeduction: number
   readonly slabTax: number
   readonly rebate: number
   readonly marginalRelief: number
@@ -1612,6 +1635,110 @@ function additionalIncomeTotal(income: AdditionalIncome) {
     : 0
 }
 
+function parseEmployerNps(
+  value: unknown,
+  errors: ProfileInputError[],
+): EmployerNps {
+  const path = 'otherIncome.salary.employerNps'
+  if (!isRecord(value)) {
+    addError(
+      errors,
+      'invalid',
+      path,
+      'other-income',
+      'Choose whether your employers contribute to NPS.',
+    )
+    return { kind: 'not-sure' }
+  }
+  if (value.kind !== 'contributions') {
+    checkObject(value, ['kind'], path, 'other-income', errors)
+    return {
+      kind: readText(
+        value,
+        'kind',
+        ['none', 'not-sure'],
+        path,
+        'other-income',
+        errors,
+      ),
+    }
+  }
+  checkObject(
+    value,
+    ['kind', 'confirmed', 'employers'],
+    path,
+    'other-income',
+    errors,
+  )
+  const employers: { contribution: number; eligibleSalary: number }[] = []
+  if (!Array.isArray(value.employers) || value.employers.length === 0)
+    addError(
+      errors,
+      'invalid',
+      `${path}.employers`,
+      'other-income',
+      'Add the NPS amounts for at least one employer.',
+    )
+  else
+    value.employers.forEach((employer: unknown, index: number) => {
+      const rowPath = `${path}.employers.${index}`
+      if (!isRecord(employer)) {
+        addError(
+          errors,
+          'invalid',
+          rowPath,
+          'other-income',
+          'Enter both amounts for this employer.',
+        )
+        return
+      }
+      checkObject(
+        employer,
+        ['contribution', 'eligibleSalary'],
+        rowPath,
+        'other-income',
+        errors,
+      )
+      employers.push({
+        contribution: readAmount(
+          employer,
+          'contribution',
+          rowPath,
+          'other-income',
+          errors,
+        ),
+        eligibleSalary: readAmount(
+          employer,
+          'eligibleSalary',
+          rowPath,
+          'other-income',
+          errors,
+        ),
+      })
+    })
+  if (
+    !Number.isSafeInteger(
+      employers.reduce(
+        (sum, employer) =>
+          sum + employer.contribution + employer.eligibleSalary,
+        0,
+      ),
+    )
+  )
+    addError(
+      errors,
+      'invalid',
+      `${path}.employers`,
+      'other-income',
+      'The combined employer amounts exceed the supported whole-rupee range.',
+    )
+  return {
+    kind: 'contributions',
+    confirmed: readTri(value, 'confirmed', path, 'other-income', errors),
+    employers,
+  }
+}
+
 function parseSalary(
   value: unknown,
   errors: ProfileInputError[],
@@ -1630,21 +1757,39 @@ function parseSalary(
   if (value.kind === 'domestic') {
     checkObject(
       value,
-      ['kind', 'confirmed', 'grossSalary'],
+      ['kind', 'confirmed', 'grossSalary', 'employerNps'],
       path,
       'other-income',
       errors,
     )
+    const employerNps = parseEmployerNps(value.employerNps, errors)
+    const grossSalary = readAmount(
+      value,
+      'grossSalary',
+      path,
+      'other-income',
+      errors,
+    )
+    if (
+      employerNps.kind === 'contributions' &&
+      employerNps.employers.reduce(
+        (sum, employer) =>
+          sum + employer.contribution + employer.eligibleSalary,
+        0,
+      ) > grossSalary
+    )
+      addError(
+        errors,
+        'invalid',
+        `${path}.grossSalary`,
+        'other-income',
+        'Annual salary must include all employer NPS contributions and the basic pay and eligible DA entered below. Check for amounts counted twice.',
+      )
     return {
       kind: 'domestic',
       confirmed: readTri(value, 'confirmed', path, 'other-income', errors),
-      grossSalary: readAmount(
-        value,
-        'grossSalary',
-        path,
-        'other-income',
-        errors,
-      ),
+      grossSalary,
+      employerNps,
     }
   }
   checkObject(value, ['kind'], path, 'other-income', errors)
@@ -1776,11 +1921,31 @@ function calculateTax(
         ) + percentage(path.otherReceipts, pathRules.businessOtherReceiptRate)
   const usedIncome = Math.max(minimumIncome, path.declaredProfit)
   const salary = calculateSalary(profile.otherIncome.salary, taxRules)
-  const roundedTotalIncome = roundMoney(
+  const incomeBeforeNpsDeduction =
     usedIncome +
-      (salary?.taxableSalary ?? 0) +
-      additionalIncomeTotal(profile.otherIncome.additionalIncome) +
-      profile.otherIncome.taxableBankInterest,
+    (salary?.taxableSalary ?? 0) +
+    additionalIncomeTotal(profile.otherIncome.additionalIncome) +
+    profile.otherIncome.taxableBankInterest
+  const nps =
+    profile.otherIncome.salary.kind === 'domestic'
+      ? profile.otherIncome.salary.employerNps
+      : null
+  const employerNpsDeduction = Math.min(
+    incomeBeforeNpsDeduction,
+    nps?.kind === 'contributions'
+      ? nps.employers.reduce(
+          (sum, employer) =>
+            sum +
+            Math.min(
+              employer.contribution,
+              percentage(employer.eligibleSalary, taxRules.employerNpsRate),
+            ),
+          0,
+        )
+      : 0,
+  )
+  const roundedTotalIncome = roundMoney(
+    incomeBeforeNpsDeduction - employerNpsDeduction,
     taxRules.roundingUnit,
   )
   const slabTax = calculateSlabTax(roundedTotalIncome, taxRules)
@@ -1826,6 +1991,19 @@ function calculateTax(
               profile.otherIncome.additionalIncome.incomeTaxRefundInterest,
           }
         : null,
+    incomeBeforeNpsDeduction,
+    employerNpsDeduction,
+    employerNpsContributions:
+      nps?.kind === 'contributions'
+        ? nps.employers.reduce(
+            (sum, employer) => sum + employer.contribution,
+            0,
+          )
+        : null,
+    roundedIncomeBeforeNpsDeduction: roundMoney(
+      incomeBeforeNpsDeduction,
+      taxRules.roundingUnit,
+    ),
     roundedTotalIncome,
     slabTax,
     rebate,
@@ -2279,8 +2457,12 @@ function annualReturnTriggers(
   rules: AnnualReturnRules,
 ) {
   const triggers: string[] = []
-  if (tax.roundedTotalIncome > rules.filingIncomeThreshold)
-    triggers.push('Rounded total income is above ₹4,00,000.')
+  if (tax.roundedIncomeBeforeNpsDeduction > rules.filingIncomeThreshold)
+    triggers.push(
+      tax.employerNpsDeduction > 0
+        ? 'Income before the employer NPS deduction, rounded to ₹10, is above ₹4,00,000.'
+        : 'Rounded total income is above ₹4,00,000.',
+    )
   if (
     profile.incomePath.kind === 'specified-profession' &&
     profile.incomePath.grossReceipts > rules.professionReceiptThreshold
@@ -2839,6 +3021,49 @@ function coreSupportFacts(
   const salary = current.otherIncome.salary
   const additionalIncome = current.otherIncome.additionalIncome
   if (
+    salary.kind === 'domestic' &&
+    salary.employerNps.kind === 'contributions' &&
+    salary.employerNps.employers.length > 1 &&
+    salary.employerNps.employers.some(
+      (employer) =>
+        employer.contribution >
+        percentage(
+          employer.eligibleSalary,
+          rules.groups.commonIncomeTax.values.employerNpsRate,
+        ),
+    )
+  )
+    coreFacts.push(
+      unsupported(
+        'employer-nps-allocation',
+        'income-tax',
+        'other-income',
+        'Employer NPS limits across jobs',
+        'An NPS contribution exceeds 14% of the basic pay and eligible DA entered for that employer. This version does not resolve unused limits across multiple employers. Check the amounts or get a separate review.',
+        sourceIds,
+      ),
+    )
+  if (
+    salary.kind === 'domestic' &&
+    (salary.employerNps.kind === 'not-sure' ||
+      (salary.employerNps.kind === 'contributions' &&
+        (salary.employerNps.confirmed !== 'yes' ||
+          salary.employerNps.employers.reduce(
+            (sum, employer) => sum + employer.contribution,
+            0,
+          ) > rules.groups.commonIncomeTax.values.employerRetirementFundLimit)))
+  )
+    coreFacts.push(
+      unsupported(
+        'employer-nps-scope',
+        'income-tax',
+        'other-income',
+        'Employer NPS contributions',
+        'Confirm the employer NPS amounts and retirement-fund conditions. Excess contributions, taxable fund growth or uncertain treatment need a separate review.',
+        sourceIds,
+      ),
+    )
+  if (
     additionalIncome.kind === 'not-sure' ||
     (additionalIncome.kind === 'domestic' &&
       additionalIncome.confirmed !== 'yes')
@@ -2880,28 +3105,13 @@ function coreSupportFacts(
         sourceIds,
       ),
     )
-  const minimumIncome =
-    current.incomePath.kind === 'specified-profession'
-      ? percentage(
-          current.incomePath.grossReceipts,
-          rules.groups.incomePaths.values.professionMinimumProfitRate,
-        )
-      : percentage(
-          current.incomePath.qualifyingReceipts,
-          rules.groups.incomePaths.values.businessQualifyingReceiptRate,
-        ) +
-        percentage(
-          current.incomePath.otherReceipts,
-          rules.groups.incomePaths.values.businessOtherReceiptRate,
-        )
-  const roundedIncome = roundMoney(
-    Math.max(minimumIncome, current.incomePath.declaredProfit) +
-      (calculateSalary(salary, rules.groups.commonIncomeTax.values)
-        ?.taxableSalary ?? 0) +
-      additionalIncomeTotal(additionalIncome) +
-      current.otherIncome.taxableBankInterest,
-    rules.groups.commonIncomeTax.values.roundingUnit,
+  const estimate = calculateTax(
+    current,
+    rules.groups.incomePaths.values,
+    rules.groups.commonIncomeTax.values,
   )
+  const minimumIncome = estimate.presumptive.minimumIncome
+  const roundedIncome = estimate.roundedTotalIncome
   if (roundedIncome > rules.groups.commonIncomeTax.values.incomeCeiling)
     coreFacts.push(
       unsupported(
@@ -3269,7 +3479,7 @@ export function evaluate(
     assumptions: [
       'This estimate is for one adult who is resident and ordinarily resident in India and runs one individual practice.',
       'The amounts you entered are complete, non-negative whole-rupee values from your tax records.',
-      'This is a best-effort estimate. It does not calculate deductions other than the salary standard deduction, surcharge, losses, special-rate tax, foreign-tax relief, interest, fees, or penalties.',
+      'This is a best-effort estimate. It does not calculate deductions other than the salary standard deduction and supported employer NPS contributions, surcharge, losses, special-rate tax, foreign-tax relief, interest, fees, or penalties.',
     ],
     explanations: [
       current.incomePath.kind === 'specified-profession'
@@ -3278,6 +3488,11 @@ export function evaluate(
       ...(tax.salary
         ? [
             'Salary uses your combined annual amount from all employers, less one standard deduction capped at salary. Employer TDS is included only through the Indian TDS credit you entered.',
+          ]
+        : []),
+      ...(tax.employerNpsContributions !== null
+        ? [
+            'Employer NPS is already included in your salary amount. Its separate deduction uses each contributing employer’s basic pay and eligible DA and cannot exceed combined income. The annual-return income trigger is checked before this deduction.',
           ]
         : []),
       ...(tax.additionalIncome

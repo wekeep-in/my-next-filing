@@ -88,6 +88,8 @@ export type IncomePathRules = {
 
 export type CommonIncomeTaxRules = {
   readonly salaryStandardDeduction: number
+  readonly employerNpsRate: number
+  readonly employerRetirementFundLimit: number
   readonly incomeCeiling: number
   readonly slabs: readonly {
     readonly upper: number | null
@@ -301,11 +303,17 @@ export const sourceRegistry: readonly Source[] = [
     kind: 'statutory',
     publisher: 'Income Tax Department',
     title:
-      'Income-tax Act, 2025 as amended: salary, deductions and combined income, sections 15–19, 202, 263, 405 and 408',
+      'Income-tax Act, 2025 as amended: salary, employer NPS and combined income, sections 15–19, 122, 124, 202, 263, 405 and 408',
     url: 'https://www.incometaxindia.gov.in/documents/d/guest/income_tax_act_2025_as_amended_by_fa_act_2026-pdf',
-    reviewDate: '2026-09-06',
+    publicationDate: '2026-03-30',
+    reviewDate: '2026-09-07',
     taxPeriod: TAX_YEAR,
-    coveredRuleIds: ['domestic-salary', 'salary-standard-deduction'],
+    coveredRuleIds: [
+      'domestic-salary',
+      'salary-standard-deduction',
+      'employer-nps-deduction',
+      'employer-retirement-fund-limit',
+    ],
   },
   {
     id: 'income-tax-act-2025-2026',
@@ -603,27 +611,27 @@ const group = <T>(
   id,
   effectiveStart,
   effectiveEnd,
-  verifiedOn: [
-    'common-income-tax',
-    'annual-return',
-    'gst-registration',
-  ].includes(id)
-    ? '2026-09-06'
-    : reviewedOn,
+  verifiedOn:
+    id === 'common-income-tax'
+      ? '2026-09-07'
+      : ['annual-return', 'gst-registration'].includes(id)
+        ? '2026-09-06'
+        : reviewedOn,
   expiresOn,
   values,
   provenance,
 })
 
 export const currentRules: RuleDataset = {
-  id: 'my-next-filing-2026-27-v6',
+  id: 'my-next-filing-2026-27-v7',
   schemaVersion: 1,
   taxPeriod: TAX_YEAR,
   effectiveStart,
   effectiveEnd,
-  verifiedOn: '2026-09-06',
+  verifiedOn: '2026-09-07',
   expiresOn,
   changeNotes: [
+    'Employer NPS reviewed on 7 September 2026: 14% new-regime deduction, separate employer inputs, restricted retirement-fund scope and annual-return income before Chapter VIII deductions.',
     'Ordinary domestic dividends, taxable Indian mutual-fund distributions, post-office and income-tax refund interest added after review on 6 September 2026. Preserve established annual-return and GST-threshold conclusions despite independent uncertainty; annual triggers and dates now cite enacted authority.',
     'GST return calendars and independent LUT guidance reviewed on 6 September 2026, expiring on 30 September pending another extension review. Dates are normal statutory dates; the current extension inventory is incomplete.',
     'Domestic salary and one capped standard deduction added after review on 6 September 2026; the presumptive advance-tax schedule and business-income return date continue to apply.',
@@ -764,6 +772,8 @@ export const currentRules: RuleDataset = {
       'common-income-tax',
       {
         salaryStandardDeduction: 75_000,
+        employerNpsRate: 0.14,
+        employerRetirementFundLimit: 750_000,
         incomeCeiling: 5_000_000,
         slabs: [
           { upper: 400_000, rate: 0 },
@@ -785,6 +795,16 @@ export const currentRules: RuleDataset = {
           ruleId: 'domestic-salary',
           sourceId: 'domestic-salary-2026',
           role: 'applicability',
+        },
+        {
+          ruleId: 'employer-nps-deduction',
+          sourceId: 'domestic-salary-2026',
+          role: 'rate',
+        },
+        {
+          ruleId: 'employer-retirement-fund-limit',
+          sourceId: 'domestic-salary-2026',
+          role: 'threshold',
         },
         {
           ruleId: 'ordinary-domestic-income',
@@ -1291,6 +1311,11 @@ function validateValues(
       errors.push('Rules contain income-path values outside the reviewed set.')
   }
   if (id === 'common-income-tax') {
+    if (
+      values.employerNpsRate !== 0.14 ||
+      values.employerRetirementFundLimit !== 750_000
+    )
+      errors.push('Rules contain employer NPS values outside the reviewed set.')
     if (values.salaryStandardDeduction !== 75_000)
       errors.push(
         'Rules contain a salary standard deduction outside the reviewed set.',
@@ -1515,6 +1540,8 @@ export function validateRules(
       ],
       commonIncomeTax: [
         'salaryStandardDeduction',
+        'employerNpsRate',
+        'employerRetirementFundLimit',
         'incomeCeiling',
         'slabs',
         'rebateLimit',
@@ -1570,6 +1597,8 @@ export function validateRules(
       ],
       commonIncomeTax: [
         'domestic-salary',
+        'employer-nps-deduction',
+        'employer-retirement-fund-limit',
         'ordinary-domestic-income',
         'dividend-expenses-disallowed',
         'salary-standard-deduction',

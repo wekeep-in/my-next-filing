@@ -60,7 +60,7 @@ import {
   questionnaireGroups,
 } from '../../src/routes/check/model.ts'
 
-const today = '2026-09-06'
+const today = '2026-09-07'
 
 const exampleDraft = draftFromProfile(exampleProfile)
 
@@ -904,7 +904,7 @@ test('deletes legacy workspaces and handles conflicts and uncertain removal', ()
   }
   const savedV2 = saveSavedWorkspace(workspaceStore, null, workspaceInput)
   assert.ok(savedV2.kind === 'saved')
-  assert.equal(savedV2.workspace.schemaVersion, 5)
+  assert.equal(savedV2.workspace.schemaVersion, 6)
   assert.equal(savedV2.workspace.noticeVersion, 2)
   assert.equal(deleteLegacyWorkspace(workspaceStore).kind, 'conflict')
   assert.equal(loadSavedWorkspace(workspaceStore).kind, 'ready')
@@ -932,7 +932,7 @@ test('derives Plan sources payment edits and Completion records', () => {
   })
   const savedV2 = saveSavedWorkspace(new TestStorage(), null, workspaceInput)
   assert.ok(savedV2.kind === 'saved')
-  const planDate = new Date('2026-09-06T12:00:00+05:30')
+  const planDate = new Date('2026-09-07T12:00:00+05:30')
   const readyWorkspace = {
     kind: 'ready' as const,
     workspace: savedV2.workspace,
@@ -1180,7 +1180,7 @@ test('derives Plan sources payment edits and Completion records', () => {
 })
 
 test('retries partial and unverified deletion without clearing unrelated data', () => {
-  const planDate = new Date('2026-09-06T12:00:00+05:30')
+  const planDate = new Date('2026-09-07T12:00:00+05:30')
   const savedV2 = saveSavedWorkspace(new TestStorage(), null, workspaceInput)
   assert.ok(savedV2.kind === 'saved')
   const recovery = recoveryFromSession(personal, TAX_YEAR)
