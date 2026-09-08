@@ -46,6 +46,17 @@ export type ResourceDefinition = {
 // URLs, statutory periods, publishers and source-review dates stay in the Rule registry.
 export const resourceDefinitions: readonly ResourceDefinition[] = [
   {
+    sourceIds: ['gst-residential-rent-proprietor'],
+    title: 'Residential rent for a registered proprietor',
+    description:
+      'The exemption for a registered sole proprietor renting in a personal capacity for their own residence, on their own behalf rather than for their business.',
+    documentType: 'Notification',
+    topics: ['gst'],
+    tasks: ['gst-registration', 'gst-returns'],
+    aliases: ['rent rental GST proprietor personal capacity own residence'],
+    identifiers: ['Notification 15/2022'],
+  },
+  {
     sourceIds: ['gst-residential-rent-exemption'],
     title: 'Residential-rent GST exemption',
     description:
@@ -60,7 +71,7 @@ export const resourceDefinitions: readonly ResourceDefinition[] = [
     sourceIds: ['gst-residential-rent-tenants'],
     title: 'Residential rent and GST-registered tenants',
     description:
-      'The 2022 amendment excludes registered tenants from the original residential-rent exemption. This version establishes coverage only for unregistered tenants; other arrangements need separate review.',
+      'This amendment excludes registered tenants from the original residential-rent exemption. Read it with Notification 15/2022, which adds the personal-residence exception for a registered proprietor.',
     documentType: 'Notification',
     topics: ['gst'],
     tasks: ['gst-registration', 'gst-returns'],
@@ -334,11 +345,15 @@ export const resourceDefinitions: readonly ResourceDefinition[] = [
     sourceIds: ['finance-act-2026'],
     title: 'Finance Act 2026',
     description:
-      'The enacted Finance Act referenced for income-tax changes and cess.',
+      'The enacted Finance Act covering income-tax rates, surcharge, marginal relief and cess. The first ordinary-income surcharge band above ₹50 lakh and through ₹1 crore is supported here.',
     documentType: 'Act',
     topics: ['income-tax'],
     tasks: ['rates-deductions'],
-    aliases: ['health education cess', 'income tax amendments'],
+    aliases: [
+      'health education cess',
+      'income tax amendments',
+      'surcharge marginal relief fifty lakh one crore',
+    ],
     identifiers: ['Finance Act 2026'],
   },
   {

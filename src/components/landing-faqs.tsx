@@ -168,11 +168,17 @@ export function LandingFaqs() {
             account classification still needs review; foreign income and
             foreign-tax relief remain outside this version.
           </p>
+          <p>
+            Ordinary taxable income up to ₹1 crore is supported, including
+            first-band surcharge and marginal relief above ₹50 lakh. Positive
+            equity gains remaining after loss adjustment still limit this
+            version to ₹50 lakh of total taxable income.
+          </p>
           <p>It stops without showing a personal estimate if you have:</p>
           <ul>
             <li>
               A company, non-resident status, a regular-books case, an audit, a
-              surcharge, or another tax regime.
+              surcharge outside the supported band, or another tax regime.
             </li>
             <li>
               Salary or house-property income outside the supported conditions,

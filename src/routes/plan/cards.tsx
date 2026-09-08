@@ -207,6 +207,24 @@ export function TaxSummary({
             <SourceReferences ids={annualReturn.sourceIds} />
           </section>
         )}
+      {tax.surcharge && (
+        <section
+          className="mt-6 border-t border-border pt-4"
+          aria-labelledby="surcharge-title"
+        >
+          <h3 id="surcharge-title">Surcharge included</h3>
+          <p>
+            This estimate includes the first surcharge band for ordinary taxable
+            income above ₹50 lakh and up to ₹1 crore, after any surcharge
+            marginal relief.
+          </p>
+          <p>
+            Confirm the applicable return form and higher-income disclosures
+            using current Tax Year instructions. This plan does not select a
+            return form.
+          </p>
+        </section>
+      )}
       <details className="calculation-details">
         <summary>How this estimate was calculated</summary>
         <dl className="calculation-list">
@@ -429,6 +447,32 @@ export function TaxSummary({
             <dt>Marginal relief</dt>
             <dd>−{formatMoney(tax.marginalRelief)}</dd>
           </div>
+          {tax.surcharge && (
+            <>
+              <div>
+                <dt>Income tax before surcharge</dt>
+                <dd>{formatMoney(tax.taxAfterRelief)}</dd>
+              </div>
+              <div>
+                <dt>Surcharge before marginal relief</dt>
+                <dd>{formatMoney(tax.surcharge.beforeRelief)}</dd>
+              </div>
+              <div>
+                <dt>Surcharge marginal relief</dt>
+                <dd className="whitespace-nowrap">
+                  −{formatMoney(tax.surcharge.marginalRelief)}
+                </dd>
+              </div>
+              <div>
+                <dt>Net surcharge</dt>
+                <dd>{formatMoney(tax.surcharge.amount)}</dd>
+              </div>
+              <div>
+                <dt>Income tax including surcharge</dt>
+                <dd>{formatMoney(tax.surcharge.taxIncludingSurcharge)}</dd>
+              </div>
+            </>
+          )}
           <div>
             <dt>Health and Education Cess</dt>
             <dd>{formatMoney(tax.cess)}</dd>

@@ -344,7 +344,7 @@ test('exposes profit and receipts errors at the right time', () => {
       {
         draft: {
           ...exampleDraft,
-          amounts: { ...exampleDraft.amounts, taxableBankInterest: '6000000' },
+          amounts: { ...exampleDraft.amounts, taxableBankInterest: '11000000' },
         },
       },
       'other-income',

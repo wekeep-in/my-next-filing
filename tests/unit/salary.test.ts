@@ -96,11 +96,11 @@ test('enforces return and supported-income boundaries', () => {
     assert.equal(result.coverage.annualReturn.value.required, required)
   }
   assert.equal(
-    evaluate(withSalary(4_875_000), now, currentRules).kind,
+    evaluate(withSalary(9_875_000), now, currentRules).kind,
     'supported',
   )
   assert.equal(
-    evaluate(withSalary(4_875_010), now, currentRules).kind,
+    evaluate(withSalary(9_875_010), now, currentRules).kind,
     'unsupported',
   )
 })
@@ -261,7 +261,7 @@ test('clears salary answers and migrates the original Recovery schema', () => {
     { ...draft, hasSalary: 'not-sure' as const },
     { ...draft, salaryConfirmed: 'no' as const },
     { ...draft, amounts: { ...draft.amounts, grossSalary: '' } },
-    draftFromProfile(withSalary(4_875_010)),
+    draftFromProfile(withSalary(9_875_010)),
   ])
     assert.equal(
       assessQuestionnaire({ draft: changed }, 'other-income', today).progression

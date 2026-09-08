@@ -245,7 +245,20 @@ test('rental income can establish filing and cross the rebate and high-income bo
   }
   expect(supported(high).tax.roundedTotalIncome).toBe(5_000_000)
   const stopped = evaluate(
-    { ...high, incomePath: { ...high.incomePath, declaredProfit: 4_904_010 } },
+    {
+      ...high,
+      otherIncome: {
+        ...high.otherIncome,
+        additionalIncome: {
+          kind: 'domestic',
+          confirmed: 'yes',
+          dividends: 5_000_010,
+          mutualFundDistributions: 0,
+          postOfficeInterest: 0,
+          incomeTaxRefundInterest: 0,
+        },
+      },
+    },
     now,
     currentRules,
   )

@@ -52,6 +52,10 @@ const explanations: Partial<
     title: 'Dividends or gifts selected in an earlier version',
     help: 'Review the dividend fields above. Select any gift income separately before clearing this older combined answer.',
   },
+  surchargeCase: {
+    title: 'Surcharge needing a separate review',
+    help: 'Ordinary taxable income above ₹50 lakh and up to ₹1 crore is now covered automatically. Higher income or positive equity gains with total income above ₹50 lakh need separate review. Review a restored answer before clearing it.',
+  },
   foreignAssets: {
     title: 'Foreign assets needing a separate review',
     help: 'Use the foreign-assets questions above for supported holdings and signing authority. Other arrangements or unresolved income effects remain outside scope. Review a restored answer before clearing it.',

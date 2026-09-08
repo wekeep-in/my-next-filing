@@ -18,7 +18,7 @@ test('searches a fresh public catalogue without changing storage URL title or ou
       remote.push(request.url())
   })
   await page.goto('/resources')
-  await expect(page.locator('[aria-label="Resources"] > li')).toHaveCount(31)
+  await expect(page.locator('[aria-label="Resources"] > li')).toHaveCount(32)
   const help = page.getByRole('button', { name: 'Search resources help' })
   await help.hover()
   await expect(page.getByRole('tooltip')).toHaveText(
@@ -52,7 +52,7 @@ test('searches a fresh public catalogue without changing storage URL title or ou
   expect(await stored(page)).toEqual(before)
   expect(remote).toEqual([])
   await search.fill('')
-  await expect(page.locator('[aria-label="Resources"] > li')).toHaveCount(31)
+  await expect(page.locator('[aria-label="Resources"] > li')).toHaveCount(32)
 })
 
 test('keeps a personal plan and browse state through Back Forward and reload', async ({

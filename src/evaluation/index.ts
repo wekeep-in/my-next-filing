@@ -57,7 +57,7 @@ const unsupportedFactLabels = {
   employeesOrDeductorDuties:
     'Employees, or a requirement to deduct tax and file TDS returns',
   auditRequirement: 'A required audit under tax law or another law',
-  surchargeCase: 'Income tax that requires surcharge',
+  surchargeCase: 'Surcharge outside the supported ordinary-income band',
   goodsSales: 'Income from selling goods',
   agencyCommissionBrokerage: 'Agency, commission, or brokerage income',
   royaltyOrLicensing: 'Royalty or licensing income',
@@ -442,6 +442,13 @@ export type TaxEstimate = {
   readonly slabTax: number
   readonly rebate: number
   readonly marginalRelief: number
+  readonly surcharge: {
+    readonly beforeRelief: number
+    readonly marginalRelief: number
+    readonly amount: number
+    readonly taxAtThreshold: number
+    readonly taxIncludingSurcharge: number
+  } | null
   readonly taxAfterRelief: number
   readonly cess: number
   readonly grossTax: number
@@ -2364,8 +2371,41 @@ function calculateTax(
         )
       : 0
   const taxAfterRelief = taxBeforeRelief - rebate - marginalRelief
-  const cess = percentage(taxAfterRelief, taxRules.cessRate)
-  const grossTax = taxAfterRelief + cess
+  let surcharge: TaxEstimate['surcharge'] = null
+  // ponytail: mixed-rate surcharge comparison is not inferred; positive net equity gains retain the lower scope ceiling.
+  if (
+    roundedTotalIncome > taxRules.surchargeThreshold &&
+    roundedTotalIncome <= taxRules.incomeCeiling &&
+    netShortTermGains === 0 &&
+    netLongTermGains === 0
+  ) {
+    const beforeRelief = percentage(taxAfterRelief, taxRules.surchargeRate)
+    const taxAtThreshold = calculateSlabTax(
+      taxRules.surchargeThreshold,
+      taxRules,
+    )
+    const relief = Math.min(
+      beforeRelief,
+      Math.max(
+        0,
+        taxAfterRelief +
+          beforeRelief -
+          taxAtThreshold -
+          (roundedTotalIncome - taxRules.surchargeThreshold),
+      ),
+    )
+    const amount = beforeRelief - relief
+    surcharge = {
+      beforeRelief,
+      marginalRelief: relief,
+      amount,
+      taxAtThreshold,
+      taxIncludingSurcharge: taxAfterRelief + amount,
+    }
+  }
+  const taxIncludingSurcharge = taxAfterRelief + (surcharge?.amount ?? 0)
+  const cess = percentage(taxIncludingSurcharge, taxRules.cessRate)
+  const grossTax = taxIncludingSurcharge + cess
   const credits = profile.otherIncome.tds + profile.otherIncome.tcs
   const beforeAdvancePaid = grossTax - credits
   const finalBalance = beforeAdvancePaid - profile.otherIncome.advanceTaxPaid
@@ -2448,6 +2488,7 @@ function calculateTax(
     rebate,
     marginalRelief,
     taxAfterRelief,
+    surcharge,
     cess,
     grossTax,
     tds: profile.otherIncome.tds,
@@ -3693,7 +3734,13 @@ function coreSupportFacts(
     )
   const minimumIncome = estimate.presumptive.minimumIncome
   const roundedIncome = estimate.roundedTotalIncome
-  if (roundedIncome > rules.groups.commonIncomeTax.values.incomeCeiling)
+  const hasNetEquityGains =
+    (estimate.equityGains?.netShortTermGains ?? 0) > 0 ||
+    (estimate.equityGains?.netLongTermGains ?? 0) > 0
+  const ceiling = hasNetEquityGains
+    ? rules.groups.commonIncomeTax.values.surchargeThreshold
+    : rules.groups.commonIncomeTax.values.incomeCeiling
+  if (roundedIncome > ceiling)
     coreFacts.push(
       unsupported(
         'income-ceiling',
@@ -3701,11 +3748,15 @@ function coreSupportFacts(
         roundMoney(
           Math.max(minimumIncome, current.incomePath.declaredProfit),
           rules.groups.commonIncomeTax.values.roundingUnit,
-        ) > rules.groups.commonIncomeTax.values.incomeCeiling
+        ) > ceiling
           ? 'receipts'
           : 'other-income',
-        'Total income above ₹50 lakh',
-        'This version stops before surcharge and broader high-income rules.',
+        hasNetEquityGains
+          ? 'Equity gains with total income above ₹50 lakh'
+          : 'Total income above ₹1 crore',
+        hasNetEquityGains
+          ? 'Positive equity gains remain after loss adjustment and total income exceeds ₹50 lakh. This version needs a separate review of mixed-rate surcharge and marginal relief.'
+          : 'This version supports ordinary taxable income up to ₹1 crore. Higher surcharge bands need separate review.',
         sourceIds,
       ),
     )
@@ -4072,7 +4123,7 @@ export function evaluate(
     assumptions: [
       'This estimate is for one adult who is resident and ordinarily resident in India and runs one individual practice.',
       'The amounts you entered are complete, non-negative whole-rupee values from your tax records.',
-      'This is a best-effort estimate. It does not calculate deductions other than the supported salary, employer NPS and rental deductions, surcharge, losses other than supported current-year domestic equity losses, special-rate tax other than supported domestic equity gains, foreign-tax relief, interest, fees, or penalties.',
+      'This is a best-effort estimate. It does not calculate deductions other than the supported salary, employer NPS and rental deductions, surcharge beyond the supported first ordinary-income band, losses other than supported current-year domestic equity losses, special-rate tax other than supported domestic equity gains, foreign-tax relief, interest, fees, or penalties.',
     ],
     explanations: [
       current.incomePath.kind === 'specified-profession'
@@ -4086,6 +4137,11 @@ export function evaluate(
       ...(tax.employerNpsContributions !== null
         ? [
             'Employer NPS is already included in your salary amount. Its separate deduction uses each contributing employer’s basic pay and eligible DA and cannot exceed ordinary income excluding equity gains. The annual-return income trigger is checked before this deduction.',
+          ]
+        : []),
+      ...(tax.surcharge
+        ? [
+            'Ordinary taxable income above ₹50 lakh and up to ₹1 crore includes 10% surcharge, reduced by any surcharge marginal relief. The comparison uses tax on ₹50 lakh plus the excess income. Cess applies after this relief, before actual credits and payments.',
           ]
         : []),
       ...(tax.rentalIncome

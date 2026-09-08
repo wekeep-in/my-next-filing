@@ -50,14 +50,19 @@ export function RentalIncomeHelp() {
       </p>
       <p>
         The GST confirmation covers only a dwelling and rental supply in the
-        same state or Union territory as your practice, with every tenant
-        unregistered for GST throughout the letting. Other arrangements,
-        including a registered tenant renting in a personal capacity, need a
-        separate GST review in this version. Choosing No or Not sure here
-        preserves your income-tax estimate.
+        same state or Union territory as your practice. Throughout the letting,
+        every tenant must be unregistered for GST, or a registered sole
+        proprietor renting personally for their own residence and on their own
+        behalf, rather than for their business. A company lease or a rental on
+        behalf of the proprietorship does not meet these conditions. Choose Not
+        sure if the tenant's capacity or account is unclear; your income-tax
+        estimate remains available.
       </p>
       <ExternalLink href="https://www.incometaxindia.gov.in/documents/d/guest/income_tax_act_2025_as_amended_by_fa_act_2026-pdf">
         Official house-property rules
+      </ExternalLink>
+      <ExternalLink href="https://cbic-gst.gov.in/pdf/central-tax-rate/15_2022-ctr-eng.pdf">
+        GST exemption for a proprietor's own residence
       </ExternalLink>
     </HelpModal>
   )
@@ -161,8 +166,11 @@ export function RentalIncomeFields({
                       registration entered here.
                     </li>
                     <li>
-                      The dwelling is used only as a residence, and every tenant
-                      is unregistered for GST throughout the letting.
+                      The dwelling is used only as a residence. Throughout the
+                      letting, every tenant is either unregistered for GST or a
+                      registered sole proprietor renting in their personal
+                      capacity for their own residence, on their own behalf
+                      rather than for their proprietorship.
                     </li>
                   </ul>
                   <p className="mt-3">

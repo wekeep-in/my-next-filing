@@ -95,6 +95,8 @@ export type CommonIncomeTaxRules = {
   readonly salaryStandardDeduction: number
   readonly employerNpsRate: number
   readonly employerRetirementFundLimit: number
+  readonly surchargeThreshold: number
+  readonly surchargeRate: number
   readonly incomeCeiling: number
   readonly slabs: readonly {
     readonly upper: number | null
@@ -210,6 +212,18 @@ const quarterlyEarlyStates = [
 ] as const
 
 export const sourceRegistry: readonly Source[] = [
+  {
+    id: 'gst-residential-rent-proprietor',
+    kind: 'statutory',
+    publisher: 'Central Board of Indirect Taxes and Customs',
+    title:
+      'Notification 15/2022: registered proprietor renting personally for their own residence',
+    url: 'https://cbic-gst.gov.in/pdf/central-tax-rate/15_2022-ctr-eng.pdf',
+    publicationDate: '2022-12-30',
+    reviewDate: '2026-09-08',
+    taxPeriod: TAX_YEAR,
+    coveredRuleIds: ['rental-gst-personal-proprietor'],
+  },
   {
     id: 'foreign-assets-act-2026',
     kind: 'statutory',
@@ -485,10 +499,12 @@ export const sourceRegistry: readonly Source[] = [
     title: 'Finance Act, 2026',
     url: 'https://www.incometaxindia.gov.in/documents/d/guest/finance-act-2026-pdf-1',
     publicationDate: '2026-03-30',
-    reviewDate: reviewedOn,
+    reviewDate: '2026-09-08',
     taxPeriod: TAX_YEAR,
     coveredRuleIds: [
       'income-ceiling',
+      'ordinary-income-surcharge',
+      'surcharge-marginal-relief',
       'health-education-cess',
       'dividend-expenses-disallowed',
     ],
@@ -715,7 +731,7 @@ const group = <T>(
 })
 
 export const currentRules: RuleDataset = {
-  id: 'my-next-filing-2026-27-v12',
+  id: 'my-next-filing-2026-27-v13',
   schemaVersion: 1,
   taxPeriod: TAX_YEAR,
   effectiveStart,
@@ -723,6 +739,7 @@ export const currentRules: RuleDataset = {
   verifiedOn: '2026-09-08',
   expiresOn,
   changeNotes: [
+    'Added first-band surcharge and marginal relief for ordinary taxable income through one crore; positive remaining equity gains retain the fifty-lakh ceiling. Added the registered-proprietor personal-residence rental GST exemption. Verified 8 September 2026.',
     'Added bounded foreign assets and signing authority with resolved income effects, independent mandatory return trigger and visible current-rule disclosure guidance. Verified 8 September 2026.',
     'Added bounded domestic rental income with the 30% net-annual-value deduction and eligible current interest, preserving independent rental GST review. Verified 8 September 2026.',
     'Current-year domestic equity loss set-off and conditional carry-forward filing guidance reviewed on 8 September 2026. Capital losses do not reduce ordinary income. The mixed-gain basic-exemption restriction is evaluated after loss adjustment.',
@@ -755,6 +772,11 @@ export const currentRules: RuleDataset = {
           {
             ruleId: 'rental-gst-exemption',
             sourceId: 'gst-residential-rent-exemption',
+            role: 'applicability',
+          },
+          {
+            ruleId: 'rental-gst-personal-proprietor',
+            sourceId: 'gst-residential-rent-proprietor',
             role: 'applicability',
           },
           {
@@ -886,7 +908,9 @@ export const currentRules: RuleDataset = {
         salaryStandardDeduction: 75_000,
         employerNpsRate: 0.14,
         employerRetirementFundLimit: 750_000,
-        incomeCeiling: 5_000_000,
+        surchargeThreshold: 5_000_000,
+        surchargeRate: 0.1,
+        incomeCeiling: 10_000_000,
         slabs: [
           { upper: 400_000, rate: 0 },
           { upper: 800_000, rate: 0.05 },
@@ -977,6 +1001,16 @@ export const currentRules: RuleDataset = {
           ruleId: 'salary-standard-deduction',
           sourceId: 'domestic-salary-2026',
           role: 'threshold',
+        },
+        {
+          ruleId: 'ordinary-income-surcharge',
+          sourceId: 'finance-act-2026',
+          role: 'rate',
+        },
+        {
+          ruleId: 'surcharge-marginal-relief',
+          sourceId: 'finance-act-2026',
+          role: 'applicability',
         },
         {
           ruleId: 'income-ceiling',
@@ -1081,6 +1115,11 @@ export const currentRules: RuleDataset = {
         {
           ruleId: 'rental-gst-exemption',
           sourceId: 'gst-residential-rent-exemption',
+          role: 'applicability',
+        },
+        {
+          ruleId: 'rental-gst-personal-proprietor',
+          sourceId: 'gst-residential-rent-proprietor',
           role: 'applicability',
         },
         {
@@ -1556,7 +1595,9 @@ function validateValues(
         [null, 0.3],
       ] as const
       if (
-        values.incomeCeiling !== 5_000_000 ||
+        values.incomeCeiling !== 10_000_000 ||
+        values.surchargeThreshold !== 5_000_000 ||
+        values.surchargeRate !== 0.1 ||
         values.rebateLimit !== 1_200_000 ||
         values.rebateMaximum !== 60_000 ||
         values.marginalReliefLimit !== 1_200_000 ||
@@ -1749,6 +1790,8 @@ export function validateRules(
         'salaryStandardDeduction',
         'employerNpsRate',
         'employerRetirementFundLimit',
+        'surchargeThreshold',
+        'surchargeRate',
         'incomeCeiling',
         'slabs',
         'rebateLimit',
@@ -1787,6 +1830,7 @@ export function validateRules(
       gstCalendar: [
         'rental-gst-exemption',
         'rental-gst-tenants',
+        'rental-gst-personal-proprietor',
         'gst-return-periods',
         'gst-gstr1-dates',
         'gst-gstr3b-dates',
@@ -1821,6 +1865,8 @@ export function validateRules(
         'ordinary-domestic-income',
         'dividend-expenses-disallowed',
         'salary-standard-deduction',
+        'ordinary-income-surcharge',
+        'surcharge-marginal-relief',
         'income-ceiling',
         'new-regime-slabs',
         'rebate-and-marginal-relief',
@@ -1840,6 +1886,7 @@ export function validateRules(
       gstRegistration: [
         'rental-gst-exemption',
         'rental-gst-tenants',
+        'rental-gst-personal-proprietor',
         'gst-aggregate-turnover',
         'gst-registration-threshold',
         'gst-registration-window',

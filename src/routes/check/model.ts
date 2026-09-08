@@ -288,7 +288,7 @@ export const unsupportedFactLabels: Record<UnsupportedFact, string> = {
   employeesOrDeductorDuties:
     'Employees, or a requirement to deduct tax and file TDS returns',
   auditRequirement: 'A required audit under tax law or another law',
-  surchargeCase: 'Income tax that requires surcharge',
+  surchargeCase: 'Surcharge outside the supported ordinary-income band',
   goodsSales: 'Income from selling goods',
   agencyCommissionBrokerage: 'Agency, commission, or brokerage income',
   royaltyOrLicensing: 'Royalty or licensing income',

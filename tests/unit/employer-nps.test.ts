@@ -99,6 +99,7 @@ test.each([
   [1_215_000, 1_200_000, 0],
   [1_215_010, 1_200_010, 10],
   [5_015_000, 5_000_000, 1_123_200],
+  [10_015_000, 10_000_000, 2_951_520],
 ])(
   'uses post-deduction income at rebate and ceiling boundary %i',
   (salary, total, finalAmount) => {
@@ -111,7 +112,7 @@ test.each([
 )
 
 test('stops above the taxable ceiling and calculates a fractional percentage before rounding', () => {
-  expect(evaluate(withNps(5_015_010), now, currentRules).kind).toBe(
+  expect(evaluate(withNps(10_015_010), now, currentRules).kind).toBe(
     'unsupported',
   )
   const result = evaluate(

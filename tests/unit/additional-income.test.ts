@@ -110,10 +110,10 @@ test.each([
 
 test('enforces the combined income ceiling and safe additional-income sum', () => {
   expect(
-    evaluate(withIncome({ dividends: 3_590_000 }), now, currentRules).kind,
+    evaluate(withIncome({ dividends: 8_590_000 }), now, currentRules).kind,
   ).toBe('supported')
   expect(
-    evaluate(withIncome({ dividends: 3_590_010 }), now, currentRules).kind,
+    evaluate(withIncome({ dividends: 8_590_010 }), now, currentRules).kind,
   ).toBe('unsupported')
   expect(
     parseProfile(
