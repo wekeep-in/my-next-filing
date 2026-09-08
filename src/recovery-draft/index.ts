@@ -19,7 +19,7 @@ import { clearInactiveDraft } from '@/routes/check/session'
 
 export const RECOVERY_KEY = 'my-next-filing:recovery-draft'
 export type RecoveryDraftEnvelope = {
-  readonly schemaVersion: 9
+  readonly schemaVersion: 10
   readonly taxYear: TaxYear
   readonly origin: 'personal' | 'saved-edit'
   readonly baseWorkspaceRevision: number | null
@@ -59,7 +59,7 @@ const choices = {
   platformGrossBeforeFees: triState,
   platformIncomeCharacter: triState,
   platformForeignFeeGstTreatment: ['', 'not-applicable', 'known', 'not-sure'],
-  platformNoRecipientReverseCharge: triState,
+  platformReverseCharge: ['', 'none', 'due', 'not-sure'],
   foreignWorkInIndia: triState,
   foreignRecipientIdentifiable: triState,
   foreignOwnAccount: triState,
@@ -82,6 +82,8 @@ const choices = {
   salaryConfirmed: triState,
   hasEmployerNps: triState,
   employerNpsConfirmed: triState,
+  hasBroughtForwardLosses: triState,
+  broughtForwardLossesConfirmed: triState,
   hasEquityGains: triState,
   equityGainsConfirmed: triState,
   hasForeignAssets: triState,
@@ -112,6 +114,8 @@ const choices = {
       keyof Draft,
       | 'amounts'
       | 'employerNpsEmployers'
+      | 'broughtForwardYears'
+      | 'platformRcmLiabilityDate'
       | 'unsupportedFacts'
       | 'thresholdLiabilityDate'
       | 'gstRegisteredFrom'
@@ -131,6 +135,44 @@ export function parseRecoveryDraft(
   taxYear: TaxYear,
 ): RecoveryDraftEnvelope | null {
   try {
+    if (isRecord(value) && value.schemaVersion === 9) {
+      const draft = value.draft
+      if (
+        !isRecord(draft) ||
+        [
+          'hasBroughtForwardLosses',
+          'broughtForwardLossesConfirmed',
+          'broughtForwardYears',
+          'platformReverseCharge',
+          'platformRcmLiabilityDate',
+        ].some((key) => Object.hasOwn(draft, key)) ||
+        !['', 'yes', 'no', 'not-sure'].includes(
+          String(draft.platformNoRecipientReverseCharge),
+        )
+      )
+        return null
+      const { platformNoRecipientReverseCharge, ...rest } = draft
+      return parseRecoveryDraft(
+        {
+          ...value,
+          schemaVersion: 10,
+          draft: {
+            ...rest,
+            hasBroughtForwardLosses: '',
+            broughtForwardLossesConfirmed: '',
+            broughtForwardYears: [],
+            platformReverseCharge:
+              platformNoRecipientReverseCharge === 'yes'
+                ? 'none'
+                : platformNoRecipientReverseCharge === ''
+                  ? ''
+                  : 'not-sure',
+            platformRcmLiabilityDate: '',
+          },
+        },
+        taxYear,
+      )
+    }
     if (isRecord(value) && value.schemaVersion === 8) {
       const draft = value.draft
       if (
@@ -343,7 +385,7 @@ export function parseRecoveryDraft(
         'baseWorkspaceRevision',
         'draft',
       ]) ||
-      value.schemaVersion !== 9 ||
+      value.schemaVersion !== 10 ||
       value.taxYear !== taxYear
     )
       return null
@@ -367,6 +409,19 @@ export function parseRecoveryDraft(
       )
         return null
     }
+    if (
+      !Array.isArray(draft.broughtForwardYears) ||
+      draft.broughtForwardYears.length > 8 ||
+      !draft.broughtForwardYears.every(
+        (row: unknown) =>
+          isRecord(row) &&
+          exactKeys(row, ['originYear', 'shortTerm', 'longTerm']) &&
+          ['originYear', 'shortTerm', 'longTerm'].every(
+            (key) => typeof row[key] === 'string' && row[key].length <= 32,
+          ),
+      )
+    )
+      return null
     const amounts = draft.amounts
     if (
       !Array.isArray(draft.employerNpsEmployers) ||
@@ -390,6 +445,7 @@ export function parseRecoveryDraft(
     )
       return null
     for (const key of [
+      'platformRcmLiabilityDate',
       'thresholdLiabilityDate',
       'gstRegisteredFrom',
       'gstFirstExportDate',
@@ -417,7 +473,7 @@ export function parseRecoveryDraft(
     if (JSON.stringify(clearInactiveDraft(parsed)) !== JSON.stringify(parsed))
       return null
     return {
-      schemaVersion: 9,
+      schemaVersion: 10,
       taxYear,
       origin: value.origin,
       baseWorkspaceRevision: value.baseWorkspaceRevision as number | null,
@@ -548,7 +604,7 @@ export function recoveryFromSession(
 ): RecoveryDraftEnvelope | null {
   if (!session || session.origin.kind === 'example') return null
   return {
-    schemaVersion: 9,
+    schemaVersion: 10,
     taxYear,
     origin: session.origin.kind,
     baseWorkspaceRevision:

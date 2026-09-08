@@ -87,6 +87,7 @@ export type IncomePathRules = {
 }
 
 export type CommonIncomeTaxRules = {
+  readonly capitalLossCarryForwardYears: number
   readonly equityShortTermRate: number
   readonly equityLongTermRate: number
   readonly equityLongTermThreshold: number
@@ -213,6 +214,21 @@ const quarterlyEarlyStates = [
 
 export const sourceRegistry: readonly Source[] = [
   {
+    id: 'equity-computation-reference',
+    kind: 'statutory',
+    publisher: 'Income Tax Department',
+    title:
+      'Official ITR-3 AY 2026-27 utility: allocation reference, with current Act rates applied separately',
+    url: 'https://www.incometax.gov.in/iec/foportal/sites/default/files/2026-08/ITR3_AY_26-27_V1.3.zip',
+    publicationDate: '2026-09-01',
+    reviewDate: '2026-09-08',
+    taxPeriod: TAX_YEAR,
+    coveredRuleIds: [
+      'equity-basic-exemption-order',
+      'mixed-rate-surcharge-comparison',
+    ],
+  },
+  {
     id: 'gst-residential-rent-proprietor',
     kind: 'statutory',
     publisher: 'Central Board of Indirect Taxes and Customs',
@@ -256,7 +272,7 @@ export const sourceRegistry: readonly Source[] = [
     kind: 'statutory',
     publisher: 'Income Tax Department',
     title:
-      'Income-tax Act, 2025 as amended: house property, sections 20–22, 202, 263 and 408',
+      'Income-tax Act, 2025 as amended: house property, sections 20–24, 202, 263 and 408',
     url: 'https://www.incometaxindia.gov.in/documents/d/guest/income_tax_act_2025_as_amended_by_fa_act_2026-pdf',
     publicationDate: '2025-08-21',
     reviewDate: '2026-09-08',
@@ -298,6 +314,7 @@ export const sourceRegistry: readonly Source[] = [
     reviewDate: '2026-09-08',
     taxPeriod: TAX_YEAR,
     coveredRuleIds: [
+      'capital-loss-brought-forward',
       'domestic-equity-gains',
       'equity-short-term-rate',
       'equity-long-term-rate',
@@ -578,9 +595,11 @@ export const sourceRegistry: readonly Source[] = [
     title: 'Central Goods and Services Tax Act, 2017',
     url: 'https://upload.indiacode.nic.in/showfile?actid=AC_CEN_2_2_00042_201712_1517807328102&filename=a2017-12.pdf&type=actfile',
     publicationDate: '2017-04-12',
-    reviewDate: reviewedOn,
+    reviewDate: '2026-09-08',
     taxPeriod: TAX_YEAR,
     coveredRuleIds: [
+      'platform-rcm-registration',
+      'platform-rcm-return-review',
       'gst-aggregate-turnover',
       'gst-registration-threshold',
       'gst-registration-window',
@@ -731,7 +750,7 @@ const group = <T>(
 })
 
 export const currentRules: RuleDataset = {
-  id: 'my-next-filing-2026-27-v13',
+  id: 'my-next-filing-2026-27-v14',
   schemaVersion: 1,
   taxPeriod: TAX_YEAR,
   effectiveStart,
@@ -739,6 +758,7 @@ export const currentRules: RuleDataset = {
   verifiedOn: '2026-09-08',
   expiresOn,
   changeNotes: [
+    'Added independent platform reverse-charge coverage, record-based co-owned rental shares, eligible earlier-year capital losses and sourced mixed-equity allocation/surcharge through one crore. Reviewed 8 September 2026.',
     'Added first-band surcharge and marginal relief for ordinary taxable income through one crore; positive remaining equity gains retain the fifty-lakh ceiling. Added the registered-proprietor personal-residence rental GST exemption. Verified 8 September 2026.',
     'Added bounded foreign assets and signing authority with resolved income effects, independent mandatory return trigger and visible current-rule disclosure guidance. Verified 8 September 2026.',
     'Added bounded domestic rental income with the 30% net-annual-value deduction and eligible current interest, preserving independent rental GST review. Verified 8 September 2026.',
@@ -783,6 +803,11 @@ export const currentRules: RuleDataset = {
             ruleId: 'rental-gst-tenants',
             sourceId: 'gst-residential-rent-tenants',
             role: 'applicability',
+          },
+          {
+            ruleId: 'platform-rcm-return-review',
+            sourceId: 'gst-act-2017',
+            role: 'guidance',
           },
           {
             ruleId: 'gst-return-periods',
@@ -900,6 +925,7 @@ export const currentRules: RuleDataset = {
     commonIncomeTax: group(
       'common-income-tax',
       {
+        capitalLossCarryForwardYears: 8,
         equityShortTermRate: 0.2,
         equityLongTermRate: 0.125,
         equityLongTermThreshold: 125_000,
@@ -941,6 +967,21 @@ export const currentRules: RuleDataset = {
           ruleId: 'rental-standard-deduction',
           sourceId: 'domestic-rental-income-2026',
           role: 'rate',
+        },
+        {
+          ruleId: 'capital-loss-brought-forward',
+          sourceId: 'domestic-equity-gains-2026',
+          role: 'applicability',
+        },
+        {
+          ruleId: 'equity-basic-exemption-order',
+          sourceId: 'equity-computation-reference',
+          role: 'applicability',
+        },
+        {
+          ruleId: 'mixed-rate-surcharge-comparison',
+          sourceId: 'equity-computation-reference',
+          role: 'applicability',
         },
         {
           ruleId: 'equity-current-year-loss-set-off',
@@ -1125,6 +1166,11 @@ export const currentRules: RuleDataset = {
         {
           ruleId: 'rental-gst-tenants',
           sourceId: 'gst-residential-rent-tenants',
+          role: 'applicability',
+        },
+        {
+          ruleId: 'platform-rcm-registration',
+          sourceId: 'gst-act-2017',
           role: 'applicability',
         },
         {
@@ -1535,6 +1581,10 @@ function validateValues(
       errors.push('Rules contain income-path values outside the reviewed set.')
   }
   if (id === 'common-income-tax') {
+    if (values.capitalLossCarryForwardYears !== 8)
+      errors.push(
+        'Earlier capital losses require the reviewed eight-year window.',
+      )
     if (values.rentalStandardDeductionRate !== 0.3)
       errors.push(
         'Rules contain a rental standard deduction outside the reviewed set.',
@@ -1782,6 +1832,7 @@ export function validateRules(
         'businessLowCashReceiptLimit',
       ],
       commonIncomeTax: [
+        'capitalLossCarryForwardYears',
         'equityShortTermRate',
         'equityLongTermRate',
         'equityLongTermThreshold',
@@ -1828,6 +1879,7 @@ export function validateRules(
   const requiredRules: Record<keyof RuleDataset['groups'], readonly string[]> =
     {
       gstCalendar: [
+        'platform-rcm-return-review',
         'rental-gst-exemption',
         'rental-gst-tenants',
         'rental-gst-personal-proprietor',
@@ -1850,6 +1902,9 @@ export function validateRules(
         'business-five-year-exclusion',
       ],
       commonIncomeTax: [
+        'capital-loss-brought-forward',
+        'equity-basic-exemption-order',
+        'mixed-rate-surcharge-comparison',
         'foreign-assets-income-scope',
         'domestic-rental-income',
         'rental-standard-deduction',
@@ -1884,6 +1939,7 @@ export function validateRules(
         'annual-return-date',
       ],
       gstRegistration: [
+        'platform-rcm-registration',
         'rental-gst-exemption',
         'rental-gst-tenants',
         'rental-gst-personal-proprietor',

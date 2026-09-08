@@ -9,6 +9,7 @@ import {
   equityGainFields,
 } from '@/routes/check/model'
 import { UnsupportedFactsField } from '@/routes/check/unsupported-facts-field'
+import { BroughtForwardLossFields } from '@/routes/check/brought-forward-loss-fields'
 import { ForeignAssetsFields } from '@/routes/check/foreign-assets-fields'
 import { RentalIncomeFields } from '@/routes/check/rental-income-fields'
 import { EmployerNpsFields } from '@/routes/check/employer-nps-fields'
@@ -284,17 +285,17 @@ export function OtherIncomeStep({
                           loss disallowance resolved.
                         </li>
                         <li>
-                          No brought-forward losses, foreign investments,
-                          business trading, employee shares, buybacks, exemption
-                          claims or other excluded transactions.
+                          No foreign investments, business trading, employee
+                          shares, buybacks, exemption claims or other excluded
+                          transactions.
                         </li>
                       </ul>
                       <p>
                         Enter gains and losses separately before loss
                         adjustment, the long-term threshold or basic exemption.
-                        Both gain types remaining after adjustment with ordinary
-                        income below ₹4 lakh after deductions need separate
-                        review.
+                        Enter eligible earlier-year losses in the separate
+                        section below. The plan applies losses before allocating
+                        any unused basic exemption.
                       </p>
                       <EquityGainsHelp />
                     </>
@@ -403,6 +404,11 @@ export function OtherIncomeStep({
                   value: value as TriState,
                 })
               }
+            />
+            <BroughtForwardLossFields
+              draft={draft}
+              errors={errors}
+              dispatch={dispatch}
             />
             <ForeignAssetsFields
               draft={draft}

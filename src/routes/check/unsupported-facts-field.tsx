@@ -54,7 +54,7 @@ const explanations: Partial<
   },
   surchargeCase: {
     title: 'Surcharge needing a separate review',
-    help: 'Ordinary taxable income above ₹50 lakh and up to ₹1 crore is now covered automatically. Higher income or positive equity gains with total income above ₹50 lakh need separate review. Review a restored answer before clearing it.',
+    help: 'Supported taxable income, including eligible equity gains, is covered up to ₹1 crore. Income above ₹1 crore or unsupported special-rate income needs separate review. Review a restored answer before clearing it.',
   },
   foreignAssets: {
     title: 'Foreign assets needing a separate review',
@@ -62,7 +62,7 @@ const explanations: Partial<
   },
   houseProperty: {
     title: 'House-property income needing a separate review',
-    help: 'Property income outside the rental conditions above, such as co-owned or foreign property, or a property loss. If this answer was restored, review your rental income before clearing it.',
+    help: 'Property income outside the rental conditions above, such as disputed ownership, foreign property, or a property loss. If this answer was restored, review your rental income before clearing it.',
   },
   capitalGains: {
     title: 'Capital gains needing a separate review',
@@ -78,7 +78,7 @@ const explanations: Partial<
   },
   deductionsLossesOrSpecialRate: {
     title: 'Other deductions, losses, or special-rate income',
-    help: 'Deductions outside the supported salary, employer NPS and rental conditions, losses outside the current-year domestic equity conditions, or other unsupported special-rate income.',
+    help: 'Deductions outside the supported salary, employer NPS and rental conditions, losses outside the supported current-year and earlier-year domestic equity conditions, or other unsupported special-rate income.',
   },
   employeesOrDeductorDuties: {
     title: 'Employees or TDS filing requirements',

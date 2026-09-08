@@ -96,7 +96,7 @@ test('ordinary income above fifty lakh reaches a complete surcharge breakdown an
       WORKSPACE_KEY,
     ),
   ).toMatchObject({
-    schemaVersion: 10,
+    schemaVersion: 11,
     active: { profile: { incomePath: { declaredProfit: 5_100_000 } } },
   })
   await page
@@ -113,7 +113,7 @@ test('ordinary income above fifty lakh reaches a complete surcharge breakdown an
   expect(remote).toEqual([])
 })
 
-test('the one-crore ceiling and positive net equity limit still block while fully offset gains permit the ordinary band', async ({
+test('the one-crore ceiling blocks and mixed equity within the first surcharge band proceeds', async ({
   page,
 }) => {
   await seedPersonal(page)
@@ -134,10 +134,8 @@ test('the one-crore ceiling and positive net equity limit still block while full
     ['longTermLosses', '0'],
   ])
     await page.locator(`#${id}`).fill(value)
-  await expect(page.locator('#shortTermGains-unsupported')).toContainText(
-    'mixed-rate surcharge',
-  )
-  await expect(next).toBeDisabled()
+  await expect(page.locator('#shortTermGains-unsupported')).toHaveCount(0)
+  await expect(next).toBeEnabled()
   await page.locator('#shortTermLosses').fill('10')
   await expect(page.locator('#shortTermGains-unsupported')).toHaveCount(0)
   await expect(next).toBeEnabled()

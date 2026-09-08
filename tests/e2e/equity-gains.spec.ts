@@ -88,7 +88,7 @@ test('combines salary dividends and equity gains through review save reload and 
     WORKSPACE_KEY,
   )
   expect(saved).toMatchObject({
-    schemaVersion: 10,
+    schemaVersion: 11,
     active: {
       profile: {
         otherIncome: {
@@ -181,7 +181,7 @@ test('keeps equity help keyboard accessible and fields usable at desktop tablet 
   ).toHaveAttribute('aria-checked', 'false')
 })
 
-test('withholds uncertain equity treatment and mixed gains with unused basic exemption', async ({
+test('withholds uncertain equity treatment and supports confirmed mixed basic exemption', async ({
   page,
 }) => {
   await seedPersonal(page)
@@ -210,9 +210,10 @@ test('withholds uncertain equity treatment and mixed gains with unused basic exe
   await page.locator('#longTermGains').fill('200000')
   await page.locator('#shortTermLosses').fill('0')
   await page.locator('#longTermLosses').fill('0')
-  await expect(page.locator('#equityGainsConfirmed-unsupported')).toContainText(
-    'unused basic exemption',
-  )
+  await expect(page.locator('#equityGainsConfirmed-unsupported')).toHaveCount(0)
+  await expect(
+    page.getByRole('button', { name: 'Continue', exact: true }),
+  ).toBeEnabled()
   await page.locator('#longTermGains').fill('0')
   await expect(page.locator('#equityGainsConfirmed-unsupported')).toHaveCount(0)
   await page.locator('#shortTermGains').fill('-1')
@@ -260,7 +261,7 @@ test('restores the captured workspace and writes the new schema only on an ordin
       WORKSPACE_KEY,
     ),
   ).toMatchObject({
-    schemaVersion: 10,
+    schemaVersion: 11,
     consentDecidedAt: workspaceV6.consentDecidedAt,
     active: {
       completions: workspaceV6.active.completions,

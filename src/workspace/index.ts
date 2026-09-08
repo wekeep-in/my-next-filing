@@ -38,7 +38,7 @@ export type ArchivedPriorYearRecord = {
 export type PriorYearRecord = OpenPriorYearRecord | ArchivedPriorYearRecord
 
 export type SavedWorkspace = {
-  readonly schemaVersion: 10
+  readonly schemaVersion: 11
   readonly revision: number
   readonly noticeVersion: 2
   readonly consentDecidedAt: string
@@ -275,6 +275,71 @@ function decodeWorkspace(
   value: unknown,
   today: DateOnly,
 ): SavedWorkspace | null {
+  if (isRecord(value) && value.schemaVersion === 10) {
+    const migrateRecord = (record: unknown) => {
+      if (
+        !isRecord(record) ||
+        !isRecord(record.profile) ||
+        !isRecord(record.profile.otherIncome) ||
+        !isRecord(record.profile.clients) ||
+        !Array.isArray(record.profile.unsupportedFacts) ||
+        Object.hasOwn(record.profile.otherIncome, 'broughtForwardLosses')
+      )
+        return null
+      const oldPlatform = record.profile.clients.platform
+      let platform = null
+      if (oldPlatform !== null) {
+        if (
+          !isRecord(oldPlatform) ||
+          Object.hasOwn(oldPlatform, 'reverseCharge') ||
+          Object.hasOwn(oldPlatform, 'rcmLiabilityDate') ||
+          !['yes', 'no', 'not-sure'].includes(
+            String(oldPlatform.noRecipientReverseCharge),
+          )
+        )
+          return null
+        const { noRecipientReverseCharge, ...rest } = oldPlatform
+        platform = {
+          ...rest,
+          reverseCharge:
+            noRecipientReverseCharge === 'yes' ? 'none' : 'not-sure',
+          rcmLiabilityDate: null,
+        }
+      }
+      const uncertainLoss = record.profile.unsupportedFacts.some(
+        (fact: unknown) =>
+          [
+            'capitalGains',
+            'deductionsLossesOrSpecialRate',
+            'otherUnsupportedFacts',
+            'unsupportedFactsNotSure',
+          ].includes(String(fact)),
+      )
+      return {
+        ...record,
+        profile: {
+          ...record.profile,
+          clients: { ...record.profile.clients, platform },
+          otherIncome: {
+            ...record.profile.otherIncome,
+            broughtForwardLosses: { kind: uncertainLoss ? 'not-sure' : 'none' },
+          },
+        },
+      }
+    }
+    if (!Array.isArray(value.priorYears)) return null
+    const active = value.active === null ? null : migrateRecord(value.active)
+    if (value.active !== null && active === null) return null
+    return decodeWorkspace(
+      {
+        ...value,
+        schemaVersion: 11,
+        active,
+        priorYears: value.priorYears.map(migrateRecord),
+      },
+      today,
+    )
+  }
   if (isRecord(value) && value.schemaVersion === 9) {
     const migrateRecord = (record: unknown) => {
       if (
@@ -654,7 +719,7 @@ function decodeWorkspace(
       'priorYears',
       'updatedAt',
     ]) ||
-    value.schemaVersion !== 10 ||
+    value.schemaVersion !== 11 ||
     !isSafeInteger(value.revision) ||
     value.noticeVersion !== STORAGE_NOTICE_VERSION ||
     !isIsoTimestamp(value.consentDecidedAt) ||
@@ -726,7 +791,7 @@ function withRevision(
   now: Date,
 ): SavedWorkspace {
   return {
-    schemaVersion: 10,
+    schemaVersion: 11,
     revision,
     noticeVersion: STORAGE_NOTICE_VERSION,
     consentDecidedAt: draft.consentDecidedAt,

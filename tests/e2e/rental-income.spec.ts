@@ -37,7 +37,9 @@ test('rental income reaches the combined plan and survives Recovery save reload 
   await page.locator('#aggregateTurnover').fill('2300000')
   await page.getByRole('button', { name: 'Continue', exact: true }).click()
   await expect(
-    page.getByText('Annual value before municipal taxes', { exact: true }),
+    page.getByText('Your share of annual value before municipal taxes', {
+      exact: true,
+    }),
   ).toBeVisible()
   await page
     .getByRole('button', { name: 'Calculate my plan', exact: true })
@@ -75,7 +77,7 @@ test('rental income reaches the combined plan and survives Recovery save reload 
     WORKSPACE_KEY,
   )
   expect(saved).toMatchObject({
-    schemaVersion: 10,
+    schemaVersion: 11,
     active: {
       profile: {
         otherIncome: {
@@ -242,6 +244,7 @@ test('historical Recovery requires rental review and preserves the selected prop
     .getByRole('radio', { name: 'None of these apply', exact: true })
     .click()
   await choose(page, 'hasForeignAssets', 'No')
+  await choose(page, 'hasBroughtForwardLosses', 'No')
   await expect(
     page.getByRole('button', { name: 'Continue', exact: true }),
   ).toBeEnabled()
@@ -274,7 +277,7 @@ test('captured workspace still opens its plan and upgrades through a normal save
       WORKSPACE_KEY,
     ),
   ).toMatchObject({
-    schemaVersion: 10,
+    schemaVersion: 11,
     active: {
       completions: workspaceV8.active.completions,
       profile: { otherIncome: { rentalIncome: { kind: 'none' } } },

@@ -1,5 +1,5 @@
 import { indiaDate } from '@/lib/india-date'
-import { useId } from 'react'
+import { Fragment, useId } from 'react'
 import { ExternalLink } from '@/components/external-link'
 import { GstFrequencyHelp, QrmpPaymentHelp } from '@/components/gst-help'
 import { Badge } from '@/components/ui/badge'
@@ -192,8 +192,8 @@ export function TaxSummary({
                   gains, for up to{' '}
                   {annualReturn.value.lossCarryForward.maximumYears} tax years
                   immediately following this Tax Year. This is an estimate, not
-                  an approved loss balance. This version does not apply
-                  brought-forward losses.
+                  an approved loss balance. Eligible earlier-year losses can be
+                  entered separately from your tax records.
                 </p>
               </>
             ) : (
@@ -214,15 +214,37 @@ export function TaxSummary({
         >
           <h3 id="surcharge-title">Surcharge included</h3>
           <p>
-            This estimate includes the first surcharge band for ordinary taxable
-            income above ₹50 lakh and up to ₹1 crore, after any surcharge
-            marginal relief.
+            This estimate includes the first surcharge band for supported
+            taxable income above ₹50 lakh and up to ₹1 crore, after any
+            surcharge marginal relief.
           </p>
           <p>
             Confirm the applicable return form and higher-income disclosures
             using current Tax Year instructions. This plan does not select a
             return form.
           </p>
+        </section>
+      )}
+      {tax.broughtForwardLosses.length > 0 && (
+        <section
+          className="mt-6 border-t border-border pt-4"
+          aria-labelledby="earlier-loss-balances-title"
+        >
+          <h3 id="earlier-loss-balances-title">
+            Earlier capital-loss balances
+          </h3>
+          <p>
+            These balances keep their original time limits. They are based on
+            your records, not an approved loss ledger.
+          </p>
+          {tax.broughtForwardLosses.map((row) => (
+            <p key={row.originYear}>
+              {row.originYear}-{String(row.originYear + 1).slice(-2)}: remaining
+              short-term loss {formatMoney(row.shortTermRemaining)}; long-term
+              loss {formatMoney(row.longTermRemaining)}. Last usable year:{' '}
+              {row.lastUsableYear}-{String(row.lastUsableYear + 1).slice(-2)}.
+            </p>
+          ))}
         </section>
       )}
       <details className="calculation-details">
@@ -365,6 +387,39 @@ export function TaxSummary({
               )}
             </>
           )}
+          {tax.broughtForwardLosses.map((row) => (
+            <Fragment key={row.originYear}>
+              <div>
+                <dt>Earlier losses: originating year</dt>
+                <dd>
+                  {row.originYear}-{String(row.originYear + 1).slice(-2)}
+                </dd>
+              </div>
+              {(
+                [
+                  ['Short-term balance entered', row.shortTerm],
+                  ['Long-term balance entered', row.longTerm],
+                  [
+                    'Short-term loss used against short-term gains',
+                    row.shortTermUsedAgainstShortTerm,
+                  ],
+                  [
+                    'Short-term loss used against long-term gains',
+                    row.shortTermUsedAgainstLongTerm,
+                  ],
+                  [
+                    'Long-term loss used against long-term gains',
+                    row.longTermUsed,
+                  ],
+                ] as const
+              ).map(([lossLabel, amount]) => (
+                <div key={lossLabel}>
+                  <dt>{lossLabel}</dt>
+                  <dd className="whitespace-nowrap">{formatMoney(amount)}</dd>
+                </div>
+              ))}
+            </Fragment>
+          ))}
           {tax.salary && (
             <>
               <div>
@@ -412,6 +467,14 @@ export function TaxSummary({
               <div>
                 <dt>Basic exemption used against equity gains</dt>
                 <dd>{formatMoney(tax.equityGains.basicExemptionUsed)}</dd>
+              </div>
+              <div>
+                <dt>Basic exemption used against short-term gains</dt>
+                <dd>{formatMoney(tax.equityGains.basicExemptionShortTerm)}</dd>
+              </div>
+              <div>
+                <dt>Basic exemption used against long-term gains</dt>
+                <dd>{formatMoney(tax.equityGains.basicExemptionLongTerm)}</dd>
               </div>
               <div>
                 <dt>Long-term gains within the annual threshold</dt>
@@ -499,7 +562,9 @@ export function TaxSummary({
           ...(tax.salary ? ['domestic-salary-2026'] : []),
           ...(tax.additionalIncome ? ['domestic-investment-income-2026'] : []),
           ...(tax.rentalIncome ? ['domestic-rental-income-2026'] : []),
-          ...(tax.equityGains ? ['domestic-equity-gains-2026'] : []),
+          ...(tax.equityGains || tax.broughtForwardLosses.length
+            ? ['domestic-equity-gains-2026', 'equity-computation-reference']
+            : []),
         ]}
       />
     </Card>
@@ -536,6 +601,21 @@ export function GstCard({
 }) {
   if (coverage.kind === 'unavailable') return null
   const gst = coverage.value
+  if (gst.status === 'reverse-charge')
+    return (
+      <Card as="article" className="coverage-card min-w-0" variant="result">
+        <Badge variant="outline" className={cardKickerClass}>
+          GST registration
+        </Badge>
+        <h2>GST registration is required for reverse charge</h2>
+        <p>
+          You confirmed a platform-fee reverse-charge duty. Registration is
+          required independently of your turnover. The agenda shows an
+          application date only when the liability date is established.
+        </p>
+        <SourceReferences ids={coverage.sourceIds} />
+      </Card>
+    )
   if (gst.status === 'calendar')
     return (
       <Card as="article" className="coverage-card min-w-0" variant="result">

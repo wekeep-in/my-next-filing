@@ -322,7 +322,7 @@ test('migrates captured workspace without overwriting original storage and prese
   if (loaded.kind !== 'ready' || !loaded.workspace.active)
     throw Error('Historical workspace did not migrate')
   expect(loaded.workspace).toMatchObject({
-    schemaVersion: 10,
+    schemaVersion: 11,
     revision: workspaceV9.revision,
     consentDecidedAt: workspaceV9.consentDecidedAt,
     active: {
@@ -351,7 +351,7 @@ test('migrates captured workspace without overwriting original storage and prese
   expect(saved).toMatchObject({
     kind: 'saved',
     workspace: {
-      schemaVersion: 10,
+      schemaVersion: 11,
       active: {
         completions: workspaceV9.active.completions,
         profile: {
@@ -425,7 +425,7 @@ test.each([
 test('captured Recovery requires fresh asset answers and mixed schemas are rejected', () => {
   const recovered = parseRecoveryDraft(recoveryV8, TAX_YEAR)
   expect(recovered).toMatchObject({
-    schemaVersion: 9,
+    schemaVersion: 10,
     draft: {
       hasForeignAssets: '',
       assetIncomeConfirmed: '',

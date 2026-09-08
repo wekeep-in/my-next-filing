@@ -216,7 +216,7 @@ test('migrates the published workspace without deleting amounts or completion da
   expect(loaded.kind).toBe('ready')
   if (loaded.kind !== 'ready' || !loaded.workspace.active)
     throw Error('Fixture did not migrate')
-  expect(loaded.workspace.schemaVersion).toBe(10)
+  expect(loaded.workspace.schemaVersion).toBe(11)
   expect(loaded.workspace.active.profile.otherIncome.additionalIncome).toEqual({
     kind: 'none',
   })
@@ -246,7 +246,7 @@ test('restores historical Recovery answers but requires the new income answer', 
   const recovery = parseRecoveryDraft(recoveryV3, TAX_YEAR)
   expect(recovery).not.toBeNull()
   if (!recovery) throw Error('Fixture did not migrate')
-  expect(recovery.schemaVersion).toBe(9)
+  expect(recovery.schemaVersion).toBe(10)
   expect(recovery.draft.hasAdditionalIncome).toBe('')
   expect(recovery.draft.amounts.grossReceipts).toBe(
     recoveryV3.draft.amounts.grossReceipts,

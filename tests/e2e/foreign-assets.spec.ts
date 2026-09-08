@@ -69,7 +69,7 @@ test('established foreign assets reach the disclosure card and survive saving an
       WORKSPACE_KEY,
     ),
   ).toMatchObject({
-    schemaVersion: 10,
+    schemaVersion: 11,
     active: {
       profile: {
         otherIncome: {
@@ -210,6 +210,7 @@ test('historical Recovery retains the foreign-assets exclusion until the new sco
   await expect(
     page.getByRole('button', { name: 'Continue', exact: true }),
   ).toBeDisabled()
+  await choose(page, 'hasBroughtForwardLosses', 'No')
   await legacy.uncheck()
   await page
     .getByRole('radio', { name: 'None of these apply', exact: true })
@@ -252,7 +253,7 @@ test('historical saved data remains unchanged on load and upgrades only through 
       WORKSPACE_KEY,
     ),
   ).toMatchObject({
-    schemaVersion: 10,
+    schemaVersion: 11,
     active: {
       completions: workspaceV9.active.completions,
       profile: { otherIncome: { foreignAssets: { kind: 'none' } } },

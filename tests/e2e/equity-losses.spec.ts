@@ -98,7 +98,7 @@ test('accepts positive net portfolios and exposes loss pairings through save and
     WORKSPACE_KEY,
   )
   expect(stored).toMatchObject({
-    schemaVersion: 10,
+    schemaVersion: 11,
     active: {
       profile: {
         otherIncome: {
@@ -175,12 +175,10 @@ test('reassesses basic exemption after loss set-off and clears all four amounts'
 }, testInfo) => {
   await openPortfolio(page, 300_000)
   await enterPortfolio(page, ['50000', '25000', '300000', '0'])
-  await expect(page.locator('#equityGainsConfirmed-unsupported')).toContainText(
-    'remaining after loss adjustment',
-  )
+  await expect(page.locator('#equityGainsConfirmed-unsupported')).toHaveCount(0)
   await expect(
     page.getByRole('button', { name: 'Continue', exact: true }),
-  ).toBeDisabled()
+  ).toBeEnabled()
   await page.locator('#shortTermLosses').fill('75000')
   await expect(page.locator('#equityGainsConfirmed-unsupported')).toHaveCount(0)
   for (const width of [1440, 1024, 320]) {
@@ -263,7 +261,7 @@ test('migrates the captured equity workspace without changing its gains or compl
       WORKSPACE_KEY,
     ),
   ).toMatchObject({
-    schemaVersion: 10,
+    schemaVersion: 11,
     consentDecidedAt: workspaceV7.consentDecidedAt,
     active: {
       completions: workspaceV7.active.completions,

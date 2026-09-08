@@ -53,6 +53,7 @@ const baseCandidate = {
     salary: { kind: 'none' },
     additionalIncome: { kind: 'none' },
     equityGains: { kind: 'none' },
+    broughtForwardLosses: { kind: 'none' },
     taxableBankInterest: 10_000,
     tds: 40_000,
     tcs: 0,
@@ -86,7 +87,8 @@ const platformFacts = {
   grossBeforeFees: 'yes',
   notEmploymentCommissionBrokerageRoyaltyLicensingAgency: 'yes',
   foreignFeeGstTreatment: 'known',
-  noRecipientReverseCharge: 'yes',
+  reverseCharge: 'none',
+  rcmLiabilityDate: null,
 } as const
 
 test('validates registration date boundaries', () => {
@@ -748,7 +750,7 @@ test('saves reconciles and deletes workspaces through storage failures', () => {
     WORKSPACE_KEY,
     JSON.stringify({
       ...workspaceDraft,
-      schemaVersion: 10,
+      schemaVersion: 11,
       revision: 0,
       updatedAt: '2026-09-03T06:30:00.000Z',
     }),

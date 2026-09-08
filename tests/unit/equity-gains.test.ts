@@ -171,34 +171,28 @@ test('rounds combined income once and keeps the threshold in filing and rebate i
 })
 
 test('preserves the full income ceiling and does not treat the long-term threshold as exempt income', () => {
-  const base = profile(1_000_000, 0, 4_000_000)
-  expect(supported(base).tax.roundedTotalIncome).toBe(5_000_000)
+  const base = profile(1_000_000, 0, 9_000_000)
+  expect(supported(base).tax.roundedTotalIncome).toBe(10_000_000)
   expect(
-    evaluate(profile(1_000_000, 0, 4_000_010), now, currentRules).kind,
+    evaluate(profile(1_000_000, 0, 9_000_010), now, currentRules).kind,
   ).toBe('unsupported')
 })
 
-test('withholds ambiguous mixed basic exemption in evaluator and questionnaire but permits either category alone', () => {
+test('allocates mixed basic exemption in evaluator and questionnaire and preserves single-category support', () => {
   const mixed = profile(300_000)
-  const result = evaluate(mixed, now, currentRules)
-  expect(result.kind).toBe('unsupported')
-  if (result.kind !== 'unsupported') throw Error('Expected mixed-gain review')
-  expect(
-    result.facts.some(
-      ({ code }) => code === 'equity-basic-exemption-allocation',
-    ),
-  ).toBe(true)
-  expect(
-    screenProfile(mixed, now, currentRules).facts.some(
-      ({ code }) => code === 'equity-basic-exemption-allocation',
-    ),
-  ).toBe(true)
+  const result = supported(mixed)
+  expect(result.tax.finalAmount).toBe(9_750)
+  expect(result.tax.equityGains).toMatchObject({
+    basicExemptionShortTerm: 100_000,
+    basicExemptionLongTerm: 0,
+  })
+  expect(screenProfile(mixed, now, currentRules).facts).toEqual([])
   const assessment = assessQuestionnaire(
     { draft: draftFromProfile(mixed) },
     'other-income',
     today,
   )
-  expect(assessment.warnings.equityGainsConfirmed).toContain('both short-term')
+  expect(assessment.progression.kind).not.toBe('blocked')
   expect(supported(profile(300_000, 200_000, 0)).tax.finalAmount).toBe(20_800)
 })
 
@@ -389,7 +383,7 @@ test('migrates captured workspaces without writing or changing consent and compl
   if (result.kind !== 'ready')
     throw Error('Expected migrated historical workspace')
   expect(result.workspace).toMatchObject({
-    schemaVersion: 10,
+    schemaVersion: 11,
     revision: workspaceV6.revision,
     consentDecidedAt: workspaceV6.consentDecidedAt,
     active: {
@@ -431,7 +425,7 @@ test('restores historical Recovery with equity unanswered and preserves legacy c
   }
   const result = parseRecoveryDraft(legacy, TAX_YEAR)
   expect(result).toMatchObject({
-    schemaVersion: 9,
+    schemaVersion: 10,
     draft: {
       hasEquityGains: '',
       equityGainsConfirmed: '',
@@ -445,3 +439,22 @@ test('restores historical Recovery with equity unanswered and preserves legacy c
     parseRecoveryDraft({ ...result, schemaVersion: 5 }, TAX_YEAR),
   ).toBeNull()
 })
+
+test.each([
+  [300_000, 100_000, 200_000, 100_000, 0, 9_750],
+  [300_000, 50_000, 300_000, 50_000, 50_000, 16_250],
+  [0, 300_000, 300_000, 300_000, 100_000, 9_750],
+  [100_000, 250_000, 200_000, 250_000, 50_000, 3_250],
+  [399_990, 15, 15, 10, 0, 0],
+])(
+  'allocates the basic exemption in official order for %i ordinary / %i ST / %i LT',
+  (ordinary, short, long, basicST, basicLT, finalAmount) => {
+    expect(supported(profile(ordinary, short, long)).tax).toMatchObject({
+      finalAmount,
+      equityGains: {
+        basicExemptionShortTerm: basicST,
+        basicExemptionLongTerm: basicLT,
+      },
+    })
+  },
+)

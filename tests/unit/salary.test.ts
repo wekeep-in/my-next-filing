@@ -342,7 +342,7 @@ test('migrates old workspaces in memory and preserves Completion records', () =>
   storage.setItem(WORKSPACE_KEY, raw)
   const restored = loadSavedWorkspace(storage, now)
   assert.ok(restored.kind === 'ready')
-  assert.equal(restored.workspace.schemaVersion, 10)
+  assert.equal(restored.workspace.schemaVersion, 11)
   assert.deepEqual(restored.workspace.active?.profile.otherIncome.salary, {
     kind: 'none',
   })

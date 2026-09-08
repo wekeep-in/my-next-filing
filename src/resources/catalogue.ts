@@ -46,6 +46,19 @@ export type ResourceDefinition = {
 // URLs, statutory periods, publishers and source-review dates stay in the Rule registry.
 export const resourceDefinitions: readonly ResourceDefinition[] = [
   {
+    sourceIds: ['equity-computation-reference'],
+    title: 'Official equity allocation reference',
+    description:
+      'The Department’s AY 2026-27 ITR-3 workbook provides the inspected basic-exemption ordering and surcharge cut-off rate ordering. This plan applies current Act rates separately and does not select an earlier-year return form.',
+    documentType: 'Guide',
+    topics: ['income-tax'],
+    tasks: ['rates-deductions'],
+    aliases: [
+      'equity basic exemption surcharge allocation short term long term',
+    ],
+    identifiers: [],
+  },
+  {
     sourceIds: ['gst-residential-rent-proprietor'],
     title: 'Residential rent for a registered proprietor',
     description:
@@ -266,7 +279,7 @@ export const resourceDefinitions: readonly ResourceDefinition[] = [
     ],
     title: 'Income-tax Act: income, rebate and return requirements',
     description:
-      'The amended Act used for freelance income, salary, employer NPS, dividends, mutual-fund distributions, interest, rental income, domestic equity capital gains and current-year losses, rebate and enacted return-filing requirements, including the foreign-asset and signing-authority trigger.',
+      'The amended Act used for freelance income, salary, employer NPS, dividends, mutual-fund distributions, interest, rental income, domestic equity capital gains, current-year and eligible earlier-year losses, rebate and enacted return-filing requirements, including the foreign-asset and signing-authority trigger.',
     documentType: 'Act',
     topics: ['income-tax'],
     tasks: [
@@ -291,9 +304,9 @@ export const resourceDefinitions: readonly ResourceDefinition[] = [
       'Section 263: enacted return-filing requirements, foreign assets/signing authority and due dates',
       'Sections 7, 92, 93 and 276: taxable ordinary dividends, distributions and interest',
       'Sections 15–19: salary and deductions',
-      'Sections 20–22 and 202: house-property annual value and deductions under the new regime',
+      'Sections 20–24 and 202: house-property shares, annual value and deductions under the new regime',
       'Sections 196 and 198: domestic equity gains, rates, thresholds and deduction restrictions',
-      'Sections 108–109, 111, 121 and 263: current-year capital-loss set-off and conditional carry-forward filing',
+      'Sections 108–109, 111, 121, 263 and 536: capital-loss set-off, original carry-forward periods and loss-return requirements',
       'Section 156: rebate',
       'Section 408: advance tax',
     ],
@@ -345,7 +358,7 @@ export const resourceDefinitions: readonly ResourceDefinition[] = [
     sourceIds: ['finance-act-2026'],
     title: 'Finance Act 2026',
     description:
-      'The enacted Finance Act covering income-tax rates, surcharge, marginal relief and cess. The first ordinary-income surcharge band above ₹50 lakh and through ₹1 crore is supported here.',
+      'The enacted Finance Act covering income-tax rates, surcharge, marginal relief and cess. The first surcharge band for ordinary income and supported equity gains above ₹50 lakh and through ₹1 crore is supported here.',
     documentType: 'Act',
     topics: ['income-tax'],
     tasks: ['rates-deductions'],

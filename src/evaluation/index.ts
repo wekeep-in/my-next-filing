@@ -50,7 +50,7 @@ const unsupportedFactLabels = {
   foreignTaxOrRelief:
     'Tax owed or paid abroad, or a claim for foreign-tax relief',
   deductionsLossesOrSpecialRate:
-    'Deductions other than the supported salary, employer NPS and rental deductions, losses outside the current-year domestic equity conditions, or other unsupported special-rate income',
+    'Deductions other than the supported salary, employer NPS and rental deductions, losses outside the supported current-year and earlier-year domestic equity conditions, or other unsupported special-rate income',
   disputedCredit: 'A dispute about your TDS or TCS tax credit',
   anotherBusinessOrProfession:
     'A business or profession in addition to the freelance work entered here',
@@ -96,6 +96,18 @@ export type EquityGains =
       readonly longTermGains: number
       readonly shortTermLosses: number
       readonly longTermLosses: number
+    }
+
+export type BroughtForwardLosses =
+  | { readonly kind: 'none' | 'not-sure' }
+  | {
+      readonly kind: 'eligible'
+      readonly confirmed: TriState
+      readonly years: readonly {
+        readonly originYear: number
+        readonly shortTerm: number
+        readonly longTerm: number
+      }[]
     }
 
 export type ForeignAssets =
@@ -159,7 +171,8 @@ export type PlatformFacts = {
   readonly grossBeforeFees: TriState
   readonly notEmploymentCommissionBrokerageRoyaltyLicensingAgency: TriState
   readonly foreignFeeGstTreatment: 'not-applicable' | 'known' | 'not-sure'
-  readonly noRecipientReverseCharge: TriState
+  readonly reverseCharge: 'none' | 'due' | 'not-sure'
+  readonly rcmLiabilityDate: DateOnly | null
 }
 
 export type ForeignFacts = {
@@ -266,6 +279,7 @@ export type Profile = {
     readonly rentalIncome: RentalIncome
     readonly additionalIncome: AdditionalIncome
     readonly equityGains: EquityGains
+    readonly broughtForwardLosses: BroughtForwardLosses
     readonly taxableBankInterest: number
     readonly tds: number
     readonly tcs: number
@@ -367,6 +381,11 @@ export type AnnualReturnConclusion = {
 
 export type GstConclusion =
   | {
+      readonly status: 'reverse-charge'
+      readonly state: string
+      readonly registrationRequired: true
+    }
+  | {
       readonly status: 'below' | 'at' | 'above'
       readonly threshold: number
       readonly difference: number
@@ -429,10 +448,23 @@ export type TaxEstimate = {
     readonly taxableShortTermGains: number
     readonly taxableLongTermGains: number
     readonly basicExemptionUsed: number
+    readonly basicExemptionShortTerm: number
+    readonly basicExemptionLongTerm: number
     readonly longTermThresholdUsed: number
     readonly shortTermTax: number
     readonly longTermTax: number
   } | null
+  readonly broughtForwardLosses: readonly {
+    readonly originYear: number
+    readonly shortTerm: number
+    readonly longTerm: number
+    readonly shortTermUsedAgainstShortTerm: number
+    readonly shortTermUsedAgainstLongTerm: number
+    readonly longTermUsed: number
+    readonly shortTermRemaining: number
+    readonly longTermRemaining: number
+    readonly lastUsableYear: number
+  }[]
   readonly ordinaryIncome: number
   readonly roundedTotalIncome: number
   readonly incomeBeforeNpsDeduction: number
@@ -677,6 +709,31 @@ function readText<T extends string>(
   return result as T
 }
 
+function readPlatformLiabilityDate(
+  record: Record<string, unknown>,
+  path: string,
+  errors: ProfileInputError[],
+): DateOnly | null {
+  const value = record.rcmLiabilityDate
+  if (value === null) return null
+  if (
+    !isDate(value) ||
+    value < currentRules.effectiveStart ||
+    value > currentRules.effectiveEnd ||
+    record.reverseCharge !== 'due'
+  ) {
+    addError(
+      errors,
+      'invalid',
+      `${path}.rcmLiabilityDate`,
+      'gst',
+      'Use a liability date within this Tax Year for confirmed reverse charge, or leave it unknown.',
+    )
+    return null
+  }
+  return value
+}
+
 function parsePlatform(
   value: unknown,
   path: string,
@@ -692,7 +749,8 @@ function parsePlatform(
       'grossBeforeFees',
       'notEmploymentCommissionBrokerageRoyaltyLicensingAgency',
       'foreignFeeGstTreatment',
-      'noRecipientReverseCharge',
+      'reverseCharge',
+      'rcmLiabilityDate',
     ],
     path,
     group,
@@ -725,13 +783,15 @@ function parsePlatform(
       errors,
     ),
     foreignFeeGstTreatment,
-    noRecipientReverseCharge: readTri(
+    reverseCharge: readText(
       record,
-      'noRecipientReverseCharge',
+      'reverseCharge',
+      ['none', 'due', 'not-sure'],
       path,
       group,
       errors,
     ),
+    rcmLiabilityDate: readPlatformLiabilityDate(record, path, errors),
   }
 }
 
@@ -1192,6 +1252,7 @@ function readProfile(value: unknown) {
       'rentalIncome',
       'foreignAssets',
       'equityGains',
+      'broughtForwardLosses',
       'taxableBankInterest',
       'tds',
       'tcs',
@@ -1207,6 +1268,10 @@ function readProfile(value: unknown) {
     foreignAssets: parseForeignAssets(otherRecord?.foreignAssets, errors),
     rentalIncome: parseRentalIncome(otherRecord?.rentalIncome, errors),
     equityGains: parseEquityGains(otherRecord?.equityGains, errors),
+    broughtForwardLosses: parseBroughtForwardLosses(
+      otherRecord?.broughtForwardLosses,
+      errors,
+    ),
     salary: parseSalary(otherRecord?.salary, errors),
     additionalIncome: parseAdditionalIncome(
       otherRecord?.additionalIncome,
@@ -1499,6 +1564,14 @@ function readProfile(value: unknown) {
       'Choose a state or Union territory.',
     )
 
+  if (gst.kind !== 'unregistered' && clients.platform?.rcmLiabilityDate != null)
+    addError(
+      errors,
+      'inconsistent',
+      'clients.platform.rcmLiabilityDate',
+      'gst',
+      'The reverse-charge registration date applies only while unregistered.',
+    )
   const gainTotal =
     otherIncome.equityGains.kind === 'domestic'
       ? otherIncome.equityGains.shortTermGains +
@@ -1745,6 +1818,114 @@ function parseEquityGains(
       'The combined gains or losses exceed the supported whole-rupee range.',
     )
   return gains
+}
+
+function parseBroughtForwardLosses(
+  value: unknown,
+  errors: ProfileInputError[],
+): BroughtForwardLosses {
+  const path = 'otherIncome.broughtForwardLosses'
+  if (!isRecord(value)) {
+    addError(
+      errors,
+      'invalid',
+      path,
+      'other-income',
+      'Choose whether you have capital losses from earlier years.',
+    )
+    return { kind: 'not-sure' }
+  }
+  if (value.kind !== 'eligible') {
+    checkObject(value, ['kind'], path, 'other-income', errors)
+    return {
+      kind: readText(
+        value,
+        'kind',
+        ['none', 'not-sure'],
+        path,
+        'other-income',
+        errors,
+      ),
+    }
+  }
+  checkObject(
+    value,
+    ['kind', 'confirmed', 'years'],
+    path,
+    'other-income',
+    errors,
+  )
+  const years: Extract<
+    BroughtForwardLosses,
+    { kind: 'eligible' }
+  >['years'][number][] = []
+  const seen = new Set<number>()
+  if (
+    !Array.isArray(value.years) ||
+    value.years.length === 0 ||
+    value.years.length > 8
+  )
+    addError(
+      errors,
+      'invalid',
+      `${path}.years`,
+      'other-income',
+      'Enter one to eight originating years, without duplicates.',
+    )
+  for (const [index, item] of (Array.isArray(value.years)
+    ? value.years.slice(0, 8)
+    : []
+  ).entries()) {
+    const rowPath = `${path}.years.${index}`
+    const row = checkObject(
+      item,
+      ['originYear', 'shortTerm', 'longTerm'],
+      rowPath,
+      'other-income',
+      errors,
+    )
+    if (!row) continue
+    const originYear = row.originYear
+    if (
+      typeof originYear !== 'number' ||
+      !Number.isSafeInteger(originYear) ||
+      originYear < 1900 ||
+      originYear >= Number(TAX_YEAR.slice(9, 13)) ||
+      seen.has(originYear)
+    ) {
+      addError(
+        errors,
+        'invalid',
+        `${rowPath}.originYear`,
+        'other-income',
+        'Choose a distinct earlier financial year. Current-year losses belong in the current-year fields.',
+      )
+      continue
+    }
+    seen.add(originYear)
+    years.push({
+      originYear,
+      shortTerm: readAmount(row, 'shortTerm', rowPath, 'other-income', errors),
+      longTerm: readAmount(row, 'longTerm', rowPath, 'other-income', errors),
+    })
+  }
+  if (
+    !Number.isSafeInteger(
+      years.reduce((sum, row) => sum + row.shortTerm + row.longTerm, 0),
+    )
+  )
+    addError(
+      errors,
+      'invalid',
+      `${path}.years`,
+      'other-income',
+      'The combined earlier-year losses exceed the supported whole-rupee range.',
+    )
+  return {
+    kind: 'eligible',
+    confirmed: readTri(value, 'confirmed', path, 'other-income', errors),
+    years,
+  }
 }
 
 function parseForeignAssets(
@@ -2261,6 +2442,40 @@ function calculateSalary(
   }
 }
 
+function taxAtSurchargeThreshold(
+  ordinary: number,
+  total: number,
+  shortTermBase: number,
+  longTermBase: number,
+  rules: CommonIncomeTaxRules,
+) {
+  const bands = [
+    {
+      amount: Math.max(0, total - ordinary - shortTermBase - longTermBase),
+      rate: 0,
+    },
+    { amount: shortTermBase, rate: rules.equityShortTermRate },
+    { amount: longTermBase, rate: rules.equityLongTermRate },
+  ]
+  let lower = 0
+  for (const slab of rules.slabs) {
+    const upper = Math.min(ordinary, slab.upper ?? ordinary)
+    bands.push({ amount: Math.max(0, upper - lower), rate: slab.rate })
+    lower = upper
+    if (upper === ordinary) break
+  }
+  let remaining = rules.surchargeThreshold
+  let tax = 0
+  // Official cut-off calculation consumes lower-rate income first. Zero-rate equity portions retain current statutory exemptions.
+  for (const band of bands.sort((a, b) => a.rate - b.rate)) {
+    const used = Math.min(remaining, band.amount)
+    tax += percentage(used, band.rate)
+    remaining -= used
+    if (remaining === 0) break
+  }
+  return tax
+}
+
 function calculateTax(
   profile: Profile,
   pathRules: IncomePathRules,
@@ -2301,14 +2516,45 @@ function calculateTax(
     shortTermLosses - shortTermLossAgainstShortTerm,
     longTermGains - longTermLossAgainstLongTerm,
   )
-  const netShortTermGains = shortTermGains - shortTermLossAgainstShortTerm
-  const netLongTermGains =
+  let netShortTermGains = shortTermGains - shortTermLossAgainstShortTerm
+  let netLongTermGains =
     longTermGains - longTermLossAgainstLongTerm - shortTermLossAgainstLongTerm
   const unusedShortTermLoss =
     shortTermLosses -
     shortTermLossAgainstShortTerm -
     shortTermLossAgainstLongTerm
   const unusedLongTermLoss = longTermLosses - longTermLossAgainstLongTerm
+  const broughtForward = profile.otherIncome.broughtForwardLosses
+  const broughtForwardLosses = (
+    broughtForward.kind === 'eligible'
+      ? [...broughtForward.years].sort((a, b) => a.originYear - b.originYear)
+      : []
+  ).map((row) => {
+    const longTermUsed = Math.min(row.longTerm, netLongTermGains)
+    netLongTermGains -= longTermUsed
+    const shortTermUsedAgainstShortTerm = Math.min(
+      row.shortTerm,
+      netShortTermGains,
+    )
+    netShortTermGains -= shortTermUsedAgainstShortTerm
+    const shortTermUsedAgainstLongTerm = Math.min(
+      row.shortTerm - shortTermUsedAgainstShortTerm,
+      netLongTermGains,
+    )
+    netLongTermGains -= shortTermUsedAgainstLongTerm
+    return {
+      ...row,
+      longTermUsed,
+      shortTermUsedAgainstShortTerm,
+      shortTermUsedAgainstLongTerm,
+      shortTermRemaining:
+        row.shortTerm -
+        shortTermUsedAgainstShortTerm -
+        shortTermUsedAgainstLongTerm,
+      longTermRemaining: row.longTerm - longTermUsed,
+      lastUsableYear: row.originYear + taxRules.capitalLossCarryForwardYears,
+    }
+  })
   const incomeBeforeNpsDeduction =
     ordinaryBeforeNps + netShortTermGains + netLongTermGains
   const nps =
@@ -2338,16 +2584,27 @@ function calculateTax(
     roundedTotalIncome - netShortTermGains - netLongTermGains,
   )
   const basicExemption = taxRules.equityBasicExemption
-  // Mixed positive gains with unused basic exemption are withheld by coreSupportFacts.
-  const singleGainBase = Math.max(0, roundedTotalIncome - basicExemption)
-  const shortTermBase =
-    netLongTermGains === 0 && ordinaryIncome < basicExemption
-      ? Math.min(netShortTermGains, singleGainBase)
-      : netShortTermGains
-  const longTermBase =
-    netShortTermGains === 0 && ordinaryIncome < basicExemption
-      ? Math.min(netLongTermGains, singleGainBase)
-      : netLongTermGains
+  // Official ITR-3 SI U52/W52 then U59/W59: apply unused basic exemption to ST first, then LT.
+  const availableExemption = Math.min(
+    netShortTermGains + netLongTermGains,
+    Math.max(
+      0,
+      netShortTermGains +
+        netLongTermGains +
+        basicExemption -
+        roundedTotalIncome,
+    ),
+  )
+  const basicExemptionShortTerm = Math.min(
+    netShortTermGains,
+    availableExemption,
+  )
+  const basicExemptionLongTerm = Math.min(
+    netLongTermGains,
+    availableExemption - basicExemptionShortTerm,
+  )
+  const shortTermBase = netShortTermGains - basicExemptionShortTerm
+  const longTermBase = netLongTermGains - basicExemptionLongTerm
   const shortTermTax = percentage(shortTermBase, taxRules.equityShortTermRate)
   const longTermTax = percentage(
     Math.max(0, longTermBase - taxRules.equityLongTermThreshold),
@@ -2372,16 +2629,16 @@ function calculateTax(
       : 0
   const taxAfterRelief = taxBeforeRelief - rebate - marginalRelief
   let surcharge: TaxEstimate['surcharge'] = null
-  // ponytail: mixed-rate surcharge comparison is not inferred; positive net equity gains retain the lower scope ceiling.
   if (
     roundedTotalIncome > taxRules.surchargeThreshold &&
-    roundedTotalIncome <= taxRules.incomeCeiling &&
-    netShortTermGains === 0 &&
-    netLongTermGains === 0
+    roundedTotalIncome <= taxRules.incomeCeiling
   ) {
     const beforeRelief = percentage(taxAfterRelief, taxRules.surchargeRate)
-    const taxAtThreshold = calculateSlabTax(
-      taxRules.surchargeThreshold,
+    const taxAtThreshold = taxAtSurchargeThreshold(
+      ordinaryIncome,
+      roundedTotalIncome,
+      shortTermBase,
+      Math.max(0, longTermBase - taxRules.equityLongTermThreshold),
       taxRules,
     )
     const relief = Math.min(
@@ -2461,6 +2718,8 @@ function calculateTax(
               netLongTermGains -
               shortTermBase -
               longTermBase,
+            basicExemptionShortTerm,
+            basicExemptionLongTerm,
             longTermThresholdUsed: Math.min(
               longTermBase,
               taxRules.equityLongTermThreshold,
@@ -2469,6 +2728,7 @@ function calculateTax(
             longTermTax,
           }
         : null,
+    broughtForwardLosses,
     ordinaryIncome,
     incomeBeforeNpsDeduction,
     employerNpsDeduction,
@@ -2783,18 +3043,6 @@ function factForClients(profile: Profile, sourceIds: readonly string[]) {
         'Platform income character',
         'Employment, commission, brokerage, royalty, licensing, and agency receipts are outside this path.',
       ],
-      [
-        clients.platform.noRecipientReverseCharge === 'yes',
-        'platform-reverse-charge',
-        'Platform fee treatment',
-        'The platform fee must not create an unsupported recipient-side reverse-charge duty.',
-      ],
-      [
-        clients.platform.foreignFeeGstTreatment !== 'not-sure',
-        'platform-fee-gst',
-        'Foreign platform fee treatment',
-        'Confirm the GST treatment of a foreign platform fee before using this result.',
-      ],
     ]
     for (const [condition, code, label, reason] of platformConditions)
       if (!condition)
@@ -3078,6 +3326,20 @@ type GstAreaResult = {
   readonly obligation: Obligation | null
 }
 
+function platformGstState(
+  profile: Pick<Profile, 'clients'>,
+): 'none' | 'due' | 'review' {
+  const platform = profile.clients.platform
+  if (!platform) return 'none'
+  if (platform.reverseCharge === 'due') return 'due'
+  return platform.reverseCharge === 'not-sure' ||
+    platform.foreignFeeGstTreatment === 'not-sure'
+    ? 'review'
+    : 'none'
+}
+const platformGstReason =
+  'Platform-fee GST treatment needs review. The income-tax estimate uses confirmed gross receipts; it does not assume that no reverse-charge duty exists.'
+
 const rentalGstReason =
   'Confirm the rental GST conditions, including tenant registration and the state of supply. Other or uncertain arrangements need a separate GST review; no GST registration or return dates are shown.'
 function rentalNeedsGstReview(profile: Pick<Profile, 'otherIncome'>) {
@@ -3272,6 +3534,34 @@ function registeredGstAreas(
       }
     }
   }
+  const platformState = platformGstState(profile)
+  if (platformState === 'review') {
+    missing.push(platformGstReason)
+    review.push(
+      reviewAction(
+        'platform-gst-review',
+        'Review GST on platform fees',
+        'gst',
+        'clients',
+        platformGstReason,
+        returnSources,
+      ),
+    )
+  } else if (
+    platformState === 'due' &&
+    validated.groups['gst-calendar'].valid
+  ) {
+    review.push(
+      reviewAction(
+        'platform-rcm-payment',
+        'Account for reverse-charge GST on platform fees',
+        'gst',
+        'clients',
+        'You confirmed a reverse-charge duty. Check the invoice value and time of supply, pay the GST through the cash ledger and report it in the applicable return. Review input-tax credit separately; this plan calculates neither GST payable nor credit.',
+        returnSources,
+      ),
+    )
+  }
   const coverage: Coverage<GstConclusion> = missing.length
     ? coverageUnavailable(
         'gst',
@@ -3366,7 +3656,7 @@ function registeredGstAreas(
 }
 
 function calculateGst(
-  profile: Pick<Profile, 'otherIncome' | 'taxYear'> & {
+  profile: Pick<Profile, 'otherIncome' | 'taxYear' | 'clients'> & {
     readonly gst: UnregisteredGst
   },
   rules: RuleDataset,
@@ -3375,6 +3665,114 @@ function calculateGst(
   expiresOn: DateOnly,
   sourceIds: readonly string[],
 ): GstAreaResult {
+  const registrationAction = (
+    dueDate: DateOnly,
+    reason: string,
+    ruleIds: readonly string[],
+  ): Obligation => ({
+    id: `gst-registration:${profile.taxYear}`,
+    kind: 'gst-registration',
+    title: 'Apply for GST registration',
+    taxYear: profile.taxYear,
+    normalDueDate: dueDate,
+    operativeDueDate: null,
+    extensionSourceId: null,
+    dueDate,
+    deadlineStatus: deadlineStatus(today, dueDate),
+    reasons: [reason],
+    consequence:
+      'This plan does not calculate GST payable, late fees, interest or filing steps.',
+    amountDue: null,
+    ruleIds,
+    statutorySourceIds: sourceIds,
+    tutorialSourceId: null,
+    verifiedOn,
+    expiresOn,
+  })
+  const values = rules.groups.gstRegistration.values
+  const threshold = values.lowerThresholdStates.includes(profile.gst.state)
+    ? values.lowerThreshold
+    : values.standardThreshold
+  const platformState = platformGstState(profile)
+  if (platformState === 'due') {
+    const rcmDate = profile.clients.platform?.rcmLiabilityDate ?? null
+    const turnoverDate =
+      profile.gst.aggregateTurnover > threshold
+        ? profile.gst.thresholdLiabilityDate
+        : null
+    const date =
+      rcmDate && turnoverDate && turnoverDate < rcmDate ? turnoverDate : rcmDate
+    const knownDate =
+      date !== null &&
+      date <= today &&
+      rcmDate !== null &&
+      rcmDate <= today &&
+      profile.gst.turnoverComplete === 'yes' &&
+      profile.gst.compulsoryRegistration === 'no' &&
+      (profile.gst.aggregateTurnover <= threshold ||
+        (turnoverDate !== null && turnoverDate <= today))
+    const reason =
+      'You confirmed a platform-fee reverse-charge liability. GST registration is required independently of the turnover threshold.'
+    return {
+      coverage: {
+        kind: 'available',
+        value: {
+          status: 'reverse-charge',
+          state: profile.gst.state,
+          registrationRequired: true,
+        },
+        sourceIds,
+      },
+      obligation: knownDate
+        ? registrationAction(
+            addDays(
+              date,
+              rules.groups.gstRegistration.values.registrationWindowDays,
+            ),
+            reason,
+            [
+              'platform-rcm-registration',
+              'gst-registration-threshold',
+              'gst-registration-window',
+            ],
+          )
+        : null,
+      review: knownDate
+        ? []
+        : [
+            reviewAction(
+              'platform-rcm-date',
+              'Confirm when reverse-charge registration became required',
+              'gst',
+              'gst',
+              reason +
+                ' Confirm the first liability date, complete turnover and any other compulsory-registration trigger from your records; no deadline is shown until the timing is established.',
+              sourceIds,
+            ),
+          ],
+    }
+  }
+  if (platformState === 'review')
+    return {
+      coverage: coverageUnavailable(
+        'gst',
+        'platform-gst-review',
+        platformGstReason,
+        'Review whether registration is required independently of turnover. No registration exemption or deadline is inferred.',
+        sourceIds,
+      ),
+      obligation: null,
+      review: [
+        reviewAction(
+          'platform-gst-review',
+          'Review GST on platform fees',
+          'gst',
+          'clients',
+          platformGstReason,
+          sourceIds,
+        ),
+      ],
+    }
   if (rentalNeedsGstReview(profile))
     return {
       coverage: coverageUnavailable(
@@ -3421,10 +3819,6 @@ function calculateGst(
       obligation: null,
     }
   }
-  const values = rules.groups.gstRegistration.values
-  const threshold = values.lowerThresholdStates.includes(profile.gst.state)
-    ? values.lowerThreshold
-    : values.standardThreshold
   const difference = Math.abs(threshold - profile.gst.aggregateTurnover)
   const status: GstConclusion['status'] =
     profile.gst.aggregateTurnover < threshold
@@ -3475,34 +3869,18 @@ function calculateGst(
           values.registrationWindowDays,
         )
       : null
-  const obligation: Obligation | null = dueDate
-    ? {
-        id: `gst-registration:${profile.taxYear}`,
-        kind: 'gst-registration',
-        title: 'Apply for GST registration',
-        taxYear: profile.taxYear,
-        normalDueDate: dueDate,
-        operativeDueDate: null,
-        extensionSourceId: null,
+  const obligation = dueDate
+    ? registrationAction(
         dueDate,
-        deadlineStatus: deadlineStatus(today, dueDate),
-        reasons: [
-          'Your declared GST aggregate turnover is above the starting threshold and the liability date is known.',
-        ],
-        consequence:
-          'My Next Filing does not calculate GST payable, late fees, interest, or filing steps.',
-        amountDue: null,
-        ruleIds: [
+        'Your declared GST aggregate turnover is above the starting threshold and the liability date is known.',
+        [
           'gst-aggregate-turnover',
           'gst-registration-threshold',
           'gst-registration-window',
         ],
-        statutorySourceIds: sourceIds,
-        tutorialSourceId: null,
-        verifiedOn,
-        expiresOn,
-      }
+      )
     : null
+
   return {
     coverage: { kind: 'available', value, sourceIds },
     review: [],
@@ -3607,6 +3985,40 @@ function coreSupportFacts(
         sourceIds,
       ),
     )
+  const prior = current.otherIncome.broughtForwardLosses
+  if (
+    prior.kind === 'not-sure' ||
+    (prior.kind === 'eligible' && prior.confirmed !== 'yes')
+  )
+    coreFacts.push(
+      unsupported(
+        'brought-forward-loss-scope',
+        'income-tax',
+        'other-income',
+        'Earlier-year capital losses',
+        'Confirm the determined, timely filed and still-available earlier-year losses before using this estimate.',
+        sourceIds,
+      ),
+    )
+  if (
+    prior.kind === 'eligible' &&
+    prior.years.some(
+      (row) =>
+        row.originYear +
+          rules.groups.commonIncomeTax.values.capitalLossCarryForwardYears <
+        Number(current.taxYear.slice(9, 13)),
+    )
+  )
+    coreFacts.push(
+      unsupported(
+        'brought-forward-loss-expired',
+        'income-tax',
+        'other-income',
+        'Expired capital loss',
+        'An entered loss is outside its eight-year set-off window. Review the year and balance; this version will not silently discard it.',
+        sourceIds,
+      ),
+    )
   const gains = current.otherIncome.equityGains
   if (
     gains.kind === 'not-sure' ||
@@ -3618,7 +4030,7 @@ function coreSupportFacts(
         'income-tax',
         'other-income',
         'Domestic equity gains',
-        'Confirm the eligible equity gains and complete annual amounts. Other gains, brought-forward losses or uncertain treatment need separate review.',
+        'Confirm the eligible equity gains and complete annual amounts. Other gains or uncertain treatment need separate review; enter eligible earlier-year losses in their own section.',
         sourceIds,
       ),
     )
@@ -3714,32 +4126,9 @@ function coreSupportFacts(
     rules.groups.incomePaths.values,
     rules.groups.commonIncomeTax.values,
   )
-  // ponytail: no assumed exemption allocation between gain categories; expand after primary-source verification.
-  if (
-    gains.kind === 'domestic' &&
-    (estimate.equityGains?.netShortTermGains ?? 0) > 0 &&
-    (estimate.equityGains?.netLongTermGains ?? 0) > 0 &&
-    estimate.ordinaryIncome <
-      rules.groups.commonIncomeTax.values.equityBasicExemption
-  )
-    coreFacts.push(
-      unsupported(
-        'equity-basic-exemption-allocation',
-        'income-tax',
-        'other-income',
-        'Basic exemption across equity gains',
-        'You have both short-term and long-term gains remaining after loss adjustment, with ordinary income below ₹4 lakh after deductions. This version needs a separate review of how the unused basic exemption applies.',
-        sourceIds,
-      ),
-    )
   const minimumIncome = estimate.presumptive.minimumIncome
   const roundedIncome = estimate.roundedTotalIncome
-  const hasNetEquityGains =
-    (estimate.equityGains?.netShortTermGains ?? 0) > 0 ||
-    (estimate.equityGains?.netLongTermGains ?? 0) > 0
-  const ceiling = hasNetEquityGains
-    ? rules.groups.commonIncomeTax.values.surchargeThreshold
-    : rules.groups.commonIncomeTax.values.incomeCeiling
+  const ceiling = rules.groups.commonIncomeTax.values.incomeCeiling
   if (roundedIncome > ceiling)
     coreFacts.push(
       unsupported(
@@ -3751,12 +4140,8 @@ function coreSupportFacts(
         ) > ceiling
           ? 'receipts'
           : 'other-income',
-        hasNetEquityGains
-          ? 'Equity gains with total income above ₹50 lakh'
-          : 'Total income above ₹1 crore',
-        hasNetEquityGains
-          ? 'Positive equity gains remain after loss adjustment and total income exceeds ₹50 lakh. This version needs a separate review of mixed-rate surcharge and marginal relief.'
-          : 'This version supports ordinary taxable income up to ₹1 crore. Higher surcharge bands need separate review.',
+        'Total income above ₹1 crore',
+        'This version supports taxable income up to ₹1 crore. Higher surcharge bands need separate review.',
         sourceIds,
       ),
     )
@@ -3790,6 +4175,7 @@ export function screenProfile(
           gst: profile.gst,
           taxYear: profile.taxYear,
           otherIncome: profile.otherIncome,
+          clients: profile.clients,
         },
         data,
         indiaDate(currentDate),
@@ -3800,8 +4186,9 @@ export function screenProfile(
       if (gst.coverage.kind === 'unavailable') coverage.push(gst.coverage)
       else
         coverage.push(
-          ...gst.review.map(({ reason }) => ({
-            code: 'gst-liability-date-uncertain',
+          ...gst.review.map(({ id, reason }) => ({
+            code:
+              id === 'gst-liability-date' ? 'gst-liability-date-uncertain' : id,
             reason,
           })),
         )
@@ -4022,6 +4409,7 @@ export function evaluate(
         gst: current.gst,
         taxYear: current.taxYear,
         otherIncome: current.otherIncome,
+        clients: current.clients,
       },
       data,
       today,
@@ -4123,7 +4511,7 @@ export function evaluate(
     assumptions: [
       'This estimate is for one adult who is resident and ordinarily resident in India and runs one individual practice.',
       'The amounts you entered are complete, non-negative whole-rupee values from your tax records.',
-      'This is a best-effort estimate. It does not calculate deductions other than the supported salary, employer NPS and rental deductions, surcharge beyond the supported first ordinary-income band, losses other than supported current-year domestic equity losses, special-rate tax other than supported domestic equity gains, foreign-tax relief, interest, fees, or penalties.',
+      'This is a best-effort estimate. It does not calculate deductions other than the supported salary, employer NPS and rental deductions, surcharge beyond the supported first band, losses other than supported current-year and eligible earlier-year domestic equity losses, special-rate tax other than supported domestic equity gains, foreign-tax relief, interest, fees, or penalties.',
     ],
     explanations: [
       current.incomePath.kind === 'specified-profession'
@@ -4141,7 +4529,7 @@ export function evaluate(
         : []),
       ...(tax.surcharge
         ? [
-            'Ordinary taxable income above ₹50 lakh and up to ₹1 crore includes 10% surcharge, reduced by any surcharge marginal relief. The comparison uses tax on ₹50 lakh plus the excess income. Cess applies after this relief, before actual credits and payments.',
+            'Supported taxable income above ₹50 lakh and up to ₹1 crore includes 10% surcharge, reduced by any surcharge marginal relief. The comparison fills ₹50 lakh from the same zero-tax and income-rate components, from lower to higher rates, then adds the excess income. Cess applies after this relief, before actual credits and payments.',
           ]
         : []),
       ...(tax.rentalIncome
@@ -4154,10 +4542,15 @@ export function evaluate(
             'Supported dividends, mutual-fund distributions and additional interest are included once at their confirmed annual taxable amounts before TDS. No dividend or distribution expenses are deducted.',
           ]
         : []),
+      ...(tax.broughtForwardLosses.length
+        ? [
+            'Current-year losses are applied first, then eligible earlier years oldest first. Earlier losses retain their original last usable year; this plan does not certify them or restart their carry-forward window.',
+          ]
+        : []),
       ...(tax.equityGains
         ? [
             'Domestic equity gains are included once after permitted current-year loss adjustment, separately from dividends and freelance receipts. Employer NPS and the rebate do not reduce their special-rate tax. The long-term threshold does not remove gains from total income.',
-            'Long-term losses offset long-term gains. Short-term losses offset short-term gains first, then remaining long-term gains. Capital losses never reduce salary, freelance income or other ordinary income. Loss adjustment precedes the basic exemption and long-term threshold.',
+            'Long-term losses offset long-term gains. Short-term losses offset short-term gains first, then remaining long-term gains. Capital losses never reduce salary, freelance income or other ordinary income. Loss adjustment precedes the basic exemption and long-term threshold. Unused basic exemption is applied to short-term gains first, then long-term gains.',
             'Unexpected capital gains may require a separate review of advance-tax payment timing, including the conditional 31 March provision. This estimate does not calculate interest or confirm eligibility for that relief.',
           ]
         : []),

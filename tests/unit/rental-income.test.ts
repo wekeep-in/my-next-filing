@@ -499,7 +499,7 @@ test('migrates captured workspace 8 without writes or loss of consent amounts or
   if (loaded.kind !== 'ready' || !loaded.workspace.active)
     throw Error('Historical workspace did not migrate')
   expect(loaded.workspace).toMatchObject({
-    schemaVersion: 10,
+    schemaVersion: 11,
     revision: workspaceV8.revision,
     consentDecidedAt: workspaceV8.consentDecidedAt,
     active: {
@@ -529,7 +529,7 @@ test('migrates captured workspace 8 without writes or loss of consent amounts or
   expect(saved).toMatchObject({
     kind: 'saved',
     workspace: {
-      schemaVersion: 10,
+      schemaVersion: 11,
       active: {
         profile: { otherIncome: { rentalIncome: rent } },
         completions: workspaceV8.active.completions,
@@ -584,7 +584,7 @@ test.each([
 test('requires a fresh rental answer from captured Recovery and rejects mixed schemas', () => {
   const recovered = parseRecoveryDraft(recoveryV7, TAX_YEAR)
   expect(recovered).toMatchObject({
-    schemaVersion: 9,
+    schemaVersion: 10,
     draft: {
       hasRentalIncome: '',
       rentalIncomeConfirmed: '',

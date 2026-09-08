@@ -202,6 +202,7 @@ export function ReviewAreas({
   )
   const standaloneActions = evaluation.reviewActions.filter(
     (action) =>
+      action.id === 'platform-rcm-payment' ||
       !unavailable.some(([key]) => {
         const coverage = evaluation.coverage[key]
         return coverage.kind === 'unavailable' && coverage.area === action.area

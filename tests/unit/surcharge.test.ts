@@ -188,7 +188,7 @@ test('supports professional profit plus salary rental and dividends without chan
   })
 })
 
-test('keeps positive net equity gains above fifty lakh outside scope even when their tax base is zero', () => {
+test('supports positive net equity gains above fifty lakh without removing their annual threshold', () => {
   for (const [shortTermGains, longTermGains] of [
     [10, 0],
     [0, 10],
@@ -209,14 +209,9 @@ test('keeps positive net equity gains above fifty lakh outside scope even when t
         },
       },
     }
-    const result = evaluate(input, now, currentRules)
-    expect(result.kind).toBe('unsupported')
-    expect(result).not.toHaveProperty('tax')
-    expect(
-      screenProfile(input, now, currentRules).facts.some(({ reason }) =>
-        reason.includes('mixed-rate surcharge'),
-      ),
-    ).toBe(true)
+    const result = supported(input)
+    expect(result.tax.surcharge).not.toBeNull()
+    expect(screenProfile(input, now, currentRules).facts).toEqual([])
   }
 })
 
@@ -309,7 +304,7 @@ test('keeps historical workspace and Recovery data intact without a new schema',
   const loaded = loadSavedWorkspace(storage, now)
   if (loaded.kind !== 'ready' || !loaded.workspace.active)
     throw Error('Expected historical workspace')
-  expect(loaded.workspace.schemaVersion).toBe(10)
+  expect(loaded.workspace.schemaVersion).toBe(11)
   expect(loaded.workspace.active.completions).toEqual(
     workspaceV9.active.completions,
   )
@@ -412,3 +407,36 @@ test('the rental exemption preserves a registered calendar and source failure wi
   }
   expect(supported(uncertain).coverage.gst.kind).toBe('unavailable')
 })
+
+test.each([
+  [6_000_000, 100, 0, 1_079_990, 1_578_740],
+  [6_000_000, 0, 100, 1_079_970, 1_578_720],
+  [4_900_000, 100_010, 0, 1_069_999, 1_112_810],
+  [300_000, 0, 4_700_010, 559_375, 581_760],
+  [3_000_000, 0, 2_000_010, 714_373.25, 742_960],
+  [1_000_000, 0, 4_000_010, 524_375, 545_360],
+  [0, 5_000_010, 0, 920_000, 956_810],
+])(
+  'compares the same mixed income at the surcharge threshold for %i ordinary / %i ST / %i LT',
+  (income, shortTermGains, longTermGains, taxAtThreshold, finalAmount) => {
+    const base = ordinary(income)
+    const value: Profile = {
+      ...base,
+      otherIncome: {
+        ...base.otherIncome,
+        equityGains: {
+          kind: 'domestic',
+          confirmed: 'yes',
+          shortTermGains,
+          longTermGains,
+          shortTermLosses: 0,
+          longTermLosses: 0,
+        },
+      },
+    }
+    const result = supported(value)
+    expect(result.tax.finalAmount).toBe(finalAmount)
+    expect(result.tax.surcharge?.taxAtThreshold).toBeCloseTo(taxAtThreshold)
+    expect(screenProfile(value, now, currentRules).facts).toEqual([])
+  },
+)

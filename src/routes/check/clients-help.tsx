@@ -12,9 +12,10 @@ export function PlatformFeeHelp() {
       description="Check the platform's fee invoice and the supplier's location. Ask your adviser whether you must pay GST yourself under reverse charge."
     >
       <p>
-        An invoice with no GST does not prove that no GST is due. Answer Yes to
-        the no-reverse-charge question only when confirmed; otherwise choose Not
-        sure.
+        An invoice with no GST does not prove that no GST is due. Choose the
+        confirmed treatment from your invoice review or adviser. If it is
+        unresolved, choose Not sure. Your income-tax estimate can remain
+        available while the GST duty is reviewed.
       </p>
       <ExternalLink href="https://taxinformation.cbic.gov.in/content-page/explore-act/1000613/1000001">
         Official IGST reverse-charge rules

@@ -190,6 +190,7 @@ export function MoneyField({
   readonly id:
     | DraftAmountKey
     | `employerNpsEmployers.${number}.${'contribution' | 'eligibleSalary'}`
+    | `broughtForwardYears.${number}.${'shortTerm' | 'longTerm'}`
   readonly label: ReactNode
   readonly help: ReactNode
   readonly tooltipLabel?: string

@@ -214,8 +214,17 @@ function GroupSummary({
                 }),
               },
               {
-                label: 'No reverse-charge GST on platform fee',
-                value: answer(draft.platformNoRecipientReverseCharge),
+                label: 'Platform reverse-charge GST',
+                value:
+                  draft.platformReverseCharge === 'none'
+                    ? 'No reverse-charge duty'
+                    : draft.platformReverseCharge === 'due'
+                      ? 'Reverse-charge duty confirmed'
+                      : answer(draft.platformReverseCharge),
+              },
+              {
+                label: 'Reverse-charge registration liability date',
+                value: draft.platformRcmLiabilityDate || 'Not established',
               },
             ]
           : []),
@@ -330,6 +339,28 @@ function GroupSummary({
                 label: 'Rental GST conditions confirmed',
                 value: answer(draft.rentalGstConfirmed),
               },
+            ]
+          : []),
+        {
+          label: 'Earlier-year capital losses',
+          value: answer(draft.hasBroughtForwardLosses),
+        },
+        ...(draft.hasBroughtForwardLosses === 'yes'
+          ? [
+              {
+                label: 'Earlier losses confirmed eligible',
+                value: answer(draft.broughtForwardLossesConfirmed),
+              },
+              ...draft.broughtForwardYears.flatMap((row) => [
+                {
+                  label: `${row.originYear}-${String(Number(row.originYear) + 1).slice(-2)} short-term loss balance`,
+                  value: money(row.shortTerm),
+                },
+                {
+                  label: `${row.originYear}-${String(Number(row.originYear) + 1).slice(-2)} long-term loss balance`,
+                  value: money(row.longTerm),
+                },
+              ]),
             ]
           : []),
         {

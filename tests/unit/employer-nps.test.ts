@@ -410,7 +410,7 @@ test('migrates captured salary workspaces in memory and preserves consent and co
   if (loaded.kind !== 'ready') return
   expect(storage.getItem(WORKSPACE_KEY)).toBe(raw)
   expect(loaded.workspace).toMatchObject({
-    schemaVersion: 10,
+    schemaVersion: 11,
     consentDecidedAt: workspaceV5.consentDecidedAt,
     active: {
       completions: workspaceV5.active.completions,
@@ -447,7 +447,7 @@ test('migrates captured salary workspaces in memory and preserves consent and co
 test('restores captured Recovery with NPS unanswered and rejects mixed schemas and hidden rows', () => {
   const migrated = parseRecoveryDraft(recoveryV4, TAX_YEAR)
   expect(migrated).toMatchObject({
-    schemaVersion: 9,
+    schemaVersion: 10,
     draft: {
       hasSalary: 'yes',
       hasEmployerNps: '',

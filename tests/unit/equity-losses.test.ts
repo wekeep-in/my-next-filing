@@ -149,7 +149,7 @@ test.each([
   },
 )
 
-test('uses the post-set-off categories for basic exemption and keeps unresolved mixed cases blocked', () => {
+test('allocates basic exemption after current loss set-off for one or both categories', () => {
   const resolved = portfolio(50_000, 75_000, 300_000, 0, 300_000)
   const result = supported(resolved)
   expect(result.tax).toMatchObject({
@@ -172,16 +172,14 @@ test('uses the post-set-off categories for basic exemption and keeps unresolved 
       today,
     ).progression.kind,
   ).toBe('next')
-  const blocked = portfolio(50_000, 25_000, 300_000, 0, 300_000)
-  const evaluation = evaluate(blocked, now, currentRules)
-  expect(evaluation.kind).toBe('unsupported')
-  if (evaluation.kind !== 'unsupported')
-    throw Error('Expected mixed exemption review')
-  expect(
-    evaluation.facts.some(
-      ({ code }) => code === 'equity-basic-exemption-allocation',
-    ),
-  ).toBe(true)
+  const mixed = supported(portfolio(50_000, 25_000, 300_000, 0, 300_000))
+  expect(mixed.tax).toMatchObject({
+    finalAmount: 13_000,
+    equityGains: {
+      basicExemptionShortTerm: 25_000,
+      basicExemptionLongTerm: 75_000,
+    },
+  })
 })
 
 test('keeps NPS salary dividends and GST independent from capital losses', () => {
@@ -287,10 +285,10 @@ test('rejects well-formed portfolios whose expanded instrument or loss condition
 
 test('uses gains after loss adjustment for the income ceiling and rebate', () => {
   expect(
-    supported(portfolio(6_000_000, 2_000_000, 0, 0)).tax.roundedTotalIncome,
-  ).toBe(5_000_000)
+    supported(portfolio(11_000_000, 2_000_000, 0, 0)).tax.roundedTotalIncome,
+  ).toBe(10_000_000)
   expect(
-    evaluate(portfolio(6_000_010, 2_000_000, 0, 0), now, currentRules).kind,
+    evaluate(portfolio(11_000_010, 2_000_000, 0, 0), now, currentRules).kind,
   ).toBe('unsupported')
   const rebate = supported(portfolio(300_000, 100_000, 0, 0))
   expect(rebate.tax).toMatchObject({
@@ -525,7 +523,7 @@ test('migrates captured workspace without deleting gains consent revisions or co
   if (loaded.kind !== 'ready')
     throw Error('Expected captured workspace to migrate')
   expect(loaded.workspace).toMatchObject({
-    schemaVersion: 10,
+    schemaVersion: 11,
     revision: workspaceV7.revision,
     consentDecidedAt: workspaceV7.consentDecidedAt,
     active: {
@@ -594,7 +592,7 @@ test('preserves legacy loss exclusions and requires the expanded Recovery answer
   )
   const recovery = parseRecoveryDraft(recoveryV6, TAX_YEAR)
   expect(recovery).toMatchObject({
-    schemaVersion: 9,
+    schemaVersion: 10,
     draft: {
       hasEquityGains: 'yes',
       equityGainsConfirmed: '',

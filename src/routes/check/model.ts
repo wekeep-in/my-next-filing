@@ -75,7 +75,8 @@ export type Draft = {
     | 'not-applicable'
     | 'known'
     | 'not-sure'
-  readonly platformNoRecipientReverseCharge: DraftChoice
+  readonly platformReverseCharge: '' | 'none' | 'due' | 'not-sure'
+  readonly platformRcmLiabilityDate: string
   readonly foreignWorkInIndia: DraftChoice
   readonly foreignRecipientIdentifiable: DraftChoice
   readonly foreignOwnAccount: DraftChoice
@@ -100,6 +101,13 @@ export type Draft = {
   readonly employerNpsEmployers: readonly {
     readonly contribution: string
     readonly eligibleSalary: string
+  }[]
+  readonly hasBroughtForwardLosses: DraftChoice
+  readonly broughtForwardLossesConfirmed: DraftChoice
+  readonly broughtForwardYears: readonly {
+    readonly originYear: string
+    readonly shortTerm: string
+    readonly longTerm: string
   }[]
   readonly hasEquityGains: DraftChoice
   readonly equityGainsConfirmed: DraftChoice
@@ -140,8 +148,11 @@ export const equityGainFields = [
 export const equityGainKeys = equityGainFields.map(({ key }) => key)
 
 export const rentalIncomeFields = [
-  { key: 'rentalAnnualValue', label: 'Annual value before municipal taxes' },
-  { key: 'rentalMunicipalTaxes', label: 'Municipal taxes paid by you' },
+  {
+    key: 'rentalAnnualValue',
+    label: 'Your share of annual value before municipal taxes',
+  },
+  { key: 'rentalMunicipalTaxes', label: 'Your municipal-tax deduction' },
   { key: 'rentalInterest', label: 'Eligible interest on the property loan' },
 ] as const satisfies readonly {
   readonly key: keyof RentalIncomeAmounts
@@ -281,7 +292,7 @@ export const unsupportedFactLabels: Record<UnsupportedFact, string> = {
   foreignTaxOrRelief:
     'Tax owed or paid abroad, or a claim for foreign-tax relief',
   deductionsLossesOrSpecialRate:
-    'Deductions other than the supported salary, employer NPS and rental deductions, losses outside the current-year domestic equity conditions, or other unsupported special-rate income',
+    'Deductions other than the supported salary, employer NPS and rental deductions, losses outside the supported current-year and earlier-year domestic equity conditions, or other unsupported special-rate income',
   disputedCredit: 'A dispute about your TDS or TCS tax credit',
   anotherBusinessOrProfession:
     'A business or profession in addition to the freelance work entered here',
@@ -355,7 +366,8 @@ export const blankDraft = (): Draft => ({
   platformGrossBeforeFees: '',
   platformIncomeCharacter: '',
   platformForeignFeeGstTreatment: '',
-  platformNoRecipientReverseCharge: '',
+  platformReverseCharge: '',
+  platformRcmLiabilityDate: '',
   foreignWorkInIndia: '',
   foreignRecipientIdentifiable: '',
   foreignOwnAccount: '',
@@ -374,6 +386,9 @@ export const blankDraft = (): Draft => ({
   hasEmployerNps: '',
   employerNpsConfirmed: '',
   employerNpsEmployers: [],
+  hasBroughtForwardLosses: '',
+  broughtForwardLossesConfirmed: '',
+  broughtForwardYears: [],
   hasEquityGains: '',
   equityGainsConfirmed: '',
   hasForeignAssets: '',
@@ -412,6 +427,7 @@ export function draftFromProfile(profile: Profile): Draft {
   amounts.advanceTaxPaid =
     profile.otherIncome.advanceTaxPaid.toLocaleString('en-IN')
   const salary = profile.otherIncome.salary
+  const prior = profile.otherIncome.broughtForwardLosses
   const gains = profile.otherIncome.equityGains
   if (gains.kind === 'domestic')
     for (const key of equityGainKeys)
@@ -476,6 +492,22 @@ export function draftFromProfile(profile: Profile): Draft {
             eligibleSalary: employer.eligibleSalary.toLocaleString('en-IN'),
           }))
         : [],
+    hasBroughtForwardLosses:
+      prior.kind === 'eligible'
+        ? 'yes'
+        : prior.kind === 'none'
+          ? 'no'
+          : 'not-sure',
+    broughtForwardLossesConfirmed:
+      prior.kind === 'eligible' ? prior.confirmed : '',
+    broughtForwardYears:
+      prior.kind === 'eligible'
+        ? prior.years.map((row) => ({
+            originYear: String(row.originYear),
+            shortTerm: row.shortTerm.toLocaleString('en-IN'),
+            longTerm: row.longTerm.toLocaleString('en-IN'),
+          }))
+        : [],
     hasEquityGains:
       gains.kind === 'none'
         ? 'no'
@@ -525,9 +557,8 @@ export function draftFromProfile(profile: Profile): Draft {
       : '',
     platformForeignFeeGstTreatment:
       profile.clients.platform?.foreignFeeGstTreatment ?? '',
-    platformNoRecipientReverseCharge: profile.clients.platform
-      ? choice(profile.clients.platform.noRecipientReverseCharge)
-      : '',
+    platformReverseCharge: profile.clients.platform?.reverseCharge ?? '',
+    platformRcmLiabilityDate: profile.clients.platform?.rcmLiabilityDate ?? '',
     foreignWorkInIndia: profile.clients.foreign
       ? choice(profile.clients.foreign.workPerformedInIndia)
       : '',
@@ -654,6 +685,7 @@ const exampleCandidate = {
   otherIncome: {
     salary: { kind: 'none' },
     equityGains: { kind: 'none' },
+    broughtForwardLosses: { kind: 'none' },
     additionalIncome: { kind: 'none' },
     rentalIncome: { kind: 'none' },
     foreignAssets: { kind: 'none' },
@@ -786,8 +818,8 @@ function candidateFromDraft(draft: Draft) {
               draft.platformIncomeCharacter || 'not-sure',
             foreignFeeGstTreatment:
               draft.platformForeignFeeGstTreatment || 'not-sure',
-            noRecipientReverseCharge:
-              draft.platformNoRecipientReverseCharge || 'not-sure',
+            reverseCharge: draft.platformReverseCharge || 'not-sure',
+            rcmLiabilityDate: draft.platformRcmLiabilityDate || null,
           }
         : null,
       foreign: foreignSelected
@@ -810,6 +842,27 @@ function candidateFromDraft(draft: Draft) {
         : null,
     },
     otherIncome: {
+      broughtForwardLosses:
+        draft.hasBroughtForwardLosses === 'yes'
+          ? {
+              kind: 'eligible',
+              confirmed: draft.broughtForwardLossesConfirmed || 'not-sure',
+              years: draft.broughtForwardYears.map((row) => {
+                const short = parseMoney(row.shortTerm)
+                const long = parseMoney(row.longTerm)
+                return {
+                  originYear: /^\d{4}$/.test(row.originYear)
+                    ? Number(row.originYear)
+                    : null,
+                  shortTerm: 'value' in short ? short.value : 0,
+                  longTerm: 'value' in long ? long.value : 0,
+                }
+              }),
+            }
+          : {
+              kind:
+                draft.hasBroughtForwardLosses === 'no' ? 'none' : 'not-sure',
+            },
       foreignAssets:
         draft.hasForeignAssets === 'no'
           ? { kind: 'none' }
@@ -1042,6 +1095,9 @@ export function completeDraft(
 }
 
 function errorStep(key: string) {
+  if (key === 'platformRcmLiabilityDate') return groupStep('gst')
+  if (key.startsWith('broughtForward') || key === 'hasBroughtForwardLosses')
+    return groupStep('other-income')
   if (
     [
       'personKind',
@@ -1120,6 +1176,19 @@ function errorStep(key: string) {
 }
 
 function profileErrorKey(error: ProfileInputError) {
+  if (error.path === 'clients.platform.rcmLiabilityDate')
+    return 'platformRcmLiabilityDate'
+  if (error.path === 'clients.platform.reverseCharge')
+    return 'platformReverseCharge'
+  if (error.path.startsWith('otherIncome.broughtForwardLosses.years'))
+    return error.path.replace(
+      'otherIncome.broughtForwardLosses.years',
+      'broughtForwardYears',
+    )
+  if (error.path.startsWith('otherIncome.broughtForwardLosses'))
+    return error.path.endsWith('.confirmed')
+      ? 'broughtForwardLossesConfirmed'
+      : 'hasBroughtForwardLosses'
   if (error.path.startsWith('otherIncome.foreignAssets'))
     return error.path.endsWith('.incomeConfirmed')
       ? 'assetIncomeConfirmed'
@@ -1321,7 +1390,7 @@ function validateDraftGroup(
         'platformRecipientIdentifiable',
         'platformGrossBeforeFees',
         'platformIncomeCharacter',
-        'platformNoRecipientReverseCharge',
+        'platformReverseCharge',
       ] as const)
         if (!draft[key]) nextErrors[key] = 'Choose Yes, No, or Not sure.'
     if (hasPlatformWork(draft) && !draft.platformForeignFeeGstTreatment)
@@ -1350,6 +1419,30 @@ function validateDraftGroup(
         'Choose whether these payments involve a foreign account or similar arrangement.'
   }
   if (group === 'other-income') {
+    if (!draft.hasBroughtForwardLosses)
+      nextErrors.hasBroughtForwardLosses =
+        'Choose whether earlier-year capital losses remain.'
+    if (draft.hasBroughtForwardLosses === 'yes') {
+      if (!draft.broughtForwardLossesConfirmed)
+        nextErrors.broughtForwardLossesConfirmed =
+          'Confirm the eligibility and remaining balances, or choose Not sure.'
+      if (
+        draft.broughtForwardYears.length === 0 ||
+        draft.broughtForwardYears.length > 8
+      )
+        nextErrors.broughtForwardYears = 'Add one to eight originating years.'
+      draft.broughtForwardYears.forEach((row, index) => {
+        if (!row.originYear)
+          nextErrors[`broughtForwardYears.${index}.originYear`] =
+            'Choose the year in which the loss arose.'
+        for (const key of ['shortTerm', 'longTerm'] as const) {
+          const parsed = parseMoney(row[key])
+          if ('error' in parsed)
+            nextErrors[`broughtForwardYears.${index}.${key}`] = parsed.error
+        }
+      })
+    }
+
     if (!draft.hasForeignAssets)
       nextErrors.hasForeignAssets =
         'Choose whether you held foreign assets or had signing authority.'
@@ -1429,6 +1522,13 @@ function validateDraftGroup(
         "Select any situations that apply, or choose None of these apply or I'm not sure."
   }
   if (group === 'gst') {
+    if (
+      draft.platformRcmLiabilityDate &&
+      (draft.platformRcmLiabilityDate < currentRules.effectiveStart ||
+        draft.platformRcmLiabilityDate > latestThresholdDate)
+    )
+      nextErrors.platformRcmLiabilityDate =
+        'Use an established past or present liability date within this Tax Year, or leave it unknown.'
     if (!draft.gstKind)
       nextErrors.gstKind = 'Choose whether you have ever had a GSTIN.'
     if (isUnregisteredGst(draft)) {
@@ -1548,15 +1648,15 @@ function draftFeedback(draft: Draft, latestDate: string) {
         ? ['employerNpsConfirmed']
         : ['hasEmployerNps'],
     'employer-nps-allocation': ['employerNpsConfirmed'],
+    'brought-forward-loss-scope':
+      draft.hasBroughtForwardLosses === 'yes'
+        ? ['broughtForwardLossesConfirmed']
+        : ['hasBroughtForwardLosses'],
+    'brought-forward-loss-expired': ['broughtForwardLossesConfirmed'],
     'equity-gains-scope':
       draft.hasEquityGains === 'yes'
         ? ['equityGainsConfirmed']
         : ['hasEquityGains'],
-    'equity-basic-exemption-allocation': [
-      'equityGainsConfirmed',
-      ...equityGainKeys,
-      ...receipts,
-    ],
     'foreign-assets-income-scope':
       draft.hasForeignAssets && draft.hasForeignAssets !== 'no'
         ? ['assetIncomeConfirmed']
@@ -1580,8 +1680,6 @@ function draftFeedback(draft: Draft, latestDate: string) {
     'platform-recipient': ['platformRecipientIdentifiable'],
     'platform-gross': ['platformGrossBeforeFees'],
     'platform-income-character': ['platformIncomeCharacter'],
-    'platform-reverse-charge': ['platformNoRecipientReverseCharge'],
-    'platform-fee-gst': ['platformForeignFeeGstTreatment'],
     'foreign-work-location': ['foreignWorkInIndia'],
     'foreign-recipient': ['foreignRecipientIdentifiable'],
     'foreign-own-account': ['foreignOwnAccount'],
@@ -1669,6 +1767,12 @@ function draftFeedback(draft: Draft, latestDate: string) {
   const coverage: DraftError[] = []
   for (const notice of screening.coverage) {
     let field: string | undefined
+    if (notice.code === 'platform-gst-review' && draft.platformReverseCharge)
+      field =
+        draft.platformReverseCharge === 'not-sure'
+          ? 'platformReverseCharge'
+          : 'platformForeignFeeGstTreatment'
+    if (notice.code === 'platform-rcm-date') field = 'platformRcmLiabilityDate'
     if (notice.code === 'rental-gst-review' && draft.rentalGstConfirmed)
       field = 'rentalGstConfirmed'
     if (draft.gstKind === 'registered') {

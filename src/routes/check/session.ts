@@ -129,6 +129,12 @@ export function clearInactiveDraft(draft: Draft): Draft {
     next.employerNpsConfirmed = ''
     next.employerNpsEmployers = []
   }
+  if (draft.hasBroughtForwardLosses !== 'yes') {
+    next.broughtForwardLossesConfirmed = ''
+    next.broughtForwardYears = []
+  }
+  if (draft.platformReverseCharge !== 'due' || !isUnregisteredGst(draft))
+    next.platformRcmLiabilityDate = ''
   if (draft.hasEquityGains !== 'yes') {
     next.equityGainsConfirmed = ''
     for (const key of equityGainKeys) next.amounts[key] = ''

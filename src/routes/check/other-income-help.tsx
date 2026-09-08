@@ -301,17 +301,17 @@ export function EquityGainsHelp({
         gives only a net amount, obtain the separate totals before continuing.
         Do not subtract losses twice. Your records must already resolve any
         dividend or bonus stripping restriction. This section excludes
-        brought-forward losses, foreign or unlisted shares, debt and other
-        nonqualifying funds, derivatives, intraday or business trading, employee
-        shares, buybacks, property, REIT/InvIT/AIF/ULIP income, clubbing,
-        reinvestment exemptions and unresolved corporate actions.
+        unconfirmed or ineligible earlier-year losses, foreign or unlisted
+        shares, debt and other nonqualifying funds, derivatives, intraday or
+        business trading, employee shares, buybacks, property,
+        REIT/InvIT/AIF/ULIP income, clubbing, reinvestment exemptions and
+        unresolved corporate actions.
       </p>
       <p>
-        If you have both short-term and long-term gains remaining after loss
-        adjustment and ordinary income after deductions below ₹4 lakh, this
-        version withholds the estimate pending review of how unused basic
-        exemption applies. A single gain category can use the supported
-        adjustment.
+        Enter eligible earlier-year losses in their separate section. After loss
+        adjustment, any unused basic exemption reduces short-term gains first,
+        then long-term gains. The annual long-term threshold applies afterward.
+        The breakdown shows each adjustment.
       </p>
       <p>
         Long-term losses reduce only long-term gains. Short-term losses reduce

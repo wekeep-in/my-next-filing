@@ -152,21 +152,28 @@ export function ClientsStep({
                 }
               />
               <ChoiceField
-                id="platformNoRecipientReverseCharge"
-                label="Have you confirmed that no reverse-charge GST is due on the platform fees?"
+                id="platformReverseCharge"
+                label="How does reverse-charge GST apply to the platform fees?"
+                options={['none', 'due', 'not-sure']}
+                labels={{
+                  none: 'Confirmed: no reverse-charge duty',
+                  due: 'Confirmed: I must pay GST',
+                  'not-sure': 'Not sure',
+                }}
                 help={
                   <>
-                    Confirm whether you must pay the GST yourself.{' '}
-                    <PlatformFeeHelp />
+                    Use confirmed tax treatment from your records or adviser.
+                    Uncertain fee GST keeps your income-tax estimate available
+                    but needs a separate GST review. <PlatformFeeHelp />
                   </>
                 }
-                value={draft.platformNoRecipientReverseCharge}
-                error={errors.platformNoRecipientReverseCharge}
+                value={draft.platformReverseCharge}
+                error={errors.platformReverseCharge}
                 onChange={(value) =>
                   dispatch({
                     type: 'field-changed',
-                    field: 'platformNoRecipientReverseCharge',
-                    value: value as TriState,
+                    field: 'platformReverseCharge',
+                    value: value as Draft['platformReverseCharge'],
                   })
                 }
               />

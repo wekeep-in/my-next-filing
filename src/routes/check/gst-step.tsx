@@ -52,7 +52,7 @@ export function GstStep({
     <div className={className}>
       <CheckHeading
         title="Your GST registration and filings"
-        description="If you have a normal GST registration, we can build a filing calendar. Otherwise, we'll check whether your turnover may require registration."
+        description="If you have a normal GST registration, we can build a filing calendar. Otherwise, we'll check turnover and any confirmed platform-fee reverse-charge duty."
       />
       <div className="question-sections">
         <section
@@ -74,6 +74,42 @@ export function GstStep({
                 })
               }
             />
+            {draft.gstKind === 'unregistered' &&
+              draft.platformReverseCharge === 'due' && (
+                <div className="field">
+                  <label htmlFor="platformRcmLiabilityDate">
+                    When did the platform-fee reverse-charge registration
+                    liability arise?
+                  </label>
+                  <p
+                    id="platformRcmLiabilityDate-help"
+                    className="text-muted-foreground"
+                  >
+                    Use the date established by your records or adviser. Leave
+                    it unknown for earlier-year or unresolved timing; the plan
+                    will still show that registration is required.
+                  </p>
+                  <DatePicker
+                    id="platformRcmLiabilityDate"
+                    describedBy="platformRcmLiabilityDate-help platformRcmLiabilityDate-error"
+                    invalid={Boolean(errors.platformRcmLiabilityDate)}
+                    value={draft.platformRcmLiabilityDate}
+                    min={currentRules.effectiveStart}
+                    max={latestThresholdDate}
+                    onChange={(value) =>
+                      dispatch({
+                        type: 'field-changed',
+                        field: 'platformRcmLiabilityDate',
+                        value,
+                      })
+                    }
+                  />
+                  <FieldError
+                    id="platformRcmLiabilityDate-error"
+                    error={errors.platformRcmLiabilityDate}
+                  />
+                </div>
+              )}
             {draft.gstKind === 'registered' && (
               <>
                 <ChoiceField
@@ -227,7 +263,11 @@ export function GstStep({
                 />
                 <ChoiceField
                   id="compulsoryRegistration"
-                  label="Could you need to register for GST for a reason other than turnover?"
+                  label={
+                    draft.platformReverseCharge === 'due'
+                      ? 'Could another reason require GST registration, besides turnover and the platform-fee duty?'
+                      : 'Could you need to register for GST for a reason other than turnover?'
+                  }
                   help="Choose Not sure if you haven't confirmed this."
                   value={draft.compulsoryRegistration}
                   error={errors.compulsoryRegistration}

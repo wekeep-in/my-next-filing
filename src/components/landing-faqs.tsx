@@ -155,11 +155,11 @@ export function LandingFaqs() {
             <EquityGainsHelp buttonText="About equity gains and losses" />
           </p>
           <p>
-            It also supports one wholly owned Indian home let for residential
-            use, with resolved annual-value records and a non-negative
-            property-income result. Municipal taxes, the standard deduction and
-            eligible loan interest are included. Rental GST treatment is checked
-            separately.
+            It also supports one Indian home owned alone or with a documented
+            co-ownership share let for residential use, with resolved
+            annual-value records and a non-negative property-income result.
+            Municipal taxes, the standard deduction and eligible loan interest
+            are included. Rental GST treatment is checked separately.
           </p>
           <p>
             Foreign assets and overseas signing authority can be included when
@@ -169,10 +169,10 @@ export function LandingFaqs() {
             foreign-tax relief remain outside this version.
           </p>
           <p>
-            Ordinary taxable income up to ₹1 crore is supported, including
-            first-band surcharge and marginal relief above ₹50 lakh. Positive
-            equity gains remaining after loss adjustment still limit this
-            version to ₹50 lakh of total taxable income.
+            The estimate covers taxable income up to ₹1 crore, including
+            first-band surcharge and marginal relief above ₹50 lakh. Supported
+            equity gains use the same ceiling after current-year and eligible
+            earlier-year losses.
           </p>
           <p>It stops without showing a personal estimate if you have:</p>
           <ul>

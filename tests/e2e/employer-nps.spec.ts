@@ -84,7 +84,7 @@ test('keeps employer NPS through Recovery, review, saving and reload', async ({
     WORKSPACE_KEY,
   )
   expect(saved).toMatchObject({
-    schemaVersion: 10,
+    schemaVersion: 11,
     active: {
       profile: {
         otherIncome: {
@@ -303,7 +303,7 @@ test('migrates the captured salary workspace without changing consent or complet
     WORKSPACE_KEY,
   )
   expect(saved).toMatchObject({
-    schemaVersion: 10,
+    schemaVersion: 11,
     consentDecidedAt: workspaceV5.consentDecidedAt,
     active: {
       completions: workspaceV5.active.completions,
