@@ -28,6 +28,10 @@ Rules are local, versioned, sourced, and subject to review deadlines. Invalid or
 
 My Next Filing provides general information and does not replace a tax professional. Public release still requires the statutory, privacy, accessibility, usability, and deployment checks described in the specification.
 
+## Demo video
+
+The [editable video project](video/README.md) includes the Remotion source, narration, and browser recordings. [Direction](video/README.md#direction) pairs the finished voiceover with its screen sequence.
+
 ## License
 
 [Apache License 2.0](LICENSE).

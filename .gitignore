@@ -6,4 +6,6 @@ dist/
 .wrangler/
 artifacts/
 .lighthouseci/
-.scratch/demo-video/
+video/out/
+video/.cache/
+video/sources/

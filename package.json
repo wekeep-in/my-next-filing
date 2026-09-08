@@ -7,8 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "format": "oxfmt --write package.json index.html tsconfig.json vite.config.ts vitest.config.ts playwright.config.ts lighthouserc.cjs scripts src tests",
-    "format:check": "oxfmt --check package.json index.html tsconfig.json vite.config.ts vitest.config.ts playwright.config.ts lighthouserc.cjs scripts src tests",
+    "format": "oxfmt --write package.json index.html tsconfig.json vite.config.ts vitest.config.ts playwright.config.ts lighthouserc.cjs scripts src tests remotion.config.ts video",
+    "format:check": "oxfmt --check package.json index.html tsconfig.json vite.config.ts vitest.config.ts playwright.config.ts lighthouserc.cjs scripts src tests remotion.config.ts video",
     "lint": "oxlint --deny-warnings --ignore-pattern 'public/video/hls/**/*.ts'",
     "lint:fix": "oxlint --fix --deny-warnings --ignore-pattern 'public/video/hls/**/*.ts'",
     "test": "vitest run",
@@ -21,7 +21,14 @@
     "test:browser": "vitest run --project browser",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "pnpm build && playwright test",
-    "test:performance": "pnpm build && node scripts/lighthouse.ts"
+    "test:performance": "pnpm build && node scripts/lighthouse.ts",
+    "video:studio": "remotion studio video/src/index.ts --port=3001",
+    "video:record": "tsx video/record-browser.ts",
+    "video:render": "remotion render video/src/index.ts Submission video/out/my-next-filing-demo-v3-sfx-1080p.mp4 --scale=0.75 --codec=h264 --crf=16 --audio-bitrate=192k --pixel-format=yuv420p --color-space=bt709 --image-format=png --concurrency=6",
+    "video:render:audio": "remotion render video/src/index.ts Soundtrack video/out/my-next-filing-demo-v3-soundtrack.wav --codec=wav --concurrency=6",
+    "video:mux:audio": "ffmpeg -v error -y -i video/out/my-next-filing-demo-v3-sfx-1080p.mp4 -i video/out/my-next-filing-demo-v3-soundtrack.wav -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -b:a 192k -ar 48000 -movflags +faststart video/out/my-next-filing-demo-v3-remixed-1080p.mp4",
+    "video:test": "tsx --test video/recording.test.ts",
+    "video:package": "tsx video/package-video.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
@@ -59,7 +66,11 @@
     "vite": "^8.2.2",
     "vitest": "5.0.0",
     "vitest-browser-react": "2.3.0",
-    "wrangler": "^4.127.0"
+    "wrangler": "^4.127.0",
+    "@remotion/cli": "4.0.521",
+    "@remotion/transitions": "4.0.521",
+    "remotion": "4.0.521",
+    "zod": "4.5.4"
   },
   "packageManager": "pnpm@11.24.0"
 }

@@ -19,7 +19,7 @@
       "entryPoint": "src/styles.css"
     }
   },
-  "ignorePatterns": ["dist/**", "node_modules/**", ".agents/**", "artifacts/**", ".lighthouseci/**"],
+  "ignorePatterns": ["dist/**", "node_modules/**", ".agents/**", "artifacts/**", ".lighthouseci/**", "video/**"],
   "rules": {
     "no-console": ["error", { "allow": ["warn", "error"] }],
     "no-shadow": "warn",
