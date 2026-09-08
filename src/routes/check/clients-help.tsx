@@ -72,8 +72,11 @@ export function ForeignAccountHelp() {
       <p>
         Signing authority means you can authorise transactions on an account,
         even if it is not yours. Choose Yes or possibly if any listed
-        arrangement applies, or Not sure if unclear. This flags a separate
-        review; it does not decide whether you must report a foreign asset.
+        arrangement applies, or Not sure if unclear. Review this again in the
+        foreign-assets section. Established assets or signing authority can be
+        supported when their income effects are resolved; uncertain
+        classification still needs review. Do not infer account ownership from a
+        provider brand.
       </p>
       <ExternalLink href="https://www.incometax.gov.in/iec/foportal/nudge/nudge-schedule-fa">
         Official foreign-account guidance

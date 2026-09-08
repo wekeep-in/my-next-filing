@@ -161,6 +161,13 @@ export function LandingFaqs() {
             eligible loan interest are included. Rental GST treatment is checked
             separately.
           </p>
+          <p>
+            Foreign assets and overseas signing authority can be included when
+            they add no unsupported income or unresolved tax effects. The plan
+            includes their filing trigger and disclosure guidance. Unclear
+            account classification still needs review; foreign income and
+            foreign-tax relief remain outside this version.
+          </p>
           <p>It stops without showing a personal estimate if you have:</p>
           <ul>
             <li>

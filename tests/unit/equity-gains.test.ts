@@ -389,7 +389,7 @@ test('migrates captured workspaces without writing or changing consent and compl
   if (result.kind !== 'ready')
     throw Error('Expected migrated historical workspace')
   expect(result.workspace).toMatchObject({
-    schemaVersion: 9,
+    schemaVersion: 10,
     revision: workspaceV6.revision,
     consentDecidedAt: workspaceV6.consentDecidedAt,
     active: {
@@ -431,7 +431,7 @@ test('restores historical Recovery with equity unanswered and preserves legacy c
   }
   const result = parseRecoveryDraft(legacy, TAX_YEAR)
   expect(result).toMatchObject({
-    schemaVersion: 8,
+    schemaVersion: 9,
     draft: {
       hasEquityGains: '',
       equityGainsConfirmed: '',

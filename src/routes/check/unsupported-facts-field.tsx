@@ -52,6 +52,10 @@ const explanations: Partial<
     title: 'Dividends or gifts selected in an earlier version',
     help: 'Review the dividend fields above. Select any gift income separately before clearing this older combined answer.',
   },
+  foreignAssets: {
+    title: 'Foreign assets needing a separate review',
+    help: 'Use the foreign-assets questions above for supported holdings and signing authority. Other arrangements or unresolved income effects remain outside scope. Review a restored answer before clearing it.',
+  },
   houseProperty: {
     title: 'House-property income needing a separate review',
     help: 'Property income outside the rental conditions above, such as co-owned or foreign property, or a property loss. If this answer was restored, review your rental income before clearing it.',

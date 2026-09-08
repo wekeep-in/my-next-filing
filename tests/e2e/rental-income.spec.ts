@@ -75,7 +75,7 @@ test('rental income reaches the combined plan and survives Recovery save reload 
     WORKSPACE_KEY,
   )
   expect(saved).toMatchObject({
-    schemaVersion: 9,
+    schemaVersion: 10,
     active: {
       profile: {
         otherIncome: {
@@ -241,6 +241,7 @@ test('historical Recovery requires rental review and preserves the selected prop
   await page
     .getByRole('radio', { name: 'None of these apply', exact: true })
     .click()
+  await choose(page, 'hasForeignAssets', 'No')
   await expect(
     page.getByRole('button', { name: 'Continue', exact: true }),
   ).toBeEnabled()
@@ -273,7 +274,7 @@ test('captured workspace still opens its plan and upgrades through a normal save
       WORKSPACE_KEY,
     ),
   ).toMatchObject({
-    schemaVersion: 9,
+    schemaVersion: 10,
     active: {
       completions: workspaceV8.active.completions,
       profile: { otherIncome: { rentalIncome: { kind: 'none' } } },

@@ -249,12 +249,13 @@ export const resourceDefinitions: readonly ResourceDefinition[] = [
       'domestic-investment-income-2026',
       'domestic-equity-gains-2026',
       'domestic-rental-income-2026',
+      'foreign-assets-act-2026',
       'section-156',
       'section-263',
     ],
     title: 'Income-tax Act: income, rebate and return requirements',
     description:
-      'The amended Act used for freelance income, salary, employer NPS, dividends, mutual-fund distributions, interest, rental income, domestic equity capital gains and current-year losses, rebate and enacted return-filing requirements.',
+      'The amended Act used for freelance income, salary, employer NPS, dividends, mutual-fund distributions, interest, rental income, domestic equity capital gains and current-year losses, rebate and enacted return-filing requirements, including the foreign-asset and signing-authority trigger.',
     documentType: 'Act',
     topics: ['income-tax'],
     tasks: [
@@ -271,11 +272,12 @@ export const resourceDefinitions: readonly ResourceDefinition[] = [
       'domestic equity capital gains losses short term long term STT set off carry forward',
       'rebate marginal relief',
       'presumptive income',
+      'foreign assets overseas accounts signing authority beneficial owner',
       'ITR',
     ],
     identifiers: ['Income-tax Act 2025', 'Section 263'],
     references: [
-      'Section 263: enacted return-filing requirements and due dates',
+      'Section 263: enacted return-filing requirements, foreign assets/signing authority and due dates',
       'Sections 7, 92, 93 and 276: taxable ordinary dividends, distributions and interest',
       'Sections 15–19: salary and deductions',
       'Sections 20–22 and 202: house-property annual value and deductions under the new regime',
@@ -362,14 +364,22 @@ export const resourceDefinitions: readonly ResourceDefinition[] = [
     references: ['Section 408(2): presumptive advance tax'],
   },
   {
-    sourceIds: ['rule-163'],
+    sourceIds: ['rule-163', 'foreign-assets-returns-2026'],
     title: 'Income tax return: additional filing conditions',
     description:
-      'Rule 163 in the Income-tax Rules, covering additional conditions for furnishing a return.',
+      'Rules 163 and 164 in the Income-tax Rules, covering additional filing conditions and restrictions on simplified return forms, including foreign assets and signing authority.',
     documentType: 'Rules',
     topics: ['income-tax'],
     tasks: ['income-tax-return'],
-    aliases: ['ITR', 'annual return', 'TDS TCS filing conditions'],
+    aliases: [
+      'ITR',
+      'annual return',
+      'TDS TCS filing conditions',
+      'foreign assets signing authority ITR-4',
+    ],
+    references: [
+      'Rule 164: foreign assets and signing authority exclude ITR-4; confirm current form instructions',
+    ],
     identifiers: ['Rule 163'],
   },
   {

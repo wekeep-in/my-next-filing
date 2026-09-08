@@ -55,7 +55,11 @@ const reviewGroups = [
   ['advanceTax', 'advance-tax', 'Advance tax'],
   ['annualReturn', 'annual-return', 'Income tax returns'],
   ['gstRegistration', 'gst-registration', 'GST registration'],
-  ['foreignGuidance', 'foreign-guidance', 'Overseas payments'],
+  [
+    'foreignGuidance',
+    'foreign-guidance',
+    'Foreign assets and overseas payments',
+  ],
   ['gstCalendar', 'gst-calendar', 'GST return schedules'],
   ['lut', 'lut', 'LUT guidance'],
 ] as const satisfies readonly (readonly [

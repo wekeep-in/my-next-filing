@@ -17,6 +17,7 @@ import {
 } from '@/routes/plan/agenda'
 import {
   AttentionCard,
+  ForeignGuidanceCard,
   GstCard,
   SourceLinks,
   SourceReferences,
@@ -250,6 +251,9 @@ export function PlanRoute() {
                 annualReturn={supported.coverage.annualReturn}
               />
               <GstCard coverage={supported.coverage.gst} />
+              <ForeignGuidanceCard
+                coverage={supported.coverage.foreignGuidance}
+              />
             </div>
             <Agenda
               evaluation={supported}

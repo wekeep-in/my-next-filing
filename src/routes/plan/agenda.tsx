@@ -195,7 +195,7 @@ export function ReviewAreas({
     ['annualReturn', 'Annual-return check', 'other-income'],
     ['gst', 'GST check', 'gst'],
     ['lut', 'LUT and export check', 'gst'],
-    ['foreignGuidance', 'Foreign-receipt check', 'clients'],
+    ['foreignGuidance', 'Foreign-asset and receipt check', 'clients'],
   ] as const
   const unavailable = areas.filter(
     ([key]) => evaluation.coverage[key].kind === 'unavailable',
@@ -217,6 +217,10 @@ export function ReviewAreas({
           {unavailable.map(([key, title, group]) => {
             const coverage = evaluation.coverage[key]
             if (coverage.kind === 'available') return null
+            const correctionGroup =
+              evaluation.reviewActions.find(
+                (action) => action.area === coverage.area,
+              )?.correctionGroup ?? group
             return (
               <Card
                 as="article"
@@ -238,9 +242,9 @@ export function ReviewAreas({
                   <Button
                     variant="link"
                     type="button"
-                    onClick={() => onReview(group)}
+                    onClick={() => onReview(correctionGroup)}
                   >
-                    {reviewLabel(group)}
+                    {reviewLabel(correctionGroup)}
                   </Button>
                 )}
                 <SourceReferences ids={coverage.sourceIds} />

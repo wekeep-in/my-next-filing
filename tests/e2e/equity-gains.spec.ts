@@ -88,7 +88,7 @@ test('combines salary dividends and equity gains through review save reload and 
     WORKSPACE_KEY,
   )
   expect(saved).toMatchObject({
-    schemaVersion: 9,
+    schemaVersion: 10,
     active: {
       profile: {
         otherIncome: {
@@ -260,7 +260,7 @@ test('restores the captured workspace and writes the new schema only on an ordin
       WORKSPACE_KEY,
     ),
   ).toMatchObject({
-    schemaVersion: 9,
+    schemaVersion: 10,
     consentDecidedAt: workspaceV6.consentDecidedAt,
     active: {
       completions: workspaceV6.active.completions,

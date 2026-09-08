@@ -134,6 +134,7 @@ export type GstRegistrationRules = {
 }
 
 export type ForeignGuidanceRules = {
+  readonly assetMessage: string
   readonly transitionDate: DateOnly
   readonly message: string
 }
@@ -209,6 +210,33 @@ const quarterlyEarlyStates = [
 ] as const
 
 export const sourceRegistry: readonly Source[] = [
+  {
+    id: 'foreign-assets-act-2026',
+    kind: 'statutory',
+    publisher: 'Income Tax Department',
+    title:
+      'Income-tax Act, 2025: worldwide income and foreign-asset return trigger, sections 5 and 263',
+    url: 'https://www.incometaxindia.gov.in/documents/d/guest/income_tax_act_2025_as_amended_by_fa_act_2026-pdf',
+    publicationDate: '2025-08-21',
+    reviewDate: '2026-09-08',
+    taxPeriod: TAX_YEAR,
+    coveredRuleIds: [
+      'foreign-assets-income-scope',
+      'foreign-asset-return-trigger',
+    ],
+  },
+  {
+    id: 'foreign-assets-returns-2026',
+    kind: 'statutory',
+    publisher: 'Income Tax Department',
+    title:
+      'Income-tax Rules, 2026: foreign-asset and signing-authority exclusions from ITR-4, rule 164',
+    url: 'https://www.incometaxindia.gov.in/documents/d/guest/notification-22-2026-1',
+    publicationDate: '2026-03-20',
+    reviewDate: '2026-09-08',
+    taxPeriod: TAX_YEAR,
+    coveredRuleIds: ['foreign-asset-return-guidance'],
+  },
   {
     id: 'domestic-rental-income-2026',
     kind: 'statutory',
@@ -677,18 +705,17 @@ const group = <T>(
     'common-income-tax',
     'annual-return',
     'gst-registration',
+    'foreign-guidance',
   ].includes(id)
     ? '2026-09-08'
-    : id === 'gst-registration'
-      ? '2026-09-06'
-      : reviewedOn,
+    : reviewedOn,
   expiresOn,
   values,
   provenance,
 })
 
 export const currentRules: RuleDataset = {
-  id: 'my-next-filing-2026-27-v11',
+  id: 'my-next-filing-2026-27-v12',
   schemaVersion: 1,
   taxPeriod: TAX_YEAR,
   effectiveStart,
@@ -696,6 +723,7 @@ export const currentRules: RuleDataset = {
   verifiedOn: '2026-09-08',
   expiresOn,
   changeNotes: [
+    'Added bounded foreign assets and signing authority with resolved income effects, independent mandatory return trigger and visible current-rule disclosure guidance. Verified 8 September 2026.',
     'Added bounded domestic rental income with the 30% net-annual-value deduction and eligible current interest, preserving independent rental GST review. Verified 8 September 2026.',
     'Current-year domestic equity loss set-off and conditional carry-forward filing guidance reviewed on 8 September 2026. Capital losses do not reduce ordinary income. The mixed-gain basic-exemption restriction is evaluated after loss adjustment.',
     'GST calendar and LUT authority refreshed on 7 September 2026 through 31 October 2026. Normal dates, eligibility and completion identities are unchanged. The public CBIC 2026 listing contains no applicable current-period extension; the wider state-extension inventory still requires release-time review.',
@@ -876,6 +904,11 @@ export const currentRules: RuleDataset = {
       },
       [
         {
+          ruleId: 'foreign-assets-income-scope',
+          sourceId: 'foreign-assets-act-2026',
+          role: 'applicability',
+        },
+        {
           ruleId: 'domestic-rental-income',
           sourceId: 'domestic-rental-income-2026',
           role: 'applicability',
@@ -1000,6 +1033,11 @@ export const currentRules: RuleDataset = {
       },
       [
         {
+          ruleId: 'foreign-asset-return-trigger',
+          sourceId: 'foreign-assets-act-2026',
+          role: 'applicability',
+        },
+        {
           ruleId: 'capital-loss-carry-forward',
           sourceId: 'domestic-equity-gains-2026',
           role: 'applicability',
@@ -1070,11 +1108,18 @@ export const currentRules: RuleDataset = {
     foreignGuidance: group(
       'foreign-guidance',
       {
+        assetMessage:
+          'You confirmed foreign assets or signing authority. These facts exclude the simplified ITR-4 route. When preparing your annual return, confirm the applicable Tax Year form, reporting period, asset categories and values from current official instructions. Keep ownership and account records, including accounts closed during the year. This plan does not prepare foreign-asset schedules, value assets or select a return form.',
         transitionDate: '2026-10-01',
         message:
           'A FEMA export-regulation transition takes effect on 1 October 2026. Review the applicable payment and export-declaration process with your authorised dealer or a qualified adviser.',
       },
       [
+        {
+          ruleId: 'foreign-asset-return-guidance',
+          sourceId: 'foreign-assets-returns-2026',
+          role: 'guidance',
+        },
         {
           ruleId: 'foreign-guidance-transition',
           sourceId: 'fema-export-regulations-2026',
@@ -1583,6 +1628,8 @@ function validateValues(
     (!isDate(values.transitionDate) || !isText(values.message))
   )
     errors.push('Rules contain invalid foreign guidance values.')
+  if (id === 'foreign-guidance' && !isText(values.assetMessage))
+    errors.push('Rules need foreign-asset guidance.')
   if (id === 'foreign-guidance' && values.transitionDate !== '2026-10-01')
     errors.push(
       'Rules contain foreign guidance values outside the reviewed set.',
@@ -1733,7 +1780,7 @@ export function validateRules(
         'standardThreshold',
         'registrationWindowDays',
       ],
-      foreignGuidance: ['transitionDate', 'message'],
+      foreignGuidance: ['transitionDate', 'message', 'assetMessage'],
     }
   const requiredRules: Record<keyof RuleDataset['groups'], readonly string[]> =
     {
@@ -1759,6 +1806,7 @@ export function validateRules(
         'business-five-year-exclusion',
       ],
       commonIncomeTax: [
+        'foreign-assets-income-scope',
         'domestic-rental-income',
         'rental-standard-deduction',
         'equity-current-year-loss-set-off',
@@ -1781,6 +1829,7 @@ export function validateRules(
       ],
       advanceTax: ['advance-tax-threshold', 'advance-tax-date'],
       annualReturn: [
+        'foreign-asset-return-trigger',
         'capital-loss-carry-forward',
         'annual-return-income-threshold',
         'annual-return-profession-threshold',
@@ -1795,7 +1844,10 @@ export function validateRules(
         'gst-registration-threshold',
         'gst-registration-window',
       ],
-      foreignGuidance: ['foreign-guidance-transition'],
+      foreignGuidance: [
+        'foreign-guidance-transition',
+        'foreign-asset-return-guidance',
+      ],
     }
   const statuses = {} as Record<RuleGroupId, RuleGroupStatus>
   const groups = value.groups as Record<string, unknown>

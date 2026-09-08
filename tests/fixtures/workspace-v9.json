@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 9,
+  "revision": 0,
+  "noticeVersion": 2,
+  "consentDecidedAt": "2026-09-08T06:30:00.000Z",
+  "activeTaxYear": "Tax Year 2026-27",
+  "active": {
+    "profile": {
+      "taxYear": "Tax Year 2026-27",
+      "person": {
+        "kind": "individual",
+        "adult": "yes",
+        "residence": "resident-ordinarily-resident"
+      },
+      "taxRegime": "new",
+      "practice": {
+        "onePractice": "yes",
+        "setupInIndia": "yes",
+        "workInIndia": "yes",
+        "hasPartner": "no",
+        "hasEmployee": "no",
+        "hasForeignOperation": "no",
+        "hasClientWorkSubcontractor": "no",
+        "contractorBoundary": "none"
+      },
+      "activity": "software-development",
+      "incomePath": {
+        "kind": "specified-profession",
+        "confirmed": "yes",
+        "grossReceipts": 1900000,
+        "cashReceipts": 0,
+        "declaredProfit": 1400000
+      },
+      "clients": {
+        "kind": "domestic",
+        "delivery": "direct",
+        "platform": null,
+        "foreign": null
+      },
+      "otherIncome": {
+        "rentalIncome": {
+          "kind": "none"
+        },
+        "equityGains": {
+          "kind": "none"
+        },
+        "salary": {
+          "kind": "none"
+        },
+        "additionalIncome": {
+          "kind": "none"
+        },
+        "taxableBankInterest": 10000,
+        "tds": 40000,
+        "tcs": 0,
+        "advanceTaxPaid": 0,
+        "ageSixtyOrOlder": "no",
+        "otherAnnualReturnTrigger": "no"
+      },
+      "gst": {
+        "kind": "unregistered",
+        "state": "Maharashtra",
+        "aggregateTurnover": 1910000,
+        "turnoverComplete": "yes",
+        "compulsoryRegistration": "no",
+        "thresholdLiabilityDate": null
+      },
+      "unsupportedFacts": []
+    },
+    "ruleDatasetId": "my-next-filing-2026-27-v11",
+    "completions": [
+      {
+        "obligationId": "annual-return:Tax Year 2026-27",
+        "completedOn": "2026-09-08"
+      }
+    ]
+  },
+  "priorYears": [],
+  "updatedAt": "2026-09-08T06:30:00.000Z"
+}

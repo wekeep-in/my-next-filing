@@ -42,7 +42,7 @@ test('publishes unique resources with complete provenance', () => {
   )
   assert.equal(
     new Set(catalogue.resources.flatMap((resource) => resource.sourceIds)).size,
-    37,
+    39,
   )
 })
 
@@ -95,7 +95,6 @@ test('ranks exact titles identifiers and reviewed aliases', () => {
 
 test('protects unsupported identifiers and suggests only unambiguous typos', () => {
   for (const query of [
-    'foreign salary',
     'company incorporation',
     'GSTR-9',
     'section 59',
@@ -104,6 +103,8 @@ test('protects unsupported identifiers and suggests only unambiguous typos', () 
   ]) {
     assert.equal(ids(query).length, 0, query)
   }
+  // The shared Act now indexes worldwide-income and foreign-asset provisions; a resource match does not grant profile eligibility.
+  assert.deepEqual(ids('foreign salary'), ['income-tax-act-2025-2026'])
   assert.equal(search('section 59').suggestion, null)
   assert.equal(search('GSTR-9').suggestion, null)
   assert.equal(search('advnace tax').suggestion, 'advance tax')
@@ -196,7 +197,7 @@ test('combines filters and counts unique resources in every facet', () => {
 })
 
 test('consolidates source descriptions and oldest review dates', () => {
-  assert.equal(act.sources.length, 7)
+  assert.equal(act.sources.length, 8)
   assert.equal(act.reviewDate, '2026-09-03')
   assert.ok(act.references?.some((reference) => reference.includes('156')))
   assert.ok(act.references?.some((reference) => reference.includes('salary')))
@@ -278,7 +279,7 @@ test('scopes malformed and expired groups to their own resources', () => {
     resolveResources(invalidForeignGroup, now).resources.find(
       (resource) => resource.id === 'fema-export-regulations-2026',
     )!.reviewAreas,
-    ['Overseas payments'],
+    ['Foreign assets and overseas payments'],
   )
   assert.deepEqual(
     resolveResources(annualExpired, now).resources.find(

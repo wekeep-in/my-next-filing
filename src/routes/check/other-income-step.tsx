@@ -9,6 +9,7 @@ import {
   equityGainFields,
 } from '@/routes/check/model'
 import { UnsupportedFactsField } from '@/routes/check/unsupported-facts-field'
+import { ForeignAssetsFields } from '@/routes/check/foreign-assets-fields'
 import { RentalIncomeFields } from '@/routes/check/rental-income-fields'
 import { EmployerNpsFields } from '@/routes/check/employer-nps-fields'
 import {
@@ -402,6 +403,11 @@ export function OtherIncomeStep({
                   value: value as TriState,
                 })
               }
+            />
+            <ForeignAssetsFields
+              draft={draft}
+              errors={errors}
+              dispatch={dispatch}
             />
             <UnsupportedFactsField
               draft={draft}

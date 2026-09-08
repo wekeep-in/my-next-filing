@@ -462,6 +462,29 @@ export function TaxSummary({
   )
 }
 
+export function ForeignGuidanceCard({
+  coverage,
+}: {
+  readonly coverage: SupportedResult['coverage']['foreignGuidance']
+}) {
+  if (
+    coverage.kind === 'unavailable' ||
+    coverage.value.status === 'no-foreign-receipts'
+  )
+    return null
+  return (
+    <Card as="article" className="coverage-card min-w-0" variant="result">
+      <h2>
+        {coverage.value.status === 'assets-disclosure'
+          ? 'Foreign assets and accounts'
+          : 'Overseas payment guidance'}
+      </h2>
+      <p>{coverage.value.message}</p>
+      <SourceReferences ids={coverage.sourceIds} />
+    </Card>
+  )
+}
+
 export function GstCard({
   coverage,
 }: {

@@ -19,7 +19,7 @@ import { clearInactiveDraft } from '@/routes/check/session'
 
 export const RECOVERY_KEY = 'my-next-filing:recovery-draft'
 export type RecoveryDraftEnvelope = {
-  readonly schemaVersion: 8
+  readonly schemaVersion: 9
   readonly taxYear: TaxYear
   readonly origin: 'personal' | 'saved-edit'
   readonly baseWorkspaceRevision: number | null
@@ -84,6 +84,8 @@ const choices = {
   employerNpsConfirmed: triState,
   hasEquityGains: triState,
   equityGainsConfirmed: triState,
+  hasForeignAssets: triState,
+  assetIncomeConfirmed: triState,
   hasRentalIncome: triState,
   rentalIncomeConfirmed: triState,
   rentalGstConfirmed: triState,
@@ -129,6 +131,23 @@ export function parseRecoveryDraft(
   taxYear: TaxYear,
 ): RecoveryDraftEnvelope | null {
   try {
+    if (isRecord(value) && value.schemaVersion === 8) {
+      const draft = value.draft
+      if (
+        !isRecord(draft) ||
+        Object.hasOwn(draft, 'hasForeignAssets') ||
+        Object.hasOwn(draft, 'assetIncomeConfirmed')
+      )
+        return null
+      return parseRecoveryDraft(
+        {
+          ...value,
+          schemaVersion: 9,
+          draft: { ...draft, hasForeignAssets: '', assetIncomeConfirmed: '' },
+        },
+        taxYear,
+      )
+    }
     if (isRecord(value) && value.schemaVersion === 7) {
       const draft = value.draft
       if (
@@ -324,7 +343,7 @@ export function parseRecoveryDraft(
         'baseWorkspaceRevision',
         'draft',
       ]) ||
-      value.schemaVersion !== 8 ||
+      value.schemaVersion !== 9 ||
       value.taxYear !== taxYear
     )
       return null
@@ -398,7 +417,7 @@ export function parseRecoveryDraft(
     if (JSON.stringify(clearInactiveDraft(parsed)) !== JSON.stringify(parsed))
       return null
     return {
-      schemaVersion: 8,
+      schemaVersion: 9,
       taxYear,
       origin: value.origin,
       baseWorkspaceRevision: value.baseWorkspaceRevision as number | null,
@@ -529,7 +548,7 @@ export function recoveryFromSession(
 ): RecoveryDraftEnvelope | null {
   if (!session || session.origin.kind === 'example') return null
   return {
-    schemaVersion: 8,
+    schemaVersion: 9,
     taxYear,
     origin: session.origin.kind,
     baseWorkspaceRevision:

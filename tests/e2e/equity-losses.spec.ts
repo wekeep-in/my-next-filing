@@ -98,7 +98,7 @@ test('accepts positive net portfolios and exposes loss pairings through save and
     WORKSPACE_KEY,
   )
   expect(stored).toMatchObject({
-    schemaVersion: 9,
+    schemaVersion: 10,
     active: {
       profile: {
         otherIncome: {
@@ -263,7 +263,7 @@ test('migrates the captured equity workspace without changing its gains or compl
       WORKSPACE_KEY,
     ),
   ).toMatchObject({
-    schemaVersion: 9,
+    schemaVersion: 10,
     consentDecidedAt: workspaceV7.consentDecidedAt,
     active: {
       completions: workspaceV7.active.completions,

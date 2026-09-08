@@ -302,6 +302,19 @@ function GroupSummary({
               })),
             ]
           : []),
+        {
+          label: 'Foreign assets or signing authority',
+          value: answer(draft.hasForeignAssets),
+        },
+        ...(draft.hasForeignAssets === 'yes' ||
+        draft.hasForeignAssets === 'not-sure'
+          ? [
+              {
+                label: 'Foreign-asset income conditions confirmed',
+                value: answer(draft.assetIncomeConfirmed),
+              },
+            ]
+          : []),
         { label: 'Rental income', value: answer(draft.hasRentalIncome) },
         ...(draft.hasRentalIncome === 'yes'
           ? [

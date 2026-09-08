@@ -46,7 +46,7 @@ const unsupportedFactLabels = {
   agriculturalIncome: 'Agricultural income',
   unrelatedForeignIncome:
     'Foreign income other than the freelance receipts entered here',
-  foreignAssets: 'Assets or financial interests outside India',
+  foreignAssets: 'Foreign assets outside the supported conditions',
   foreignTaxOrRelief:
     'Tax owed or paid abroad, or a claim for foreign-tax relief',
   deductionsLossesOrSpecialRate:
@@ -97,6 +97,10 @@ export type EquityGains =
       readonly shortTermLosses: number
       readonly longTermLosses: number
     }
+
+export type ForeignAssets =
+  | { readonly kind: 'none' }
+  | { readonly kind: 'held' | 'possible'; readonly incomeConfirmed: TriState }
 
 export type RentalIncomeAmounts = {
   readonly rentalAnnualValue: number
@@ -258,6 +262,7 @@ export type Profile = {
   readonly clients: ClientProfile
   readonly otherIncome: {
     readonly salary: SalaryIncome
+    readonly foreignAssets: ForeignAssets
     readonly rentalIncome: RentalIncome
     readonly additionalIncome: AdditionalIncome
     readonly equityGains: EquityGains
@@ -381,7 +386,7 @@ export type LutConclusion = {
 }
 
 export type ForeignGuidanceConclusion = {
-  readonly status: 'no-foreign-receipts' | 'reviewed-note'
+  readonly status: 'no-foreign-receipts' | 'reviewed-note' | 'assets-disclosure'
   readonly message: string
 }
 
@@ -1178,6 +1183,7 @@ function readProfile(value: unknown) {
       'salary',
       'additionalIncome',
       'rentalIncome',
+      'foreignAssets',
       'equityGains',
       'taxableBankInterest',
       'tds',
@@ -1191,6 +1197,7 @@ function readProfile(value: unknown) {
     errors,
   )
   const otherIncome = {
+    foreignAssets: parseForeignAssets(otherRecord?.foreignAssets, errors),
     rentalIncome: parseRentalIncome(otherRecord?.rentalIncome, errors),
     equityGains: parseEquityGains(otherRecord?.equityGains, errors),
     salary: parseSalary(otherRecord?.salary, errors),
@@ -1731,6 +1738,62 @@ function parseEquityGains(
       'The combined gains or losses exceed the supported whole-rupee range.',
     )
   return gains
+}
+
+function parseForeignAssets(
+  value: unknown,
+  errors: ProfileInputError[],
+): ForeignAssets {
+  const path = 'otherIncome.foreignAssets'
+  if (!isRecord(value)) {
+    addError(
+      errors,
+      'invalid',
+      path,
+      'other-income',
+      'Choose whether you held foreign assets or had signing authority.',
+    )
+    return { kind: 'possible', incomeConfirmed: 'not-sure' }
+  }
+  if (value.kind === 'none') {
+    checkObject(value, ['kind'], path, 'other-income', errors)
+    return { kind: 'none' }
+  }
+  checkObject(value, ['kind', 'incomeConfirmed'], path, 'other-income', errors)
+  return {
+    kind: readText(
+      value,
+      'kind',
+      ['held', 'possible'],
+      path,
+      'other-income',
+      errors,
+    ),
+    incomeConfirmed: readTri(
+      value,
+      'incomeConfirmed',
+      path,
+      'other-income',
+      errors,
+    ),
+  }
+}
+
+function hasUnresolvedForeignAssets(profile: Profile) {
+  return (
+    profile.otherIncome.foreignAssets.kind === 'possible' ||
+    (profile.otherIncome.foreignAssets.kind !== 'held' &&
+      (profile.clients.kind === 'foreign' ||
+        profile.clients.kind === 'mixed') &&
+      profile.clients.foreign?.accountExposure !== 'none')
+  )
+}
+
+function needsForeignGuidance(profile: Profile) {
+  return (
+    profile.otherIncome.foreignAssets.kind !== 'none' ||
+    profile.clients.kind !== 'domestic'
+  )
 }
 
 function parseRentalIncome(
@@ -2817,6 +2880,8 @@ function annualReturnUncertainty(
   establishedTriggers: readonly string[],
 ) {
   if (establishedTriggers.length) return null
+  if (hasUnresolvedForeignAssets(profile))
+    return 'annual-return-foreign-assets-uncertain'
   const credits = profile.otherIncome.tds + profile.otherIncome.tcs
   if (profile.otherIncome.otherAnnualReturnTrigger === 'not-sure')
     return 'annual-return-trigger-uncertain'
@@ -2840,6 +2905,10 @@ function annualReturnTriggers(
   rules: AnnualReturnRules,
 ) {
   const triggers: string[] = []
+  if (profile.otherIncome.foreignAssets.kind === 'held')
+    triggers.push(
+      'You held a foreign asset or financial interest, or had signing authority over an overseas account, at some time in this Tax Year. As a resident and ordinarily resident individual, you must file even if income or tax is nil.',
+    )
   if (hasUnusedEquityLoss(tax))
     triggers.push(
       'To claim carry-forward of unused capital losses, file a return reporting them by the due date. This action preserves that option even if no other filing condition applies.',
@@ -2942,6 +3011,7 @@ function calculateAnnualReturn(
             : 'A filing fee or other effect can apply after the deadline. My Next Filing does not calculate those amounts.',
           amountDue: null,
           ruleIds: [
+            'foreign-asset-return-trigger',
             'annual-return-income-threshold',
             'annual-return-profession-threshold',
             'annual-return-business-threshold',
@@ -3404,30 +3474,39 @@ function calculateForeignCoverage(
   rules: ForeignGuidanceRules,
   sourceIds: readonly string[],
 ): Coverage<ForeignGuidanceConclusion> {
-  if (profile.clients.kind === 'domestic')
+  if (!needsForeignGuidance(profile))
     return {
       kind: 'available',
       value: {
         status: 'no-foreign-receipts',
         message:
-          'No foreign-receipt guidance is needed for the domestic-only branch.',
+          'No foreign-asset or foreign-receipt guidance is needed for these answers.',
       },
-      sourceIds,
+      sourceIds: [],
     }
-  const foreign = profile.clients.foreign
-  if (foreign?.accountExposure !== 'none')
+  if (hasUnresolvedForeignAssets(profile))
     return {
       kind: 'unavailable',
       area: 'foreign-guidance',
       code: 'foreign-account-coverage',
       reason:
-        'A possible foreign account, provider-held balance, wallet, or signing authority needs separate review.',
-      guidance: rules.message,
+        'The foreign-asset or account classification is unresolved. Review ownership, signing authority and any rights to provider-held money.',
+      guidance:
+        'Your income-tax estimate uses the resolved income amounts only. Confirm whether these arrangements require foreign-asset reporting. A provider brand or a small balance does not settle this. Review the asset answer and any earlier client-account answer.',
       sourceIds,
     }
+  const held = profile.otherIncome.foreignAssets.kind === 'held'
   return {
     kind: 'available',
-    value: { status: 'reviewed-note', message: rules.message },
+    value: {
+      status: held ? 'assets-disclosure' : 'reviewed-note',
+      message: [
+        held ? rules.assetMessage : '',
+        profile.clients.kind !== 'domestic' ? rules.message : '',
+      ]
+        .filter(Boolean)
+        .join(' '),
+    },
     sourceIds,
   }
 }
@@ -3446,6 +3525,18 @@ function coreSupportFacts(
     ...factForPath(current, rules.groups.incomePaths.values, sourceIds),
     ...factForClients(current, sourceIds),
   ]
+  const assets = current.otherIncome.foreignAssets
+  if (assets.kind !== 'none' && assets.incomeConfirmed !== 'yes')
+    coreFacts.push(
+      unsupported(
+        'foreign-assets-income-scope',
+        'income-tax',
+        'other-income',
+        'Income effects of foreign assets',
+        'Confirm that these arrangements add no unsupported income, gains, losses, benefits, foreign tax or unresolved amounts. Otherwise this version cannot estimate your tax.',
+        sourceIds,
+      ),
+    )
   const rental = current.otherIncome.rentalIncome
   if (
     rental.kind === 'not-sure' ||
@@ -3893,29 +3984,38 @@ export function evaluate(
   }
 
   let foreignGuidance: Coverage<ForeignGuidanceConclusion>
-  if (
-    (current.clients.kind === 'foreign' || current.clients.kind === 'mixed') &&
-    !ruleValidation.groups['foreign-guidance'].valid
-  ) {
+  if (!needsForeignGuidance(current)) {
+    foreignGuidance = {
+      kind: 'available',
+      value: {
+        status: 'no-foreign-receipts',
+        message:
+          'No foreign-asset or foreign-receipt guidance is needed for these answers.',
+      },
+      sourceIds: [],
+    }
+  } else if (!ruleValidation.groups['foreign-guidance'].valid) {
     const sources = sourceIdsForGroup(data, 'foreignGuidance')
     foreignGuidance = coverageUnavailable(
       'foreign-guidance',
       'foreign-guidance-rules-stale',
-      'Foreign-receipt guidance needs review before it can be shown.',
+      'Foreign-asset and receipt guidance needs review before it can be shown.',
       'The income-tax estimate remains available. Ask an authorised dealer or qualified adviser about cross-border steps.',
       sources,
     )
     reviewActions.push(
       reviewAction(
         'foreign-guidance-rules',
-        'Review foreign-receipt guidance',
+        'Review foreign-asset and receipt guidance',
         'foreign-guidance',
-        'clients',
-        'The reviewed FEMA transition note is unavailable.',
+        current.otherIncome.foreignAssets.kind === 'none'
+          ? 'clients'
+          : 'other-income',
+        'Foreign-asset disclosure and foreign-receipt guidance are unavailable until their sources are reviewed.',
         sources,
       ),
     )
-  } else if (ruleValidation.groups['foreign-guidance'].valid) {
+  } else {
     foreignGuidance = calculateForeignCoverage(
       current,
       data.groups.foreignGuidance.values,
@@ -3927,19 +4027,14 @@ export function evaluate(
           'foreign-account-guidance',
           'Review foreign-account facts',
           'foreign-guidance',
-          'clients',
+          current.otherIncome.foreignAssets.kind === 'none'
+            ? 'clients'
+            : 'other-income',
           foreignGuidance.reason,
           foreignSources,
         ),
       )
-  } else
-    foreignGuidance = coverageUnavailable(
-      'foreign-guidance',
-      'foreign-guidance-unneeded',
-      'Foreign guidance is unavailable.',
-      'No foreign receipt facts were selected.',
-      [],
-    )
+  }
 
   obligations.sort(
     (left, right) =>

@@ -133,6 +133,8 @@ export function clearInactiveDraft(draft: Draft): Draft {
     next.equityGainsConfirmed = ''
     for (const key of equityGainKeys) next.amounts[key] = ''
   }
+  if (!draft.hasForeignAssets || draft.hasForeignAssets === 'no')
+    next.assetIncomeConfirmed = ''
   if (draft.hasRentalIncome !== 'yes') {
     next.rentalIncomeConfirmed = ''
     next.rentalGstConfirmed = ''

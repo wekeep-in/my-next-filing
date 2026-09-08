@@ -103,6 +103,8 @@ export type Draft = {
   }[]
   readonly hasEquityGains: DraftChoice
   readonly equityGainsConfirmed: DraftChoice
+  readonly hasForeignAssets: DraftChoice
+  readonly assetIncomeConfirmed: DraftChoice
   readonly hasRentalIncome: DraftChoice
   readonly rentalIncomeConfirmed: DraftChoice
   readonly rentalGstConfirmed: DraftChoice
@@ -275,7 +277,7 @@ export const unsupportedFactLabels: Record<UnsupportedFact, string> = {
   agriculturalIncome: 'Agricultural income',
   unrelatedForeignIncome:
     'Foreign income other than the freelance receipts entered here',
-  foreignAssets: 'Assets or financial interests outside India',
+  foreignAssets: 'Foreign assets outside the supported conditions',
   foreignTaxOrRelief:
     'Tax owed or paid abroad, or a claim for foreign-tax relief',
   deductionsLossesOrSpecialRate:
@@ -374,6 +376,8 @@ export const blankDraft = (): Draft => ({
   employerNpsEmployers: [],
   hasEquityGains: '',
   equityGainsConfirmed: '',
+  hasForeignAssets: '',
+  assetIncomeConfirmed: '',
   hasRentalIncome: '',
   rentalIncomeConfirmed: '',
   rentalGstConfirmed: '',
@@ -412,6 +416,7 @@ export function draftFromProfile(profile: Profile): Draft {
   if (gains.kind === 'domestic')
     for (const key of equityGainKeys)
       amounts[key] = gains[key].toLocaleString('en-IN')
+  const assets = profile.otherIncome.foreignAssets
   const rental = profile.otherIncome.rentalIncome
   if (rental.kind === 'domestic')
     for (const key of rentalIncomeKeys)
@@ -478,6 +483,13 @@ export function draftFromProfile(profile: Profile): Draft {
           ? 'yes'
           : 'not-sure',
     equityGainsConfirmed: gains.kind === 'domestic' ? gains.confirmed : '',
+    hasForeignAssets:
+      assets.kind === 'held'
+        ? 'yes'
+        : assets.kind === 'none'
+          ? 'no'
+          : 'not-sure',
+    assetIncomeConfirmed: assets.kind !== 'none' ? assets.incomeConfirmed : '',
     hasRentalIncome:
       rental.kind === 'domestic'
         ? 'yes'
@@ -644,6 +656,7 @@ const exampleCandidate = {
     equityGains: { kind: 'none' },
     additionalIncome: { kind: 'none' },
     rentalIncome: { kind: 'none' },
+    foreignAssets: { kind: 'none' },
     taxableBankInterest: 10_000,
     tds: 40_000,
     tcs: 0,
@@ -797,6 +810,13 @@ function candidateFromDraft(draft: Draft) {
         : null,
     },
     otherIncome: {
+      foreignAssets:
+        draft.hasForeignAssets === 'no'
+          ? { kind: 'none' }
+          : {
+              kind: draft.hasForeignAssets === 'yes' ? 'held' : 'possible',
+              incomeConfirmed: draft.assetIncomeConfirmed || 'not-sure',
+            },
       rentalIncome:
         draft.hasRentalIncome === 'yes'
           ? {
@@ -1076,6 +1096,8 @@ function errorStep(key: string) {
       'hasEquityGains',
       'equityGainsConfirmed',
       ...equityGainKeys,
+      'hasForeignAssets',
+      'assetIncomeConfirmed',
       'hasRentalIncome',
       'rentalIncomeConfirmed',
       'rentalGstConfirmed',
@@ -1098,6 +1120,10 @@ function errorStep(key: string) {
 }
 
 function profileErrorKey(error: ProfileInputError) {
+  if (error.path.startsWith('otherIncome.foreignAssets'))
+    return error.path.endsWith('.incomeConfirmed')
+      ? 'assetIncomeConfirmed'
+      : 'hasForeignAssets'
   if (error.path.startsWith('otherIncome.rentalIncome')) {
     const last = error.path.split('.').at(-1) ?? ''
     return last === 'confirmed'
@@ -1324,6 +1350,16 @@ function validateDraftGroup(
         'Choose whether these payments involve a foreign account or similar arrangement.'
   }
   if (group === 'other-income') {
+    if (!draft.hasForeignAssets)
+      nextErrors.hasForeignAssets =
+        'Choose whether you held foreign assets or had signing authority.'
+    if (
+      draft.hasForeignAssets &&
+      draft.hasForeignAssets !== 'no' &&
+      !draft.assetIncomeConfirmed
+    )
+      nextErrors.assetIncomeConfirmed =
+        'Confirm the income effects of these arrangements, or choose Not sure.'
     if (!draft.hasRentalIncome)
       nextErrors.hasRentalIncome = 'Choose whether you have rental income.'
     if (draft.hasRentalIncome === 'yes') {
@@ -1521,6 +1557,10 @@ function draftFeedback(draft: Draft, latestDate: string) {
       ...equityGainKeys,
       ...receipts,
     ],
+    'foreign-assets-income-scope':
+      draft.hasForeignAssets && draft.hasForeignAssets !== 'no'
+        ? ['assetIncomeConfirmed']
+        : ['hasForeignAssets'],
     'rental-income-scope':
       draft.hasRentalIncome === 'yes'
         ? ['rentalIncomeConfirmed']
@@ -1673,7 +1713,23 @@ function draftFeedback(draft: Draft, latestDate: string) {
       hasForeignClients(draft) &&
       draft.foreignAccountExposure
     )
-      field = 'foreignAccountExposure'
+      field =
+        draft.hasForeignAssets === 'not-sure'
+          ? 'hasForeignAssets'
+          : 'foreignAccountExposure'
+    if (
+      notice.code === 'foreign-account-coverage' &&
+      draft.hasForeignAssets === 'not-sure'
+    )
+      field = 'hasForeignAssets'
+    if (
+      notice.code === 'annual-return-foreign-assets-uncertain' &&
+      draft.hasForeignAssets
+    )
+      field =
+        draft.hasForeignAssets === 'not-sure'
+          ? 'hasForeignAssets'
+          : 'foreignAccountExposure'
     if (
       notice.code === 'annual-return-trigger-uncertain' &&
       draft.otherAnnualReturnTrigger
