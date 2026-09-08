@@ -197,6 +197,12 @@ main {
   padding-block: clamp(2rem, 7vw, 6rem);
 }
 
+.app-loading {
+  min-height: 100dvh;
+  align-items: center;
+  justify-content: center;
+}
+
 .app--landing main {
   padding-block: clamp(3rem, 7vw, 5.5rem);
 }

@@ -10,6 +10,7 @@ import {
   useState,
 } from 'react'
 import { cn } from 'cn'
+import { LoaderIcon } from 'lucide-react'
 import {
   Link,
   Outlet,
@@ -606,8 +607,13 @@ export const router = createBrowserRouter([
   {
     element: <AppFrame />,
     hydrateFallbackElement: (
-      <main>
-        <p role="status">Loading My Next Filing...</p>
+      <main className="app-loading">
+        <div role="status" aria-label="Loading My Next Filing">
+          <LoaderIcon
+            className="size-8 animate-spin text-muted-foreground motion-reduce:animate-none"
+            aria-hidden="true"
+          />
+        </div>
       </main>
     ),
     children: [
