@@ -3,7 +3,8 @@ import { createContext, useContext } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { SelectControl } from '@/components/select-control'
-import { Badge } from '@/components/ui/badge'
+import { PeriodNavigation } from '@/components/period-navigation'
+import { Button } from '@/components/ui/button'
 import { AmountInput } from '@/components/amount-input'
 import { FieldHelp } from '@/components/field-help'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
@@ -28,6 +29,7 @@ export function FieldError({
   const coverage = useContext(CoverageWarnings)[id.replace(/-error$/, '')]
   return (
     <>
+      <span id={`${id}-anchor`} hidden />
       {warning && (
         <p
           className="choice-warning"
@@ -183,6 +185,8 @@ export function MoneyField({
   label,
   help,
   tooltipLabel,
+  zeroLabel,
+  readOnly = false,
   value,
   error,
   onChange,
@@ -194,6 +198,8 @@ export function MoneyField({
   readonly label: ReactNode
   readonly help: ReactNode
   readonly tooltipLabel?: string
+  readonly zeroLabel?: string
+  readonly readOnly?: boolean
   readonly value: string
   readonly error?: string
   readonly onChange: (value: string) => void
@@ -225,10 +231,22 @@ export function MoneyField({
           autoComplete="off"
           className="rounded-none border-0 focus-visible:border-0 focus-visible:ring-0"
           value={value}
+          readOnly={readOnly}
           aria-describedby={`${id}-help${error ? ` ${id}-error` : ''}${warning ? ` ${id}-unsupported` : ''}`}
           aria-invalid={Boolean(error)}
           onValueChange={onChange}
         />
+        {zeroLabel && (
+          <Button
+            type="button"
+            variant="ghost"
+            className="shrink-0 rounded-none px-3 text-sm"
+            aria-label={zeroLabel}
+            onClick={() => onChange('0')}
+          >
+            None
+          </Button>
+        )}
       </div>
       <FieldError id={`${id}-error`} error={error} />
     </div>
@@ -246,9 +264,9 @@ export function CheckHeading({
 }) {
   return (
     <header className="question-heading">
-      <Badge className="mb-[.85rem]" variant="period">
+      <PeriodNavigation>
         {first ? `Tax year ${taxYearShort}` : TAX_YEAR}
-      </Badge>
+      </PeriodNavigation>
       <h1 id="check-title" tabIndex={-1}>
         {title}
       </h1>

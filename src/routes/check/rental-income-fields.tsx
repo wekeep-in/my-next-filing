@@ -1,3 +1,4 @@
+import { QuestionSection } from '@/routes/check/question-section'
 import type { TriState } from '@/evaluation'
 import { HelpModal } from '@/components/help-modal'
 import { ExternalLink } from '@/components/external-link'
@@ -82,8 +83,7 @@ export function RentalIncomeFields({
   readonly setAmount: (key: DraftAmountKey, value: string) => void
 }) {
   return (
-    <section className="question-section" aria-labelledby="rental-income-title">
-      <h2 id="rental-income-title">Rental income</h2>
+    <QuestionSection id="rental-income-title" title="Rental income">
       <div className="field-stack">
         <ChoiceField
           id="hasRentalIncome"
@@ -208,6 +208,6 @@ export function RentalIncomeFields({
           </>
         )}
       </div>
-    </section>
+    </QuestionSection>
   )
 }

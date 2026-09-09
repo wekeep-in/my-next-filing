@@ -1,14 +1,19 @@
-import type { Page } from '@playwright/test'
 import {
   RECOVERY_KEY,
   WORKSPACE_KEY,
   expect,
+  questionField,
   seedPersonal,
   test,
 } from './fixtures'
+import type { Page } from '@playwright/test'
 
 async function choose(page: Page, id: string, name: string) {
-  await page.locator(`#${id}`).getByRole('radio', { name, exact: true }).check()
+  await (
+    await questionField(page, `#${id}`)
+  )
+    .getByRole('radio', { name, exact: true })
+    .check()
 }
 
 test('ordinary income above fifty lakh reaches a complete surcharge breakdown and survives save reload and payment update', async ({
@@ -20,8 +25,8 @@ test('ordinary income above fifty lakh reaches a complete surcharge breakdown an
       remote.push(request.url())
   })
   await seedPersonal(page)
-  await page.goto('/check/receipts')
-  await page.locator('#grossReceipts').fill('5100000')
+  await page.goto('/check/income')
+  await (await questionField(page, '#grossReceipts')).fill('5100000')
   // Let the temporary notice finish before the later viewport and save interactions.
   const notice = page.getByText(
     'Your answers will stay available if you refresh this tab. Closing the tab may remove them.',
@@ -29,15 +34,14 @@ test('ordinary income above fifty lakh reaches a complete surcharge breakdown an
   )
   await expect(notice).toBeVisible()
   await expect(notice).toHaveCount(0)
-  await page.locator('#declaredProfit').fill('5100000')
+  await (await questionField(page, '#declaredProfit')).fill('5100000')
   await expect(
     page.getByRole('button', { name: 'Continue', exact: true }),
   ).toBeEnabled()
-  await page.goto('/check/other-income')
-  await page.locator('#taxableBankInterest').fill('0')
-  await page.locator('#tds').fill('0')
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
-  await page.locator('#aggregateTurnover').fill('5100000')
+  await page.goto('/check/income')
+  await (await questionField(page, '#taxableBankInterest')).fill('0')
+  await (await questionField(page, '#tds')).fill('0')
+  await (await questionField(page, '#aggregateTurnover')).fill('5100000')
   await page.getByRole('button', { name: 'Continue', exact: true }).click()
   await page
     .getByRole('button', { name: 'Calculate my plan', exact: true })
@@ -103,7 +107,7 @@ test('ordinary income above fifty lakh reaches a complete surcharge breakdown an
     .locator('.attention-action')
     .getByRole('button', { name: 'Update amount paid', exact: true })
     .click()
-  await page.locator('#advance-tax-update').fill('100000')
+  await (await questionField(page, '#advance-tax-update')).fill('100000')
   await page
     .getByRole('button', { name: 'Save and recalculate', exact: true })
     .click()
@@ -117,14 +121,14 @@ test('the one-crore ceiling blocks and mixed equity within the first surcharge b
   page,
 }) => {
   await seedPersonal(page)
-  await page.goto('/check/other-income')
+  await page.goto('/check/income')
   const next = page.getByRole('button', { name: 'Continue', exact: true })
-  await page.locator('#taxableBankInterest').fill('11000000')
-  await expect(page.locator('#taxableBankInterest-unsupported')).toContainText(
-    '₹1 crore',
-  )
+  await (await questionField(page, '#taxableBankInterest')).fill('11000000')
+  await expect(
+    await questionField(page, '#taxableBankInterest-unsupported'),
+  ).toContainText('₹1 crore')
   await expect(next).toBeDisabled()
-  await page.locator('#taxableBankInterest').fill('3700000')
+  await (await questionField(page, '#taxableBankInterest')).fill('3700000')
   await choose(page, 'hasEquityGains', 'Yes')
   await choose(page, 'equityGainsConfirmed', 'Yes')
   for (const [id, value] of [
@@ -133,10 +137,10 @@ test('the one-crore ceiling blocks and mixed equity within the first surcharge b
     ['shortTermLosses', '0'],
     ['longTermLosses', '0'],
   ])
-    await page.locator(`#${id}`).fill(value)
+    await (await questionField(page, `#${id}`)).fill(value)
   await expect(page.locator('#shortTermGains-unsupported')).toHaveCount(0)
   await expect(next).toBeEnabled()
-  await page.locator('#shortTermLosses').fill('10')
+  await (await questionField(page, '#shortTermLosses')).fill('10')
   await expect(page.locator('#shortTermGains-unsupported')).toHaveCount(0)
   await expect(next).toBeEnabled()
 })
@@ -145,12 +149,13 @@ test('a restored surcharge exclusion remains selected until explicitly reviewed'
   page,
 }) => {
   await seedPersonal(page)
-  await page.goto('/check/other-income')
-  await page.locator('#taxableBankInterest').fill('3700000')
-  const flag = page.getByRole('checkbox', {
-    name: 'Surcharge needing a separate review',
-    exact: true,
-  })
+  await page.goto('/check/income')
+  await (await questionField(page, '#taxableBankInterest')).fill('3700000')
+  const scope = await questionField(
+    page,
+    '#unsupportedSituationAnswers-businessTax',
+  )
+  const flag = scope.getByRole('radio', { name: 'Yes', exact: true })
   await flag.check()
   await expect(
     page.getByRole('button', { name: 'Continue', exact: true }),
@@ -160,13 +165,14 @@ test('a restored surcharge exclusion remains selected until explicitly reviewed'
       async () =>
         await page.evaluate((key) => sessionStorage.getItem(key), RECOVERY_KEY),
     )
-    .toContain('surchargeCase')
+    .toContain('unsupportedBusinessOrTax')
   await page.reload()
+  const reviewedScope = await questionField(
+    page,
+    '#unsupportedSituationAnswers-businessTax',
+  )
   await expect(flag).toBeChecked()
-  await flag.uncheck()
-  await page
-    .getByRole('radio', { name: 'None of these apply', exact: true })
-    .check()
+  await reviewedScope.getByRole('radio', { name: 'No', exact: true }).check()
   await expect(
     page.getByRole('button', { name: 'Continue', exact: true }),
   ).toBeEnabled()
@@ -176,7 +182,7 @@ test('the personal-residence proprietor exemption requires explicit review and p
   page,
 }, testInfo) => {
   await seedPersonal(page)
-  await page.goto('/check/other-income')
+  await page.goto('/check/income')
   await choose(page, 'hasRentalIncome', 'Yes')
   await choose(page, 'rentalIncomeConfirmed', 'Yes')
   for (const [id, amount] of [
@@ -184,13 +190,15 @@ test('the personal-residence proprietor exemption requires explicit review and p
     ['rentalMunicipalTaxes', '20000'],
     ['rentalInterest', '100000'],
   ])
-    await page.locator(`#${id}`).fill(amount)
-  const field = page.locator('#rentalGstConfirmed')
+    await (await questionField(page, `#${id}`)).fill(amount)
+  const field = await questionField(page, '#rentalGstConfirmed')
   await expect(field).toContainText('registered sole proprietor')
   await expect(field).toContainText('personal capacity for their own residence')
   await expect(field).toContainText('on their own behalf')
   await choose(page, 'rentalGstConfirmed', 'No')
-  await expect(page.locator('#rentalGstConfirmed-coverage')).toBeVisible()
+  await expect(
+    await questionField(page, '#rentalGstConfirmed-coverage'),
+  ).toBeVisible()
   await expect
     .poll(async () => {
       const raw = await page.evaluate(
@@ -201,6 +209,7 @@ test('the personal-residence proprietor exemption requires explicit review and p
     })
     .toMatchObject({ draft: { rentalGstConfirmed: 'no' } })
   await page.reload()
+  await questionField(page, '#rentalGstConfirmed')
   await expect(
     field.getByRole('radio', { name: 'No', exact: true }),
   ).toBeChecked()
@@ -235,7 +244,7 @@ test('the personal-residence proprietor exemption requires explicit review and p
     })
   }
   await page.getByRole('button', { name: 'Continue', exact: true }).click()
-  await page.locator('#aggregateTurnover').fill('2300000')
+  await (await questionField(page, '#aggregateTurnover')).fill('2300000')
   await page.getByRole('button', { name: 'Continue', exact: true }).click()
   await page
     .getByRole('button', { name: 'Calculate my plan', exact: true })

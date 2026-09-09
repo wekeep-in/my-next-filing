@@ -1,30 +1,35 @@
-import type { Page } from '@playwright/test'
 import {
   RECOVERY_KEY,
   WORKSPACE_KEY,
   expect,
+  openQuestionStep,
+  questionField,
   seedPersonal,
   test,
 } from './fixtures'
+import type { Page } from '@playwright/test'
 import workspaceV7 from '../fixtures/workspace-v7.json' with { type: 'json' }
 import recoveryV6 from '../fixtures/recovery-v6.json' with { type: 'json' }
 
 async function openPortfolio(page: Page, ordinary = 1_000_000) {
   await seedPersonal(page)
-  await page.goto('/check/receipts')
-  await page.locator('#grossReceipts').fill(String(ordinary * 2))
-  await page.locator('#declaredProfit').fill(String(ordinary))
+  await page.goto('/check/income')
+  await (await questionField(page, '#grossReceipts')).fill(String(ordinary * 2))
+  await (await questionField(page, '#declaredProfit')).fill(String(ordinary))
   await page.getByRole('button', { name: 'Continue', exact: true }).click()
   await page.getByRole('button', { name: 'Continue', exact: true }).click()
-  await expect(page).toHaveURL(/\/check\/other-income$/)
-  await page.locator('#taxableBankInterest').fill('0')
-  await page.locator('#tds').fill('0')
-  await page
-    .locator('#hasEquityGains')
+  await expect(page).toHaveURL(/\/check\/taxes-and-gst$/)
+  await openQuestionStep(page, 1)
+  await (await questionField(page, '#taxableBankInterest')).fill('0')
+  await (await questionField(page, '#tds')).fill('0')
+  await (
+    await questionField(page, '#hasEquityGains')
+  )
     .getByRole('radio', { name: 'Yes', exact: true })
     .click()
-  await page
-    .locator('#equityGainsConfirmed')
+  await (
+    await questionField(page, '#equityGainsConfirmed')
+  )
     .getByRole('radio', { name: 'Yes', exact: true })
     .click()
 }
@@ -38,9 +43,11 @@ async function enterPortfolio(
     'longTermGains',
     'longTermLosses',
   ].entries())
-    await page.locator(`#${id}`).fill(gainsAndLosses[index])
+    await (await questionField(page, `#${id}`)).fill(gainsAndLosses[index])
 }
 async function calculate(page: Page) {
+  await openQuestionStep(page, 1)
+  await page.getByRole('button', { name: 'Continue', exact: true }).click()
   await page.getByRole('button', { name: 'Continue', exact: true }).click()
   await page.getByRole('button', { name: 'Continue', exact: true }).click()
   await page
@@ -66,7 +73,9 @@ test('accepts positive net portfolios and exposes loss pairings through save and
   await openPortfolio(page)
   await enterPortfolio(page, ['200000', '50000', '300000', '75000'])
   await page.reload()
-  await expect(page.locator('#shortTermLosses')).toHaveValue('50,000')
+  await expect(await questionField(page, '#shortTermLosses')).toHaveValue(
+    '50,000',
+  )
   await calculate(page)
   await expect(page.locator('.tax-summary h2')).toHaveText('₹85,800')
   await expect(
@@ -179,14 +188,14 @@ test('reassesses basic exemption after loss set-off and clears all four amounts'
   await expect(
     page.getByRole('button', { name: 'Continue', exact: true }),
   ).toBeEnabled()
-  await page.locator('#shortTermLosses').fill('75000')
+  await (await questionField(page, '#shortTermLosses')).fill('75000')
   await expect(page.locator('#equityGainsConfirmed-unsupported')).toHaveCount(0)
   for (const width of [1440, 1024, 320]) {
     await page.setViewportSize({ width, height: 900 })
-    await page
-      .locator('#longTermLosses')
-      .evaluate((element) => element.scrollIntoView({ block: 'center' }))
-    await expect(page.locator('#longTermLosses')).toBeInViewport()
+    await (
+      await questionField(page, '#longTermLosses')
+    ).evaluate((element) => element.scrollIntoView({ block: 'center' }))
+    await expect(await questionField(page, '#longTermLosses')).toBeInViewport()
     expect(
       await page.evaluate(
         () =>
@@ -200,16 +209,18 @@ test('reassesses basic exemption after loss set-off and clears all four amounts'
   }
   await calculate(page)
   await expect(page.locator('.tax-summary h2')).toHaveText('₹6,500')
-  await page.goto('/check/other-income')
+  await page.goto('/check/income')
   await page.emulateMedia({ reducedMotion: 'reduce' })
-  const no = page
-    .locator('#hasEquityGains')
-    .getByRole('radio', { name: 'No', exact: true })
+  const no = (await questionField(page, '#hasEquityGains')).getByRole('radio', {
+    name: 'No',
+    exact: true,
+  })
   await no.focus()
   await page.keyboard.press('Space')
   await expect(page.locator('#shortTermLosses')).toHaveCount(0)
-  await page
-    .locator('#hasEquityGains')
+  await (
+    await questionField(page, '#hasEquityGains')
+  )
     .getByRole('radio', { name: 'Yes', exact: true })
     .click()
   for (const id of [
@@ -218,11 +229,12 @@ test('reassesses basic exemption after loss set-off and clears all four amounts'
     'longTermGains',
     'longTermLosses',
   ])
-    await expect(page.locator(`#${id}`)).toHaveValue('')
+    await expect(await questionField(page, `#${id}`)).toHaveValue('')
   await expect(
-    page
-      .locator('#equityGainsConfirmed')
-      .getByRole('radio', { name: 'Yes', exact: true }),
+    (await questionField(page, '#equityGainsConfirmed')).getByRole('radio', {
+      name: 'Yes',
+      exact: true,
+    }),
   ).toHaveAttribute('aria-checked', 'false')
 })
 
@@ -251,7 +263,7 @@ test('migrates the captured equity workspace without changing its gains or compl
     .locator('.attention-action')
     .getByRole('button', { name: 'Update amount paid', exact: true })
     .click()
-  await page.locator('#advance-tax-update').fill('1000')
+  await (await questionField(page, '#advance-tax-update')).fill('1000')
   await page
     .getByRole('button', { name: 'Save and recalculate', exact: true })
     .click()
@@ -290,19 +302,24 @@ test('restores historical Recovery with gains preserved but loss amounts and exp
     },
     { key: RECOVERY_KEY, value: JSON.stringify(recoveryV6) },
   )
-  await page.goto('/check/other-income')
-  await expect(page.locator('#shortTermGains')).toHaveValue('1,00,000')
-  await expect(page.locator('#shortTermLosses')).toHaveValue('')
-  await expect(page.locator('#longTermLosses')).toHaveValue('')
+  await page.goto('/check/income')
+  await expect(await questionField(page, '#shortTermGains')).toHaveValue(
+    '1,00,000',
+  )
+  await expect(await questionField(page, '#shortTermLosses')).toHaveValue('')
+  await expect(await questionField(page, '#longTermLosses')).toHaveValue('')
   await expect(
-    page
-      .locator('#equityGainsConfirmed')
-      .getByRole('radio', { name: 'Yes', exact: true }),
+    (await questionField(page, '#equityGainsConfirmed')).getByRole('radio', {
+      name: 'Yes',
+      exact: true,
+    }),
   ).toHaveAttribute('aria-checked', 'false')
-  await page.locator('#shortTermLosses').fill('12000')
+  await (await questionField(page, '#shortTermLosses')).fill('12000')
   await page.reload()
-  await expect(page.locator('#shortTermLosses')).toHaveValue('12,000')
-  await expect(page.locator('#longTermLosses')).toHaveValue('')
+  await expect(await questionField(page, '#shortTermLosses')).toHaveValue(
+    '12,000',
+  )
+  await expect(await questionField(page, '#longTermLosses')).toHaveValue('')
   await expect(
     page.getByRole('button', { name: 'Continue', exact: true }),
   ).toBeDisabled()

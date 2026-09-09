@@ -16,7 +16,10 @@ import {
   unsupportedFactLabels,
 } from '@/routes/check/model'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
+import {
+  QuestionSection,
+  QuestionSections,
+} from '@/routes/check/question-section'
 import type { Draft } from '@/routes/check/model'
 import { CheckHeading } from '@/routes/check/fields'
 
@@ -63,8 +66,8 @@ function GroupSummary({
       : 'Not entered'
   const groups = [
     {
-      title: 'You and your practice',
-      editLabel: 'Edit answers about you and your practice',
+      id: 'review-fit',
+      title: 'Fit for this version',
       step: groupStep('tax-year'),
       answers: [
         { label: 'Person', value: answer(draft.personKind) },
@@ -104,13 +107,6 @@ function GroupSummary({
               },
             ]
           : []),
-      ],
-    },
-    {
-      title: 'Your work and tax method',
-      editLabel: 'Edit your work and tax method',
-      step: groupStep('activity'),
-      answers: [
         {
           label: 'Work type',
           value:
@@ -139,11 +135,22 @@ function GroupSummary({
               },
             ]
           : []),
+        {
+          label: 'Situations outside this version',
+          value:
+            draft.unsupportedCertainty === 'selected'
+              ? draft.unsupportedFacts
+                  .map((fact) => unsupportedFactLabels[fact])
+                  .join(', ')
+              : answer(draft.unsupportedCertainty, {
+                  none: 'None of these apply',
+                }),
+        },
       ],
     },
     {
-      title: 'Receipts and profit',
-      editLabel: 'Edit receipts and profit',
+      id: 'review-receipts',
+      title: 'Freelance receipts and profit',
       step: groupStep('receipts'),
       answers: [
         {
@@ -175,8 +182,8 @@ function GroupSummary({
       ],
     },
     {
+      id: 'review-clients',
       title: 'Clients and payments',
-      editLabel: 'Edit clients and payments',
       step: groupStep('clients'),
       answers: [
         { label: 'Client location', value: answer(draft.clientKind) },
@@ -291,8 +298,8 @@ function GroupSummary({
       ],
     },
     {
-      title: 'Other income and tax paid',
-      editLabel: 'Edit other income and tax paid',
+      id: 'review-other-income',
+      title: 'Other income',
       step: groupStep('other-income'),
       answers: [
         {
@@ -421,6 +428,17 @@ function GroupSummary({
           label: 'Taxable bank or deposit interest',
           value: money(draft.amounts.taxableBankInterest),
         },
+      ],
+    },
+    {
+      id: 'review-taxes-gst',
+      title: 'Taxes and GST',
+      step: groupStep('gst'),
+      answers: [
+        {
+          label: 'Tax credits or advance tax payments',
+          value: answer(draft.hasTaxPaid),
+        },
         { label: 'Indian TDS credit', value: money(draft.amounts.tds) },
         { label: 'Indian TCS credit', value: money(draft.amounts.tcs) },
         {
@@ -439,24 +457,7 @@ function GroupSummary({
           label: 'Another income-tax return condition',
           value: answer(draft.otherAnnualReturnTrigger),
         },
-        {
-          label: 'Situations outside this version',
-          value:
-            draft.unsupportedCertainty === 'selected'
-              ? draft.unsupportedFacts
-                  .map((fact) => unsupportedFactLabels[fact])
-                  .join(', ')
-              : answer(draft.unsupportedCertainty, {
-                  none: 'None of these apply',
-                }),
-        },
-      ],
-    },
-    {
-      title: 'GST registration and filings',
-      editLabel: 'Edit GST registration and filing answers',
-      step: groupStep('gst'),
-      answers: [
+
         { label: 'Ever had a GSTIN', value: answer(draft.gstKind) },
         ...(draft.gstKind === 'registered'
           ? [
@@ -535,21 +536,9 @@ function GroupSummary({
     },
   ]
   return (
-    <div className="review-list">
-      {groups.map(({ title, editLabel, step, answers }) => (
-        <Card as="article" key={title}>
-          <div className="review-card-header">
-            <h2>{title}</h2>
-            <Button
-              className="shrink-0 leading-[1.1]! font-extrabold!"
-              variant="link"
-              type="button"
-              aria-label={editLabel}
-              onClick={() => onEdit(step)}
-            >
-              Edit
-            </Button>
-          </div>
+    <QuestionSections initialOpen="review-fit">
+      {groups.map(({ id, title, step, answers }) => (
+        <QuestionSection key={id} id={id} title={title} showStatus={false}>
           <dl className="review-answers">
             {answers.map(({ label, value }) => (
               <div className="review-answer" key={label}>
@@ -558,9 +547,20 @@ function GroupSummary({
               </div>
             ))}
           </dl>
-        </Card>
+          <div className="mt-4 flex justify-start">
+            <Button
+              className="w-fit leading-[1.1]! font-extrabold!"
+              variant="outline"
+              type="button"
+              aria-label={`Edit your answers for ${title}`}
+              onClick={() => onEdit(step)}
+            >
+              Edit your answers
+            </Button>
+          </div>
+        </QuestionSection>
       ))}
-    </div>
+    </QuestionSections>
   )
 }
 

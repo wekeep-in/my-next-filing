@@ -592,7 +592,7 @@ test('preserves legacy loss exclusions and requires the expanded Recovery answer
   )
   const recovery = parseRecoveryDraft(recoveryV6, TAX_YEAR)
   expect(recovery).toMatchObject({
-    schemaVersion: 10,
+    schemaVersion: 12,
     draft: {
       hasEquityGains: 'yes',
       equityGainsConfirmed: '',

@@ -2,6 +2,7 @@ import {
   RECOVERY_KEY,
   WORKSPACE_KEY,
   expect,
+  questionField,
   seedPersonal,
   test,
 } from './fixtures'
@@ -18,15 +19,16 @@ test('keeps employer NPS through Recovery, review, saving and reload', async ({
     requests.push(`${request.url()} ${request.postData() ?? ''}`),
   )
   await seedPersonal(page)
-  await page.goto('/check/other-income')
+  await page.goto('/check/income')
   for (const id of [
     'hasSalary',
     'salaryConfirmed',
     'hasEmployerNps',
     'employerNpsConfirmed',
   ])
-    await page
-      .locator(`#${id}`)
+    await (
+      await questionField(page, `#${id}`)
+    )
       .getByRole('radio', { name: 'Yes', exact: true })
       .click()
   await page
@@ -52,8 +54,11 @@ test('keeps employer NPS through Recovery, review, saving and reload', async ({
     page.getByLabel('Employer 2 NPS contribution', { exact: true }),
   ).toHaveValue('70,000')
   await page.getByRole('button', { name: 'Continue', exact: true }).click()
-  await expect(page).toHaveURL(/\/check\/gst$/)
+  await expect(page).toHaveURL(/\/check\/clients$/)
   await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await expect(page).toHaveURL(/\/check\/taxes-and-gst$/)
+  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await page.getByRole('button', { name: 'Other income', exact: true }).click()
   await expect(
     page.getByText('Employer 2 basic pay and eligible DA', { exact: true }),
   ).toBeVisible()
@@ -117,9 +122,10 @@ test('keeps NPS fields and help usable across viewports and clears deselected co
   page,
 }, testInfo) => {
   await seedPersonal(page)
-  await page.goto('/check/other-income')
-  await page
-    .locator('#hasSalary')
+  await page.goto('/check/income')
+  await (
+    await questionField(page, '#hasSalary')
+  )
     .getByRole('radio', { name: 'Yes', exact: true })
     .click()
   // The temporary Recovery banner changes page geometry when it disappears.
@@ -129,8 +135,9 @@ test('keeps NPS fields and help usable across viewports and clears deselected co
   )
   await expect(recoveryNotice).toBeVisible()
   await expect(recoveryNotice).toHaveCount(0)
-  await page
-    .locator('#hasEmployerNps')
+  await (
+    await questionField(page, '#hasEmployerNps')
+  )
     .getByRole('radio', { name: 'Yes', exact: true })
     .click()
   const help = page.getByRole('button', {
@@ -167,7 +174,9 @@ test('keeps NPS fields and help usable across viewports and clears deselected co
     await page.evaluate(async () => {
       await document.fonts.ready
     })
-    await page.locator('#hasEmployerNps').scrollIntoViewIfNeeded()
+    await (
+      await questionField(page, '#hasEmployerNps')
+    ).scrollIntoViewIfNeeded()
     expect(
       await page.evaluate(
         () =>
@@ -176,10 +185,11 @@ test('keeps NPS fields and help usable across viewports and clears deselected co
       ),
     ).toBe(true)
     const sections = await page
-      .locator('.question-section')
+      .locator('.question-disclosure')
       .evaluateAll((nodes) =>
         nodes.map((node) => ({
-          gap: getComputedStyle(node).rowGap,
+          gap: getComputedStyle(node.querySelector('.question-section')!)
+            .rowGap,
           headingSize: getComputedStyle(node.querySelector('h2')!).fontSize,
         })),
       )
@@ -242,18 +252,21 @@ test('keeps NPS fields and help usable across viewports and clears deselected co
     page.getByRole('button', { name: 'Add another employer', exact: true }),
   ).toBeFocused()
   await expect(contribution).toHaveValue('12,345')
-  await page
-    .locator('#hasEmployerNps')
+  await (
+    await questionField(page, '#hasEmployerNps')
+  )
     .getByRole('radio', { name: 'No', exact: true })
     .click()
   await expect(contribution).toHaveCount(0)
-  await page
-    .locator('#hasEmployerNps')
+  await (
+    await questionField(page, '#hasEmployerNps')
+  )
     .getByRole('radio', { name: 'Yes', exact: true })
     .click()
   await expect(contribution).toHaveValue('')
-  await page
-    .locator('#hasSalary')
+  await (
+    await questionField(page, '#hasSalary')
+  )
     .getByRole('radio', { name: 'No', exact: true })
     .click()
   // Recovery writes follow the React commit; reload only after this answer is stored.
@@ -294,7 +307,7 @@ test('migrates the captured salary workspace without changing consent or complet
     .locator('.attention-action')
     .getByRole('button', { name: 'Update amount paid', exact: true })
     .click()
-  await page.locator('#advance-tax-update').fill('1000')
+  await (await questionField(page, '#advance-tax-update')).fill('1000')
   await page
     .getByRole('button', { name: 'Save and recalculate', exact: true })
     .click()
@@ -327,15 +340,21 @@ test('restores historical salary Recovery with the new NPS answer blank', async 
     },
     { key: RECOVERY_KEY, value: JSON.stringify(recoveryV4) },
   )
-  await page.goto('/check/other-income')
+  await page.goto('/check/income')
   await expect(
     page.getByLabel('Annual salary before standard deduction', { exact: true }),
   ).toHaveValue('10,00,000')
-  const no = page
-    .locator('#hasEmployerNps')
-    .getByRole('radio', { name: 'No', exact: true })
+  const no = (await questionField(page, '#hasEmployerNps')).getByRole('radio', {
+    name: 'No',
+    exact: true,
+  })
   await expect(no).toHaveAttribute('aria-checked', 'false')
   await no.click()
   await page.reload()
-  await expect(no).toHaveAttribute('aria-checked', 'true')
+  await expect(
+    (await questionField(page, '#hasEmployerNps')).getByRole('radio', {
+      name: 'No',
+      exact: true,
+    }),
+  ).toHaveAttribute('aria-checked', 'true')
 })

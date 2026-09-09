@@ -17,12 +17,12 @@ import {
 
 export function reviewLabel(group: ProfileGroup) {
   return {
-    'tax-year': 'Review personal and Tax Year answers',
-    activity: 'Review work and tax method',
-    receipts: 'Review receipts and profit',
+    'tax-year': 'Review fit answers',
+    activity: 'Review fit answers',
+    receipts: 'Review income and profit',
     clients: 'Review client and payment answers',
-    'other-income': 'Review income and tax paid',
-    gst: 'Review GST answers',
+    'other-income': 'Review income and profit',
+    gst: 'Review tax and GST answers',
     review: 'Review all answers',
   }[group]
 }
@@ -192,7 +192,7 @@ export function ReviewAreas({
   readonly onReview: (group: ProfileGroup) => void
 }) {
   const areas = [
-    ['annualReturn', 'Annual-return check', 'other-income'],
+    ['annualReturn', 'Annual-return check', 'gst'],
     ['gst', 'GST check', 'gst'],
     ['lut', 'LUT and export check', 'gst'],
     ['foreignGuidance', 'Foreign-asset and receipt check', 'clients'],

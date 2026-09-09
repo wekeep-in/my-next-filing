@@ -3,6 +3,7 @@ import type { StorageDeleteResult } from '@/workspace'
 import { TAX_YEAR } from '@/rules'
 import type { TaxYear } from '@/rules'
 import type { Draft } from '@/routes/check/model'
+import type { UnsupportedFact } from '@/evaluation'
 import {
   activityOptions,
   additionalIncomeKeys,
@@ -10,16 +11,20 @@ import {
   blankDraft,
   blankGstCalendarFields,
   equityGainKeys,
+  parseMoney,
   rentalIncomeKeys,
   statesAndUnionTerritories,
+  taxPaidKeys,
   unsupportedFactLabels,
+  unsupportedSituationAnswersFromFacts,
+  unsupportedSituationKeys,
 } from '@/routes/check/model'
 import type { QuestionnaireState } from '@/routes/check/session'
 import { clearInactiveDraft } from '@/routes/check/session'
 
 export const RECOVERY_KEY = 'my-next-filing:recovery-draft'
 export type RecoveryDraftEnvelope = {
-  readonly schemaVersion: 10
+  readonly schemaVersion: 12
   readonly taxYear: TaxYear
   readonly origin: 'personal' | 'saved-edit'
   readonly baseWorkspaceRevision: number | null
@@ -78,6 +83,7 @@ const choices = {
   foreignTreatyRelief: triState,
   foreignReceiptsResolved: triState,
   foreignCurrencyResolved: triState,
+  hasTaxPaid: triState,
   hasSalary: triState,
   salaryConfirmed: triState,
   hasEmployerNps: triState,
@@ -117,6 +123,7 @@ const choices = {
       | 'broughtForwardYears'
       | 'platformRcmLiabilityDate'
       | 'unsupportedFacts'
+      | 'unsupportedSituationAnswers'
       | 'thresholdLiabilityDate'
       | 'gstRegisteredFrom'
       | 'gstFirstExportDate'
@@ -135,6 +142,68 @@ export function parseRecoveryDraft(
   taxYear: TaxYear,
 ): RecoveryDraftEnvelope | null {
   try {
+    if (isRecord(value) && value.schemaVersion === 10) {
+      const draft = value.draft
+      if (
+        !isRecord(draft) ||
+        Object.hasOwn(draft, 'hasTaxPaid') ||
+        !isRecord(draft.amounts)
+      )
+        return null
+      const amounts = draft.amounts
+      if (!taxPaidKeys.every((key) => typeof amounts[key] === 'string'))
+        return null
+      const paid = taxPaidKeys.map((key) => parseMoney(amounts[key] as string))
+      const hasTaxPaid = paid.some(
+        (amount) => 'value' in amount && amount.value > 0,
+      )
+        ? 'yes'
+        : paid.every((amount) => 'value' in amount && amount.value === 0)
+          ? 'no'
+          : ''
+      return parseRecoveryDraft(
+        {
+          ...value,
+          schemaVersion: 11,
+          draft: {
+            ...draft,
+            hasTaxPaid,
+            amounts:
+              hasTaxPaid === 'no'
+                ? { ...amounts, tds: '0', tcs: '0', advanceTaxPaid: '0' }
+                : amounts,
+          },
+        },
+        taxYear,
+      )
+    }
+    if (isRecord(value) && value.schemaVersion === 11) {
+      const draft = value.draft
+      if (
+        !isRecord(draft) ||
+        Object.hasOwn(draft, 'unsupportedSituationAnswers') ||
+        !Array.isArray(draft.unsupportedFacts) ||
+        !draft.unsupportedFacts.every(
+          (fact: unknown) =>
+            typeof fact === 'string' &&
+            Object.hasOwn(unsupportedFactLabels, fact),
+        )
+      )
+        return null
+      return parseRecoveryDraft(
+        {
+          ...value,
+          schemaVersion: 12,
+          draft: {
+            ...draft,
+            unsupportedSituationAnswers: unsupportedSituationAnswersFromFacts(
+              draft.unsupportedFacts as UnsupportedFact[],
+            ),
+          },
+        },
+        taxYear,
+      )
+    }
     if (isRecord(value) && value.schemaVersion === 9) {
       const draft = value.draft
       if (
@@ -385,7 +454,7 @@ export function parseRecoveryDraft(
         'baseWorkspaceRevision',
         'draft',
       ]) ||
-      value.schemaVersion !== 10 ||
+      value.schemaVersion !== 12 ||
       value.taxYear !== taxYear
     )
       return null
@@ -409,6 +478,17 @@ export function parseRecoveryDraft(
       )
         return null
     }
+    const situationAnswers = draft.unsupportedSituationAnswers
+    if (!isRecord(situationAnswers)) return null
+    if (!exactKeys(situationAnswers, unsupportedSituationKeys)) return null
+    if (
+      !unsupportedSituationKeys.every(
+        (key) =>
+          typeof situationAnswers[key] === 'string' &&
+          (triState as readonly string[]).includes(situationAnswers[key]),
+      )
+    )
+      return null
     if (
       !Array.isArray(draft.broughtForwardYears) ||
       draft.broughtForwardYears.length > 8 ||
@@ -473,7 +553,7 @@ export function parseRecoveryDraft(
     if (JSON.stringify(clearInactiveDraft(parsed)) !== JSON.stringify(parsed))
       return null
     return {
-      schemaVersion: 10,
+      schemaVersion: 12,
       taxYear,
       origin: value.origin,
       baseWorkspaceRevision: value.baseWorkspaceRevision as number | null,
@@ -604,7 +684,7 @@ export function recoveryFromSession(
 ): RecoveryDraftEnvelope | null {
   if (!session || session.origin.kind === 'example') return null
   return {
-    schemaVersion: 10,
+    schemaVersion: 12,
     taxYear,
     origin: session.origin.kind,
     baseWorkspaceRevision:

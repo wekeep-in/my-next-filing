@@ -323,7 +323,7 @@ test('exposes profit and receipts errors at the right time', () => {
   assert.equal(lowProfit.progression.kind, 'blocked')
   assert.deepEqual(
     assessQuestionnaire({ draft: exampleDraft }, 'receipts', today).progression,
-    { kind: 'next', group: 'clients' },
+    { kind: 'next', group: 'other-income' },
   )
   const receiptsErrors = assessQuestionnaire(
     {
@@ -1223,4 +1223,109 @@ test('retries partial and unverified deletion without clearing unrelated data', 
     deleteBrowserData(deleteLocal, null, null, planDate).kind,
     'partial',
   )
+})
+
+test('fills the business receipt remainder and clears it when either source becomes invalid', () => {
+  let state: QuestionnaireSession | null = questionnaireReducer(personal, {
+    type: 'path-changed',
+    value: 'eligible-business',
+  })
+  state = questionnaireReducer(state, {
+    type: 'amount-changed',
+    field: 'grossReceipts',
+    value: '1,00,000',
+  })
+  assert.equal(state?.draft.amounts.otherReceipts, '')
+  state = questionnaireReducer(state, {
+    type: 'amount-changed',
+    field: 'qualifyingReceipts',
+    value: '75,000',
+  })
+  assert.equal(state?.draft.amounts.otherReceipts, '25,000')
+  state = questionnaireReducer(state, {
+    type: 'amount-changed',
+    field: 'grossReceipts',
+    value: '50,000',
+  })
+  assert.equal(state?.draft.amounts.otherReceipts, '')
+  assert.match(
+    assessQuestionnaire(state, 'receipts', today).errors.qualifyingReceipts,
+    /cannot exceed/,
+  )
+  state = questionnaireReducer(state, {
+    type: 'amount-changed',
+    field: 'qualifyingReceipts',
+    value: '50,000',
+  })
+  assert.equal(state?.draft.amounts.otherReceipts, '0')
+  state = questionnaireReducer(state, {
+    type: 'amount-changed',
+    field: 'grossReceipts',
+    value: '',
+  })
+  assert.equal(state?.draft.amounts.otherReceipts, '')
+  state = questionnaireReducer(state, {
+    type: 'amount-changed',
+    field: 'grossReceipts',
+    value: '9007199254740992',
+  })
+  assert.equal(state?.draft.amounts.otherReceipts, '')
+})
+
+test('reuses shared practice answers without overwriting conflicting restored foreign facts', () => {
+  let state = questionnaireReducer(personal, {
+    type: 'clientKind-changed',
+    value: 'foreign',
+  })
+  assert.equal(state?.draft.foreignWorkInIndia, 'yes')
+  assert.equal(state?.draft.foreignOperation, 'no')
+  const conflict = clearInactiveDraft({
+    ...state.draft,
+    foreignWorkInIndia: 'no',
+    foreignOperation: 'not-sure',
+  })
+  assert.equal(conflict.foreignWorkInIndia, 'no')
+  assert.equal(conflict.foreignOperation, 'not-sure')
+  const screened = assessQuestionnaire({ draft: conflict }, 'clients', today)
+  assert.ok(screened.warnings.foreignWorkInIndia)
+  assert.ok(screened.warnings.foreignOperation)
+  state = questionnaireReducer(state, {
+    type: 'field-changed',
+    field: 'workInIndia',
+    value: 'not-sure',
+  })
+  assert.equal(state?.draft.foreignWorkInIndia, '')
+  assert.equal(
+    assessQuestionnaire(state, 'tax-year', today).progression.kind,
+    'blocked',
+  )
+  state = questionnaireReducer(state, {
+    type: 'field-changed',
+    field: 'hasForeignOperation',
+    value: 'yes',
+  })
+  assert.equal(state?.draft.foreignOperation, '')
+  state = questionnaireReducer(state, {
+    type: 'clientKind-changed',
+    value: 'domestic',
+  })
+  assert.equal(state?.draft.foreignWorkInIndia, '')
+  assert.equal(state?.draft.foreignOperation, '')
+})
+
+test('an explicit no-credit action sets only the selected amounts to zero', () => {
+  const changed = questionnaireReducer(personal, {
+    type: 'field-changed',
+    field: 'hasTaxPaid',
+    value: 'no',
+  })
+  assert.ok(changed)
+  assert.deepEqual(changed.draft.amounts, {
+    ...personal.draft.amounts,
+    tds: '0',
+    tcs: '0',
+    advanceTaxPaid: '0',
+  })
+  assert.equal(changed.draft.ageSixtyOrOlder, '')
+  assert.equal(completeDraft(changed.draft, today).valid, true)
 })

@@ -63,6 +63,13 @@ const unsupportedFactLabels = {
   royaltyOrLicensing: 'Royalty or licensing income',
   otherUnsupportedFacts: 'Another income or tax situation not listed',
   unsupportedFactsNotSure: 'Unsupported situations not confirmed',
+  unsupportedOtherIncome: 'Other income outside the supported branches',
+  unsupportedSalaryInvestments:
+    'Salary or investment income outside the supported branches',
+  unsupportedOverseasIncomeOrTax:
+    'Overseas income or foreign tax outside the supported branches',
+  unsupportedBusinessOrTax:
+    'Business or tax requirements outside the supported branches',
 } as const
 
 export type UnsupportedFact = keyof typeof unsupportedFactLabels
@@ -3259,7 +3266,9 @@ function calculateAnnualReturn(
           'annual-return-review',
           'Review annual-return triggers',
           'annual-return',
-          'other-income',
+          uncertainty === 'annual-return-foreign-assets-uncertain'
+            ? 'other-income'
+            : 'gst',
           'Some annual-return facts need confirmation before a dated action can be shown.',
           sourceIds,
         ),
@@ -4297,7 +4306,7 @@ export function evaluate(
         'advance-tax-rules',
         'Check the advance-tax rules',
         'advance-tax',
-        'other-income',
+        'gst',
         'The advance-tax rules are unavailable, so no advance-tax date is shown.',
         sourceIdsForGroup(data, 'advanceTax'),
       ),
@@ -4346,7 +4355,7 @@ export function evaluate(
           'annual-return-rules',
           'Check the annual-return rules',
           'annual-return',
-          'other-income',
+          'gst',
           'Annual-return dates and triggers are unavailable until the tax rules are reviewed.',
           sources,
         ),

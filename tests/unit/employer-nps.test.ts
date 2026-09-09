@@ -447,7 +447,7 @@ test('migrates captured salary workspaces in memory and preserves consent and co
 test('restores captured Recovery with NPS unanswered and rejects mixed schemas and hidden rows', () => {
   const migrated = parseRecoveryDraft(recoveryV4, TAX_YEAR)
   expect(migrated).toMatchObject({
-    schemaVersion: 10,
+    schemaVersion: 12,
     draft: {
       hasSalary: 'yes',
       hasEmployerNps: '',

@@ -5,7 +5,7 @@ for (const width of [1440, 1024, 390, 320]) {
     page,
   }) => {
     await page.setViewportSize({ width, height: 900 })
-    await page.goto('/check/receipts?example=1')
+    await page.goto('/check/income?example=1')
     const trigger = page.getByRole('button', { name: /^Show journey steps/ })
     const desktop = page.locator('.journey-nav > .journey-list')
     await expect(desktop).toBeAttached()

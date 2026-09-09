@@ -2,6 +2,7 @@ import {
   RECOVERY_KEY,
   WORKSPACE_KEY,
   expect,
+  questionField,
   seedPersonal,
   test,
 } from './fixtures'
@@ -12,13 +13,15 @@ test('includes additional income and preserves established filing and GST conclu
   page,
 }) => {
   await seedPersonal(page)
-  await page.goto('/check/other-income')
-  await page
-    .locator('#hasAdditionalIncome')
+  await page.goto('/check/income')
+  await (
+    await questionField(page, '#hasAdditionalIncome')
+  )
     .getByRole('radio', { name: 'Yes', exact: true })
     .click()
-  await page
-    .locator('#additionalIncomeConfirmed')
+  await (
+    await questionField(page, '#additionalIncomeConfirmed')
+  )
     .getByRole('radio', { name: 'Yes', exact: true })
     .click()
   for (const [id, amount] of [
@@ -27,13 +30,15 @@ test('includes additional income and preserves established filing and GST conclu
     ['postOfficeInterest', '15000'],
     ['incomeTaxRefundInterest', '5000'],
   ])
-    await page.locator(`#${id}`).fill(amount)
-  await page
-    .locator('#otherAnnualReturnTrigger')
+    await (await questionField(page, `#${id}`)).fill(amount)
+  await (
+    await questionField(page, '#otherAnnualReturnTrigger')
+  )
     .getByRole('radio', { name: 'Not sure', exact: true })
     .click()
-  await page
-    .locator('#ageSixtyOrOlder')
+  await (
+    await questionField(page, '#ageSixtyOrOlder')
+  )
     .getByRole('radio', { name: 'Not sure', exact: true })
     .click()
   await expect(page.locator('#otherAnnualReturnTrigger-coverage')).toHaveCount(
@@ -41,14 +46,19 @@ test('includes additional income and preserves established filing and GST conclu
   )
   await expect(page.locator('#ageSixtyOrOlder-coverage')).toHaveCount(0)
   await page.reload()
-  await expect(page.locator('#mutualFundDistributions')).toHaveValue('20,000')
+  await expect(
+    await questionField(page, '#mutualFundDistributions'),
+  ).toHaveValue('20,000')
   await page.getByRole('button', { name: 'Continue', exact: true }).click()
-  await expect(page).toHaveURL(/\/check\/gst$/)
-  await page.locator('#aggregateTurnover').fill('2000001')
-  await expect(page.locator('#thresholdLiabilityDate-coverage')).toContainText(
-    'exceeds the registration threshold',
-  )
+  await expect(page).toHaveURL(/\/check\/clients$/)
   await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await expect(page).toHaveURL(/\/check\/taxes-and-gst$/)
+  await (await questionField(page, '#aggregateTurnover')).fill('2000001')
+  await expect(
+    await questionField(page, '#thresholdLiabilityDate-coverage'),
+  ).toContainText('exceeds the registration threshold')
+  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await page.getByRole('button', { name: 'Other income', exact: true }).click()
   await expect(
     page.getByText('Indian-company dividends', { exact: true }),
   ).toBeVisible()
@@ -120,14 +130,18 @@ test('preserves income through Resources navigation with responsive help and fie
   page,
 }, testInfo) => {
   await seedPersonal(page)
-  await page.goto('/check/other-income')
-  await page
-    .locator('#hasAdditionalIncome')
+  await page.goto('/check/income')
+  await (
+    await questionField(page, '#hasAdditionalIncome')
+  )
     .getByRole('radio', { name: 'Yes', exact: true })
     .click()
-  const help = page.locator('#hasAdditionalIncome').getByRole('button', {
-    name: 'Learn more about dividends and additional interest',
-  })
+  const help = (await questionField(page, '#hasAdditionalIncome')).getByRole(
+    'button',
+    {
+      name: 'Learn more about dividends and additional interest',
+    },
+  )
   await help.focus()
   await page.keyboard.press('Enter')
   const dialog = page.getByRole('dialog', {
@@ -142,7 +156,7 @@ test('preserves income through Resources navigation with responsive help and fie
     await page.evaluate(async () => {
       await document.fonts.ready
     })
-    await expect(page.locator('#postOfficeInterest')).toBeVisible()
+    await expect(await questionField(page, '#postOfficeInterest')).toBeVisible()
     expect(
       await page.evaluate(
         () =>
@@ -150,12 +164,14 @@ test('preserves income through Resources navigation with responsive help and fie
           document.documentElement.clientWidth,
       ),
     ).toBe(true)
-    await page.locator('#other-interest-title').scrollIntoViewIfNeeded()
+    await (
+      await questionField(page, '#other-interest-title')
+    ).scrollIntoViewIfNeeded()
     await page.screenshot({ path: testInfo.outputPath(`income-${width}.png`) })
   }
   // The existing questionnaire FAQ shortcut is intentionally desktop-only.
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.locator('#dividends').fill('12345')
+  await (await questionField(page, '#dividends')).fill('12345')
   await page.getByRole('link', { name: 'Read the FAQs', exact: true }).click()
   await page
     .getByRole('link', { name: 'Browse all resources', exact: true })
@@ -171,18 +187,20 @@ test('preserves income through Resources navigation with responsive help and fie
   await expect(page).toHaveURL(/\/resources$/)
   await page.goBack()
   await page.goBack()
-  await expect(page.locator('#dividends')).toHaveValue('12,345')
+  await expect(await questionField(page, '#dividends')).toHaveValue('12,345')
   await page.emulateMedia({ reducedMotion: 'reduce' })
-  await page
-    .locator('#hasAdditionalIncome')
+  await (
+    await questionField(page, '#hasAdditionalIncome')
+  )
     .getByRole('radio', { name: 'No', exact: true })
     .click()
   await expect(page.locator('#dividends')).toHaveCount(0)
-  await page
-    .locator('#hasAdditionalIncome')
+  await (
+    await questionField(page, '#hasAdditionalIncome')
+  )
     .getByRole('radio', { name: 'Yes', exact: true })
     .click()
-  await expect(page.locator('#dividends')).toHaveValue('')
+  await expect(await questionField(page, '#dividends')).toHaveValue('')
 })
 
 test('loads the published workspace and upgrades it on an ordinary save', async ({
@@ -204,7 +222,7 @@ test('loads the published workspace and upgrades it on an ordinary save', async 
     .locator('.attention-action')
     .getByRole('button', { name: 'Update amount paid', exact: true })
     .click()
-  await page.locator('#advance-tax-update').fill('1000')
+  await (await questionField(page, '#advance-tax-update')).fill('1000')
   await page
     .getByRole('button', { name: 'Save and recalculate', exact: true })
     .click()
@@ -232,14 +250,20 @@ test('restores published Recovery without inventing an answer to the new income 
     },
     { key: RECOVERY_KEY, value: JSON.stringify(recoveryV3) },
   )
-  await page.goto('/check/other-income')
-  await expect(page.locator('#taxableBankInterest')).toHaveValue('10,000')
-  const no = page
-    .locator('#hasAdditionalIncome')
-    .getByRole('radio', { name: 'No', exact: true })
+  await page.goto('/check/income')
+  await expect(await questionField(page, '#taxableBankInterest')).toHaveValue(
+    '10,000',
+  )
+  const no = (await questionField(page, '#hasAdditionalIncome')).getByRole(
+    'radio',
+    { name: 'No', exact: true },
+  )
   await expect(no).toHaveAttribute('aria-checked', 'false')
   await no.click()
   await page.reload()
+  await questionField(page, '#hasAdditionalIncome')
   await expect(no).toHaveAttribute('aria-checked', 'true')
-  await expect(page.locator('#taxableBankInterest')).toHaveValue('10,000')
+  await expect(await questionField(page, '#taxableBankInterest')).toHaveValue(
+    '10,000',
+  )
 })

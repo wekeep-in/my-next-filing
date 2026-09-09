@@ -111,8 +111,8 @@ The poster uses frame 1026, before the plan callouts. Packaging also writes stan
 | If I Google "Indian freelancer tax filing," there's plenty of information. | Type the query into an illustrated search field. Scribbled search results fill a long paper sheet that scrolls upward, accelerating as it leaves the screen. |
 | But which parts apply to me, and what do I actually do next? | Reveal the handwritten question "What do I do next?" in green, with an underline. |
 | That's why I built My Next Filing. Let me show you an example. | Turn the paper away to reveal the current homepage. Click "Start your estimate". |
-| I start by answering a few questions about my work, | Keep the fictional example pre-filled. Show "You and your practice", then click Continue to "Your work and tax method". |
-| enter my income and taxes already paid, | Click Continue through "Receipts and profit", "Clients and payments", and "Other income and tax paid". Scroll to "Tax already paid", then continue to "GST registration and filings". |
+| I start by answering a few questions about my work, | Keep the fictional example pre-filled. Show "Fit for this version", then click Continue to "Income and profit". |
+| enter my income and taxes already paid, | Click Continue through "Income and profit", "Clients and payments", and "Taxes and GST". Scroll to "Tax already paid", then continue to "Review your answers". |
 | review my answers, and calculate my plan. | Click Continue to "Review your answers", hold on the pre-filled summary, then click "Calculate my plan". |
 | Here's my next action, the date, and the estimated amount left to pay. | Hold on the next-action card. Move the cursor slowly toward the date and keep it visible. Circle the date first, then the estimated amount, in green. |
 | Below it, you can view all upcoming compliances for the whole tax year. | Scroll down to "Your agenda" and show the upcoming actions. |

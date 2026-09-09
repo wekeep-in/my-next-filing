@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import type { ReactNode } from 'react'
-import { Info } from 'lucide-react'
+import type { ReactElement, ReactNode } from 'react'
+import { CircleAlert, Info } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Tooltip,
@@ -12,10 +12,16 @@ export function FieldHelp({
   id,
   label,
   children,
+  trigger,
+  disabled = false,
+  tone = 'default',
 }: {
   readonly id: string
   readonly label: string
   readonly children: ReactNode
+  readonly trigger?: ReactElement<{ children?: ReactNode }>
+  readonly disabled?: boolean
+  readonly tone?: 'default' | 'warning'
 }) {
   const [open, setOpen] = useState(false)
   const openedByClick = useRef(false)
@@ -30,7 +36,7 @@ export function FieldHelp({
   return (
     <>
       <Tooltip
-        open={open}
+        open={open && !disabled}
         onOpenChange={(value, details) => {
           // Touch-generated mouseleave must not undo an explicit tap to open.
           if (
@@ -44,23 +50,34 @@ export function FieldHelp({
         }}
       >
         <TooltipTrigger
+          disabled={disabled}
           aria-label={`${label} help`}
           aria-describedby={open ? `${id}-tooltip` : `${id}-help`}
           closeOnClick={false}
           onClick={() => {
-            openedByClick.current = !open
-            setOpen(!open)
+            if (disabled) return
+            // A click pins help that hover or focus already opened.
+            openedByClick.current = !openedByClick.current
+            setOpen(openedByClick.current)
           }}
           render={
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="relative size-7 min-h-7 text-muted-foreground after:absolute after:-inset-2 after:content-['']"
-            />
+            trigger ?? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className={`relative min-h-0 rounded-none bg-transparent p-0 after:absolute after:top-1/2 after:left-1/2 after:min-h-11 after:min-w-11 after:-translate-1/2 after:content-[''] hover:bg-transparent hover:opacity-75 aria-expanded:bg-transparent ${tone === 'warning' ? 'size-4.5 text-warning hover:text-warning aria-expanded:text-warning' : 'size-4 text-muted-foreground hover:text-foreground aria-expanded:text-foreground'}`}
+              />
+            )
           }
         >
-          <Info className="size-4" aria-hidden="true" />
+          {trigger ? (
+            trigger.props.children
+          ) : tone === 'warning' ? (
+            <CircleAlert className="size-4.5" aria-hidden="true" />
+          ) : (
+            <Info className="size-4" aria-hidden="true" />
+          )}
         </TooltipTrigger>
         <TooltipContent
           id={`${id}-tooltip`}

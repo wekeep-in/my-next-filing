@@ -1,23 +1,28 @@
-import type { Page } from '@playwright/test'
 import {
   RECOVERY_KEY,
   WORKSPACE_KEY,
   expect,
+  questionField,
   seedPersonal,
   test,
 } from './fixtures'
+import type { Page } from '@playwright/test'
 import recoveryV7 from '../fixtures/recovery-v7.json' with { type: 'json' }
 import workspaceV8 from '../fixtures/workspace-v8.json' with { type: 'json' }
 
 async function choose(page: Page, id: string, name: string) {
-  await page.locator(`#${id}`).getByRole('radio', { name, exact: true }).click()
+  await (
+    await questionField(page, `#${id}`)
+  )
+    .getByRole('radio', { name, exact: true })
+    .click()
 }
 async function enterRent(page: Page) {
   await choose(page, 'hasRentalIncome', 'Yes')
   await choose(page, 'rentalIncomeConfirmed', 'Yes')
-  await page.locator('#rentalAnnualValue').fill('300000')
-  await page.locator('#rentalMunicipalTaxes').fill('20000')
-  await page.locator('#rentalInterest').fill('100000')
+  await (await questionField(page, '#rentalAnnualValue')).fill('300000')
+  await (await questionField(page, '#rentalMunicipalTaxes')).fill('20000')
+  await (await questionField(page, '#rentalInterest')).fill('100000')
   await choose(page, 'rentalGstConfirmed', 'Yes')
 }
 
@@ -25,17 +30,20 @@ test('rental income reaches the combined plan and survives Recovery save reload 
   page,
 }) => {
   await seedPersonal(page)
-  await page.goto('/check/other-income')
+  await page.goto('/check/income')
   await enterRent(page)
   await page.reload()
-  await expect(page.locator('#rentalAnnualValue')).toHaveValue('3,00,000')
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
-  await expect(page.locator('#aggregateTurnover-help')).toContainText(
-    'exempt rental supply value',
+  await expect(await questionField(page, '#rentalAnnualValue')).toHaveValue(
+    '3,00,000',
   )
-  // GST supply value is separately declared; the net property income is not used.
-  await page.locator('#aggregateTurnover').fill('2300000')
   await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await expect(
+    await questionField(page, '#aggregateTurnover-help'),
+  ).toContainText('exempt rental supply value')
+  // GST supply value is separately declared; the net property income is not used.
+  await (await questionField(page, '#aggregateTurnover')).fill('2300000')
+  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await page.getByRole('button', { name: 'Other income', exact: true }).click()
   await expect(
     page.getByText('Your share of annual value before municipal taxes', {
       exact: true,
@@ -94,10 +102,13 @@ test('rental income reaches the combined plan and survives Recovery save reload 
   expect(
     await page.evaluate((key) => sessionStorage.getItem(key), RECOVERY_KEY),
   ).toBeNull()
+  await page.getByRole('button', { name: 'Back', exact: true }).click()
   await page
-    .getByRole('button', { name: '6. Other income and tax paid', exact: true })
+    .getByRole('button', { name: '2. Income and profit', exact: true })
     .click()
-  await expect(page.locator('#rentalInterest')).toHaveValue('1,00,000')
+  await expect(await questionField(page, '#rentalInterest')).toHaveValue(
+    '1,00,000',
+  )
   expect(page.url()).not.toMatch(/300000|20000|100000|2300000/)
   expect(await page.title()).not.toMatch(/300000|20000|100000|2300000/)
   for (const href of await page
@@ -110,23 +121,24 @@ test('property losses block progress while rental GST uncertainty permits the in
   page,
 }) => {
   await seedPersonal(page)
-  await page.goto('/check/other-income')
+  await page.goto('/check/income')
   await enterRent(page)
   const next = page.getByRole('button', { name: 'Continue', exact: true })
-  await page.locator('#rentalInterest').fill('196001')
-  await expect(page.locator('#rentalInterest-unsupported')).toContainText(
-    'property losses',
-  )
+  await (await questionField(page, '#rentalInterest')).fill('196001')
+  await expect(
+    await questionField(page, '#rentalInterest-unsupported'),
+  ).toContainText('property losses')
   await expect(next).toBeDisabled()
-  await page.locator('#rentalInterest').fill('100000')
+  await (await questionField(page, '#rentalInterest')).fill('100000')
   await choose(page, 'rentalIncomeConfirmed', 'Not sure')
   await expect(next).toBeDisabled()
   await choose(page, 'rentalIncomeConfirmed', 'Yes')
   await choose(page, 'rentalGstConfirmed', 'Not sure')
-  await expect(page.locator('#rentalGstConfirmed-coverage')).toContainText(
-    'Partial plan',
-  )
+  await expect(
+    await questionField(page, '#rentalGstConfirmed-coverage'),
+  ).toContainText('Partial plan')
   await expect(next).toBeEnabled()
+  await next.click()
   await next.click()
   await next.click()
   await page
@@ -147,7 +159,7 @@ test('rental help and fields fit desktop tablet and mobile with keyboard and red
   page,
 }, testInfo) => {
   await seedPersonal(page)
-  await page.goto('/check/other-income')
+  await page.goto('/check/income')
   await enterRent(page)
   const help = page.getByRole('button', {
     name: 'Learn more about rental income',
@@ -167,8 +179,10 @@ test('rental help and fields fit desktop tablet and mobile with keyboard and red
     await page.evaluate(async () => {
       await document.fonts.ready
     })
-    await page.locator('#rentalAnnualValue').scrollIntoViewIfNeeded()
-    await expect(page.locator('#rentalAnnualValue')).toBeVisible()
+    await (
+      await questionField(page, '#rentalAnnualValue')
+    ).scrollIntoViewIfNeeded()
+    await expect(await questionField(page, '#rentalAnnualValue')).toBeVisible()
     expect(
       await page.evaluate(
         () =>
@@ -182,11 +196,12 @@ test('rental help and fields fit desktop tablet and mobile with keyboard and red
   await choose(page, 'hasRentalIncome', 'No')
   await expect(page.locator('#rentalAnnualValue')).toHaveCount(0)
   await choose(page, 'hasRentalIncome', 'Yes')
-  await expect(page.locator('#rentalAnnualValue')).toHaveValue('')
+  await expect(await questionField(page, '#rentalAnnualValue')).toHaveValue('')
   await expect(
-    page
-      .locator('#rentalIncomeConfirmed')
-      .getByRole('radio', { name: 'Yes', exact: true }),
+    (await questionField(page, '#rentalIncomeConfirmed')).getByRole('radio', {
+      name: 'Yes',
+      exact: true,
+    }),
   ).toHaveAttribute('aria-checked', 'false')
 })
 
@@ -211,38 +226,27 @@ test('historical Recovery requires rental review and preserves the selected prop
       },
     },
   )
-  await page.goto('/check/other-income')
-  await expect(page.locator('#taxableBankInterest')).toHaveValue('10,000')
+  await page.goto('/check/fit')
+  const scope = await questionField(
+    page,
+    '#unsupportedSituationAnswers-otherIncome',
+  )
+  const legacy = scope.getByRole('radio', { name: 'Yes', exact: true })
+  await expect(legacy).toBeChecked()
+  await scope.getByRole('radio', { name: 'No', exact: true }).check()
+  await page
+    .getByRole('button', { name: '2. Income and profit', exact: true })
+    .click()
+  await expect(await questionField(page, '#taxableBankInterest')).toHaveValue(
+    '10,000',
+  )
   await expect(
-    page
-      .locator('#hasRentalIncome')
-      .getByRole('radio', { name: 'No', exact: true }),
+    (await questionField(page, '#hasRentalIncome')).getByRole('radio', {
+      name: 'No',
+      exact: true,
+    }),
   ).toHaveAttribute('aria-checked', 'false')
-  await expect(
-    page.getByRole('checkbox', {
-      name: 'House-property income needing a separate review',
-      exact: true,
-    }),
-  ).toBeChecked()
   await enterRent(page)
-  await expect(
-    page.getByRole('checkbox', {
-      name: 'House-property income needing a separate review',
-      exact: true,
-    }),
-  ).toBeChecked()
-  await expect(
-    page.getByRole('button', { name: 'Continue', exact: true }),
-  ).toBeDisabled()
-  await page
-    .getByRole('checkbox', {
-      name: 'House-property income needing a separate review',
-      exact: true,
-    })
-    .click()
-  await page
-    .getByRole('radio', { name: 'None of these apply', exact: true })
-    .click()
   await choose(page, 'hasForeignAssets', 'No')
   await choose(page, 'hasBroughtForwardLosses', 'No')
   await expect(
@@ -267,7 +271,7 @@ test('captured workspace still opens its plan and upgrades through a normal save
     .locator('.attention-action')
     .getByRole('button', { name: 'Update amount paid', exact: true })
     .click()
-  await page.locator('#advance-tax-update').fill('1000')
+  await (await questionField(page, '#advance-tax-update')).fill('1000')
   await page
     .getByRole('button', { name: 'Save and recalculate', exact: true })
     .click()

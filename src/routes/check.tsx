@@ -9,33 +9,38 @@ import {
 } from 'react-router-dom'
 import { latestQuestionnaireDate, useApp } from '@/app-context'
 import type { AppOutletContext } from '@/app-context'
-import type { ProfileGroup } from '@/evaluation'
-import { JourneySidebar, calculationStep } from '@/components/journey-sidebar'
+import {
+  JourneySidebar,
+  journeyStep,
+  journeySteps,
+} from '@/components/journey-sidebar'
 import { TopBar } from '@/components/top-bar'
 import { AutoSize } from '@/components/auto-size'
 import { Button } from '@/components/ui/button'
-import { ActivityStep } from '@/routes/check/activity-step'
+import { FieldHelp } from '@/components/field-help'
+import { QuestionIssues } from '@/routes/check/question-section'
 import { ClientsStep } from '@/routes/check/clients-step'
 import { GstStep } from '@/routes/check/gst-step'
 import { OtherIncomeStep } from '@/routes/check/other-income-step'
-import { ReceiptsStep } from '@/routes/check/receipts-step'
 import { ReviewStep } from '@/routes/check/review'
 import { SituationStep } from '@/routes/check/situation-step'
 import {
-  assessQuestionnaire,
-  groupStep,
-  questionnaireGroupFromPath,
+  assessQuestionnaireRoute,
   questionnaireGroups,
+  questionnaireRouteForGroup,
+  questionnaireRouteFromPath,
+  questionnaireRouteStep,
+  questionnaireRoutes,
 } from '@/routes/check/model'
-import type { DraftAmountKey } from '@/routes/check/model'
+import type { DraftAmountKey, QuestionnaireRoute } from '@/routes/check/model'
 import { CoverageWarnings, FieldWarnings } from '@/routes/check/fields'
 import { sessionMatchesWorkspace } from '@/routes/plan/model'
 
 type CheckContext = {
   readonly app: AppOutletContext
-  readonly assessment: ReturnType<typeof assessQuestionnaire> | null
+  readonly assessment: ReturnType<typeof assessQuestionnaireRoute> | null
   readonly latestDate: string
-  readonly go: (group: ProfileGroup, replace?: boolean) => void
+  readonly go: (route: QuestionnaireRoute, replace?: boolean) => void
 }
 
 export function CheckIndex() {
@@ -53,7 +58,7 @@ export function CheckIndex() {
   )
 }
 
-export function CheckGroup({ group }: { readonly group: ProfileGroup }) {
+export function CheckGroup({ group }: { readonly group: QuestionnaireRoute }) {
   const { app, latestDate, go, assessment } = useOutletContext<CheckContext>()
   const session = app.session
   if (!session || !assessment) return null
@@ -73,17 +78,13 @@ export function CheckGroup({ group }: { readonly group: ProfileGroup }) {
   const setAmount = (field: DraftAmountKey, value: string) =>
     app.dispatch({ type: 'amount-changed', field, value })
   switch (group) {
-    case 'tax-year':
+    case 'fit':
       return <SituationStep {...props} />
-    case 'activity':
-      return <ActivityStep {...props} />
-    case 'receipts':
-      return <ReceiptsStep {...props} setAmount={setAmount} />
+    case 'income':
+      return <OtherIncomeStep {...props} setAmount={setAmount} />
     case 'clients':
       return <ClientsStep {...props} />
-    case 'other-income':
-      return <OtherIncomeStep {...props} setAmount={setAmount} />
-    case 'gst':
+    case 'taxes-and-gst':
       return (
         <GstStep
           {...props}
@@ -97,7 +98,9 @@ export function CheckGroup({ group }: { readonly group: ProfileGroup }) {
           className="question-group"
           draft={session.draft}
           errors={assessment.errors}
-          onEdit={(step) => go(questionnaireGroups[step].id)}
+          onEdit={(step) =>
+            go(questionnaireRouteForGroup(questionnaireGroups[step].id))
+          }
         />
       )
   }
@@ -108,7 +111,7 @@ export function CheckRoute() {
   const app = useApp()
   const location = useLocation()
   const navigate = useNavigate()
-  const group = questionnaireGroupFromPath(location.pathname)
+  const route = questionnaireRouteFromPath(location.pathname)
   const isIndex =
     location.pathname === '/check' || location.pathname === '/check/'
   const latestDate = latestQuestionnaireDate(new Date())
@@ -116,33 +119,34 @@ export function CheckRoute() {
   const assessment = useMemo(
     () =>
       session
-        ? assessQuestionnaire(session, group ?? 'tax-year', latestDate, touched)
+        ? assessQuestionnaireRoute(session, route ?? 'fit', latestDate, touched)
         : null,
-    [session, group, latestDate, touched],
+    [session, route, latestDate, touched],
   )
   useEffect(() => {
     if (
       session?.kind === 'editing' &&
       session.validationGroup &&
-      session.validationGroup !== group
+      route &&
+      questionnaireRouteForGroup(session.validationGroup) !== route
     )
       dispatch({ type: 'clear-validation' })
-  }, [dispatch, group, session])
+  }, [dispatch, route, session])
   useLayoutEffect(() => {
     if (
       !session &&
       !app.deleted &&
       !app.workspaceSelected &&
-      (group || isIndex)
+      (route || isIndex)
     )
       app.startPersonal()
-  }, [app, group, isIndex, session])
+  }, [app, isIndex, route, session])
   useEffect(() => {
-    if (!group) return
+    if (!route) return
     window.scrollTo(0, 0)
     document.getElementById('check-title')?.focus()
-  }, [group, location.key])
-  const go = (target: ProfileGroup, replace = false) => {
+  }, [route, location.key])
+  const go = (target: QuestionnaireRoute, replace = false) => {
     dispatch({ type: 'clear-validation' })
     void navigate(
       `/check/${target}${session?.origin.kind === 'example' ? '?example=1' : ''}`,
@@ -155,12 +159,12 @@ export function CheckRoute() {
     latestDate,
     go,
   }
-  if (!group && !isIndex) return <Outlet context={context} />
+  if (!route && !isIndex) return <Outlet context={context} />
   if (app.deleted) return <Navigate to="/plan" replace />
   if (app.workspaceSelected) return <Navigate to="/plan" replace />
   if (!session || !assessment) return null
   if (isIndex) return <Outlet context={context} />
-  const step = groupStep(group!)
+  const step = questionnaireRouteStep(route!)
   const focusError = (field: string | undefined) => {
     if (!field) return
     requestAnimationFrame(() => {
@@ -173,9 +177,9 @@ export function CheckRoute() {
   const next = (event: MouseEvent<HTMLButtonElement>) => {
     const now = new Date()
     const latest = latestQuestionnaireDate(now)
-    const { progression } = assessQuestionnaire(
+    const { progression } = assessQuestionnaireRoute(
       session,
-      group!,
+      route!,
       latest,
       touched,
     )
@@ -183,9 +187,9 @@ export function CheckRoute() {
       if (progression.issue) {
         const issue = progression.issue
         dispatch({ type: 'expose-validation', group: issue.group })
-        if (issue.group !== group)
+        if (questionnaireRouteForGroup(issue.group) !== route)
           void navigate(
-            `/check/${issue.group}${session.origin.kind === 'example' ? '?example=1' : ''}`,
+            `/check/${questionnaireRouteForGroup(issue.group)}${session.origin.kind === 'example' ? '?example=1' : ''}`,
           )
         focusError(issue.field)
       }
@@ -236,11 +240,13 @@ export function CheckRoute() {
       )}
       <div className="questionnaire-main">
         <AutoSize>
-          <FieldWarnings value={assessment.warnings}>
-            <CoverageWarnings value={assessment.coverage}>
-              <Outlet context={context} />
-            </CoverageWarnings>
-          </FieldWarnings>
+          <QuestionIssues value={assessment.sectionIssues}>
+            <FieldWarnings value={assessment.warnings}>
+              <CoverageWarnings value={assessment.coverage}>
+                <Outlet context={context} />
+              </CoverageWarnings>
+            </FieldWarnings>
+          </QuestionIssues>
           {assessment.stale && (
             <p className="choice-warning" role="alert">
               The rules need an update before this version can calculate your
@@ -261,7 +267,7 @@ export function CheckRoute() {
         </div>
       </div>
       <JourneySidebar
-        activeStep={step + 1}
+        activeStep={journeyStep(route!)}
         backAction={
           <Button
             className="w-full min-w-0 px-[.65rem] leading-[1.1]! font-extrabold!"
@@ -269,32 +275,55 @@ export function CheckRoute() {
             onClick={() =>
               step === 0
                 ? navigate('/', { replace: true })
-                : go(questionnaireGroups[step - 1].id, true)
+                : go(questionnaireRoutes[step - 1].id, true)
             }
           >
             Back
           </Button>
         }
         action={
-          <Button
-            className="w-full min-w-0 px-[.65rem] leading-[1.1]! font-extrabold!"
-            onClick={next}
-            disabled={assessment.progression.kind === 'blocked'}
+          <FieldHelp
+            id="continue-blocked"
+            label="Why Continue is unavailable"
+            disabled={assessment.progression.kind !== 'blocked'}
+            trigger={
+              <span
+                className="block min-w-0"
+                tabIndex={
+                  assessment.progression.kind === 'blocked' ? 0 : undefined
+                }
+              >
+                <Button
+                  className="w-full min-w-0 px-[.65rem] leading-[1.1]! font-extrabold! disabled:pointer-events-none"
+                  onClick={next}
+                  disabled={assessment.progression.kind === 'blocked'}
+                  aria-describedby={
+                    assessment.progression.kind === 'blocked'
+                      ? 'continue-blocked-help'
+                      : undefined
+                  }
+                >
+                  {route === 'review' ? 'Calculate my plan' : 'Continue'}
+                </Button>
+              </span>
+            }
           >
-            {group === 'review' ? 'Calculate my plan' : 'Continue'}
-          </Button>
+            {assessment.stale
+              ? 'The rules need an update before this version can calculate your plan.'
+              : (assessment.progression.kind === 'blocked' &&
+                  assessment.progression.issue?.message) ||
+                'Complete the required answers before continuing.'}
+          </FieldHelp>
         }
-        disabledSteps={[
-          calculationStep,
-          ...questionnaireGroups.flatMap(({ id }, index) =>
-            assessment.availableGroups.includes(id) ? [] : [index + 1],
-          ),
-        ]}
-        onStepSelect={(selected) =>
-          selected === 0
-            ? navigate('/')
-            : go(questionnaireGroups[selected - 1].id)
-        }
+        disabledSteps={journeySteps.flatMap(({ id: target }, index) =>
+          target !== 'plan' && assessment.availableGroups.includes(target)
+            ? []
+            : [index],
+        )}
+        onStepSelect={(selected) => {
+          const target = journeySteps[selected].id
+          if (target !== 'plan') go(target)
+        }}
       />
     </section>
   )

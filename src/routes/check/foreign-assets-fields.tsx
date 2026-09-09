@@ -1,3 +1,4 @@
+import { QuestionSection } from '@/routes/check/question-section'
 import type { TriState } from '@/evaluation'
 import { HelpModal } from '@/components/help-modal'
 import { ExternalLink } from '@/components/external-link'
@@ -67,11 +68,10 @@ export function ForeignAssetsFields({
   readonly dispatch: QuestionnaireDispatch
 }) {
   return (
-    <section
-      className="question-section"
-      aria-labelledby="foreign-assets-title"
+    <QuestionSection
+      id="foreign-assets-title"
+      title="Foreign assets and accounts"
     >
-      <h2 id="foreign-assets-title">Foreign assets and accounts</h2>
       <div className="field-stack">
         <ChoiceField
           id="hasForeignAssets"
@@ -141,6 +141,6 @@ export function ForeignAssetsFields({
           />
         )}
       </div>
-    </section>
+    </QuestionSection>
   )
 }

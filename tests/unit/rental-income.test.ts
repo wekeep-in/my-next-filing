@@ -584,7 +584,7 @@ test.each([
 test('requires a fresh rental answer from captured Recovery and rejects mixed schemas', () => {
   const recovered = parseRecoveryDraft(recoveryV7, TAX_YEAR)
   expect(recovered).toMatchObject({
-    schemaVersion: 10,
+    schemaVersion: 12,
     draft: {
       hasRentalIncome: '',
       rentalIncomeConfirmed: '',

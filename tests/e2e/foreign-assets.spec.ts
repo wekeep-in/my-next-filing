@@ -2,6 +2,7 @@ import {
   RECOVERY_KEY,
   WORKSPACE_KEY,
   expect,
+  questionField,
   seedPersonal,
   test,
 } from './fixtures'
@@ -10,7 +11,11 @@ import recoveryV8 from '../fixtures/recovery-v8.json' with { type: 'json' }
 import workspaceV9 from '../fixtures/workspace-v9.json' with { type: 'json' }
 
 async function choose(page: Page, id: string, name: string) {
-  await page.locator(`#${id}`).getByRole('radio', { name, exact: true }).click()
+  await (
+    await questionField(page, `#${id}`)
+  )
+    .getByRole('radio', { name, exact: true })
+    .click()
 }
 
 test('established foreign assets reach the disclosure card and survive saving and reload without changing tax', async ({
@@ -22,17 +27,20 @@ test('established foreign assets reach the disclosure card and survive saving an
       remote.push(request.url())
   })
   await seedPersonal(page)
-  await page.goto('/check/other-income')
+  await page.goto('/check/income')
   await choose(page, 'hasForeignAssets', 'Yes')
   await choose(page, 'assetIncomeConfirmed', 'Yes')
   await page.reload()
   await expect(
-    page
-      .locator('#hasForeignAssets')
-      .getByRole('radio', { name: 'Yes', exact: true }),
+    (await questionField(page, '#hasForeignAssets')).getByRole('radio', {
+      name: 'Yes',
+      exact: true,
+    }),
   ).toBeChecked()
   await page.getByRole('button', { name: 'Continue', exact: true }).click()
   await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await page.getByRole('button', { name: 'Other income', exact: true }).click()
   await expect(
     page.getByText('Foreign assets or signing authority', { exact: true }),
   ).toBeVisible()
@@ -90,17 +98,20 @@ test('classification uncertainty permits a partial plan but unresolved income bl
   page,
 }) => {
   await seedPersonal(page)
-  await page.goto('/check/other-income')
+  await page.goto('/check/income')
   const next = page.getByRole('button', { name: 'Continue', exact: true })
   await choose(page, 'hasForeignAssets', 'Not sure')
   await choose(page, 'assetIncomeConfirmed', 'Not sure')
-  await expect(page.locator('#assetIncomeConfirmed-unsupported')).toBeVisible()
+  await expect(
+    await questionField(page, '#assetIncomeConfirmed-unsupported'),
+  ).toBeVisible()
   await expect(next).toBeDisabled()
   await choose(page, 'assetIncomeConfirmed', 'Yes')
-  await expect(page.locator('#hasForeignAssets-coverage')).toContainText(
-    'classification',
-  )
+  await expect(
+    await questionField(page, '#hasForeignAssets-coverage'),
+  ).toContainText('classification')
   await expect(next).toBeEnabled()
+  await next.click()
   await next.click()
   await next.click()
   await page
@@ -116,11 +127,11 @@ test('classification uncertainty permits a partial plan but unresolved income bl
   await expect(review).toContainText('unresolved')
   await review
     .getByRole('button', {
-      name: 'Review income and tax paid',
+      name: 'Review income and profit',
       exact: true,
     })
     .click()
-  await expect(page).toHaveURL(/\/check\/other-income$/)
+  await expect(page).toHaveURL(/\/check\/income$/)
   await choose(page, 'hasForeignAssets', 'No')
   await expect(page.locator('#assetIncomeConfirmed')).toHaveCount(0)
 })
@@ -129,7 +140,7 @@ test('foreign-asset help and guidance fit desktop tablet and mobile with keyboar
   page,
 }, testInfo) => {
   await seedPersonal(page)
-  await page.goto('/check/other-income')
+  await page.goto('/check/income')
   await choose(page, 'hasForeignAssets', 'Yes')
   const help = page.getByRole('button', {
     name: 'Learn more about foreign assets and signing authority',
@@ -150,7 +161,9 @@ test('foreign-asset help and guidance fit desktop tablet and mobile with keyboar
     await page.evaluate(async () => {
       await document.fonts.ready
     })
-    await page.locator('#assetIncomeConfirmed').scrollIntoViewIfNeeded()
+    await (
+      await questionField(page, '#assetIncomeConfirmed')
+    ).scrollIntoViewIfNeeded()
     expect(
       await page.evaluate(
         () =>
@@ -166,9 +179,10 @@ test('foreign-asset help and guidance fit desktop tablet and mobile with keyboar
   await choose(page, 'hasForeignAssets', 'No')
   await choose(page, 'hasForeignAssets', 'Yes')
   await expect(
-    page
-      .locator('#assetIncomeConfirmed')
-      .getByRole('radio', { name: 'Yes', exact: true }),
+    (await questionField(page, '#assetIncomeConfirmed')).getByRole('radio', {
+      name: 'Yes',
+      exact: true,
+    }),
   ).not.toBeChecked()
 })
 
@@ -193,28 +207,29 @@ test('historical Recovery retains the foreign-assets exclusion until the new sco
       },
     },
   )
-  await page.goto('/check/other-income')
-  await expect(page.locator('#taxableBankInterest')).toHaveValue('10,000')
+  await page.goto('/check/fit')
+  const scope = await questionField(
+    page,
+    '#unsupportedSituationAnswers-overseasIncomeTax',
+  )
+  const legacy = scope.getByRole('radio', { name: 'Yes', exact: true })
+  await expect(legacy).toBeChecked()
+  await scope.getByRole('radio', { name: 'No', exact: true }).check()
+  await page
+    .getByRole('button', { name: '2. Income and profit', exact: true })
+    .click()
+  await expect(await questionField(page, '#taxableBankInterest')).toHaveValue(
+    '10,000',
+  )
   await expect(
-    page
-      .locator('#hasForeignAssets')
-      .getByRole('radio', { name: 'No', exact: true }),
+    (await questionField(page, '#hasForeignAssets')).getByRole('radio', {
+      name: 'No',
+      exact: true,
+    }),
   ).not.toBeChecked()
   await choose(page, 'hasForeignAssets', 'Yes')
   await choose(page, 'assetIncomeConfirmed', 'Yes')
-  const legacy = page.getByRole('checkbox', {
-    name: 'Foreign assets needing a separate review',
-    exact: true,
-  })
-  await expect(legacy).toBeChecked()
-  await expect(
-    page.getByRole('button', { name: 'Continue', exact: true }),
-  ).toBeDisabled()
   await choose(page, 'hasBroughtForwardLosses', 'No')
-  await legacy.uncheck()
-  await page
-    .getByRole('radio', { name: 'None of these apply', exact: true })
-    .check()
   await expect(
     page.getByRole('button', { name: 'Continue', exact: true }),
   ).toBeEnabled()
@@ -243,7 +258,7 @@ test('historical saved data remains unchanged on load and upgrades only through 
     .locator('.attention-action')
     .getByRole('button', { name: 'Update amount paid', exact: true })
     .click()
-  await page.locator('#advance-tax-update').fill('1000')
+  await (await questionField(page, '#advance-tax-update')).fill('1000')
   await page
     .getByRole('button', { name: 'Save and recalculate', exact: true })
     .click()
@@ -265,16 +280,16 @@ test('a nil-tax freelancer with foreign assets sees the annual return as the nex
   page,
 }, testInfo) => {
   await seedPersonal(page)
-  await page.goto('/check/receipts')
-  await page.locator('#grossReceipts').fill('0')
-  await page.locator('#declaredProfit').fill('0')
-  await page.goto('/check/other-income')
-  await page.locator('#taxableBankInterest').fill('0')
-  await page.locator('#tds').fill('0')
+  await page.goto('/check/income')
+  await (await questionField(page, '#grossReceipts')).fill('0')
+  await (await questionField(page, '#declaredProfit')).fill('0')
+  await page.goto('/check/income')
+  await (await questionField(page, '#taxableBankInterest')).fill('0')
+  await (await questionField(page, '#tds')).fill('0')
   await choose(page, 'hasForeignAssets', 'Yes')
   await choose(page, 'assetIncomeConfirmed', 'Yes')
   await page.getByRole('button', { name: 'Continue', exact: true }).click()
-  await page.locator('#aggregateTurnover').fill('0')
+  await (await questionField(page, '#aggregateTurnover')).fill('0')
   await page.getByRole('button', { name: 'Continue', exact: true }).click()
   await page
     .getByRole('button', { name: 'Calculate my plan', exact: true })

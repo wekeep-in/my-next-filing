@@ -1,3 +1,4 @@
+import { QuestionSection } from '@/routes/check/question-section'
 import { useRef } from 'react'
 import { TAX_YEAR, currentRules } from '@/rules'
 import { Button } from '@/components/ui/button'
@@ -54,11 +55,10 @@ export function BroughtForwardLossFields({
       ),
     )
   return (
-    <section
-      className="question-section"
-      aria-labelledby="brought-forward-title"
+    <QuestionSection
+      id="brought-forward-title"
+      title="Capital losses from earlier years"
     >
-      <h2 id="brought-forward-title">Capital losses from earlier years</h2>
       <div className="field-stack">
         <ChoiceField
           id="hasBroughtForwardLosses"
@@ -66,7 +66,7 @@ export function BroughtForwardLossFields({
           help={
             <>
               Enter balances from your tax records after previous use and
-              adjustments. Keep this year's losses in the current-year fields.
+              adjustments. Keep this year's losses in the current-year fields.{' '}
               <HelpModal
                 topic="earlier-year capital losses"
                 title="Which earlier losses can I use?"
@@ -204,6 +204,6 @@ export function BroughtForwardLossFields({
           </>
         )}
       </div>
-    </section>
+    </QuestionSection>
   )
 }

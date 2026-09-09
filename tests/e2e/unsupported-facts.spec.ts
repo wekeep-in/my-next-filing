@@ -1,114 +1,96 @@
-import { RECOVERY_KEY, expect, seedPersonal, test } from './fixtures'
-import { unsupportedFactLabels } from '../../src/routes/check/model'
+import {
+  RECOVERY_KEY,
+  expect,
+  questionField,
+  seedPersonal,
+  test,
+} from './fixtures'
 import recoveryV4 from '../fixtures/recovery-v4.json' with { type: 'json' }
 
-test('card selections block navigation, survive reload, and clear through the global alternatives', async ({
+const situationKeys = [
+  'otherIncome',
+  'salaryInvestments',
+  'overseasIncomeTax',
+  'businessTax',
+] as const
+
+test('fit scope questions replace checkboxes and block an unsupported answer', async ({
   page,
 }) => {
   await seedPersonal(page)
-  await page.goto('/check/other-income')
-  const field = page.locator('#unsupportedCertainty')
-  const next = page.getByRole('button', { name: 'Continue', exact: true })
-  const gift = field.getByRole('checkbox', { name: 'Gift income', exact: true })
-  const property = field.getByRole('checkbox', {
-    name: 'House-property income needing a separate review',
-    exact: true,
-  })
-  const none = field.getByRole('radio', {
-    name: 'None of these apply',
-    exact: true,
-  })
-  const unsure = field.getByRole('radio', { name: "I'm not sure", exact: true })
-  await expect(field.locator('[data-slot="card"]')).toHaveCount(4)
-  await expect(field.getByRole('radio')).toHaveCount(2)
-  expect(
-    await field
-      .locator('input[name="unsupportedFacts"]')
-      .evaluateAll((elements) =>
-        elements
-          .map((element) => element.getAttribute('value') ?? '')
-          .sort((a, b) => a.localeCompare(b)),
-      ),
-  ).toEqual(
-    Object.keys(unsupportedFactLabels)
-      .filter(
-        (key) =>
-          key !== 'unsupportedFactsNotSure' && key !== 'dividendsOrGifts',
-      )
-      .sort((a, b) => a.localeCompare(b)),
+  await page.goto('/check/fit')
+  await expect(page.locator('.question-disclosure')).toHaveCount(8)
+  for (const key of situationKeys)
+    await expect(
+      (
+        await questionField(page, `#unsupportedSituationAnswers-${key}`)
+      ).getByRole('radio', { name: 'No', exact: true }),
+    ).toBeChecked()
+  await expect(page.locator('input[type="checkbox"]')).toHaveCount(0)
+
+  await (
+    await questionField(page, '#unsupportedSituationAnswers-otherIncome')
   )
-  await expect(none).toBeChecked()
-  await expect(next).toBeEnabled()
-  await field.locator('#situation-gifts-label').click()
-  await expect(gift).not.toBeChecked()
-  await gift.focus()
-  await page.keyboard.press('Space')
-  await property.check()
-  await expect(none).not.toBeChecked()
-  await expect(next).toBeDisabled()
-  await expect(page.locator('#unsupportedCertainty-unsupported')).toBeVisible()
-  await page.reload()
-  await expect(gift).toBeChecked()
-  await expect(property).toBeChecked()
-  await expect(next).toBeDisabled()
-  await unsure.check()
-  await expect(gift).not.toBeChecked()
-  await expect(property).not.toBeChecked()
-  await page.reload()
-  await expect(unsure).toBeChecked()
-  await expect(next).toBeDisabled()
-  await none.check()
-  await expect(next).toBeEnabled()
-  await gift.check()
-  await gift.uncheck()
-  await expect(none).not.toBeChecked()
-  await expect(next).toBeDisabled()
-  await none.check()
-  await next.click()
-  await expect(page).toHaveURL(/\/check\/gst$/)
-  await page
-    .getByRole('button', { name: '8. Review your answers', exact: true })
-    .click()
+    .getByRole('radio', { name: 'Yes', exact: true })
+    .check()
   await expect(
-    page.getByText('None of these apply', { exact: true }),
-  ).toBeVisible()
+    page.getByRole('button', { name: 'Continue', exact: true }),
+  ).toBeDisabled()
+  await page.reload()
+  await expect(
+    (
+      await questionField(page, '#unsupportedSituationAnswers-otherIncome')
+    ).getByRole('radio', { name: 'Yes', exact: true }),
+  ).toBeChecked()
 })
 
-test('a restored combined dividend and gift answer stays visible and blocked until reviewed', async ({
+test('each fit scope group accepts Not sure and retains its answer', async ({
+  page,
+}) => {
+  await seedPersonal(page)
+  await page.goto('/check/fit')
+  for (const key of situationKeys) {
+    await (
+      await questionField(page, `#unsupportedSituationAnswers-${key}`)
+    )
+      .getByRole('radio', { name: 'Not sure', exact: true })
+      .check()
+  }
+  await expect(
+    page.getByRole('button', { name: 'Continue', exact: true }),
+  ).toBeDisabled()
+  await page.reload()
+  await expect(
+    (
+      await questionField(page, '#unsupportedSituationAnswers-businessTax')
+    ).getByRole('radio', { name: 'Not sure', exact: true }),
+  ).toBeChecked()
+})
+
+test('legacy unsupported facts migrate into the relevant fit question', async ({
   page,
 }) => {
   await page.addInitScript(
-    ({ key, recovery }) => {
-      sessionStorage.setItem(key, JSON.stringify(recovery))
-    },
+    ({ key, value }) => sessionStorage.setItem(key, JSON.stringify(value)),
     {
       key: RECOVERY_KEY,
-      recovery: {
+      value: {
         ...recoveryV4,
         draft: {
           ...recoveryV4.draft,
           unsupportedCertainty: 'selected',
-          unsupportedFacts: ['dividendsOrGifts'],
+          unsupportedFacts: ['salary'],
         },
       },
     },
   )
-  await page.goto('/check/other-income')
-  const field = page.locator('#unsupportedCertainty')
-  const legacy = field.getByRole('checkbox', {
-    name: 'Dividends or gifts selected in an earlier version',
-    exact: true,
-  })
-  const gift = field.getByRole('checkbox', { name: 'Gift income', exact: true })
-  await expect(legacy).toBeChecked()
+  await page.goto('/check/fit')
   await expect(
-    page.getByRole('button', { name: 'Continue', exact: true }),
-  ).toBeDisabled()
-  await gift.check()
-  await legacy.click()
-  await expect(legacy).toHaveCount(0)
-  await expect(gift).toBeChecked()
-  await expect(
-    page.getByRole('button', { name: 'Continue', exact: true }),
-  ).toBeDisabled()
+    (
+      await questionField(
+        page,
+        '#unsupportedSituationAnswers-salaryInvestments',
+      )
+    ).getByRole('radio', { name: 'Yes', exact: true }),
+  ).toBeChecked()
 })

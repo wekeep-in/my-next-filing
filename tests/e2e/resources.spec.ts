@@ -25,13 +25,11 @@ test('searches a fresh public catalogue without changing storage URL title or ou
     'Try a topic, form name or section number.',
   )
   await help.click()
-  await expect(page.getByRole('tooltip')).toHaveCount(0)
-  // Preserve the original click-toggle check independently of pointer hover opening it first.
-  await help.dispatchEvent('click')
+  await page.getByRole('heading', { level: 1 }).hover()
   await expect(page.getByRole('tooltip')).toHaveText(
     'Try a topic, form name or section number.',
   )
-  await help.dispatchEvent('click')
+  await help.click()
   await expect(page.getByRole('tooltip')).toHaveCount(0)
   const before = await stored(page)
   const url = page.url()
@@ -90,7 +88,7 @@ test('retains personal edits through FAQ resource visits and failed Recovery wri
   page,
 }) => {
   await seedPersonal(page, true)
-  await page.goto('/check/receipts')
+  await page.goto('/check/income')
   const gross = page.locator('#grossReceipts')
   await expect(gross).toHaveValue('20,00,000')
   await gross.fill('2100000')
@@ -144,8 +142,9 @@ test('preserves selected workspace and its separate personal draft', async ({
   await page
     .getByRole('button', { name: 'Return to your estimate', exact: true })
     .click()
+  await page.getByRole('button', { name: 'Back', exact: true }).click()
   await page
-    .getByRole('button', { name: '4. Receipts and profit', exact: true })
+    .getByRole('button', { name: '2. Income and profit', exact: true })
     .click()
   await expect(page.locator('#grossReceipts')).toHaveValue('20,00,000')
 })
@@ -154,14 +153,14 @@ test('a failed lazy screen keeps the shell resources and latest unsaved answers'
   page,
 }) => {
   await seedPersonal(page)
-  await page.goto('/check/receipts')
+  await page.goto('/check/income')
   await failRecoveryWrites(page)
   const before = await stored(page)
   await page.locator('#grossReceipts').fill('2400000')
   // Plan has not loaded in this document. Fail its production chunk without importing app internals.
   await page.route('**/assets/plan-*.js', (route) => route.abort())
   await page
-    .getByRole('button', { name: '8. Review your answers', exact: true })
+    .getByRole('button', { name: '5. Review your answers', exact: true })
     .click()
   await page
     .getByRole('button', { name: 'Calculate my plan', exact: true })
@@ -176,7 +175,7 @@ test('a failed lazy screen keeps the shell resources and latest unsaved answers'
   await page.goBack()
   await page.goBack()
   await page
-    .getByRole('button', { name: '4. Receipts and profit', exact: true })
+    .getByRole('button', { name: '2. Income and profit', exact: true })
     .click()
   await expect(page.locator('#grossReceipts')).toHaveValue('24,00,000')
   expect(await stored(page)).toEqual(before)

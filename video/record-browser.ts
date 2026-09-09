@@ -272,8 +272,13 @@ async function step(label: string) {
   await click(button(label))
   await ready()
 }
+async function reviewStep(label: string) {
+  await click(button('Back'))
+  await ready()
+  await step(label)
+}
 
-async function seedPersonal(route = '/check/tax-year') {
+async function seedPersonal(route = '/check/fit') {
   await visit('/')
   await page.evaluate(async (prefix) => {
     const { exampleProfile } = await import(prefix + 'routes/check/model.ts')
@@ -579,7 +584,7 @@ try {
       .waitFor()
     await visit('/plan')
     await reveal(card())
-    await step('5. Clients and payments')
+    await reviewStep('3. Clients and payments')
     await shot('clients', async (at) => {
       await at(1.0, () =>
         click(
@@ -676,7 +681,7 @@ try {
         reveal(page.getByRole('heading', { name: 'Your agenda', exact: true })),
       )
     })
-    await step('3. Your work and tax method')
+    await reviewStep('1. Fit for this version')
     await shot('help', async (at) => {
       const learn = page.getByRole('button', {
         name: /Learn more about.*tax method/,

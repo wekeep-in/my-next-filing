@@ -30,9 +30,11 @@ export function AutoSize({ children }: { readonly children: ReactNode }) {
     }
     const onToggle = (event: Event) => {
       if (
-        event.target instanceof HTMLDetailsElement &&
-        CSS.supports('interpolate-size: allow-keywords') &&
-        CSS.supports('selector(::details-content)')
+        event.target instanceof HTMLElement &&
+        (event.target.matches('.question-panel') ||
+          (event.target instanceof HTMLDetailsElement &&
+            CSS.supports('interpolate-size: allow-keywords') &&
+            CSS.supports('selector(::details-content)')))
       ) {
         nativeDisclosure = true
         stop()
@@ -79,11 +81,13 @@ export function AutoSize({ children }: { readonly children: ReactNode }) {
     // Measure natural content; animating this observed box would create a resize loop.
     observer.observe(inner, { box: 'border-box' })
     inner.addEventListener('toggle', onToggle, true)
+    inner.addEventListener('transitionrun', onToggle, true)
     document.addEventListener('keydown', stop, true)
     reducedMotion.addEventListener('change', stop)
     return () => {
       observer.disconnect()
       inner.removeEventListener('toggle', onToggle, true)
+      inner.removeEventListener('transitionrun', onToggle, true)
       cancelAnimationFrame(settledFrame)
       document.removeEventListener('keydown', stop, true)
       reducedMotion.removeEventListener('change', stop)

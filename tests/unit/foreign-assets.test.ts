@@ -425,7 +425,7 @@ test.each([
 test('captured Recovery requires fresh asset answers and mixed schemas are rejected', () => {
   const recovered = parseRecoveryDraft(recoveryV8, TAX_YEAR)
   expect(recovered).toMatchObject({
-    schemaVersion: 10,
+    schemaVersion: 12,
     draft: {
       hasForeignAssets: '',
       assetIncomeConfirmed: '',

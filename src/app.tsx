@@ -13,6 +13,7 @@ import { cn } from 'cn'
 import { LoaderIcon } from 'lucide-react'
 import {
   Link,
+  Navigate,
   Outlet,
   createBrowserRouter,
   useLocation,
@@ -35,8 +36,9 @@ import {
   exampleProfile,
   firstIncompleteGroup,
   isBlankDraft,
-  questionnaireGroupFromPath,
-  questionnaireGroups,
+  questionnaireRouteForGroup,
+  questionnaireRouteFromPath,
+  questionnaireRoutes,
 } from '@/routes/check/model'
 import {
   questionnaireReducer,
@@ -190,7 +192,7 @@ function AppFrame() {
               setWorkspaceSelected(false)
               setDeleted(false)
               dispatch({ type: 'start-over' })
-              void navigate('/check/tax-year', { replace: true })
+              void navigate('/check/fit', { replace: true })
               break
             case 'delete-all':
               setExampleReturn(null)
@@ -227,7 +229,7 @@ function AppFrame() {
       !restored &&
       (location.pathname === '/check' ||
         location.pathname === '/check/' ||
-        questionnaireGroupFromPath(location.pathname))
+        questionnaireRouteFromPath(location.pathname))
     )
       restored = {
         kind: 'editing',
@@ -332,7 +334,7 @@ function AppFrame() {
     setDeleted(false)
     setWorkspaceSelected(false)
     dispatch({ type: 'start-over' })
-    void navigate('/check/tax-year')
+    void navigate('/check/fit')
   }
   const startExample = () => {
     if (session?.origin.kind !== 'example') setExampleReturn(session)
@@ -346,7 +348,7 @@ function AppFrame() {
         latestQuestionnaireDate(new Date()),
       ),
     })
-    void navigate('/check/tax-year?example=1')
+    void navigate('/check/fit?example=1')
   }
   const returnPersonal = () => {
     const returned =
@@ -356,14 +358,21 @@ function AppFrame() {
     setDeleted(false)
     if (!returned) {
       dispatch({ type: 'start-over' })
-      void navigate('/check/tax-year')
+      void navigate('/check/fit')
       return
     }
     dispatch({ type: 'restore', session: returned })
+    const incomplete =
+      returned.kind === 'editing'
+        ? firstIncompleteGroup(
+            returned.draft,
+            latestQuestionnaireDate(new Date()),
+          )
+        : null
     void navigate(
       returned.kind === 'complete'
         ? '/plan'
-        : `/check/${firstIncompleteGroup(returned.draft, latestQuestionnaireDate(new Date())) ?? 'review'}`,
+        : `/check/${incomplete ? questionnaireRouteForGroup(incomplete) : 'review'}`,
     )
   }
   const openWorkspace = () => {
@@ -389,7 +398,7 @@ function AppFrame() {
         latestQuestionnaireDate(new Date()),
       ),
     })
-    void navigate(`/check/${group}`)
+    void navigate(`/check/${questionnaireRouteForGroup(group)}`)
   }
   const editGroup = (group: ProfileGroup) => {
     if (workspaceSelected || !session) {
@@ -401,7 +410,7 @@ function AppFrame() {
     } else {
       dispatch({ type: 'clear-validation' })
       void navigate(
-        `/check/${group}${session.origin.kind === 'example' ? '?example=1' : ''}`,
+        `/check/${questionnaireRouteForGroup(group)}${session.origin.kind === 'example' ? '?example=1' : ''}`,
       )
     }
   }
@@ -459,7 +468,7 @@ function AppFrame() {
         location.pathname === '/' && 'app--landing',
         (location.pathname === '/check' ||
           location.pathname === '/check/' ||
-          questionnaireGroupFromPath(location.pathname) !== null ||
+          questionnaireRouteFromPath(location.pathname) !== null ||
           location.pathname === '/plan') &&
           'app--journey',
       )}
@@ -603,6 +612,16 @@ function loadScreen(load: () => Promise<ComponentType>) {
   }
 }
 
+function LegacyQuestionnaireRedirect({ route }: { readonly route: string }) {
+  const location = useLocation()
+  return (
+    <Navigate
+      replace
+      to={{ pathname: `/check/${route}`, search: location.search }}
+    />
+  )
+}
+
 export const router = createBrowserRouter([
   {
     element: <AppFrame />,
@@ -638,13 +657,24 @@ export const router = createBrowserRouter([
               async () => (await import('@/routes/check')).CheckIndex,
             ),
           },
-          ...questionnaireGroups.map(({ id }) => ({
+          ...questionnaireRoutes.map(({ id }) => ({
             path: id,
             caseSensitive: true,
             lazy: loadScreen(async () => {
               const { CheckGroup } = await import('@/routes/check')
               return () => <CheckGroup group={id} />
             }),
+          })),
+          ...[
+            ['tax-year', 'fit'],
+            ['activity', 'fit'],
+            ['receipts', 'income'],
+            ['other-income', 'income'],
+            ['gst', 'taxes-and-gst'],
+          ].map(([path, route]) => ({
+            path,
+            caseSensitive: true,
+            element: <LegacyQuestionnaireRedirect route={route} />,
           })),
           { path: '*', element: <NotFoundRoute /> },
         ],

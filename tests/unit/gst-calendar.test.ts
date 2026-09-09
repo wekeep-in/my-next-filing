@@ -350,7 +350,7 @@ test('derives LUT dates and renders independent expiry guidance', () => {
     }),
   )
   assert.equal((expiredMarkup.match(/Open GST portal/g) ?? []).length, 2)
-  assert.doesNotMatch(expiredMarkup, /Review GST answers/)
+  assert.doesNotMatch(expiredMarkup, /Review tax and GST answers/)
   const lut = exportResult.obligations.find(({ kind }) => kind === 'gst-lut')!
   assert.equal(lut.dueDate, '2026-04-15')
   assert.equal(lut.id, `gst-lut:${TAX_YEAR}`)

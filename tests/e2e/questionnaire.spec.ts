@@ -1,15 +1,15 @@
-import { expect, seedPersonal, stored, test } from './fixtures'
+import { expect, questionField, seedPersonal, stored, test } from './fixtures'
 
 test('validates amounts and keeps fictional navigation separate from personal Recovery', async ({
   page,
 }) => {
   await seedPersonal(page)
-  await page.goto('/check/receipts?example=1')
+  await page.goto('/check/income?example=1')
   const before = await stored(page)
   const profit = page.locator('#declaredProfit')
   const original = await profit.inputValue()
   const review = page.getByRole('button', {
-    name: '8. Review your answers',
+    name: '5. Review your answers',
     exact: true,
   })
   const next = page.getByRole('button', { name: 'Continue', exact: true })
@@ -31,12 +31,13 @@ test('validates amounts and keeps fictional navigation separate from personal Re
   await expect(page).toHaveURL(/\/check\/clients\?example=1$/)
   await page
     .getByRole('button', {
-      name: '7. GST registration and filings',
+      name: '4. Taxes and GST',
       exact: true,
     })
     .click()
-  await page
-    .locator('#compulsoryRegistration')
+  await (
+    await questionField(page, '#compulsoryRegistration')
+  )
     .getByText('Not sure', { exact: true })
     .click()
   await expect(page.locator('#compulsoryRegistration-coverage')).toBeVisible()

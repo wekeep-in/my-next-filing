@@ -1,5 +1,10 @@
 import type { Profile, ProfileGroup, UnsupportedFact } from '@/evaluation'
-import type { Draft, DraftAmountKey } from '@/routes/check/model'
+import type {
+  Draft,
+  DraftAmountKey,
+  DraftChoice,
+  UnsupportedSituationKey,
+} from '@/routes/check/model'
 import {
   additionalIncomeKeys,
   amountKeys,
@@ -15,7 +20,11 @@ import {
   hasPlatformWork,
   isBusinessPath,
   isUnregisteredGst,
+  remainingBusinessReceipts,
   rentalIncomeKeys,
+  taxPaidKeys,
+  unsupportedCertaintyFromSituationAnswers,
+  unsupportedFactsFromSituationAnswers,
 } from '@/routes/check/model'
 
 export type DraftOrigin =
@@ -67,6 +76,10 @@ export type QuestionnaireEvent =
   | FieldEvent
   | CascadeEvent
   | {
+      readonly type: 'amounts-zeroed'
+      readonly fields: readonly DraftAmountKey[]
+    }
+  | {
       readonly type: 'amount-changed'
       readonly field: DraftAmountKey
       readonly value: string
@@ -75,6 +88,11 @@ export type QuestionnaireEvent =
       readonly type: 'unsupported-fact-toggled'
       readonly fact: UnsupportedFact
       readonly checked: boolean
+    }
+  | {
+      readonly type: 'unsupported-situation-changed'
+      readonly situation: UnsupportedSituationKey
+      readonly value: DraftChoice
     }
   | {
       readonly type: 'start'
@@ -97,7 +115,11 @@ export type QuestionnaireDispatch = (event: QuestionnaireEvent) => void
 
 // Keep hidden answers out of both live sessions and Recovery envelopes.
 export function clearInactiveDraft(draft: Draft): Draft {
-  const next = { ...draft, amounts: { ...draft.amounts } }
+  const next = {
+    ...draft,
+    amounts: { ...draft.amounts },
+    unsupportedSituationAnswers: { ...draft.unsupportedSituationAnswers },
+  }
   if (!draft.path) {
     next.pathConfirmed = ''
     for (const key of amountKeys.slice(0, 5)) next.amounts[key] = ''
@@ -110,6 +132,8 @@ export function clearInactiveDraft(draft: Draft): Draft {
     next.amounts.qualifyingReceipts = ''
     next.amounts.otherReceipts = ''
   }
+  if (isBusinessPath(draft) && !next.amounts.otherReceipts)
+    next.amounts.otherReceipts = remainingBusinessReceipts(draft)
   for (const key of Object.keys(next) as (keyof Draft)[]) {
     if (
       (!hasPlatformWork(draft) && key.startsWith('platform')) ||
@@ -118,6 +142,14 @@ export function clearInactiveDraft(draft: Draft): Draft {
       // All platform/foreign fields in Draft are string choices.
       Object.assign(next, { [key]: '' })
     }
+  }
+  if (hasForeignClients(draft)) {
+    // An unanswered branch can reuse a whole-practice declaration. Preserve
+    // conflicting restored answers until the person corrects them explicitly.
+    if (!next.foreignWorkInIndia && draft.workInIndia === 'yes')
+      next.foreignWorkInIndia = 'yes'
+    if (!next.foreignOperation && draft.hasForeignOperation === 'no')
+      next.foreignOperation = 'no'
   }
   if (draft.hasClientWorkSubcontractor !== 'no') next.contractorBoundary = ''
   if (draft.hasSalary !== 'yes') {
@@ -150,7 +182,11 @@ export function clearInactiveDraft(draft: Draft): Draft {
     next.additionalIncomeConfirmed = ''
     for (const key of additionalIncomeKeys) next.amounts[key] = ''
   }
-  if (!creditTriggerMayApply(draft)) next.ageSixtyOrOlder = ''
+  if (draft.hasTaxPaid === 'no' || draft.hasTaxPaid === 'not-sure')
+    for (const key of taxPaidKeys)
+      next.amounts[key] = draft.hasTaxPaid === 'no' ? '0' : ''
+  // Preserve partially entered legacy amounts until the new question is answered.
+  if (!creditTriggerMayApply(next)) next.ageSixtyOrOlder = ''
   if (draft.unsupportedCertainty !== 'selected') next.unsupportedFacts = []
   if (!isUnregisteredGst(draft)) {
     next.amounts.aggregateTurnover = ''
@@ -242,8 +278,12 @@ export function questionnaireReducer(
   }
   if (event.type === 'payment-replaced') {
     if (state.kind !== 'complete') return state
-    const draft = {
+    const draft: Draft = {
       ...state.draft,
+      hasTaxPaid:
+        event.profile.otherIncome.advanceTaxPaid > 0
+          ? 'yes'
+          : state.draft.hasTaxPaid,
       amounts: {
         ...state.draft.amounts,
         advanceTaxPaid:
@@ -261,9 +301,31 @@ export function questionnaireReducer(
   const draft = state.draft
   let next: Draft
   switch (event.type) {
+    case 'amounts-zeroed':
+      next = { ...draft, amounts: { ...draft.amounts } }
+      for (const field of event.fields) next.amounts[field] = '0'
+      break
     case 'field-changed':
       if (draft[event.field] === event.value) return state
       next = { ...draft, [event.field]: event.value }
+      if (
+        event.field === 'hasTaxPaid' &&
+        event.value === 'yes' &&
+        draft.hasTaxPaid === 'no'
+      )
+        next = {
+          ...next,
+          amounts: { ...next.amounts, tds: '', tcs: '', advanceTaxPaid: '' },
+        }
+      if (hasForeignClients(draft)) {
+        if (event.field === 'workInIndia')
+          next = {
+            ...next,
+            foreignWorkInIndia: event.value === 'yes' ? 'yes' : '',
+          }
+        if (event.field === 'hasForeignOperation')
+          next = { ...next, foreignOperation: event.value === 'no' ? 'no' : '' }
+      }
       break
     case 'amount-changed':
       if (draft.amounts[event.field] === event.value) return state
@@ -271,6 +333,17 @@ export function questionnaireReducer(
         ...draft,
         amounts: { ...draft.amounts, [event.field]: event.value },
       }
+      if (
+        event.field === 'grossReceipts' ||
+        event.field === 'qualifyingReceipts'
+      )
+        next = {
+          ...next,
+          amounts: {
+            ...next.amounts,
+            otherReceipts: remainingBusinessReceipts(next),
+          },
+        }
       break
     case 'path-changed':
       if (draft.path === event.value) return state
@@ -320,6 +393,23 @@ export function questionnaireReducer(
     case 'unsupportedCertainty-changed':
       next = { ...draft, unsupportedCertainty: event.value }
       break
+    case 'unsupported-situation-changed': {
+      const unsupportedSituationAnswers = {
+        ...draft.unsupportedSituationAnswers,
+        [event.situation]: event.value,
+      }
+      next = {
+        ...draft,
+        unsupportedSituationAnswers,
+        unsupportedCertainty: unsupportedCertaintyFromSituationAnswers(
+          unsupportedSituationAnswers,
+        ),
+        unsupportedFacts: unsupportedFactsFromSituationAnswers(
+          unsupportedSituationAnswers,
+        ),
+      }
+      break
+    }
     case 'unsupported-fact-toggled': {
       const unsupportedFacts = event.checked
         ? [...new Set([...draft.unsupportedFacts, event.fact])]

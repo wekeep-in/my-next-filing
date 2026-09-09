@@ -1,14 +1,23 @@
 import Confetti from 'react-confetti-boom'
 import { useEffect } from 'react'
-import { Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 import { latestQuestionnaireDate, useApp } from '@/app-context'
 import { TopBar } from '@/components/top-bar'
 import { Badge } from '@/components/ui/badge'
+import { PeriodNavigation } from '@/components/period-navigation'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { formatDate } from '@/lib/format'
-import { JourneySidebar, calculationStep } from '@/components/journey-sidebar'
-import { firstIncompleteGroup, questionnaireGroups } from '@/routes/check/model'
+import {
+  JourneySidebar,
+  calculationStep,
+  journeySteps,
+} from '@/components/journey-sidebar'
+import {
+  firstIncompleteGroup,
+  questionnaireRouteForGroup,
+  questionnaireRoutes,
+} from '@/routes/check/model'
 import {
   Agenda,
   NeedsReview,
@@ -43,7 +52,6 @@ export function PlanRoute() {
     removeCompletionRecord,
   } = c
   const location = useLocation()
-  const navigate = useNavigate()
   const routeState = location.state as {
     readonly confettiOrigin?: { readonly x: number; readonly y: number }
   } | null
@@ -58,13 +66,18 @@ export function PlanRoute() {
   useEffect(() => {
     document.querySelector<HTMLElement>('.plan-main h1')?.focus()
   }, [location.key, model.kind])
-  if (app.session?.kind === 'editing' && !app.workspaceSelected)
+  if (app.session?.kind === 'editing' && !app.workspaceSelected) {
+    const incomplete = firstIncompleteGroup(
+      app.session.draft,
+      latestQuestionnaireDate(new Date()),
+    )
     return (
       <Navigate
         replace
-        to={`/check/${firstIncompleteGroup(app.session.draft, latestQuestionnaireDate(new Date())) ?? 'review'}${app.session.origin.kind === 'example' ? '?example=1' : ''}`}
+        to={`/check/${incomplete ? questionnaireRouteForGroup(incomplete) : 'review'}${app.session.origin.kind === 'example' ? '?example=1' : ''}`}
       />
     )
+  }
   const renderPlan = () => {
     switch (model.kind) {
       case 'missing':
@@ -190,9 +203,7 @@ export function PlanRoute() {
         return (
           <>
             <header className="question-heading">
-              <Badge variant="period" className="mb-[.85rem]">
-                {profile?.taxYear}
-              </Badge>
+              <PeriodNavigation>{profile?.taxYear}</PeriodNavigation>
               <h1 tabIndex={-1}>Your plan</h1>
               <p>
                 Based on the answers you reviewed. My Next Filing does not file,
@@ -400,13 +411,13 @@ export function PlanRoute() {
             Start over
           </Button>
         }
-        onStepSelect={(step) =>
-          step === 0
-            ? navigate('/')
-            : step <= questionnaireGroups.length
-              ? review(questionnaireGroups[step - 1].id)
-              : undefined
-        }
+        onStepSelect={(step) => {
+          const target = journeySteps[step].id
+          if (target !== 'plan')
+            review(
+              questionnaireRoutes.find(({ id }) => id === target)!.groups[0],
+            )
+        }}
       />
     </section>
   )

@@ -1,6 +1,12 @@
 import { test as base, expect } from '@playwright/test'
 import type { Page } from '@playwright/test'
-import { exampleProfile } from '../../src/routes/check/model'
+import {
+  errorStep,
+  exampleProfile,
+  questionnaireGroups,
+  questionnaireRouteForGroup,
+  questionnaireRoutes,
+} from '../../src/routes/check/model'
 import { sessionFromProfile } from '../../src/routes/check/session'
 import { RECOVERY_KEY, recoveryFromSession } from '../../src/recovery-draft'
 import { TAX_YEAR, currentRules } from '../../src/rules'
@@ -8,6 +14,50 @@ import { WORKSPACE_KEY, saveSavedWorkspace } from '../../src/workspace'
 import { TestStorage } from '../helpers/storage'
 
 export { expect, RECOVERY_KEY, WORKSPACE_KEY }
+
+export async function openQuestionStep(page: Page, step: number) {
+  const route = questionnaireRoutes[step]
+  if (new URL(page.url()).pathname === `/check/${route.id}`) return
+  const menu = page.getByRole('button', { name: /^Show journey steps/ })
+  if (
+    (await menu.isVisible()) &&
+    (await menu.getAttribute('aria-expanded')) !== 'true'
+  )
+    await menu.click()
+  await page
+    .getByRole('button', { name: `${step + 1}. ${route.label}`, exact: true })
+    .click()
+  await expect(page).toHaveURL(new RegExp(`/check/${route.id}(?:\\?|$)`))
+}
+
+// Follow the same disclosure controls as a person before interacting with a field.
+export async function questionField(page: Page, selector: string) {
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+  const field = page.locator(selector)
+  const path = new URL(page.url()).pathname
+  if (path.startsWith('/check/') && !(await field.count())) {
+    const name = selector
+      .slice(1)
+      .replace(/-(?:error|unsupported|coverage|help)$/, '')
+    const group = questionnaireGroups[errorStep(name)]
+    const route = questionnaireRouteForGroup(group.id)
+    const step = questionnaireRoutes.findIndex(({ id }) => id === route)
+    if (path !== `/check/${route}`) await openQuestionStep(page, step)
+  }
+  await field.waitFor({ state: 'attached' })
+  const section = page
+    .locator('.question-disclosure')
+    .filter({ has: field })
+    .first()
+  if (
+    (await section.count()) &&
+    !(await section.evaluate((element) => element.hasAttribute('data-open')))
+  )
+    await section
+      .locator('.question-card-trigger')
+      .click({ position: { x: 12, y: 12 } })
+  return field
+}
 export const now = new Date('2026-09-08T12:00:00+05:30')
 
 export const test = base.extend({
@@ -87,7 +137,7 @@ export async function failRecoveryWrites(page: Page) {
 
 export async function openResources(page: Page) {
   await page
-    .getByRole('button', { name: '8. Review your answers', exact: true })
+    .getByRole('button', { name: '5. Review your answers', exact: true })
     .click()
   await page
     .getByRole('button', { name: 'Calculate my plan', exact: true })
@@ -108,7 +158,8 @@ export async function returnFromResources(page: Page) {
   await expect(page).toHaveURL(/\/#faqs$/)
   await page.goBack()
   await expect(page).toHaveURL(/\/plan(?:\?example=1)?$/)
+  await page.getByRole('button', { name: 'Back', exact: true }).click()
   await page
-    .getByRole('button', { name: '4. Receipts and profit', exact: true })
+    .getByRole('button', { name: '2. Income and profit', exact: true })
     .click()
 }

@@ -429,7 +429,7 @@ test('captured workspace and Recovery migrate conservatively without writing on 
   })
   const recovered = parseRecoveryDraft(recoveryV9, TAX_YEAR)
   expect(recovered).toMatchObject({
-    schemaVersion: 10,
+    schemaVersion: 12,
     draft: {
       hasBroughtForwardLosses: '',
       broughtForwardLossesConfirmed: '',

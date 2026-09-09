@@ -1,5 +1,5 @@
 import { taxYearShort } from '@/lib/tax-period'
-import { isBusinessPath } from '@/routes/check/model'
+import { isBusinessPath, remainingBusinessReceipts } from '@/routes/check/model'
 import { CheckHeading, MoneyField } from '@/routes/check/fields'
 import type { Draft, DraftAmountKey } from '@/routes/check/model'
 import { DeclaredProfitHelp } from '@/routes/check/declared-profit-help'
@@ -9,18 +9,22 @@ export function ReceiptsStep({
   draft,
   errors,
   setAmount,
+  heading = true,
 }: {
   readonly className: string
   readonly draft: Draft
   readonly errors: Record<string, string>
   readonly setAmount: (key: DraftAmountKey, value: string) => void
+  readonly heading?: boolean
 }) {
   return (
     <div className={className}>
-      <CheckHeading
-        title="Your receipts and profit"
-        description="Enter whole-rupee amounts from your records. Receipt amounts should be before expenses, platform fees, and Indian withholding."
-      />
+      {heading && (
+        <CheckHeading
+          title="Your receipts and profit"
+          description="Enter whole-rupee amounts from your records. Receipt amounts should be before expenses, platform fees, and Indian withholding."
+        />
+      )}
       {isBusinessPath(draft) ? (
         <>
           <MoneyField
@@ -42,13 +46,17 @@ export function ReceiptsStep({
           <MoneyField
             id="otherReceipts"
             label="All other business receipts"
-            help="Together with qualifying receipts, this must equal gross business receipts."
+            readOnly={
+              draft.amounts.otherReceipts === remainingBusinessReceipts(draft)
+            }
+            help="Filled from gross receipts minus qualifying receipts. Check this amount against your records."
             value={draft.amounts.otherReceipts}
             error={errors.otherReceipts}
             onChange={(value) => setAmount('otherReceipts', value)}
           />
           <MoneyField
             id="cashReceipts"
+            zeroLabel="No cash receipts, non-account-payee cheques or drafts"
             label="Receipts paid in cash"
             help="Include cash, non-account-payee cheques, and drafts."
             value={draft.amounts.cashReceipts}
@@ -81,6 +89,7 @@ export function ReceiptsStep({
           />
           <MoneyField
             id="cashReceipts"
+            zeroLabel="No cash receipts, non-account-payee cheques or drafts"
             label="Professional receipts received in cash"
             help="Include cash, non-account-payee cheques, and drafts. If cash is exactly 5%, the higher receipt limit applies."
             value={draft.amounts.cashReceipts}

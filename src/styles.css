@@ -669,17 +669,17 @@ details {
   line-height: 1.5;
 }
 
-details:not(.assumptions) {
+details:not(.assumptions, .question-disclosure) {
   margin-top: 1.25rem;
   border-block: 1px solid var(--border);
 }
 
-details + details:not(.assumptions) {
+details + details:not(.assumptions, .question-disclosure) {
   margin-top: 0;
   border-top: 0;
 }
 
-details:not(.assumptions):last-child {
+details:not(.assumptions, .question-disclosure):last-child {
   border-bottom: 0;
 }
 
@@ -710,7 +710,9 @@ details > :not(summary):last-child {
   margin-bottom: 0.75rem;
 }
 
-details:has(> summary:not(:focus-visible))::details-content {
+details:not(.question-disclosure):has(
+    > summary:not(:focus-visible)
+  )::details-content {
   block-size: 0;
   opacity: 0;
   overflow: hidden;
@@ -723,7 +725,9 @@ details:has(> summary:not(:focus-visible))::details-content {
     transform 150ms var(--ease-app-out);
 }
 
-details[open]:has(> summary:not(:focus-visible))::details-content {
+details[open]:not(.question-disclosure):has(
+    > summary:not(:focus-visible)
+  )::details-content {
   block-size: auto;
   opacity: 1;
   transform: translateY(0);
@@ -1225,8 +1229,95 @@ main:has(> .resources-page) {
 .question-sections {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: clamp(3rem, 4vw, 4.5rem);
+  gap: 1.25rem;
+  margin-top: 2rem;
+}
+
+.question-group
+  > .field-stack
+  + .question-sections:has(> .question-disclosure) {
   margin-top: 3rem;
+}
+
+.question-sections:empty {
+  margin-top: 0;
+}
+
+.question-disclosure {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--card);
+}
+
+.question-card-heading {
+  position: relative;
+  margin: 0;
+  padding: 1.5rem 4rem 1.5rem 1.5rem;
+  font-size: 1.25rem;
+}
+
+.question-card-trigger {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--foreground);
+  cursor: pointer;
+}
+
+.question-card-label {
+  position: relative;
+  pointer-events: none;
+}
+
+.question-card-trigger > svg {
+  position: absolute;
+  top: 50%;
+  right: 1.5rem;
+  translate: 0 -50%;
+}
+
+.question-card-trigger[data-panel-open] > svg {
+  rotate: 180deg;
+}
+
+.question-card-status {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  margin-left: 0.35rem;
+  vertical-align: -0.125em;
+}
+
+.question-card-status:has([role='img']) {
+  pointer-events: none;
+}
+
+.question-panel {
+  height: var(--accordion-panel-height);
+  overflow: hidden;
+  transition:
+    height 150ms var(--ease-app-out),
+    opacity 150ms var(--ease-app-out);
+}
+
+.question-panel[data-starting-style],
+.question-panel[data-ending-style] {
+  height: 0;
+  opacity: 0;
+}
+
+.question-panel > .question-section {
+  margin: 0;
+  border-top: 1px solid var(--border);
+  padding: 1.5rem;
+}
+
+:root[data-input-method='keyboard'] .question-panel {
+  transition: none;
 }
 
 .question-section {
@@ -1238,6 +1329,10 @@ main:has(> .resources-page) {
 .question-section > h2 {
   margin: 0;
   font-size: clamp(1.35rem, 1.7vw, 1.75rem);
+}
+
+.fit-situation-question .field {
+  margin: 0;
 }
 
 .choice-grid {
@@ -1675,6 +1770,10 @@ main:has(> .resources-page) {
     scroll-behavior: auto !important;
   }
 
+  .question-panel {
+    transition: none;
+  }
+
   .journey-menu-content {
     animation: none;
     transition: none;
@@ -1684,7 +1783,9 @@ main:has(> .resources-page) {
     scale: 1;
   }
 
-  details:has(> summary:not(:focus-visible))::details-content {
+  details:not(.question-disclosure):has(
+      > summary:not(:focus-visible)
+    )::details-content {
     transform: translateY(0);
     transition-property: content-visibility, opacity;
   }

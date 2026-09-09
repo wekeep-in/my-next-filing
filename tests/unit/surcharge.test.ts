@@ -258,7 +258,7 @@ test('stops above the rounded one-crore ceiling and retains all legacy exclusion
         { draft: draftFromProfile(input) },
         'other-income',
         today,
-      ).warnings.unsupportedCertainty,
+      ).warnings['unsupportedSituationAnswers-businessTax'],
     ).toBeTruthy()
   }
   expect(

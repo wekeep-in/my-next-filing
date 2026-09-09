@@ -1,20 +1,30 @@
-import type { Page } from '@playwright/test'
 import {
   RECOVERY_KEY,
   WORKSPACE_KEY,
   expect,
+  questionField,
   seedPersonal,
   test,
 } from './fixtures'
+import type { Page } from '@playwright/test'
 import recoveryV9 from '../fixtures/recovery-v9.json' with { type: 'json' }
 import workspaceV10 from '../fixtures/workspace-v10.json' with { type: 'json' }
 
 async function choose(page: Page, id: string, name: string) {
-  await page.locator(`#${id}`).getByRole('radio', { name, exact: true }).click()
+  await (
+    await questionField(page, `#${id}`)
+  )
+    .getByRole('radio', { name, exact: true })
+    .click()
 }
 async function calculate(page: Page) {
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  const path = new URL(page.url()).pathname
+  if (path === '/check/income')
+    await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  if (new URL(page.url()).pathname === '/check/clients')
+    await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  if (new URL(page.url()).pathname === '/check/taxes-and-gst')
+    await page.getByRole('button', { name: 'Continue', exact: true }).click()
   await page
     .getByRole('button', { name: 'Calculate my plan', exact: true })
     .click()
@@ -24,14 +34,14 @@ test('earlier loss balances combine with co-owned rent and survive Recovery and 
   page,
 }, testInfo) => {
   await seedPersonal(page)
-  await page.goto('/check/other-income')
+  await page.goto('/check/income')
   await choose(page, 'hasRentalIncome', 'Yes')
-  await expect(page.locator('#rentalIncomeConfirmed-help')).toContainText(
-    'definite, documented share',
-  )
-  await expect(page.locator('#rentalIncomeConfirmed-help')).toContainText(
-    'liability for borrowing',
-  )
+  await expect(
+    await questionField(page, '#rentalIncomeConfirmed-help'),
+  ).toContainText('definite, documented share')
+  await expect(
+    await questionField(page, '#rentalIncomeConfirmed-help'),
+  ).toContainText('liability for borrowing')
   await choose(page, 'rentalIncomeConfirmed', 'Yes')
   // A documented half share of annual value 600,000; deductions are separately established.
   await page
@@ -39,8 +49,8 @@ test('earlier loss balances combine with co-owned rent and survive Recovery and 
       exact: true,
     })
     .fill('300000')
-  await page.locator('#rentalMunicipalTaxes').fill('20000')
-  await page.locator('#rentalInterest').fill('100000')
+  await (await questionField(page, '#rentalMunicipalTaxes')).fill('20000')
+  await (await questionField(page, '#rentalInterest')).fill('100000')
   await choose(page, 'rentalGstConfirmed', 'Yes')
   await choose(page, 'hasEquityGains', 'Yes')
   await choose(page, 'equityGainsConfirmed', 'Yes')
@@ -50,7 +60,7 @@ test('earlier loss balances combine with co-owned rent and survive Recovery and 
     ['longTermGains', '300000'],
     ['longTermLosses', '75000'],
   ])
-    await page.locator(`#${id}`).fill(value)
+    await (await questionField(page, `#${id}`)).fill(value)
   await choose(page, 'hasBroughtForwardLosses', 'Yes')
   await choose(page, 'broughtForwardLossesConfirmed', 'Yes')
   await page
@@ -70,6 +80,7 @@ test('earlier loss balances combine with co-owned rent and survive Recovery and 
   await expect(
     page.getByLabel('Loss 1: remaining short-term balance', { exact: true }),
   ).toHaveValue('2,00,000')
+  await questionField(page, '#hasBroughtForwardLosses')
   await page.getByRole('button', { name: 'Add loss year', exact: true }).click()
   const remove = page.getByRole('button', {
     name: 'Remove loss year 2',
@@ -156,8 +167,9 @@ test('earlier loss balances combine with co-owned rent and survive Recovery and 
     },
   })
   await page.setViewportSize({ width: 1440, height: 900 })
+  await page.getByRole('button', { name: 'Back', exact: true }).click()
   await page
-    .getByRole('button', { name: '6. Other income and tax paid', exact: true })
+    .getByRole('button', { name: '2. Income and profit', exact: true })
     .click()
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await choose(page, 'hasBroughtForwardLosses', 'No')
@@ -184,9 +196,9 @@ test('platform GST uncertainty permits tax and confirmed RCM produces a registra
     await choose(page, id, 'Yes')
   await choose(page, 'platformForeignFeeGstTreatment', 'Not sure')
   await choose(page, 'platformReverseCharge', 'Not sure')
-  await expect(page.locator('#platformReverseCharge-coverage')).toContainText(
-    'Partial plan',
-  )
+  await expect(
+    await questionField(page, '#platformReverseCharge-coverage'),
+  ).toContainText('Partial plan')
   await page.getByRole('button', { name: 'Continue', exact: true }).click()
   await calculate(page)
   await expect(page.locator('.tax-summary h2')).toHaveText('₹55,160')
@@ -196,8 +208,9 @@ test('platform GST uncertainty permits tax and confirmed RCM produces a registra
       exact: true,
     }),
   ).toBeVisible()
+  await page.getByRole('button', { name: 'Back', exact: true }).click()
   await page
-    .getByRole('button', { name: '5. Clients and payments', exact: true })
+    .getByRole('button', { name: '3. Clients and payments', exact: true })
     .click()
   await choose(
     page,
@@ -207,7 +220,7 @@ test('platform GST uncertainty permits tax and confirmed RCM produces a registra
   await choose(page, 'platformReverseCharge', 'Confirmed: I must pay GST')
   await page.getByRole('button', { name: 'Continue', exact: true }).click()
   await page.getByRole('button', { name: 'Continue', exact: true }).click()
-  await page.locator('#platformRcmLiabilityDate').click()
+  await (await questionField(page, '#platformRcmLiabilityDate')).click()
   // The new picker opens at the beginning of the Tax Year.
   await page.getByRole('button', { name: '15 April 2026', exact: true }).click()
   await page.getByRole('button', { name: 'Continue', exact: true }).click()
@@ -248,11 +261,12 @@ test('captured Recovery asks about prior balances and captured workspace remains
     },
     { key: RECOVERY_KEY, value: JSON.stringify(recoveryV9) },
   )
-  await page.goto('/check/other-income')
+  await page.goto('/check/income')
   await expect(
-    page
-      .locator('#hasBroughtForwardLosses')
-      .getByRole('radio', { name: 'No', exact: true }),
+    (await questionField(page, '#hasBroughtForwardLosses')).getByRole('radio', {
+      name: 'No',
+      exact: true,
+    }),
   ).toHaveAttribute('aria-checked', 'false')
   await expect(
     page.getByRole('button', { name: 'Continue', exact: true }),

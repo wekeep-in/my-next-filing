@@ -1,4 +1,3 @@
-import { questionnaireGroups } from '@/routes/check/model'
 import type { ReactNode } from 'react'
 import { useRef, useState } from 'react'
 import { cn } from 'cn'
@@ -12,11 +11,19 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import {
+  questionnaireRouteStep,
+  questionnaireRoutes,
+} from '@/routes/check/model'
+import type { QuestionnaireRoute } from '@/routes/check/model'
 
-export const questionnaireSteps = questionnaireGroups.map(({ label }) => label)
-
-export const calculationStep = questionnaireSteps.length + 1
-const journeySteps = ['Overview', ...questionnaireSteps, 'Your plan']
+export const journeySteps = [
+  ...questionnaireRoutes,
+  { id: 'plan', label: 'Your plan', groups: [] as const },
+] as const
+export const calculationStep = journeySteps.length - 1
+export const journeyStep = (route: QuestionnaireRoute) =>
+  questionnaireRouteStep(route)
 const noDisabledSteps: readonly number[] = []
 
 function JourneySteps({
@@ -30,7 +37,7 @@ function JourneySteps({
 }) {
   return (
     <ol className="journey-list">
-      {journeySteps.map((label, index) => (
+      {journeySteps.map(({ label }, index) => (
         <li
           className={cn(
             'journey-step',
@@ -63,6 +70,7 @@ export function JourneySidebar({
   action,
   onStepSelect,
   disabledSteps = noDisabledSteps,
+  showSteps = true,
   className = '',
 }: {
   readonly activeStep: number
@@ -70,6 +78,7 @@ export function JourneySidebar({
   readonly action: ReactNode
   readonly onStepSelect: (step: number) => void
   readonly disabledSteps?: readonly number[]
+  readonly showSteps?: boolean
   readonly className?: string
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -78,63 +87,67 @@ export function JourneySidebar({
   return (
     <aside
       className={cn('journey-sidebar', className)}
-      aria-label="Journey overview"
+      aria-label={showSteps ? 'Journey overview' : 'Plan actions'}
     >
       <Card className="journey-panel">
-        <nav className="journey-nav" aria-label="Journey steps">
-          <Popover open={menuOpen} onOpenChange={setMenuOpen}>
-            <PopoverTrigger
-              render={<Button variant="ghost" />}
-              className="journey-menu-trigger"
-              aria-label={`Show journey steps, ${journeySteps[activeStep]}, step ${activeStep + 1} of ${journeySteps.length}`}
-            >
-              <span className="is-current flex min-w-0 items-center gap-2">
-                <span className="journey-number shrink-0" aria-hidden="true">
-                  {activeStep + 1}
+        {showSteps && (
+          <nav className="journey-nav" aria-label="Journey steps">
+            <Popover open={menuOpen} onOpenChange={setMenuOpen}>
+              <PopoverTrigger
+                render={<Button variant="ghost" />}
+                className="journey-menu-trigger"
+                aria-label={`Show journey steps, ${journeySteps[activeStep].label}, step ${activeStep + 1} of ${journeySteps.length}`}
+              >
+                <span className="is-current flex min-w-0 items-center gap-2">
+                  <span className="journey-number shrink-0" aria-hidden="true">
+                    {activeStep + 1}
+                  </span>
+                  <span className="truncate">
+                    {journeySteps[activeStep].label}
+                  </span>
                 </span>
-                <span className="truncate">{journeySteps[activeStep]}</span>
-              </span>
-              <span className="flex shrink-0 items-center gap-2 font-normal text-muted-foreground tabular-nums">
-                {activeStep + 1} of {journeySteps.length}
-                <ChevronDownIcon
-                  aria-hidden="true"
-                  className="size-4 text-foreground"
-                />
-              </span>
-            </PopoverTrigger>
-            <PopoverContent
-              ref={menuRef}
-              positionMethod="fixed"
-              align="start"
-              sideOffset={1}
-              collisionPadding={0}
-              collisionAvoidance={{ side: 'none', align: 'none' }}
-              className="journey-menu-content"
-              initialFocus={() =>
-                menuRef.current?.querySelector<HTMLButtonElement>(
-                  '[aria-current="step"] button',
-                ) ?? true
-              }
-            >
-              <PopoverTitle className="sr-only">Journey steps</PopoverTitle>
-              <nav aria-label="Journey steps" className="journey-menu-scroll">
-                <JourneySteps
-                  activeStep={activeStep}
-                  disabledSteps={disabledSteps}
-                  onStepSelect={(step) => {
-                    setMenuOpen(false)
-                    onStepSelect(step)
-                  }}
-                />
-              </nav>
-            </PopoverContent>
-          </Popover>
-          <JourneySteps
-            activeStep={activeStep}
-            disabledSteps={disabledSteps}
-            onStepSelect={onStepSelect}
-          />
-        </nav>
+                <span className="flex shrink-0 items-center gap-2 font-normal text-muted-foreground tabular-nums">
+                  {activeStep + 1} of {journeySteps.length}
+                  <ChevronDownIcon
+                    aria-hidden="true"
+                    className="size-4 text-foreground"
+                  />
+                </span>
+              </PopoverTrigger>
+              <PopoverContent
+                ref={menuRef}
+                positionMethod="fixed"
+                align="start"
+                sideOffset={1}
+                collisionPadding={0}
+                collisionAvoidance={{ side: 'none', align: 'none' }}
+                className="journey-menu-content"
+                initialFocus={() =>
+                  menuRef.current?.querySelector<HTMLButtonElement>(
+                    '[aria-current="step"] button',
+                  ) ?? true
+                }
+              >
+                <PopoverTitle className="sr-only">Journey steps</PopoverTitle>
+                <nav aria-label="Journey steps" className="journey-menu-scroll">
+                  <JourneySteps
+                    activeStep={activeStep}
+                    disabledSteps={disabledSteps}
+                    onStepSelect={(step) => {
+                      setMenuOpen(false)
+                      onStepSelect(step)
+                    }}
+                  />
+                </nav>
+              </PopoverContent>
+            </Popover>
+            <JourneySteps
+              activeStep={activeStep}
+              disabledSteps={disabledSteps}
+              onStepSelect={onStepSelect}
+            />
+          </nav>
+        )}
         <div className="journey-actions">
           {backAction}
           {action}

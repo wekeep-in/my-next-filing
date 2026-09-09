@@ -1,26 +1,25 @@
+import {
+  QuestionSection,
+  QuestionSections,
+} from '@/routes/check/question-section'
+import { Button } from '@/components/ui/button'
 import { taxYearShort } from '@/lib/tax-period'
 import type { QuestionnaireDispatch } from '@/routes/check/session'
 import type { TriState } from '@/evaluation'
 import { CheckHeading, ChoiceField, MoneyField } from '@/routes/check/fields'
 import type { Draft, DraftAmountKey } from '@/routes/check/model'
-import {
-  additionalIncomeFields,
-  creditTriggerMayApply,
-  equityGainFields,
-} from '@/routes/check/model'
-import { UnsupportedFactsField } from '@/routes/check/unsupported-facts-field'
+import { additionalIncomeFields, equityGainFields } from '@/routes/check/model'
 import { BroughtForwardLossFields } from '@/routes/check/brought-forward-loss-fields'
 import { ForeignAssetsFields } from '@/routes/check/foreign-assets-fields'
 import { RentalIncomeFields } from '@/routes/check/rental-income-fields'
 import { EmployerNpsFields } from '@/routes/check/employer-nps-fields'
+import { ReceiptsStep } from '@/routes/check/receipts-step'
 import {
   AdditionalIncomeHelp,
   EquityGainsHelp,
   InterestHelp,
   SalaryCoverageHelp,
   SalaryHelp,
-  TcsHelp,
-  TdsHelp,
 } from '@/routes/check/other-income-help'
 
 export function OtherIncomeStep({
@@ -39,12 +38,23 @@ export function OtherIncomeStep({
   return (
     <div className={className}>
       <CheckHeading
-        title="Other income and tax paid"
-        description={`Enter your Indian amounts for ${taxYearShort}. Use 0 if you have none.`}
+        title="Income and profit"
+        description={`Enter receipts, profit and other Indian income for ${taxYearShort}. Use 0 if you have none.`}
       />
-      <div className="question-sections">
-        <section className="question-section" aria-labelledby="salary-title">
-          <h2 id="salary-title">Salary</h2>
+      <QuestionSections initialOpen="receipts-title">
+        <QuestionSection
+          id="receipts-title"
+          title="Freelance receipts and profit"
+        >
+          <ReceiptsStep
+            className="field-stack"
+            draft={draft}
+            errors={errors}
+            setAmount={setAmount}
+            heading={false}
+          />
+        </QuestionSection>
+        <QuestionSection id="salary-title" title="Salary">
           <div className="field-stack">
             <ChoiceField
               id="hasSalary"
@@ -131,15 +141,15 @@ export function OtherIncomeStep({
               </div>
             )}
           </div>
-        </section>
-        <section
-          className="question-section"
-          aria-labelledby="other-interest-title"
+        </QuestionSection>
+        <QuestionSection
+          id="other-interest-title"
+          title="Interest and dividends"
         >
-          <h2 id="other-interest-title">Interest and dividends</h2>
           <div className="field-stack">
             <MoneyField
               id="taxableBankInterest"
+              zeroLabel="No taxable bank or deposit interest"
               label="Taxable bank or deposit interest"
               help={
                 <>
@@ -215,6 +225,7 @@ export function OtherIncomeStep({
                     key={key}
                     id={key}
                     label={label}
+                    zeroLabel={`No ${label.toLowerCase()}`}
                     help={
                       key === 'dividends'
                         ? 'Enter ordinary dividends taxable this year before TDS or expenses. Use 0 if none.'
@@ -232,18 +243,17 @@ export function OtherIncomeStep({
               </>
             )}
           </div>
-        </section>
+        </QuestionSection>
         <RentalIncomeFields
           draft={draft}
           errors={errors}
           dispatch={dispatch}
           setAmount={setAmount}
         />
-        <section
-          className="question-section"
-          aria-labelledby="equity-gains-title"
+        <QuestionSection
+          id="equity-gains-title"
+          title="Domestic equity gains and losses"
         >
-          <h2 id="equity-gains-title">Domestic equity gains and losses</h2>
           <div className="field-stack">
             <ChoiceField
               id="hasEquityGains"
@@ -310,11 +320,25 @@ export function OtherIncomeStep({
                     })
                   }
                 />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-fit whitespace-normal"
+                  onClick={() =>
+                    dispatch({
+                      type: 'amounts-zeroed',
+                      fields: ['shortTermLosses', 'longTermLosses'],
+                    })
+                  }
+                >
+                  I have no current-year equity losses
+                </Button>
                 {equityGainFields.map(({ key, label }) => (
                   <MoneyField
                     key={key}
                     id={key}
                     label={label}
+                    zeroLabel={`No ${label.toLowerCase()}`}
                     help={
                       key === 'shortTermGains'
                         ? 'Total gains from profitable short-term sales before subtracting losses. Do not enter sale proceeds. Use 0 if none.'
@@ -330,99 +354,18 @@ export function OtherIncomeStep({
               </>
             )}
           </div>
-        </section>
-        <section className="question-section" aria-labelledby="tax-paid-title">
-          <h2 id="tax-paid-title">Tax already paid</h2>
-          <div className="field-stack">
-            <MoneyField
-              id="tds"
-              label="Indian TDS credit"
-              help={
-                <>
-                  Enter actual Indian TDS for all income included in this
-                  estimate. Count each credit once. <TdsHelp />
-                </>
-              }
-              value={draft.amounts.tds}
-              error={errors.tds}
-              onChange={(value) => setAmount('tds', value)}
-            />
-            <MoneyField
-              id="tcs"
-              label="Indian TCS credit"
-              help={
-                <>
-                  Enter the TCS credit available for {taxYearShort}. <TcsHelp />
-                </>
-              }
-              value={draft.amounts.tcs}
-              error={errors.tcs}
-              onChange={(value) => setAmount('tcs', value)}
-            />
-            <MoneyField
-              id="advanceTaxPaid"
-              label="Advance tax already paid"
-              help={`Enter only advance tax paid for ${taxYearShort}. Do not include self-assessment tax.`}
-              value={draft.amounts.advanceTaxPaid}
-              error={errors.advanceTaxPaid}
-              onChange={(value) => setAmount('advanceTaxPaid', value)}
-            />
-          </div>
-        </section>
-        <section
-          className="question-section"
-          aria-labelledby="other-situations-title"
-        >
-          <h2 id="other-situations-title">Other tax situations</h2>
-          <div className="field-stack">
-            {creditTriggerMayApply(draft) && (
-              <ChoiceField
-                id="ageSixtyOrOlder"
-                label={`Were you 60 or older at any time during ${taxYearShort}?`}
-                help="If you were 60 or older, this income-tax return trigger starts at ₹50,000 of combined TDS and TCS instead of ₹25,000."
-                value={draft.ageSixtyOrOlder}
-                error={errors.ageSixtyOrOlder}
-                onChange={(value) =>
-                  dispatch({
-                    type: 'field-changed',
-                    field: 'ageSixtyOrOlder',
-                    value: value as TriState,
-                  })
-                }
-              />
-            )}
-            <ChoiceField
-              id="otherAnnualReturnTrigger"
-              label="Does another condition require you to file an income-tax return?"
-              help="Choose Not sure if you need to review the banking, travel, electricity, or foreign-asset conditions."
-              value={draft.otherAnnualReturnTrigger}
-              error={errors.otherAnnualReturnTrigger}
-              onChange={(value) =>
-                dispatch({
-                  type: 'field-changed',
-                  field: 'otherAnnualReturnTrigger',
-                  value: value as TriState,
-                })
-              }
-            />
-            <BroughtForwardLossFields
-              draft={draft}
-              errors={errors}
-              dispatch={dispatch}
-            />
-            <ForeignAssetsFields
-              draft={draft}
-              errors={errors}
-              dispatch={dispatch}
-            />
-            <UnsupportedFactsField
-              draft={draft}
-              dispatch={dispatch}
-              error={errors.unsupportedCertainty}
-            />
-          </div>
-        </section>
-      </div>
+        </QuestionSection>
+        <BroughtForwardLossFields
+          draft={draft}
+          errors={errors}
+          dispatch={dispatch}
+        />
+        <ForeignAssetsFields
+          draft={draft}
+          errors={errors}
+          dispatch={dispatch}
+        />
+      </QuestionSections>
     </div>
   )
 }

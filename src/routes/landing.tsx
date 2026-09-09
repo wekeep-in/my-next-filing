@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom'
 import { useApp } from '@/app-context'
 import { Badge } from '@/components/ui/badge'
 import { buttonVariants } from '@/components/ui/button'
-import { JourneySidebar, calculationStep } from '@/components/journey-sidebar'
+import { JourneySidebar } from '@/components/journey-sidebar'
 import { LandingFaqs } from '@/components/landing-faqs'
 import { ShareLink } from '@/components/share-link'
 import { sessionMatchesWorkspace } from '@/routes/plan/model'
@@ -105,10 +105,8 @@ export function LandingRoute() {
             {entryLabel}
           </Link>
         }
-        disabledSteps={[2, 3, 4, 5, 6, 7, calculationStep]}
-        onStepSelect={(step) =>
-          step === 0 ? window.scrollTo(0, 0) : continueEntry()
-        }
+        disabledSteps={[1, 2, 3, 4, 5]}
+        onStepSelect={(step) => (step === 0 ? continueEntry() : undefined)}
       />
 
       <figure className="product-preview">

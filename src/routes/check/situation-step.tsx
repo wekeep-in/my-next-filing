@@ -1,10 +1,20 @@
+import {
+  QuestionSection,
+  QuestionSections,
+} from '@/routes/check/question-section'
+import {
+  activityOptions,
+  isBusinessPath,
+  unsupportedSituationGroups,
+} from '@/routes/check/model'
 import { taxYearShort } from '@/lib/tax-period'
 import type { QuestionnaireDispatch } from '@/routes/check/session'
-import type { TriState } from '@/evaluation'
-import { CheckHeading, ChoiceField } from '@/routes/check/fields'
-import type { Draft } from '@/routes/check/model'
+import type { Activity, TriState } from '@/evaluation'
+import { CheckHeading, ChoiceField, SelectField } from '@/routes/check/fields'
+import type { Draft, DraftChoice, DraftPath } from '@/routes/check/model'
 import { ResidenceHelp } from '@/routes/check/residence-help'
 import { TaxRegimeHelp } from '@/routes/check/tax-regime-help'
+import { TaxMethodHelp } from '@/routes/check/tax-method-help'
 
 export function SituationStep({
   className,
@@ -20,13 +30,12 @@ export function SituationStep({
   return (
     <div className={className}>
       <CheckHeading
-        title="Does this fit your situation?"
-        description="These questions decide whether this version can give you a tax estimate."
+        title="Fit for this version"
+        description="Answer a few questions about you and your work. We will stop before the money questions if this version does not fit."
         first
       />
-      <div className="question-sections">
-        <section className="question-section" aria-labelledby="about-you">
-          <h2 id="about-you">About you</h2>
+      <QuestionSections initialOpen="about-you">
+        <QuestionSection id="about-you" title="About you">
           <div className="field-stack">
             <ChoiceField
               id="personKind"
@@ -104,10 +113,9 @@ export function SituationStep({
               }
             />
           </div>
-        </section>
+        </QuestionSection>
 
-        <section className="question-section" aria-labelledby="about-practice">
-          <h2 id="about-practice">About your practice</h2>
+        <QuestionSection id="about-practice" title="About your practice">
           <div className="field-stack">
             <ChoiceField
               id="onePractice"
@@ -150,10 +158,9 @@ export function SituationStep({
               }
             />
           </div>
-        </section>
+        </QuestionSection>
 
-        <section className="question-section" aria-labelledby="people-involved">
-          <h2 id="people-involved">Who helps with the work</h2>
+        <QuestionSection id="people-involved" title="Who helps with the work">
           <div className="field-stack">
             <ChoiceField
               id="hasPartner"
@@ -226,8 +233,157 @@ export function SituationStep({
               />
             )}
           </div>
-        </section>
-      </div>
+        </QuestionSection>
+        <QuestionSection
+          id="work-and-tax-method"
+          title="Your work and tax method"
+        >
+          <div className="field-stack">
+            <SelectField
+              id="activity"
+              label="Which option best describes your work?"
+              value={draft.activity}
+              error={errors.activity}
+              onChange={(value) =>
+                dispatch({
+                  type: 'field-changed',
+                  field: 'activity',
+                  value: value as Activity,
+                })
+              }
+              options={activityOptions}
+            />
+            {draft.activity === 'not-sure' && (
+              <p className="field-help" role="status">
+                Not sure stops the estimate. Choose a specific option if you can
+                confirm one.
+              </p>
+            )}
+            <ChoiceField
+              id="path"
+              label="Which tax method do you use for this work?"
+              help={
+                <>
+                  Choose the method in your records or the one confirmed by your
+                  tax adviser. We cannot estimate your tax without a confirmed
+                  method. <TaxMethodHelp />
+                </>
+              }
+              options={['specified-profession', 'eligible-business']}
+              value={draft.path}
+              error={errors.path}
+              onChange={(value) =>
+                dispatch({ type: 'path-changed', value: value as DraftPath })
+              }
+            />
+            {draft.path && (
+              <ChoiceField
+                id="pathConfirmed"
+                label={
+                  isBusinessPath(draft)
+                    ? 'Is your whole practice an eligible business?'
+                    : 'Is your whole practice a specified profession?'
+                }
+                help="Choose Yes only if this matches your records or professional advice."
+                value={draft.pathConfirmed}
+                error={errors.pathConfirmed}
+                onChange={(value) =>
+                  dispatch({
+                    type: 'field-changed',
+                    field: 'pathConfirmed',
+                    value: value as TriState,
+                  })
+                }
+              />
+            )}
+            {isBusinessPath(draft) && (
+              <div className="field-stack">
+                <ChoiceField
+                  id="notGoodsCarriage"
+                  label="Does your practice provide services rather than transport goods?"
+                  value={draft.notGoodsCarriage}
+                  error={errors.notGoodsCarriage}
+                  onChange={(value) =>
+                    dispatch({
+                      type: 'field-changed',
+                      field: 'notGoodsCarriage',
+                      value: value as TriState,
+                    })
+                  }
+                />
+                <ChoiceField
+                  id="notAgencyCommissionBrokerage"
+                  label="Do you provide services on your own account, rather than as an agent, commission earner, or broker?"
+                  value={draft.notAgencyCommissionBrokerage}
+                  error={errors.notAgencyCommissionBrokerage}
+                  onChange={(value) =>
+                    dispatch({
+                      type: 'field-changed',
+                      field: 'notAgencyCommissionBrokerage',
+                      value: value as TriState,
+                    })
+                  }
+                />
+                <ChoiceField
+                  id="noChapterViiiCDeduction"
+                  label="Are you claiming no Chapter VIII-C deduction?"
+                  value={draft.noChapterViiiCDeduction}
+                  error={errors.noChapterViiiCDeduction}
+                  onChange={(value) =>
+                    dispatch({
+                      type: 'field-changed',
+                      field: 'noChapterViiiCDeduction',
+                      value: value as TriState,
+                    })
+                  }
+                />
+                <ChoiceField
+                  id="fiveYearExclusion"
+                  label="Does the five-year exclusion apply to this method?"
+                  help="This checks whether an earlier use of this method affects you now. Choose Not sure if you need to review earlier years."
+                  options={['none', 'applies', 'not-sure']}
+                  value={draft.fiveYearExclusion}
+                  error={errors.fiveYearExclusion}
+                  onChange={(value) =>
+                    dispatch({
+                      type: 'field-changed',
+                      field: 'fiveYearExclusion',
+                      value: value as Draft['fiveYearExclusion'],
+                    })
+                  }
+                />
+              </div>
+            )}
+          </div>
+        </QuestionSection>
+        {unsupportedSituationGroups.map(({ key, title, question, help }) => {
+          const field = `unsupportedSituationAnswers-${key}`
+          return (
+            <QuestionSection
+              key={key}
+              id={`situations-${key}-title`}
+              title={title}
+            >
+              <div className="fit-situation-question">
+                <ChoiceField
+                  id={field}
+                  label={question}
+                  help={help}
+                  value={draft.unsupportedSituationAnswers[key]}
+                  error={errors[field]}
+                  onChange={(value) =>
+                    dispatch({
+                      type: 'unsupported-situation-changed',
+                      situation: key,
+                      value: value as DraftChoice,
+                    })
+                  }
+                />
+              </div>
+            </QuestionSection>
+          )
+        })}
+      </QuestionSections>
     </div>
   )
 }

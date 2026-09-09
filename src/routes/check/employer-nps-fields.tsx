@@ -85,7 +85,7 @@ export function EmployerNpsFields({
               })
             }
           />
-          <div className="grid gap-4">
+          <div id="employerNpsEmployers" className="grid gap-4">
             {draft.employerNpsEmployers.map((employer, index) => (
               <Card
                 role="group"

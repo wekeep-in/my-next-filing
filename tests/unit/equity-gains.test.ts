@@ -425,7 +425,7 @@ test('restores historical Recovery with equity unanswered and preserves legacy c
   }
   const result = parseRecoveryDraft(legacy, TAX_YEAR)
   expect(result).toMatchObject({
-    schemaVersion: 10,
+    schemaVersion: 12,
     draft: {
       hasEquityGains: '',
       equityGainsConfirmed: '',

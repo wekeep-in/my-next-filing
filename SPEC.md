@@ -271,21 +271,37 @@ Another or uncertain registration state, multiple GSTINs, composition, suspensio
 
 ## Questionnaire
 
-The questionnaire uses one group per static nested `/check` route, visible progress, back navigation, preserved answers, and a final review with one Edit action per group. Introduce `1 April 2026 to 31 March 2027` before the shorthand `Tax Year 2026-27` on first use. It asks only facts that change a supported branch, calculation, Coverage result, Review action, or Obligation.
+The questionnaire uses one user-facing group per static nested `/check` route, visible progress, back navigation, preserved answers, and a final review with one Edit action per user-facing group. Fit and Income and profit compose the existing internal validation groups without changing Profile ownership. Introduce `1 April 2026 to 31 March 2027` before the shorthand `Tax Year 2026-27` on first use. It asks only facts that change a supported branch, calculation, Coverage result, Review action, or Obligation.
 
-The groups are:
+The user-facing route groups are:
 
-1. Tax Year, adult/residence/new-regime facts, and one-practice boundary.
-2. Activity choice and explicit income-path confirmation.
-3. Gross receipts, declared profit, and the payment split required by that path.
-4. Domestic, foreign, or mixed clients; direct, platform-mediated, or both kinds of work; and platform and foreign follow-ups only when applicable.
-5. Supported other income and Indian credits.
-6. GST facts and the consolidated annual-return trigger confirmation.
-7. Review.
+1. Fit for this version: personal, practice, work-method and supported-scope facts.
+2. Income and profit: freelance receipts and profit, supported other income, losses and foreign assets.
+3. Domestic, foreign, or mixed clients; direct, platform-mediated, or both kinds of work; and platform and foreign follow-ups only when applicable.
+4. Indian tax credits and advance tax paid, annual-return filing conditions, and GST facts.
+5. Review.
+
+The progress rail presents six steps: Fit for this version, Income and profit, Clients and payments, Taxes and GST, Review your answers, and Your plan. Home remains a separate link before the Tax Year pill and preserves personal answers through the existing entry flow. Your plan remains an action and workspace screen, but stays visible in the rail as the current destination after calculation.
+
+Long groups use animated accordion cards, with one group open at a time and a full-width separator below each open heading. Immediately after the heading text, a warning-colored circled alert shows a tooltip when its rendered questions have missing, invalid, unsupported or unresolved answers; a green circled check appears in the same position when those answers are complete. Derive this feedback from existing validation and Coverage results, including conditional fields. Closing a card preserves its answers, requirements and feedback. Keep confirmation conditions visible whenever their controls are visible.
+
+Client routing questions use an accordion card; applicable platform and foreign-client follow-ups use additional cards. Taxes and GST has separate cards for tax already paid, income-tax filing conditions, and GST registration. A confirmed normal registration adds filing-frequency and exports/LUT cards. The disabled forward button itself reveals its blocking reason on hover, keyboard focus or touch, with no separate info icon. Info-icon tooltips elsewhere have no visible button surface and retain keyboard access and an invisible touch target.
+
+For the business path, fill other receipts from gross receipts minus qualifying receipts once both are valid and qualifying receipts do not exceed the total. Recalculate on either source edit and clear the derived amount if a source becomes invalid or blank. Preserve a conflicting restored amount for explicit correction; reconciliation remains mandatory. Provide explicit None actions where zero is valid, including a grouped declaration of no current-year equity losses. Blank or uncertain answers never become zero by default. Declared profit, GST aggregate turnover and independently sourced amounts remain separate declarations.
+
+In Taxes and GST, Tax already paid starts with a required Yes / No / Not sure question covering Indian TDS, TCS and advance tax paid. Yes reveals all three amounts, which remain separately required and may explicitly be zero. No sets all three to zero and hides them. Not sure clears those draft amounts and blocks calculation until confirmed; it never means zero. Changing No to Yes clears the inferred zeroes and requires fresh amounts. Keep the annual-return age question conditional on confirmed relevant credits. A later Plan payment update must change a previous No to Yes when a positive advance-tax payment is recorded.
+
+Income amounts, losses and asset declarations belong to Income and profit. The four-card income-scope exclusion check belongs in Fit for this version, before money questions. Tax credits, advance-tax payments, the conditional credit-trigger age band and the other annual-return trigger belong to Taxes and GST. Keep the existing Profile and Draft schemas and internal validation identities. Validation, resume selection, review summaries and correction links follow the current field location; moving a field never clears an answer or changes a calculation.
+
+Recovery version 11 adds this choice. Migrate version 10 without losing entered amounts: a known positive credit/payment establishes Yes; three confirmed zeroes establish No; incomplete entries with no established positive amount leave the question unanswered and preserve existing entries until it is answered. Reject mixed schemas and hidden amounts that contradict No or Not sure. Saved-workspace Profiles keep their existing schema and numeric amounts; derive the choice from those validated amounts when editing.
+
+Recovery version 12 adds the four Fit scope answers. Migrate version 11 by deriving Yes from retained unsupported facts, No from an explicit empty scope, and Not sure from the legacy global uncertainty. Preserve the original facts until the user changes a scope answer. Reject mixed schemas and hidden answer objects.
+
+Reuse the whole-practice confirmation that all work occurs in India, and that no foreign operation exists, in the foreign-client branch. Show their origin instead of asking twice. Preserve conflicting restored branch declarations for explicit correction. Editing a shared fact invalidates or updates its dependent answer and reruns the existing screening. Other client confirmations retain their separate scope.
 
 Every uncertainty that can stop or reduce Coverage offers "Not sure". The interface explains uncommon legal confirmations. It does not infer a favorable answer to save a click.
 
-Show the other-tax-situation exclusions as four stacked cards: Other income, Salary and investments, Overseas income and assets, and Business and tax requirements. Keep all cards visible. Only the checkboxes change selections; their text remains an accessible name without toggling on click. Place extra explanations in the shared info tooltip beside each label. Use one unselected-by-default pair of None of these apply and I'm not sure after all four cards. Either alternative clears the selected situations; selecting a situation clears the alternative. Preserve restored answers and show the legacy combined dividend/gift choice only while selected. Retain normal validation, immediate scope warnings and forward-navigation blocking.
+Show the other-tax-situation exclusions in Fit for this version as four ordinary accordion cards: Other income, Salary and investments, Overseas income and tax, and Business and tax requirements. Each card contains one Yes / No / Not sure question. Remove the partial-support options handled by the dedicated Income and profit cards; retain their legacy facts only for migration and review. Do not add a second global scope question. Preserve restored answers and retain normal validation, immediate scope warnings and forward-navigation blocking.
 
 Keep salary, registration-history and LUT conditions visible as short checklists. Use the shared Learn more modal for definitions, record checks, salary examples, GST filing frequency, export routes and QRMP payment reviews. The filing-frequency introduction stays directly below its section heading, with a 16px gap; quarter fields follow it. Short export options must preserve the distinction between LUT without IGST and IGST payment on narrow screens.
 
@@ -558,14 +574,14 @@ Stale core Rules preserve saved data, replace the main card with `Plan unavailab
 Keep these routes:
 
 - `/` for the generic landing and optional share action;
-- `/check` as the questionnaire index, with static children `/check/tax-year`, `/check/activity`, `/check/receipts`, `/check/clients`, `/check/other-income`, `/check/gst`, and `/check/review`;
+- `/check` as the questionnaire index, with static children `/check/fit`, `/check/income`, `/check/clients`, `/check/taxes-and-gst`, and `/check/review`; the former internal paths redirect to their corresponding user-facing route;
 - `/plan` for a transient result or restored workspace;
 - `/resources` for independent public browsing of the reviewed source collection; and
 - the existing not-found route.
 
 Only the questionnaire-group identity enters its path. Selected Tax Year, Profile values, amounts, Evaluation state, Completion state, Recovery state, and save state remain in memory or their exact browser-storage values. They do not enter routes, queries, fragments, titles, logs, clipboard content, Analytics, or external links.
 
-The first incomplete group limits forward access, while Review requires all six answer groups to validate. Bare `/check` redirects to the first incomplete group, Review, or a complete session's Plan. Unknown `/check/*` paths remain not-found. Continue and sidebar moves push browser history; index and access corrections plus the interface Back control replace the current entry.
+The first incomplete user-facing group limits forward access, while Review requires all internal answer groups to validate. Bare `/check` redirects to the first incomplete group, Review, or a complete session's Plan. Unknown `/check/*` paths remain not-found. Continue and sidebar moves push browser history; index and access corrections plus the interface Back control replace the current entry.
 
 Preserve the current visual language: Fraunces headings, Inter body text, warm neutral ground, dark ink, green accent, compact rounded cards, one primary action, and chronological information. Follow `DESIGN.md`; use its semantic Tailwind tokens and the source-owned shadcn components backed by Base UI where applicable. Generated defaults must be curated to this visual language before use.
 

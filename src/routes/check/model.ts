@@ -13,7 +13,16 @@ import type {
 import { gstQuarterPeriods, parseProfile, screenProfile } from '@/evaluation'
 import { TAX_YEAR, currentRules } from '@/rules'
 
-type DraftChoice = '' | TriState
+export type DraftChoice = '' | TriState
+export type UnsupportedSituationKey =
+  | 'otherIncome'
+  | 'salaryInvestments'
+  | 'overseasIncomeTax'
+  | 'businessTax'
+export type UnsupportedSituationAnswers = Record<
+  UnsupportedSituationKey,
+  DraftChoice
+>
 export type DraftPath = '' | 'specified-profession' | 'eligible-business'
 export type DraftClientKind = '' | 'domestic' | 'foreign' | 'mixed' | 'not-sure'
 export type DraftDelivery = '' | 'direct' | 'platform' | 'both' | 'not-sure'
@@ -94,6 +103,7 @@ export type Draft = {
   readonly foreignTreatyRelief: DraftChoice
   readonly foreignReceiptsResolved: DraftChoice
   readonly foreignCurrencyResolved: DraftChoice
+  readonly hasTaxPaid: DraftChoice
   readonly hasSalary: DraftChoice
   readonly salaryConfirmed: DraftChoice
   readonly hasEmployerNps: DraftChoice
@@ -121,6 +131,7 @@ export type Draft = {
   readonly ageSixtyOrOlder: DraftChoice
   readonly otherAnnualReturnTrigger: DraftChoice
   readonly unsupportedCertainty: '' | 'none' | 'selected' | 'not-sure'
+  readonly unsupportedSituationAnswers: UnsupportedSituationAnswers
   readonly unsupportedFacts: readonly UnsupportedFact[]
   readonly gstKind: DraftGstKind
   readonly gstStatus: DraftGstStatus
@@ -171,6 +182,115 @@ export const additionalIncomeFields = [
 }[]
 export const additionalIncomeKeys = additionalIncomeFields.map(({ key }) => key)
 
+export const unsupportedSituationGroups = [
+  {
+    key: 'otherIncome',
+    title: 'Other income',
+    question: 'Do you have other income outside the supported income cards?',
+    help: 'Choose Yes for gifts, crypto, lottery or gaming income, agricultural income, royalty or licensing income, or property or capital income outside the supported cards.',
+    fact: 'unsupportedOtherIncome',
+    legacyFacts: [
+      'houseProperty',
+      'gifts',
+      'capitalGains',
+      'cryptoLotteryGaming',
+      'agriculturalIncome',
+      'royaltyOrLicensing',
+    ],
+  },
+  {
+    key: 'salaryInvestments',
+    title: 'Salary and investments',
+    question:
+      'Do you have salary or investment income outside the supported cards?',
+    help: 'Choose Yes for foreign salary, unsupported dividends or distributions, or another salary or investment case outside the supported cards.',
+    fact: 'unsupportedSalaryInvestments',
+    legacyFacts: ['salary', 'unsupportedDividends', 'dividendsOrGifts'],
+  },
+  {
+    key: 'overseasIncomeTax',
+    title: 'Overseas income and tax',
+    question:
+      'Do you have overseas income or foreign tax outside the supported freelance receipts?',
+    help: 'Choose Yes for unrelated foreign income, foreign tax or treaty relief, or another overseas income case outside the supported freelance receipts.',
+    fact: 'unsupportedOverseasIncomeOrTax',
+    legacyFacts: [
+      'unrelatedForeignIncome',
+      'foreignAssets',
+      'foreignTaxOrRelief',
+    ],
+  },
+  {
+    key: 'businessTax',
+    title: 'Business and tax requirements',
+    question:
+      'Do you have another business or tax requirement outside the supported path?',
+    help: 'Choose Yes for another business, employees or TDS duties, goods sales, agency or commission income, unsupported deductions or losses, disputed credits, an audit requirement, surcharge outside the supported band, or another unlisted situation.',
+    fact: 'unsupportedBusinessOrTax',
+    legacyFacts: [
+      'anotherBusinessOrProfession',
+      'employeesOrDeductorDuties',
+      'goodsSales',
+      'agencyCommissionBrokerage',
+      'deductionsLossesOrSpecialRate',
+      'disputedCredit',
+      'auditRequirement',
+      'surchargeCase',
+      'otherUnsupportedFacts',
+    ],
+  },
+] as const satisfies readonly {
+  readonly key: UnsupportedSituationKey
+  readonly title: string
+  readonly question: string
+  readonly help: string
+  readonly fact: UnsupportedFact
+  readonly legacyFacts: readonly UnsupportedFact[]
+}[]
+
+export const unsupportedSituationKeys = unsupportedSituationGroups.map(
+  ({ key }) => key,
+)
+
+export function unsupportedSituationAnswersFromFacts(
+  facts: readonly UnsupportedFact[],
+): UnsupportedSituationAnswers {
+  const uncertain = facts.includes('unsupportedFactsNotSure')
+  return Object.fromEntries(
+    unsupportedSituationGroups.map(({ key, fact, legacyFacts }) => [
+      key,
+      uncertain
+        ? 'not-sure'
+        : facts.includes(fact) ||
+            legacyFacts.some((legacy) => facts.includes(legacy))
+          ? 'yes'
+          : 'no',
+    ]),
+  ) as UnsupportedSituationAnswers
+}
+
+export function unsupportedFactsFromSituationAnswers(
+  answers: UnsupportedSituationAnswers,
+): readonly UnsupportedFact[] {
+  const values = Object.values(answers)
+  if (values.some((value) => value === 'not-sure'))
+    return ['unsupportedFactsNotSure']
+  return unsupportedSituationGroups.flatMap(({ key, fact }) =>
+    answers[key] === 'yes' ? [fact] : [],
+  )
+}
+
+export function unsupportedCertaintyFromSituationAnswers(
+  answers: UnsupportedSituationAnswers,
+): Draft['unsupportedCertainty'] {
+  const values = Object.values(answers)
+  if (values.some((value) => value === '')) return ''
+  if (values.some((value) => value === 'not-sure')) return 'not-sure'
+  return values.some((value) => value === 'yes') ? 'selected' : 'none'
+}
+
+export const taxPaidKeys = ['tds', 'tcs', 'advanceTaxPaid'] as const
+
 export const amountKeys: readonly DraftAmountKey[] = [
   'grossReceipts',
   'cashReceipts',
@@ -187,6 +307,17 @@ export const amountKeys: readonly DraftAmountKey[] = [
   ...equityGainKeys,
   ...rentalIncomeKeys,
 ]
+
+export function remainingBusinessReceipts(draft: Draft): string {
+  const gross = parseMoney(draft.amounts.grossReceipts)
+  const qualifying = parseMoney(draft.amounts.qualifyingReceipts)
+  return isBusinessPath(draft) &&
+    'value' in gross &&
+    'value' in qualifying &&
+    qualifying.value <= gross.value
+    ? (gross.value - qualifying.value).toLocaleString('en-IN')
+    : ''
+}
 
 export const statesAndUnionTerritories = [
   'Andaman and Nicobar Islands',
@@ -305,6 +436,13 @@ export const unsupportedFactLabels: Record<UnsupportedFact, string> = {
   royaltyOrLicensing: 'Royalty or licensing income',
   otherUnsupportedFacts: 'Another income or tax situation not listed here',
   unsupportedFactsNotSure: 'Not sure whether any situation applies',
+  unsupportedOtherIncome: 'Other income outside the supported branches',
+  unsupportedSalaryInvestments:
+    'Salary or investment income outside the supported branches',
+  unsupportedOverseasIncomeOrTax:
+    'Overseas income or foreign tax outside the supported branches',
+  unsupportedBusinessOrTax:
+    'Business or tax requirements outside the supported branches',
 }
 
 const blankAmounts = (): Record<DraftAmountKey, string> =>
@@ -381,6 +519,7 @@ export const blankDraft = (): Draft => ({
   foreignTreatyRelief: '',
   foreignReceiptsResolved: '',
   foreignCurrencyResolved: '',
+  hasTaxPaid: '',
   hasSalary: '',
   salaryConfirmed: '',
   hasEmployerNps: '',
@@ -401,6 +540,12 @@ export const blankDraft = (): Draft => ({
   ageSixtyOrOlder: '',
   otherAnnualReturnTrigger: '',
   unsupportedCertainty: '',
+  unsupportedSituationAnswers: {
+    otherIncome: '',
+    salaryInvestments: '',
+    overseasIncomeTax: '',
+    businessTax: '',
+  },
   unsupportedFacts: [],
   gstKind: '',
   gstStatus: '',
@@ -448,6 +593,9 @@ export function draftFromProfile(profile: Profile): Draft {
       profile.gst.aggregateTurnover.toLocaleString('en-IN')
   const draft: Draft = {
     ...blankDraft(),
+    hasTaxPaid: taxPaidKeys.every((key) => profile.otherIncome[key] === 0)
+      ? 'no'
+      : 'yes',
     personKind: profile.person.kind,
     adult: choice(profile.person.adult),
     residence: profile.person.residence,
@@ -598,6 +746,9 @@ export function draftFromProfile(profile: Profile): Draft {
     otherAnnualReturnTrigger: choice(
       profile.otherIncome.otherAnnualReturnTrigger,
     ),
+    unsupportedSituationAnswers: unsupportedSituationAnswersFromFacts(
+      profile.unsupportedFacts,
+    ),
     unsupportedCertainty: profile.unsupportedFacts.includes(
       'unsupportedFactsNotSure',
     )
@@ -734,6 +885,7 @@ function requiredAmount(
 }
 
 export function creditTriggerMayApply(draft: Draft) {
+  if (draft.hasTaxPaid !== 'yes') return false
   const tds = parseMoney(draft.amounts.tds)
   const tcs = parseMoney(draft.amounts.tcs)
   return 'value' in tds && 'value' in tcs && tds.value + tcs.value >= 25_000
@@ -987,7 +1139,15 @@ function candidateFromDraft(draft: Draft) {
     unsupportedFacts:
       draft.unsupportedCertainty === 'not-sure'
         ? ['unsupportedFactsNotSure']
-        : draft.unsupportedFacts,
+        : Object.values(draft.unsupportedSituationAnswers).every(Boolean)
+          ? unsupportedFactsFromSituationAnswers(
+              draft.unsupportedSituationAnswers,
+            ).length || !draft.unsupportedFacts.length
+            ? unsupportedFactsFromSituationAnswers(
+                draft.unsupportedSituationAnswers,
+              )
+            : draft.unsupportedFacts
+          : draft.unsupportedFacts,
   }
   for (const key of requiredKeys) {
     const parsed = parseMoney(draft.amounts[key])
@@ -1003,21 +1163,84 @@ export const questionnaireGroups = [
   { id: 'tax-year', label: 'You and your practice' },
   { id: 'activity', label: 'Your work and tax method' },
   { id: 'receipts', label: 'Receipts and profit' },
+  { id: 'other-income', label: 'Other income' },
   { id: 'clients', label: 'Clients and payments' },
-  { id: 'other-income', label: 'Other income and tax paid' },
-  { id: 'gst', label: 'GST registration and filings' },
+  { id: 'gst', label: 'Taxes and GST' },
   { id: 'review', label: 'Review your answers' },
 ] as const satisfies readonly {
   readonly id: ProfileGroup
   readonly label: string
 }[]
 
-export function questionnaireGroupFromPath(path: string): ProfileGroup | null {
-  const canonical = path.replace(/\/$/, '')
+export type QuestionnaireRoute =
+  | 'fit'
+  | 'income'
+  | 'clients'
+  | 'taxes-and-gst'
+  | 'review'
+
+export const questionnaireRoutes = [
+  {
+    id: 'fit',
+    label: 'Fit for this version',
+    groups: ['tax-year', 'activity'],
+  },
+  {
+    id: 'income',
+    label: 'Income and profit',
+    groups: ['receipts', 'other-income'],
+  },
+  { id: 'clients', label: 'Clients and payments', groups: ['clients'] },
+  { id: 'taxes-and-gst', label: 'Taxes and GST', groups: ['gst'] },
+  { id: 'review', label: 'Review your answers', groups: ['review'] },
+] as const satisfies readonly {
+  readonly id: QuestionnaireRoute
+  readonly label: string
+  readonly groups: readonly ProfileGroup[]
+}[]
+
+const legacyQuestionnaireRoutes: Readonly<Record<string, QuestionnaireRoute>> =
+  {
+    'tax-year': 'fit',
+    activity: 'fit',
+    receipts: 'income',
+    'other-income': 'income',
+    gst: 'taxes-and-gst',
+  }
+
+export function questionnaireRouteForGroup(
+  group: ProfileGroup,
+): QuestionnaireRoute {
   return (
-    questionnaireGroups.find(({ id }) => canonical === `/check/${id}`)?.id ??
+    questionnaireRoutes.find(({ groups }) =>
+      (groups as readonly ProfileGroup[]).includes(group),
+    )?.id ?? 'review'
+  )
+}
+
+export function questionnaireRouteStep(route: QuestionnaireRoute) {
+  return questionnaireRoutes.findIndex(({ id }) => id === route)
+}
+
+export function questionnaireRouteFromPath(
+  path: string,
+): QuestionnaireRoute | null {
+  const canonical = path.replace(/\/$/, '').replace(/^\/check\//, '')
+  return (
+    questionnaireRoutes.find(({ id }) => id === canonical)?.id ??
+    legacyQuestionnaireRoutes[canonical] ??
     null
   )
+}
+
+export function questionnaireGroupFromPath(path: string): ProfileGroup | null {
+  const canonical = path.replace(/\/$/, '')
+  const legacyGroup =
+    questionnaireGroups.find(({ id }) => canonical === `/check/${id}`)?.id ??
+    null
+  if (legacyGroup) return legacyGroup
+  const route = questionnaireRouteFromPath(path)
+  return questionnaireRoutes.find(({ id }) => id === route)?.groups[0] ?? null
 }
 
 export function groupStep(group: ProfileGroup) {
@@ -1043,9 +1266,13 @@ export const isBlankDraft = (draft: Draft) =>
   Object.entries(draft).every(([key, value]) =>
     key === 'amounts'
       ? Object.values(draft.amounts).every((amount) => amount === '')
-      : Array.isArray(value)
-        ? value.length === 0
-        : value === '',
+      : key === 'unsupportedSituationAnswers'
+        ? Object.values(value as UnsupportedSituationAnswers).every(
+            (answer) => answer === '',
+          )
+        : Array.isArray(value)
+          ? value.length === 0
+          : value === '',
   )
 
 export function firstIncompleteGroup(
@@ -1088,13 +1315,13 @@ export function completeDraft(
         valid: false,
         errors: parsed.errors.map((error) => ({
           field: profileErrorKey(error),
-          group: error.group,
+          group: questionnaireGroups[errorStep(profileErrorKey(error))].id,
           message: error.message,
         })),
       }
 }
 
-function errorStep(key: string) {
+export function errorStep(key: string) {
   if (key === 'platformRcmLiabilityDate') return groupStep('gst')
   if (key.startsWith('broughtForward') || key === 'hasBroughtForwardLosses')
     return groupStep('other-income')
@@ -1163,15 +1390,14 @@ function errorStep(key: string) {
       ...additionalIncomeKeys,
       'salaryConfirmed',
       'grossSalary',
-      'tds',
-      'tcs',
-      'advanceTaxPaid',
-      'ageSixtyOrOlder',
-      'otherAnnualReturnTrigger',
-      'unsupportedCertainty',
     ].includes(key)
   )
     return groupStep('other-income')
+  if (
+    key === 'unsupportedCertainty' ||
+    key.startsWith('unsupportedSituationAnswers-')
+  )
+    return groupStep('tax-year')
   return groupStep('gst')
 }
 
@@ -1510,18 +1736,36 @@ function validateDraftGroup(
         })
       }
     }
-    for (const key of amountKeys.slice(5, 9))
-      requiredAmount(nextErrors, draft, key)
+    requiredAmount(nextErrors, draft, 'taxableBankInterest')
+  }
+  if (group === 'tax-year')
+    for (const key of unsupportedSituationKeys)
+      if (!draft.unsupportedSituationAnswers[key])
+        nextErrors[`unsupportedSituationAnswers-${key}`] =
+          'Choose Yes, No, or Not sure for each situation group.'
+  if (group === 'gst') {
+    if (!draft.hasTaxPaid)
+      nextErrors.hasTaxPaid =
+        'Choose whether you have Indian tax credits or advance tax payments to include.'
+    else if (draft.hasTaxPaid === 'not-sure')
+      nextErrors.hasTaxPaid =
+        'Confirm your Indian tax credits and advance tax payments from your records before calculating.'
+    else if (draft.hasTaxPaid === 'yes')
+      for (const key of taxPaidKeys) requiredAmount(nextErrors, draft, key)
+    else if (
+      taxPaidKeys.some((key) => {
+        const amount = parseMoney(draft.amounts[key])
+        return !('value' in amount) || amount.value !== 0
+      })
+    )
+      nextErrors.hasTaxPaid =
+        'Choose Yes to include tax credits or payments, or confirm that you have none.'
     if (creditTriggerMayApply(draft) && !draft.ageSixtyOrOlder)
       nextErrors.ageSixtyOrOlder = 'Choose an age band for the return trigger.'
     if (!draft.otherAnnualReturnTrigger)
       nextErrors.otherAnnualReturnTrigger =
         'Choose whether another income-tax return trigger applies.'
-    if (!draft.unsupportedCertainty)
-      nextErrors.unsupportedCertainty =
-        "Select any situations that apply, or choose None of these apply or I'm not sure."
-  }
-  if (group === 'gst') {
+
     if (
       draft.platformRcmLiabilityDate &&
       (draft.platformRcmLiabilityDate < currentRules.effectiveStart ||
@@ -1598,9 +1842,17 @@ function draftFeedback(draft: Draft, latestDate: string) {
     currentRules,
   )
   const hasAnswer = (field: string) =>
-    amountKeys.includes(field as DraftAmountKey)
-      ? 'value' in parseMoney(draft.amounts[field as DraftAmountKey])
-      : Boolean(draft[field as keyof Draft])
+    field.startsWith('unsupportedSituationAnswers-')
+      ? Boolean(
+          draft.unsupportedSituationAnswers[
+            field.slice(
+              'unsupportedSituationAnswers-'.length,
+            ) as UnsupportedSituationKey
+          ],
+        )
+      : amountKeys.includes(field as DraftAmountKey)
+        ? 'value' in parseMoney(draft.amounts[field as DraftAmountKey])
+        : Boolean(draft[field as keyof Draft])
   const receipts = isBusinessPath(draft)
     ? ['path', 'pathConfirmed', ...amountKeys.slice(0, 5)]
     : ['path', 'pathConfirmed', ...amountKeys.slice(0, 3)]
@@ -1698,7 +1950,19 @@ function draftFeedback(draft: Draft, latestDate: string) {
       fact.code === 'foreign-operation' && fact.correctionGroup === 'clients'
         ? ['foreignOperation']
         : (dependencies[fact.code] ??
-          (fact.correctionGroup === 'review' ? ['unsupportedCertainty'] : []))
+          (fact.correctionGroup === 'review'
+            ? unsupportedSituationGroups.some(
+                ({ fact: groupFact }) => groupFact === fact.code,
+              )
+              ? [
+                  `unsupportedSituationAnswers-${
+                    unsupportedSituationGroups.find(
+                      ({ fact: groupFact }) => groupFact === fact.code,
+                    )!.key
+                  }`,
+                ]
+              : ['unsupportedCertainty']
+            : []))
     if (!fields.length || !fields.every(hasAnswer)) continue
     let field = fields[0]
     if (fact.correctionGroup === 'receipts')
@@ -1762,7 +2026,13 @@ function draftFeedback(draft: Draft, latestDate: string) {
       !['grossReceipts', 'qualifyingReceipts', 'otherReceipts'].every(hasAnswer)
     )
       return []
-    return [{ field, group: error.group, message: error.message }]
+    return [
+      {
+        field,
+        group: questionnaireGroups[errorStep(field)].id,
+        message: error.message,
+      },
+    ]
   })
   const coverage: DraftError[] = []
   for (const notice of screening.coverage) {
@@ -1934,6 +2204,10 @@ export function assessQuestionnaire(
   }
   return {
     errors,
+    sectionIssues: fieldMessages([
+      ...current.blocking,
+      ...feedback.coverage.filter((item) => item.group === group),
+    ]),
     warnings: fieldMessages(feedback.warnings),
     coverage: fieldMessages(feedback.coverage),
     stale: feedback.stale,
@@ -1941,6 +2215,86 @@ export function assessQuestionnaire(
     redirectGroup: accessible ? null : (blocked?.id ?? null),
     resumeGroup:
       groups.find(({ required }) => required.length > 0)?.id ?? 'review',
+    progression,
+  }
+}
+
+export function assessQuestionnaireRoute(
+  session: {
+    readonly draft: Draft
+    readonly validationGroup?: ProfileGroup | null
+  },
+  route: QuestionnaireRoute,
+  latestDate: string,
+  touched: ReadonlySet<string> = new Set(),
+) {
+  type Assessment = ReturnType<typeof assessQuestionnaire>
+  const progressionIssue = (assessment: Assessment) =>
+    assessment.progression.kind === 'blocked'
+      ? assessment.progression.issue
+      : null
+  const assessments = questionnaireGroups.map(
+    ({ id }) =>
+      [id, assessQuestionnaire(session, id, latestDate, touched)] as const,
+  )
+  const byGroup = new Map(assessments)
+  const blocked = assessments.find(
+    ([id, assessment]) =>
+      id !== 'review' &&
+      (assessment.redirectGroup === id ||
+        progressionIssue(assessment)?.group === id),
+  )?.[0]
+  const blockedRoute = blocked ? questionnaireRouteForGroup(blocked) : null
+  const currentGroups = questionnaireRoutes.find(
+    ({ id }) => id === route,
+  )!.groups
+  const currentAssessments = currentGroups.map((group) => byGroup.get(group)!)
+  const currentIssue = currentAssessments
+    .map(progressionIssue)
+    .find((issue): issue is DraftError => Boolean(issue))
+  const accessible =
+    !blockedRoute ||
+    questionnaireRouteStep(route) <= questionnaireRouteStep(blockedRoute)
+  const reference = currentAssessments.at(-1)!
+  const availableGroups = questionnaireRoutes
+    .filter(
+      ({ id }) =>
+        !blockedRoute ||
+        questionnaireRouteStep(id) <= questionnaireRouteStep(blockedRoute),
+    )
+    .map(({ id }) => id)
+  const errors: Record<string, string> = {}
+  const sectionIssues: Record<string, string> = {}
+  for (const assessment of currentAssessments) {
+    Object.assign(errors, assessment.errors)
+    Object.assign(sectionIssues, assessment.sectionIssues)
+  }
+  let progression:
+    | { readonly kind: 'blocked'; readonly issue: DraftError | null }
+    | { readonly kind: 'next'; readonly group: QuestionnaireRoute }
+    | { readonly kind: 'complete' } = {
+    kind: 'blocked',
+    issue: currentIssue ?? (accessible ? null : progressionIssue(reference)),
+  }
+  if (accessible && !currentIssue && !reference.stale) {
+    if (route !== 'review') {
+      progression = {
+        kind: 'next',
+        group: questionnaireRoutes[questionnaireRouteStep(route) + 1].id,
+      }
+    } else if (reference.progression.kind === 'complete') {
+      progression = { kind: 'complete' }
+    }
+  }
+  return {
+    errors,
+    sectionIssues,
+    warnings: reference.warnings,
+    coverage: reference.coverage,
+    stale: reference.stale,
+    availableGroups,
+    redirectGroup: accessible || !blockedRoute ? null : blockedRoute,
+    resumeGroup: questionnaireRouteForGroup(reference.resumeGroup),
     progression,
   }
 }
