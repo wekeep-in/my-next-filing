@@ -622,19 +622,36 @@ function LegacyQuestionnaireRedirect({ route }: { readonly route: string }) {
   )
 }
 
+const loadingScreen = (
+  <main className="app-loading">
+    <div role="status" aria-label="Loading My Next Filing">
+      <LoaderIcon
+        className="size-8 animate-spin text-muted-foreground motion-reduce:animate-none"
+        aria-hidden="true"
+      />
+    </div>
+  </main>
+)
+
 export const router = createBrowserRouter([
   {
-    element: <AppFrame />,
-    hydrateFallbackElement: (
-      <main className="app-loading">
-        <div role="status" aria-label="Loading My Next Filing">
-          <LoaderIcon
-            className="size-8 animate-spin text-muted-foreground motion-reduce:animate-none"
-            aria-hidden="true"
-          />
-        </div>
-      </main>
+    path: '/pitch',
+    caseSensitive: true,
+    hydrateFallbackElement: loadingScreen,
+    lazy: async () => ({
+      Component: (await import('@/routes/pitch')).PitchRoute,
+    }),
+    errorElement: (
+      <section className="reference-page" role="alert">
+        <h1>The pitch couldn't load</h1>
+        <p>Reload this page to try again.</p>
+        <Link to="/">Open My Next Filing</Link>
+      </section>
     ),
+  },
+  {
+    element: <AppFrame />,
+    hydrateFallbackElement: loadingScreen,
     children: [
       {
         index: true,

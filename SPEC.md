@@ -22,6 +22,12 @@ Statutory values in this specification come from the planning research dated 2 S
 
 ## Product outcome
 
+### Stage presentation
+
+The public `/pitch` route presents a 13-slide product and Codex build story with concise statement slides, standalone video slides and a rehearsal script kept only in `.scratch/stage-pitch/content.md`, outside the published site. It is separate from the filing journey and must not restore, read or modify Profile, Saved workspace or Recovery data. All demonstrated amounts belong to a fictional recorded example. The presenter controls slide advancement and fullscreen; silent chapters hold at their end. Reduced motion opens still frames with explicit playback. The presentation does not add a filing, payment, feedback-submission or government-integration capability. See [stage pitch](docs/pitch.md) for presentation controls and local playback workflow.
+
+### Filing journey
+
 My Next Filing gives a resident-individual Solo freelancer one clear view of supported Indian tax obligations. The user declares a narrow Profile. The Application evaluates that Profile locally against typed and expiry-bound Rules, shows the next supported action, and can save the Profile and user-declared Completion records in the current browser after explicit consent.
 
 The primary outcome is simple: a returning user can identify what remains without completing the questionnaire again.

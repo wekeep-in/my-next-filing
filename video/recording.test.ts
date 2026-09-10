@@ -324,3 +324,41 @@ test('the narration pauses keep every step, captions, and music duration aligned
   assert.ok(captions.includes('cue-19\n00:01:08.840 --> 00:01:12.620'))
   assert.ok(captions.includes('00:02:06.900 --> 00:02:09.360'))
 })
+
+test('pitch edits remove idle footage while preserving cursor movement and click frames', async () => {
+  const { compactTimeline } = await import('./pitch-media.ts')
+  const clip = {
+    id: 'synthetic',
+    title: 'Synthetic capture',
+    frames: 180,
+    video: '/pitch/synthetic.mp4',
+    poster: '/pitch/synthetic.jpg',
+    cursor: [
+      { at: 0, x: 0, y: 0, click: false },
+      { at: 120, x: 0, y: 0, click: false },
+      { at: 130, x: 50, y: 60, click: true },
+      { at: 179, x: 50, y: 60, click: false },
+    ],
+  }
+  const edit = compactTimeline(clip, [[0, 180]])
+  assert.equal(edit.frames, 59)
+  assert.deepEqual(edit.ranges, [
+    [0, 6],
+    [114, 161],
+    [174, 180],
+  ])
+  assert.deepEqual(
+    edit.cursor.filter((p) => p.click),
+    [{ at: 22, x: 50, y: 60, click: true }],
+  )
+  assert.deepEqual(cursorAt(edit.cursor, edit.frames - 1).position, {
+    at: 58,
+    x: 50,
+    y: 60,
+    click: false,
+  })
+  assert.equal(
+    compactTimeline({ ...clip, cursor: [clip.cursor[0]] }, [[0, 180]]).frames,
+    12,
+  )
+})

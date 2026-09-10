@@ -18,7 +18,10 @@ export function ScrollArea({
       >
         <ScrollAreaPrimitive.Content>{children}</ScrollAreaPrimitive.Content>
       </ScrollAreaPrimitive.Viewport>
-      <ScrollAreaPrimitive.Scrollbar className="m-1 flex w-2 justify-center rounded-full bg-transparent opacity-0 transition-opacity duration-150 data-scrolling:opacity-100 motion-reduce:transition-none">
+      <ScrollAreaPrimitive.Scrollbar
+        data-slot="scroll-area-scrollbar"
+        className="m-1 flex w-2 justify-center rounded-full bg-transparent opacity-0 transition-opacity duration-150 data-scrolling:opacity-100 motion-reduce:transition-none"
+      >
         <ScrollAreaPrimitive.Thumb className="w-1.5 rounded-full bg-muted-foreground/40" />
       </ScrollAreaPrimitive.Scrollbar>
     </ScrollAreaPrimitive.Root>
