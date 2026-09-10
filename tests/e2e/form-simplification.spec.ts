@@ -29,9 +29,11 @@ for (const width of [1440, 1024, 390, 320]) {
     await page.keyboard.press('Enter')
     await expect(page.locator('#onePractice')).toBeVisible()
     await expect(page.locator('#personKind')).toBeHidden()
-    const next = page.getByRole('button', { name: 'Continue', exact: true })
+    const next = page.getByRole('button', { name: 'Next', exact: true })
     await expect(next).toBeDisabled()
-    const help = page.locator('[aria-label="Why Continue is unavailable help"]')
+    const help = page.locator(
+      '[aria-label="Why the next step is unavailable help"]',
+    )
     expect(
       await help.evaluate(
         (button) =>
@@ -61,7 +63,7 @@ for (const width of [1440, 1024, 390, 320]) {
       .getByRole('radio', { name: 'Yes', exact: true })
       .click()
     await expect(
-      page.getByRole('button', { name: 'Continue', exact: true }),
+      page.getByRole('button', { name: 'Next', exact: true }),
     ).toBeDisabled()
     await page.evaluate(() => document.fonts.ready)
     expect(
@@ -108,27 +110,27 @@ test('business receipts derive safely and explicit none actions survive reload',
     .locator('#fiveYearExclusion')
     .getByRole('radio', { name: 'None / does not apply', exact: true })
     .click()
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
   await page.locator('#grossReceipts').fill('100000')
   await page.locator('#qualifyingReceipts').fill('75000')
   await expect(page.locator('#otherReceipts')).toHaveValue('25,000')
   await expect(page.locator('#otherReceipts')).toHaveAttribute('readonly', '')
   await page
     .getByRole('button', {
-      name: 'No cash receipts, non-account-payee cheques or drafts',
+      name: 'Use 0: No cash receipts, non-account-payee cheques or drafts',
     })
     .click()
   await page.locator('#declaredProfit').fill('10000')
   await page.locator('#qualifyingReceipts').fill('100001')
   await expect(
-    page.getByRole('button', { name: 'Continue', exact: true }),
+    page.getByRole('button', { name: 'Next', exact: true }),
   ).toBeDisabled()
   await expect(page.locator('#otherReceipts')).toHaveValue('')
   await page.locator('#qualifyingReceipts').fill('75000')
   await page.reload()
   await expect(page.locator('#otherReceipts')).toHaveValue('25,000')
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
   await (
     await questionField(page, '#hasTaxPaid')
   )
@@ -148,7 +150,7 @@ test('business receipts derive safely and explicit none actions survive reload',
     .click()
   await expect(
     page.getByRole('heading', {
-      name: 'Check your answers before calculating',
+      name: 'Review your answers',
       exact: true,
     }),
   ).toBeVisible()
@@ -157,7 +159,7 @@ test('business receipts derive safely and explicit none actions survive reload',
   ).toHaveCount(0)
   await expect(
     page.getByRole('button', {
-      name: 'Edit your answers for Fit for this version',
+      name: 'Edit your answers for Fit for this app',
       exact: true,
     }),
   ).toBeVisible()
@@ -185,7 +187,7 @@ test('foreign questions appear only for foreign clients and reuse whole-practice
   await expect(page.locator('#foreign-clients')).toHaveCount(0)
   await page
     .locator('#clientKind')
-    .getByRole('radio', { name: 'Foreign clients only', exact: true })
+    .getByRole('radio', { name: 'Clients outside India only', exact: true })
     .click()
   await expect(page.locator('#foreign-clients')).toBeVisible()
   await questionField(page, '#foreignRecipientIdentifiable')
@@ -200,11 +202,11 @@ test('foreign questions appear only for foreign clients and reuse whole-practice
   await (
     await questionField(page, '#clientKind')
   )
-    .getByRole('radio', { name: 'Domestic clients only', exact: true })
+    .getByRole('radio', { name: 'Clients in India only', exact: true })
     .click()
   await expect(page.locator('#foreign-clients')).toHaveCount(0)
   await expect(
-    page.getByRole('button', { name: 'Continue', exact: true }),
+    page.getByRole('button', { name: 'Next', exact: true }),
   ).toBeEnabled()
 })
 
@@ -215,13 +217,15 @@ test.describe('touch navigation', () => {
     page,
   }) => {
     await page.goto('/check/fit')
-    const help = page.locator('[aria-label="Why Continue is unavailable help"]')
+    const help = page.locator(
+      '[aria-label="Why the next step is unavailable help"]',
+    )
     await help.tap()
     await expect(page.getByRole('tooltip')).toContainText(
       'Choose whether you are an individual',
     )
     await expect(
-      page.getByRole('button', { name: 'Continue', exact: true }),
+      page.getByRole('button', { name: 'Next', exact: true }),
     ).toBeDisabled()
     await help.tap()
     await expect(page.getByRole('tooltip')).toBeHidden()
@@ -255,4 +259,40 @@ test('changing question groups retains zero interest and credits', async ({
     '0',
   )
   await expect(await questionField(page, '#tds')).toHaveValue('0')
+})
+
+test('filing-condition help explains annual limits and returns keyboard focus without changing answers', async ({
+  page,
+}) => {
+  await seedPersonal(page)
+  await page.goto('/check/taxes-and-gst')
+  const field = await questionField(page, '#otherAnnualReturnTrigger')
+  const trigger = field.getByRole('button', {
+    name: 'When might I need to file even with no tax due?',
+    exact: true,
+  })
+  for (const width of [1440, 1024, 320]) {
+    await page.setViewportSize({ width, height: 900 })
+    await trigger.focus()
+    await page.keyboard.press('Enter')
+    const dialog = page.getByRole('dialog')
+    await expect(dialog).toBeVisible()
+    await expect(dialog).toContainText(
+      'more than ₹1 crore across current accounts',
+    )
+    await expect(dialog).toContainText(
+      '₹50 lakh or more across savings bank accounts',
+    )
+    await expect(
+      dialog.getByRole('link', {
+        name: 'Official filing conditions, rule 163, PDF',
+      }),
+    ).toHaveAttribute('href', /^https:\/\/www\.incometaxindia\.gov\.in\//)
+    await page.keyboard.press('Escape')
+    await expect(dialog).toBeHidden()
+    await expect(trigger).toBeFocused()
+    await expect(
+      field.getByRole('radio', { name: 'No', exact: true }),
+    ).toHaveAttribute('aria-checked', 'true')
+  }
 })

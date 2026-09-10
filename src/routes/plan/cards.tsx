@@ -181,8 +181,9 @@ export function TaxSummary({
             annualReturn.value.lossCarryForward ? (
               <>
                 <p>
-                  To claim carry-forward, file a return reporting these losses
-                  by {formatDate(annualReturn.value.dueDate)} and complete the
+                  To use these losses against gains in future years, called
+                  carry-forward, file a return reporting them by{' '}
+                  {formatDate(annualReturn.value.dueDate)} and complete the
                   required return verification. Carry-forward also depends on
                   determination of the loss.
                 </p>
@@ -214,9 +215,10 @@ export function TaxSummary({
         >
           <h3 id="surcharge-title">Surcharge included</h3>
           <p>
-            This estimate includes the first surcharge band for supported
-            taxable income above ₹50 lakh and up to ₹1 crore, after any
-            surcharge marginal relief.
+            Surcharge is extra income tax on higher incomes. This estimate
+            includes it for taxable income above ₹50 lakh and up to ₹1 crore.
+            Marginal relief limits the extra tax just above the ₹50 lakh
+            threshold and is included where it applies.
           </p>
           <p>
             Confirm the applicable return form and higher-income disclosures
@@ -251,7 +253,7 @@ export function TaxSummary({
         <summary>How this estimate was calculated</summary>
         <dl className="calculation-list">
           <div>
-            <dt>Path</dt>
+            <dt>Tax method</dt>
             <dd>
               {tax.path === 'specified-profession'
                 ? 'Specified profession'
@@ -275,11 +277,11 @@ export function TaxSummary({
             </div>
           )}
           <div>
-            <dt>Minimum presumptive income</dt>
+            <dt>Minimum profit under your tax method</dt>
             <dd>{formatMoney(tax.presumptive.minimumIncome)}</dd>
           </div>
           <div>
-            <dt>Presumptive income used</dt>
+            <dt>Freelance profit used in this estimate</dt>
             <dd>{formatMoney(tax.presumptive.usedIncome)}</dd>
           </div>
           <div>
@@ -304,7 +306,7 @@ export function TaxSummary({
                 <dd>{formatMoney(tax.rentalIncome.rentalMunicipalTaxes)}</dd>
               </div>
               <div>
-                <dt>Net annual value</dt>
+                <dt>Rental annual value after municipal taxes</dt>
                 <dd>{formatMoney(tax.rentalIncome.netAnnualValue)}</dd>
               </div>
               <div>
@@ -461,7 +463,7 @@ export function TaxSummary({
           {tax.equityGains && (
             <>
               <div>
-                <dt>Ordinary income for slab tax</dt>
+                <dt>Income taxed at regular rates, excluding equity gains</dt>
                 <dd>{formatMoney(tax.ordinaryIncome)}</dd>
               </div>
               <div>
@@ -499,15 +501,15 @@ export function TaxSummary({
             </>
           )}
           <div>
-            <dt>Slab tax</dt>
+            <dt>Tax at income-band rates</dt>
             <dd>{formatMoney(tax.slabTax)}</dd>
           </div>
           <div>
-            <dt>Rebate</dt>
+            <dt>Rebate, a reduction in income tax</dt>
             <dd>−{formatMoney(tax.rebate)}</dd>
           </div>
           <div>
-            <dt>Marginal relief</dt>
+            <dt>Relief for income just above the rebate limit</dt>
             <dd>−{formatMoney(tax.marginalRelief)}</dd>
           </div>
           {tax.surcharge && (
@@ -537,15 +539,15 @@ export function TaxSummary({
             </>
           )}
           <div>
-            <dt>Health and Education Cess</dt>
+            <dt>Health and Education Cess, an extra 4% tax</dt>
             <dd>{formatMoney(tax.cess)}</dd>
           </div>
           <div>
-            <dt>Indian TDS</dt>
+            <dt>Indian tax deducted by payers, TDS</dt>
             <dd>−{formatMoney(tax.tds)}</dd>
           </div>
           <div>
-            <dt>Indian TCS</dt>
+            <dt>Indian tax collected on transactions, TCS</dt>
             <dd>−{formatMoney(tax.tcs)}</dd>
           </div>
           <div>
@@ -609,9 +611,10 @@ export function GstCard({
         </Badge>
         <h2>GST registration is required for reverse charge</h2>
         <p>
-          You confirmed a platform-fee reverse-charge duty. Registration is
-          required independently of your turnover. The agenda shows an
-          application date only when the liability date is established.
+          You confirmed that you must pay GST directly on platform fees under
+          reverse charge. That requires registration even below the turnover
+          threshold. The plan can show an application deadline once you confirm
+          when that requirement began.
         </p>
         <SourceReferences ids={coverage.sourceIds} />
       </Card>
@@ -643,10 +646,10 @@ export function GstCard({
         : 'Your turnover is above the GST registration threshold'
   const message =
     gst.status === 'below'
-      ? `Your declared GST turnover is ${formatMoney(gst.difference)} below the ${formatMoney(gst.threshold)} starting threshold for ${gst.state}.`
+      ? `Your declared GST turnover is ${formatMoney(gst.difference)} below the ${formatMoney(gst.threshold)} registration threshold for ${gst.state}.`
       : gst.status === 'at'
-        ? `Your declared GST turnover is exactly ${formatMoney(gst.threshold)} for ${gst.state}. Registration begins after the threshold is exceeded.`
-        : `Your declared GST turnover is ${formatMoney(gst.difference)} above the ${formatMoney(gst.threshold)} starting threshold for ${gst.state}.`
+        ? `Your declared GST turnover is exactly ${formatMoney(gst.threshold)} for ${gst.state}. Crossing this amount creates a registration requirement based on turnover; it does not register you automatically.`
+        : `Your declared GST turnover is ${formatMoney(gst.difference)} above the ${formatMoney(gst.threshold)} registration threshold for ${gst.state}.`
   return (
     <Card as="article" className="coverage-card min-w-0" variant="result">
       <Badge variant="outline" className={cardKickerClass}>
@@ -656,8 +659,8 @@ export function GstCard({
       <p>{message}</p>
       {gst.registrationRequired && (
         <p className="coverage-note">
-          Your agenda includes registration only when you provide the date on
-          which liability arose.
+          You need to apply for registration. To show its deadline, the plan
+          needs the date your turnover first exceeded the threshold.
         </p>
       )}
       <SourceReferences ids={coverage.sourceIds} />
@@ -785,10 +788,11 @@ export function AttentionCard({
         <Badge variant="outline" className={cardKickerClass}>
           Next action
         </Badge>
-        <h2>No dated actions in your plan</h2>
+        <h2>No dated actions left in this plan</h2>
         <p>
-          This plan does not show any open filing or payment dates. Check any
-          items below before relying on it.
+          There are no remaining filing or payment dates within the situations
+          this app covers. Review any separate checks below; this does not
+          confirm that all your tax duties are complete.
         </p>
         {actions}
       </Card>

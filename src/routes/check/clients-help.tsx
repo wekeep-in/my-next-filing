@@ -28,7 +28,7 @@ export function PlaceOfSupplyHelp() {
   return (
     <HelpModal
       topic="GST place of supply"
-      title="What am I confirming?"
+      title="What is GST place of supply?"
       description="Place of supply is the location GST assigns to your service. A client's overseas address alone does not confirm which rule applies."
     >
       <p>
@@ -51,10 +51,10 @@ export function PaymentRouteHelp() {
       description="Choose foreign currency when records confirm freely convertible foreign exchange, even if it was converted to rupees before reaching your account."
     >
       <p>
-        The rupee option requires an RBI-permitted rupee receipt route. Ask your
-        bank or payment provider to confirm the route from the remittance
-        records. A rupee bank credit alone is not enough; choose Not sure if
-        unconfirmed.
+        The rupee option requires a receipt route permitted by the Reserve Bank
+        of India, or RBI. Ask your bank or payment provider to confirm the route
+        from the remittance records. A rupee bank credit alone is not enough;
+        choose Not sure if unconfirmed.
       </p>
       <ExternalLink href="https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=12579">
         RBI guidance on receipt routes
@@ -67,17 +67,17 @@ export function ForeignAccountHelp() {
   return (
     <HelpModal
       topic="overseas accounts and balances"
-      title="What should I check?"
+      title="Could this be an overseas account?"
       description="Review your platform terms and payment arrangements for overseas accounts, retained balances or rights to money held abroad."
     >
       <p>
         Signing authority means you can authorise transactions on an account,
         even if it is not yours. Choose Yes or possibly if any listed
-        arrangement applies, or Not sure if unclear. Review this again in the
-        foreign-assets section. Established assets or signing authority can be
-        supported when their income effects are resolved; uncertain
-        classification still needs review. Do not infer account ownership from a
-        provider brand.
+        arrangement applies, or Not sure if unclear. Check that your earlier
+        answers in Income and profit cover this arrangement too. Established
+        assets or signing authority can be supported when their income effects
+        are resolved; uncertain classification still needs review. Do not infer
+        account ownership from a provider brand.
       </p>
       <ExternalLink href="https://www.incometax.gov.in/iec/foportal/nudge/nudge-schedule-fa">
         Official foreign-account guidance
@@ -96,7 +96,7 @@ export function ForeignTaxReliefHelp() {
       <p>
         Check your tax computation or ask your adviser whether you are claiming
         either. Having an overseas client alone does not mean you are. Choose
-        Not sure if unconfirmed; this version cannot handle these relief claims.
+        Not sure if unconfirmed; this app cannot handle these relief claims.
       </p>
       <ExternalLink href="https://www.incometaxindia.gov.in/w/double-taxation-relief">
         Official double-taxation relief guide

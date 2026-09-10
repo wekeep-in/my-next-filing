@@ -36,13 +36,13 @@ test('ordinary income above fifty lakh reaches a complete surcharge breakdown an
   await expect(notice).toHaveCount(0)
   await (await questionField(page, '#declaredProfit')).fill('5100000')
   await expect(
-    page.getByRole('button', { name: 'Continue', exact: true }),
+    page.getByRole('button', { name: 'Next', exact: true }),
   ).toBeEnabled()
   await page.goto('/check/income')
   await (await questionField(page, '#taxableBankInterest')).fill('0')
   await (await questionField(page, '#tds')).fill('0')
   await (await questionField(page, '#aggregateTurnover')).fill('5100000')
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
   await page
     .getByRole('button', { name: 'Calculate my plan', exact: true })
     .click()
@@ -109,7 +109,7 @@ test('ordinary income above fifty lakh reaches a complete surcharge breakdown an
     .click()
   await (await questionField(page, '#advance-tax-update')).fill('100000')
   await page
-    .getByRole('button', { name: 'Save and recalculate', exact: true })
+    .getByRole('button', { name: 'Update and recalculate', exact: true })
     .click()
   await expect(page.locator('.tax-summary h2')).toHaveText('₹11,27,200')
   expect(page.url()).not.toMatch(/5100000|100000|1227200/)
@@ -122,7 +122,7 @@ test('the one-crore ceiling blocks and mixed equity within the first surcharge b
 }) => {
   await seedPersonal(page)
   await page.goto('/check/income')
-  const next = page.getByRole('button', { name: 'Continue', exact: true })
+  const next = page.getByRole('button', { name: 'Next', exact: true })
   await (await questionField(page, '#taxableBankInterest')).fill('11000000')
   await expect(
     await questionField(page, '#taxableBankInterest-unsupported'),
@@ -158,7 +158,7 @@ test('a restored surcharge exclusion remains selected until explicitly reviewed'
   const flag = scope.getByRole('radio', { name: 'Yes', exact: true })
   await flag.check()
   await expect(
-    page.getByRole('button', { name: 'Continue', exact: true }),
+    page.getByRole('button', { name: 'Next', exact: true }),
   ).toBeDisabled()
   await expect
     .poll(
@@ -174,7 +174,7 @@ test('a restored surcharge exclusion remains selected until explicitly reviewed'
   await expect(flag).toBeChecked()
   await reviewedScope.getByRole('radio', { name: 'No', exact: true }).check()
   await expect(
-    page.getByRole('button', { name: 'Continue', exact: true }),
+    page.getByRole('button', { name: 'Next', exact: true }),
   ).toBeEnabled()
 })
 
@@ -192,9 +192,11 @@ test('the personal-residence proprietor exemption requires explicit review and p
   ])
     await (await questionField(page, `#${id}`)).fill(amount)
   const field = await questionField(page, '#rentalGstConfirmed')
-  await expect(field).toContainText('registered sole proprietor')
-  await expect(field).toContainText('personal capacity for their own residence')
-  await expect(field).toContainText('on their own behalf')
+  await expect(field).toContainText(
+    'sole proprietor, someone who owns a business alone',
+  )
+  await expect(field).toContainText('renting the home personally to live in')
+  await expect(field).toContainText('not for their business')
   await choose(page, 'rentalGstConfirmed', 'No')
   await expect(
     await questionField(page, '#rentalGstConfirmed-coverage'),
@@ -214,7 +216,7 @@ test('the personal-residence proprietor exemption requires explicit review and p
     field.getByRole('radio', { name: 'No', exact: true }),
   ).toBeChecked()
   const help = page.getByRole('button', {
-    name: 'Learn more about rental income',
+    name: 'Which rental income can I include?',
     exact: true,
   })
   await help.focus()
@@ -243,9 +245,9 @@ test('the personal-residence proprietor exemption requires explicit review and p
       path: testInfo.outputPath(`rental-proprietor-${width}.png`),
     })
   }
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
   await (await questionField(page, '#aggregateTurnover')).fill('2300000')
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
   await page
     .getByRole('button', { name: 'Calculate my plan', exact: true })
     .click()

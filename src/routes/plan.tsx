@@ -135,9 +135,9 @@ export function PlanRoute() {
               We can't calculate this plan with the current tax rules
             </h1>
             <p>
-              The tax rules built into this version are missing, invalid, or
-              past their review date. No estimate was calculated. Check the
-              official sources below or return after the rules are updated.
+              The tax rules built into this app are missing, invalid, or past
+              their review date. No estimate was calculated. Check the official
+              sources below or return after the rules are updated.
             </p>
             {evaluation.expiresOn && (
               <p>
@@ -159,11 +159,12 @@ export function PlanRoute() {
             aria-labelledby="unsupported-title"
           >
             <h1 tabIndex={-1} id="unsupported-title">
-              We can't calculate a reliable plan from these answers
+              This app cannot estimate tax for your situation
             </h1>
             <p>
-              If an answer is incorrect, review it below. Otherwise, use the
-              linked official sources or ask a qualified tax adviser.
+              Your answers are still here. If one is incorrect, edit it below.
+              If these answers are right, ask a tax adviser about the listed
+              conditions. Do not leave out income to get an estimate.
             </p>
             <ul className="fact-list">
               {evaluation.facts.map((fact) => (
@@ -206,8 +207,9 @@ export function PlanRoute() {
               <PeriodNavigation>{profile?.taxYear}</PeriodNavigation>
               <h1 tabIndex={-1}>Your plan</h1>
               <p>
-                Based on the answers you reviewed. My Next Filing does not file,
-                pay, or verify completion.
+                Your income-tax estimate and next actions, based on the answers
+                you reviewed. Use the official portals to file or pay. Marking
+                an action complete here only updates your own plan.
               </p>
             </header>
             <AttentionCard

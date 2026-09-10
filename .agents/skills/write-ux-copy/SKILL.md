@@ -53,6 +53,7 @@ For source-derived HEY/Basecamp principles and representative interface evidence
 
 - Lead action labels with a specific verb: “Create project,” “Send reminder,” “Download CSV,” “Remove access.”
 - Avoid “Submit,” “Continue,” “OK,” “Yes,” and “Confirm” when the outcome can fit on the control.
+- In this app's questionnaire, use `Next` between steps and `Calculate my plan` for the final action.
 - Let a staged control disclose the next step: “Next: choose projects.” Use an ellipsis only when the action opens another decision or requires more input, never as decoration.
 - Pair destructive labels with the affected object: “Delete invoice,” not “Delete.”
 - Use a noun label only for navigation or a mode, not for an action.
@@ -96,9 +97,9 @@ For a product that estimates tax and organizes supported actions, use:
 - `your estimate` for the calculation.
 - `your plan` for the result, dates, and actions.
 - `your saved workspace` for persisted browser state.
-- `this version` when explaining scope or limitations.
+- `this app` when explaining scope or limitations. Use `this version of the app` only when a release change matters, such as a change to saved-data compatibility.
 
-Avoid using `this check` as the default name for the product or journey. Use `check` when it describes an actual action, such as `Check these answers`. Use `tax estimator` when the calculation needs a standalone name. Use `app` only when discussing the software itself. Avoid `calculator` as the product name when the product also provides filing dates or actions, because it implies exact arithmetic and undersells the rest of the experience.
+Avoid using `this check` as the default name for the product or journey. Use `check` when it describes an actual action, such as `Check these answers`. Use `tax estimator` when the calculation needs a standalone name. Avoid `calculator` as the product name when the product also provides filing dates or actions, because it implies exact arithmetic and undersells the rest of the experience.
 
 ### State facts the system knows
 

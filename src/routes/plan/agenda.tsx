@@ -212,7 +212,11 @@ export function ReviewAreas({
   return (
     <section className="review-areas" aria-labelledby="review-areas-title">
       <h2 id="review-areas-title">Check before relying on this plan</h2>
-      <p>These checks do not count as dated actions.</p>
+      <p>
+        These items need a separate check because this plan cannot give a
+        complete answer for them. They are not included in the count of dated
+        actions.
+      </p>
       {unavailable.length > 0 && (
         <div className="review-area-list">
           {unavailable.map(([key, title, group]) => {
@@ -306,7 +310,8 @@ export function NeedsReview({
             <div>
               <h3>{completionLabel(item.record.obligationId)}</h3>
               <p>
-                {item.reason} Declared on {formatDate(item.record.completedOn)}.
+                {item.reason} Date you entered:{' '}
+                {formatDate(item.record.completedOn)}.
               </p>
             </div>
             <Button

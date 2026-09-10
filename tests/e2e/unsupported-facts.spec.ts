@@ -34,7 +34,7 @@ test('fit scope questions replace checkboxes and block an unsupported answer', a
     .getByRole('radio', { name: 'Yes', exact: true })
     .check()
   await expect(
-    page.getByRole('button', { name: 'Continue', exact: true }),
+    page.getByRole('button', { name: 'Next', exact: true }),
   ).toBeDisabled()
   await page.reload()
   await expect(
@@ -57,7 +57,7 @@ test('each fit scope group accepts Not sure and retains its answer', async ({
       .check()
   }
   await expect(
-    page.getByRole('button', { name: 'Continue', exact: true }),
+    page.getByRole('button', { name: 'Next', exact: true }),
   ).toBeDisabled()
   await page.reload()
   await expect(

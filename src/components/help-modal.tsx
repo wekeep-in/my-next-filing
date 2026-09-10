@@ -24,9 +24,9 @@ export function HelpModal({
     <Dialog.Root>
       <Dialog.Trigger
         render={<Button variant="link" className="font-semibold" />}
-        aria-label={buttonText ?? `Learn more about ${topic}`}
+        aria-label={buttonText ?? title}
       >
-        {buttonText ?? 'Learn more.'}
+        {buttonText ?? title}
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Backdrop className="fixed inset-0 z-400 bg-foreground/30 backdrop-blur-sm" />

@@ -53,11 +53,11 @@ test('keeps employer NPS through Recovery, review, saving and reload', async ({
   await expect(
     page.getByLabel('Employer 2 NPS contribution', { exact: true }),
   ).toHaveValue('70,000')
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
   await expect(page).toHaveURL(/\/check\/clients$/)
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
   await expect(page).toHaveURL(/\/check\/taxes-and-gst$/)
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
   await page.getByRole('button', { name: 'Other income', exact: true }).click()
   await expect(
     page.getByText('Employer 2 basic pay and eligible DA', { exact: true }),
@@ -141,7 +141,7 @@ test('keeps NPS fields and help usable across viewports and clears deselected co
     .getByRole('radio', { name: 'Yes', exact: true })
     .click()
   const help = page.getByRole('button', {
-    name: 'Learn more about employer NPS',
+    name: 'Which NPS amounts are covered?',
     exact: true,
   })
   await help.focus()
@@ -309,7 +309,7 @@ test('migrates the captured salary workspace without changing consent or complet
     .click()
   await (await questionField(page, '#advance-tax-update')).fill('1000')
   await page
-    .getByRole('button', { name: 'Save and recalculate', exact: true })
+    .getByRole('button', { name: 'Update and recalculate', exact: true })
     .click()
   const saved = await page.evaluate(
     (key) => JSON.parse(localStorage.getItem(key)!) as unknown,

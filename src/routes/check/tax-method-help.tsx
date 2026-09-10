@@ -7,21 +7,31 @@ export function TaxMethodHelp() {
     <HelpModal
       topic="tax methods"
       title="Which method fits my work?"
-      description="Choose by your work's tax classification, not whichever gives a lower estimate."
+      description="The presumptive method uses a minimum share of your work income as taxable profit. The percentage is a profit calculation, not your income-tax rate."
     >
       <p>
-        <strong>Specified professional path:</strong> for a listed profession,
-        such as information technology or technical consultancy.
+        <strong>Specified professional path:</strong> for a profession listed in
+        tax law, such as information technology or technical consultancy. The
+        minimum profit is 50% of gross receipts, your work income before
+        expenses or tax deducted by clients.
       </p>
       <p>
         <strong>Eligible business path:</strong> for qualifying businesses that
         are not specified professions. Agency, commission and brokerage are
-        excluded.
+        excluded. The minimum profit is 6% of qualifying bank or online receipts
+        plus 8% of other receipts.
       </p>
       <p>
-        Confirm your whole practice's classification in your tax records or with
-        your adviser. A job title alone is not enough; both methods have further
-        eligibility conditions.
+        Both paths have receipt limits and other conditions. Use a higher
+        confirmed profit when it exceeds the minimum. Do not subtract business
+        expenses from that profit again.
+      </p>
+      <p>
+        Your job title alone cannot select a path. Check your tax records or ask
+        a tax adviser which classification covers all your work. If you do not
+        know, leave the choice unselected. This app cannot estimate your tax
+        until the method is confirmed. If you use actual profit from regular
+        accounts instead, these paths do not cover your case.
       </p>
       <div className="space-y-2">
         <p>

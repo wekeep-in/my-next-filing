@@ -12,7 +12,7 @@ test('validates amounts and keeps fictional navigation separate from personal Re
     name: '5. Review your answers',
     exact: true,
   })
-  const next = page.getByRole('button', { name: 'Continue', exact: true })
+  const next = page.getByRole('button', { name: 'Next', exact: true })
   await profit.fill('100')
   await expect(page.locator('#declaredProfit-unsupported')).toBeVisible()
   await expect(next).toBeDisabled()

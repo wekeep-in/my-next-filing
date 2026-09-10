@@ -186,8 +186,8 @@ export const unsupportedSituationGroups = [
   {
     key: 'otherIncome',
     title: 'Other income',
-    question: 'Do you have other income outside the supported income cards?',
-    help: 'Choose Yes for gifts, crypto, lottery or gaming income, agricultural income, royalty or licensing income, or property or capital income outside the supported cards.',
+    question: 'Do you have gifts, crypto, gaming or other income listed below?',
+    help: 'Choose Yes for gift income, crypto, lottery or gaming income, farming income, payments for licensing your work, or property or investment income beyond the rental and Indian-share or equity-fund cases covered in Income and profit. Bank interest is asked about in Income and profit.',
     fact: 'unsupportedOtherIncome',
     legacyFacts: [
       'houseProperty',
@@ -201,9 +201,8 @@ export const unsupportedSituationGroups = [
   {
     key: 'salaryInvestments',
     title: 'Salary and investments',
-    question:
-      'Do you have salary or investment income outside the supported cards?',
-    help: 'Choose Yes for foreign salary, unsupported dividends or distributions, or another salary or investment case outside the supported cards.',
+    question: 'Do you have any salary or investment situation listed below?',
+    help: 'Choose Yes for foreign salary, pension, retirement payouts, late pay for earlier periods, employee shares, foreign dividends or income from investments other than the Indian shares, equity mutual funds, ordinary dividends and interest covered here. Income and profit asks about regular Indian salary, dividends, interest, one home rented for residential use, and confirmed Indian-share or equity-fund gains and losses. Choose Not sure if you cannot tell whether your income fits.',
     fact: 'unsupportedSalaryInvestments',
     legacyFacts: ['salary', 'unsupportedDividends', 'dividendsOrGifts'],
   },
@@ -211,8 +210,8 @@ export const unsupportedSituationGroups = [
     key: 'overseasIncomeTax',
     title: 'Overseas income and tax',
     question:
-      'Do you have overseas income or foreign tax outside the supported freelance receipts?',
-    help: 'Choose Yes for unrelated foreign income, foreign tax or treaty relief, or another overseas income case outside the supported freelance receipts.',
+      'Do you have overseas income other than freelance fees, or any foreign tax?',
+    help: 'Choose Yes for overseas salary, interest, dividends, rent or investment gains; tax owed or paid abroad; or a claim to reduce Indian tax using foreign tax or a tax treaty. Fees from overseas freelance clients are asked about separately in Clients and payments.',
     fact: 'unsupportedOverseasIncomeOrTax',
     legacyFacts: [
       'unrelatedForeignIncome',
@@ -223,9 +222,8 @@ export const unsupportedSituationGroups = [
   {
     key: 'businessTax',
     title: 'Business and tax requirements',
-    question:
-      'Do you have another business or tax requirement outside the supported path?',
-    help: 'Choose Yes for another business, employees or TDS duties, goods sales, agency or commission income, unsupported deductions or losses, disputed credits, an audit requirement, surcharge outside the supported band, or another unlisted situation.',
+    question: 'Do you have any of these other business or tax requirements?',
+    help: 'Choose Yes for another business; employees; a duty to deduct tax from payments you make; goods sales; agency, commission or brokerage income; a required audit of your accounts; disputed tax credits; deductions or losses beyond the salary, employer pension, rental and Indian investment cases covered here; taxable income above ₹1 crore; another surcharge case this app cannot cover; or another unlisted tax situation. A deduction reduces taxable income. A tax credit is tax already paid that reduces what you owe. A surcharge is extra tax on higher incomes. Choose Not sure if you cannot confirm.',
     fact: 'unsupportedBusinessOrTax',
     legacyFacts: [
       'anotherBusinessOrProfession',
@@ -388,14 +386,15 @@ export const optionLabels: Readonly<Record<string, string>> = {
   'incidental-domestic': 'Incidental domestic contractor',
   'convertible-foreign-exchange':
     'Foreign currency that can be freely exchanged',
-  'rbi-permitted-rupee': 'Rupees through an RBI-permitted route',
+  'rbi-permitted-rupee':
+    'Rupees through a route permitted by the Reserve Bank of India',
   new: 'New tax regime',
   old: 'Old tax regime',
-  domestic: 'Domestic clients only',
-  foreign: 'Foreign clients only',
-  mixed: 'Domestic and foreign clients',
+  domestic: 'Clients in India only',
+  foreign: 'Clients outside India only',
+  mixed: 'Clients in India and outside India',
   direct: 'Direct clients',
-  platform: 'Platform-mediated work',
+  platform: 'Through a freelance platform',
   unregistered: 'No',
   registered: 'Yes',
   applies: 'It applies',
@@ -436,13 +435,11 @@ export const unsupportedFactLabels: Record<UnsupportedFact, string> = {
   royaltyOrLicensing: 'Royalty or licensing income',
   otherUnsupportedFacts: 'Another income or tax situation not listed here',
   unsupportedFactsNotSure: 'Not sure whether any situation applies',
-  unsupportedOtherIncome: 'Other income outside the supported branches',
-  unsupportedSalaryInvestments:
-    'Salary or investment income outside the supported branches',
+  unsupportedOtherIncome: 'Other income outside this app',
+  unsupportedSalaryInvestments: 'Salary or investment income outside this app',
   unsupportedOverseasIncomeOrTax:
-    'Overseas income or foreign tax outside the supported branches',
-  unsupportedBusinessOrTax:
-    'Business or tax requirements outside the supported branches',
+    'Overseas income or foreign tax outside this app',
+  unsupportedBusinessOrTax: 'Business or tax requirements outside this app',
 }
 
 const blankAmounts = (): Record<DraftAmountKey, string> =>
@@ -868,11 +865,16 @@ export function parseMoney(
   const trimmed = value.trim()
   if (!trimmed) return { error: 'Enter a whole-rupee amount.' }
   if (!/^(?:₹\s?)?[\d,]+$/.test(trimmed) || !/\d/.test(trimmed))
-    return { error: 'Use a non-negative whole-rupee amount.' }
+    return {
+      error: 'Enter 0 or more in whole rupees, without paise or a minus sign.',
+    }
   const amount = Number(trimmed.replace(/^₹\s?/, '').replaceAll(',', ''))
   return Number.isSafeInteger(amount) && amount >= 0
     ? { value: amount }
-    : { error: 'Use an amount within the supported whole-rupee range.' }
+    : {
+        error:
+          'This amount is too large to calculate safely. Check for extra digits.',
+      }
 }
 
 function requiredAmount(
@@ -1182,7 +1184,7 @@ export type QuestionnaireRoute =
 export const questionnaireRoutes = [
   {
     id: 'fit',
-    label: 'Fit for this version',
+    label: 'Fit for this app',
     groups: ['tax-year', 'activity'],
   },
   {
@@ -1553,7 +1555,7 @@ function validateDraftGroup(
       nextErrors.path = 'Choose the tax method you use for this work.'
     if (draft.path && !draft.pathConfirmed)
       nextErrors.pathConfirmed =
-        'Confirm the tax method for your whole practice.'
+        'Choose Yes, No or Not sure for whether this tax method covers all your freelance work.'
     if (isBusinessPath(draft)) {
       const requiredFields: readonly [keyof Draft, string][] = [
         [
@@ -1761,10 +1763,11 @@ function validateDraftGroup(
       nextErrors.hasTaxPaid =
         'Choose Yes to include tax credits or payments, or confirm that you have none.'
     if (creditTriggerMayApply(draft) && !draft.ageSixtyOrOlder)
-      nextErrors.ageSixtyOrOlder = 'Choose an age band for the return trigger.'
+      nextErrors.ageSixtyOrOlder =
+        'Choose whether you were 60 or older during this tax year.'
     if (!draft.otherAnnualReturnTrigger)
       nextErrors.otherAnnualReturnTrigger =
-        'Choose whether another income-tax return trigger applies.'
+        'Choose whether another condition requires you to file an income-tax return.'
 
     if (
       draft.platformRcmLiabilityDate &&

@@ -8,9 +8,7 @@ export function NotFoundRoute() {
         Page not found
       </p>
       <h1 id="not-found-title">That page does not exist.</h1>
-      <p>
-        Return home to start an estimate or learn what this version supports.
-      </p>
+      <p>Return home to start an estimate or learn what this app supports.</p>
       <Link
         className={buttonVariants({ className: 'text-primary-foreground!' })}
         to="/"

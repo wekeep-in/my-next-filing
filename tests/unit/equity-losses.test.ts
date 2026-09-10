@@ -340,7 +340,9 @@ test('preserves carry-forward guidance and a conditional dated return action bel
     title: 'File a return to claim capital-loss carry-forward',
     amountDue: null,
   })
-  expect(action?.reasons[0]).toContain('To claim carry-forward')
+  expect(action?.reasons[0]).toContain(
+    'To use unused investment losses against future gains',
+  )
   expect(action?.consequence).toContain('determination of the loss')
   expect(action?.ruleIds).toContain('capital-loss-carry-forward')
   expect(

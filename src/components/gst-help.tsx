@@ -16,9 +16,11 @@ export function GstRegistrationHelp() {
       description="Use your registration certificate and the filing periods shown in the GST portal."
     >
       <p>
-        A normal taxpayer files GSTR-1 and GSTR-3B. This calendar covers one
-        active GST registration. Composition registrations, multiple GSTINs,
-        suspension and cancellation need separate guidance.
+        A normal taxpayer uses the regular GST scheme and files GSTR-1 and
+        GSTR-3B, reports of sales and tax. The composition scheme uses different
+        rules and returns. Check the type on your registration certificate. This
+        calendar covers one active normal registration; multiple registrations,
+        composition, suspension and cancellation need separate guidance.
       </p>
       <p>
         The effective date is when your registration takes effect. It can differ
@@ -59,14 +61,14 @@ export function GstFrequencyHelp() {
       </p>
       <p>
         Check each quarter separately if your frequency changed. New
-        registrations can join only within the applicable election window.
-        Choose Not sure if a past or future quarter is not confirmed.
+        registrations can join only during the allowed period for choosing the
+        scheme. Choose Not sure if a past or future quarter is not confirmed.
       </p>
       <p>
-        GSTR-1 reports outward supplies, including your sales and service
-        invoices. GSTR-3B summarises GST and input-tax credits. IFF, the Invoice
-        Furnishing Facility for some invoices in the first two months, is
-        optional and is not a required action in your plan.
+        GSTR-1 reports sales and service invoices. GSTR-3B summarises GST owed
+        and eligible input-tax credits, GST on purchases you can use to reduce
+        that bill. IFF, the Invoice Furnishing Facility for some invoices in the
+        first two months, is optional and is not a required action in your plan.
       </p>
       <ExternalLink href="https://gstcouncil.gov.in/sites/default/files/2024-06/circular_refund_143_11_2020.pdf">
         Official QRMP guide, PDF
@@ -83,9 +85,10 @@ export function GstExportHelp() {
       description="Use the GST treatment in your records. Having a client outside India does not by itself make a service a qualifying export."
     >
       <p>
-        LUT means Letter of Undertaking. Eligible exporters use it to export
-        without paying Integrated GST, or IGST, upfront, subject to the export
-        conditions. This does not mean that every other GST duty disappears.
+        LUT means Letter of Undertaking, a declaration that you will meet the
+        export conditions. Eligible exporters use it to export without paying
+        Integrated GST, or IGST, upfront, subject to the export conditions. This
+        does not mean that every other GST duty disappears.
       </p>
       <p>
         Choose With IGST payment only if that is the confirmed route for all
@@ -114,7 +117,7 @@ export function LutEligibilityHelp() {
     <HelpModal
       topic="LUT eligibility"
       title="Who can use an LUT?"
-      description="This version needs you to confirm qualifying service exports outside India and the LUT conditions shown beside the question."
+      description="This app needs you to confirm qualifying service exports outside India and the LUT conditions shown beside the question."
     >
       <p>
         The prosecution restriction concerns an offence under GST or the
@@ -153,15 +156,15 @@ export function QrmpPaymentHelp() {
     >
       <p>
         Your cash ledger records money deposited with the GST portal. Your
-        credit ledger records eligible input-tax credit. No deposit may be
-        needed if GST liability is nil or the relevant ledger balance covers it.
-        For the second month, check the two months together.
+        credit ledger records GST on purchases that you can use to reduce GST
+        owed. No deposit may be needed if no GST is due or the relevant ledger
+        balance covers it. For the second month, check the two months together.
       </p>
       <p>
-        PMT-06 is the challan used to deposit money. The fixed-sum and
-        self-assessment payment methods have different conditions. Check the
-        applicable method with your records or adviser; do not use freelance
-        income to guess the deposit.
+        PMT-06 is the payment form, called a challan, used to deposit money. The
+        fixed-sum and self-assessment payment methods have different conditions.
+        Check the applicable method with your records or adviser; do not use
+        freelance income to guess the deposit.
       </p>
       <p>
         Mark reviewed only after checking the requirement and making any payment

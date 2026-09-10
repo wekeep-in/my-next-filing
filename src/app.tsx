@@ -61,7 +61,7 @@ const noticeCopy: Record<Notice, string> = {
   'invalid-recovery-removed':
     "Your previous answers couldn't be restored and were removed from this tab. Start again below.",
   'legacy-deleted':
-    'Your previously saved answers and completion dates were removed because this version uses a new workspace.',
+    'Your previously saved answers and completion dates were removed because this version of the app uses a new workspace.',
   'all-deleted':
     'Your saved answers and completion dates were removed from this browser. Your in-progress answers were removed from this tab.',
 }

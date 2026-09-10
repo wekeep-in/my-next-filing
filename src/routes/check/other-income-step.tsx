@@ -3,7 +3,7 @@ import {
   QuestionSections,
 } from '@/routes/check/question-section'
 import { Button } from '@/components/ui/button'
-import { taxYearShort } from '@/lib/tax-period'
+import { taxYearDateRange, taxYearShort } from '@/lib/tax-period'
 import type { QuestionnaireDispatch } from '@/routes/check/session'
 import type { TriState } from '@/evaluation'
 import { CheckHeading, ChoiceField, MoneyField } from '@/routes/check/fields'
@@ -39,7 +39,7 @@ export function OtherIncomeStep({
     <div className={className}>
       <CheckHeading
         title="Income and profit"
-        description={`Enter receipts, profit and other Indian income for ${taxYearShort}. Use 0 if you have none.`}
+        description={`Use full-year amounts for ${taxYearDateRange}, not just this month or the year so far. Enter whole rupees from your records. Use 0 only when an amount is zero, not when it is unknown.`}
       />
       <QuestionSections initialOpen="receipts-title">
         <QuestionSection
@@ -83,16 +83,18 @@ export function OtherIncomeStep({
                           job-related work in India.
                         </li>
                         <li>
-                          Your records confirm the full year's salary, taxable
-                          benefits and new-regime exemptions.
+                          Your records confirm the full year's salary, benefits
+                          that count as income and amounts exempt from tax under
+                          the new regime.
                         </li>
                         <li>
                           You have no pension, retirement or termination payout,
                           or leave-encashment settlement.
                         </li>
                         <li>
-                          You have no arrears, advance salary, share-based pay
-                          or foreign salary.
+                          You have no late pay for earlier periods, pay before
+                          it is due, employee shares or options, or foreign
+                          salary.
                         </li>
                         <li>
                           You have no unresolved tax adjustments for retirement
@@ -122,11 +124,13 @@ export function OtherIncomeStep({
                   label="Annual salary before standard deduction"
                   help={
                     <>
-                      Combine all employers and enter salary before TDS and the
-                      standard deduction, not CTC or take-home pay. Include
-                      employer NPS contributions before any NPS deduction. We
-                      apply the standard deduction once, up to ₹75,000.{' '}
-                      <SalaryHelp />
+                      Combine all employers. Enter salary before tax deducted by
+                      employers, called TDS, and before the standard deduction.
+                      The standard deduction reduces taxable salary. Do not use
+                      your total employment package, called CTC, or take-home
+                      pay. Include employer NPS contributions before any NPS
+                      deduction. We apply the standard deduction once, up to
+                      ₹75,000. <SalaryHelp />
                     </>
                   }
                   value={draft.amounts.grossSalary}
@@ -153,7 +157,10 @@ export function OtherIncomeStep({
               label="Taxable bank or deposit interest"
               help={
                 <>
-                  Enter interest before any TDS. <InterestHelp />
+                  Include taxable interest from Indian savings accounts, fixed
+                  deposits and recurring deposits. Enter it before tax deducted
+                  by the bank, called TDS. Exclude the money you deposited.{' '}
+                  <InterestHelp />
                 </>
               }
               value={draft.amounts.taxableBankInterest}
@@ -165,9 +172,10 @@ export function OtherIncomeStep({
               label="Do you have dividends or any of this other interest?"
               help={
                 <>
-                  Include Indian-company dividends, Indian mutual-fund
-                  distributions, taxable post-office interest and income-tax
-                  refund interest. Keep bank interest in the field above.{' '}
+                  Dividends are payouts from companies you invest in. Include
+                  Indian-company dividends, Indian mutual-fund payouts, taxable
+                  post-office interest and interest on an income-tax refund.
+                  Keep bank interest in the field above.{' '}
                   <AdditionalIncomeHelp />
                 </>
               }
@@ -230,10 +238,10 @@ export function OtherIncomeStep({
                       key === 'dividends'
                         ? 'Enter ordinary dividends taxable this year before TDS or expenses. Use 0 if none.'
                         : key === 'mutualFundDistributions'
-                          ? 'Enter taxable IDCW before TDS, including reinvested amounts. Exclude sale, redemption and switch proceeds. Use 0 if none.'
+                          ? 'Enter taxable mutual-fund payouts, often labelled IDCW, before tax deducted. Include payouts reinvested in the fund. Exclude money from selling or switching units. Use 0 if none.'
                           : key === 'postOfficeInterest'
-                            ? 'Enter the confirmed taxable part before TDS. Exclude principal and exempt interest. Use 0 if none.'
-                            : 'Enter only the taxable interest component, not the refund principal. Use 0 if none.'
+                            ? 'Enter only the interest that is taxable, before any tax deducted. Exclude the money you deposited and tax-exempt interest. Use 0 if none.'
+                            : 'Enter only interest paid on your income-tax refund. Exclude the tax that was returned to you. Use 0 if none.'
                     }
                     value={draft.amounts[key]}
                     error={errors[key]}
@@ -257,11 +265,13 @@ export function OtherIncomeStep({
           <div className="field-stack">
             <ChoiceField
               id="hasEquityGains"
-              label="Did you realise gains or losses from Indian shares or equity mutual funds?"
+              label="Did you sell Indian shares or equity mutual funds at a profit or loss?"
               help={
                 <>
-                  Include gains and losses from selling investments or redeeming
-                  eligible fund units. Keep dividends in the fields above.{' '}
+                  A capital gain is profit from selling an investment; a capital
+                  loss means selling for less than its allowed cost. Include
+                  sales and fund redemptions, not changes in the value of
+                  investments you still hold. Keep dividends above.{' '}
                   <EquityGainsHelp />
                 </>
               }
@@ -286,7 +296,9 @@ export function OtherIncomeStep({
                         <li>
                           Only Indian listed shares and qualifying Indian
                           equity-oriented mutual funds held as investments, with
-                          the required STT conditions met.
+                          the required securities transaction tax, or STT,
+                          conditions met. STT is a tax on investment
+                          transactions shown in broker or fund records.
                         </li>
                         <li>
                           Your tax records confirm the full year’s gains and
@@ -344,7 +356,7 @@ export function OtherIncomeStep({
                         ? 'Total gains from profitable short-term sales before subtracting losses. Do not enter sale proceeds. Use 0 if none.'
                         : key === 'longTermGains'
                           ? 'Total gains from profitable long-term sales before losses and the ₹1,25,000 threshold. Use 0 if none.'
-                          : 'Enter the total allowable losses as a positive amount, before set-off. Include only this Tax Year, not earlier losses. Use 0 if none.'
+                          : 'Enter losses allowed by tax rules as a positive amount. Do not subtract them from gains yourself. Include only this tax year, not earlier losses. Use 0 if none.'
                     }
                     value={draft.amounts[key]}
                     error={errors[key]}

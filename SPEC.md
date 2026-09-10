@@ -275,13 +275,13 @@ The questionnaire uses one user-facing group per static nested `/check` route, v
 
 The user-facing route groups are:
 
-1. Fit for this version: personal, practice, work-method and supported-scope facts.
+1. Fit for this app: personal, practice, work-method and supported-scope facts.
 2. Income and profit: freelance receipts and profit, supported other income, losses and foreign assets.
 3. Domestic, foreign, or mixed clients; direct, platform-mediated, or both kinds of work; and platform and foreign follow-ups only when applicable.
 4. Indian tax credits and advance tax paid, annual-return filing conditions, and GST facts.
 5. Review.
 
-The progress rail presents six steps: Fit for this version, Income and profit, Clients and payments, Taxes and GST, Review your answers, and Your plan. Home remains a separate link before the Tax Year pill and preserves personal answers through the existing entry flow. Your plan remains an action and workspace screen, but stays visible in the rail as the current destination after calculation.
+The progress rail presents six steps: Fit for this app, Income and profit, Clients and payments, Taxes and GST, Review your answers, and Your plan. Home remains a separate link before the Tax Year pill and preserves personal answers through the existing entry flow. Your plan remains an action and workspace screen, but stays visible in the rail as the current destination after calculation.
 
 Long groups use animated accordion cards, with one group open at a time and a full-width separator below each open heading. Immediately after the heading text, a warning-colored circled alert shows a tooltip when its rendered questions have missing, invalid, unsupported or unresolved answers; a green circled check appears in the same position when those answers are complete. Derive this feedback from existing validation and Coverage results, including conditional fields. Closing a card preserves its answers, requirements and feedback. Keep confirmation conditions visible whenever their controls are visible.
 
@@ -291,7 +291,7 @@ For the business path, fill other receipts from gross receipts minus qualifying 
 
 In Taxes and GST, Tax already paid starts with a required Yes / No / Not sure question covering Indian TDS, TCS and advance tax paid. Yes reveals all three amounts, which remain separately required and may explicitly be zero. No sets all three to zero and hides them. Not sure clears those draft amounts and blocks calculation until confirmed; it never means zero. Changing No to Yes clears the inferred zeroes and requires fresh amounts. Keep the annual-return age question conditional on confirmed relevant credits. A later Plan payment update must change a previous No to Yes when a positive advance-tax payment is recorded.
 
-Income amounts, losses and asset declarations belong to Income and profit. The four-card income-scope exclusion check belongs in Fit for this version, before money questions. Tax credits, advance-tax payments, the conditional credit-trigger age band and the other annual-return trigger belong to Taxes and GST. Keep the existing Profile and Draft schemas and internal validation identities. Validation, resume selection, review summaries and correction links follow the current field location; moving a field never clears an answer or changes a calculation.
+Income amounts, losses and asset declarations belong to Income and profit. The four-card income-scope exclusion check belongs in Fit for this app, before money questions. Tax credits, advance-tax payments, the conditional credit-trigger age band and the other annual-return trigger belong to Taxes and GST. Keep the existing Profile and Draft schemas and internal validation identities. Validation, resume selection, review summaries and correction links follow the current field location; moving a field never clears an answer or changes a calculation.
 
 Recovery version 11 adds this choice. Migrate version 10 without losing entered amounts: a known positive credit/payment establishes Yes; three confirmed zeroes establish No; incomplete entries with no established positive amount leave the question unanswered and preserve existing entries until it is answered. Reject mixed schemas and hidden amounts that contradict No or Not sure. Saved-workspace Profiles keep their existing schema and numeric amounts; derive the choice from those validated amounts when editing.
 
@@ -301,7 +301,7 @@ Reuse the whole-practice confirmation that all work occurs in India, and that no
 
 Every uncertainty that can stop or reduce Coverage offers "Not sure". The interface explains uncommon legal confirmations. It does not infer a favorable answer to save a click.
 
-Show the other-tax-situation exclusions in Fit for this version as four ordinary accordion cards: Other income, Salary and investments, Overseas income and tax, and Business and tax requirements. Each card contains one Yes / No / Not sure question. Remove the partial-support options handled by the dedicated Income and profit cards; retain their legacy facts only for migration and review. Do not add a second global scope question. Preserve restored answers and retain normal validation, immediate scope warnings and forward-navigation blocking.
+Show the other-tax-situation exclusions in Fit for this app as four ordinary accordion cards: Other income, Salary and investments, Overseas income and tax, and Business and tax requirements. Each card contains one Yes / No / Not sure question. Remove the partial-support options handled by the dedicated Income and profit cards; retain their legacy facts only for migration and review. Do not add a second global scope question. Preserve restored answers and retain normal validation, immediate scope warnings and forward-navigation blocking.
 
 Keep salary, registration-history and LUT conditions visible as short checklists. Use the shared Learn more modal for definitions, record checks, salary examples, GST filing frequency, export routes and QRMP payment reviews. The filing-frequency introduction stays directly below its section heading, with a 16px gap; quarter fields follow it. Short export options must preserve the distinction between LUT without IGST and IGST payment on narrow screens.
 
@@ -470,7 +470,7 @@ The version-2-to-3 migration runs in memory, validates the complete result, and 
 
 Version 4 continues that migration chain and adds a nullable, unanswered calendar to version-3 registered Profiles. Unregistered Profiles and all prior values and Completion records remain unchanged. Recovery version 3 adds unanswered GST calendar fields after the version-1-to-2 salary migration. Validate the entire resulting envelope, reject mixed schemas, and persist the latest version only through normal writes and revision checks. No migration infers a filing frequency or export route.
 
-The earlier version-1 deletion policy remains. When the Application encounters a parsed JSON object whose top-level schema version is 1, it rereads the exact key, confirms that version, removes only that key, verifies absence, and shows: `Your previously saved answers and completion dates were removed because this version uses a new workspace.` It repeats verified removal if version 1 reappears, but shows the notice at most once per loaded document. It creates no backup and offers no recovery.
+The earlier version-1 deletion policy remains. When the Application encounters a parsed JSON object whose top-level schema version is 1, it rereads the exact key, confirms that version, removes only that key, verifies absence, and shows: `Your previously saved answers and completion dates were removed because this version of the app uses a new workspace.` It repeats verified removal if version 1 reappears, but shows the notice at most once per loaded document. It creates no backup and offers no recovery.
 
 If inspection confirms the version-1 value remains, leave it untouched and offer deletion retry. If removal may have succeeded but verification cannot read the key, report an unverified deletion and offer inspection retry without claiming the raw value survived. Both outcomes block Saved-workspace writes and keep the in-memory questionnaire and Recovery draft available. Do not recreate removed data. A code rollback cannot restore a removed version-1 Profile or Completion record.
 

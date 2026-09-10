@@ -13,7 +13,7 @@ export function AdditionalIncomeHelp({
       topic="dividends and additional interest"
       buttonText={buttonText}
       title="Which dividends and interest can I include?"
-      description={`Use the amounts taxable for ${currentRules.taxPeriod} from your tax records, before TDS. The total credited to your bank may be different.`}
+      description={`Use the amounts taxable for ${currentRules.taxPeriod} from your tax records, before tax deducted by the payer, called TDS. The total credited to your bank may be different.`}
     >
       <p>
         Include ordinary dividends from Indian companies. The taxable year can
@@ -32,7 +32,7 @@ export function AdditionalIncomeHelp({
         For post-office interest, enter only the taxable part before TDS. Your
         records must already resolve any exemption, ownership share and the year
         it belongs to. Exclude deposit principal, exempt interest and full
-        maturity proceeds. This version does not calculate scheme exemptions or
+        maturity proceeds. This app does not calculate scheme exemptions or
         adjustments for early closure.
       </p>
       <p>
@@ -42,10 +42,11 @@ export function AdditionalIncomeHelp({
         separate guidance.
       </p>
       <p>
-        This version does not cover foreign or deemed dividends, buybacks,
-        company loans, liquidation or capital reductions, REIT/InvIT or other
-        business-trust distributions, AIF income, special certificates/bonds,
-        gains or losses outside the separate domestic-equity section, or
+        This app does not cover foreign or deemed dividends, buybacks, company
+        loans, liquidation or capital reductions, real-estate or infrastructure
+        investment trust payouts, other business-trust distributions,
+        alternative investment fund income, special certificates/bonds, gains or
+        losses outside the separate domestic-equity section, or
         expense/deduction claims. These are product limits. If you cannot
         confirm the categories and amounts, choose Not sure.
       </p>
@@ -70,7 +71,7 @@ export function SalaryCoverageHelp() {
     <HelpModal
       topic="salary coverage"
       title="Which salary situations are covered?"
-      description="This version covers salary from employers in India for work you performed in India, alongside your supported freelance practice."
+      description="This app covers salary from employers in India for work you performed in India, alongside your supported freelance practice."
     >
       <p>
         Your records must already establish the full year's salary, taxable
@@ -79,22 +80,21 @@ export function SalaryCoverageHelp() {
       </p>
       <p>
         Arrears are pay received late for an earlier period. Advance salary is
-        pay received before it is due. This version does not cover either,
-        pension, retirement or termination payouts, or settlements for unused
-        leave.
+        pay received before it is due. This app does not cover either, pension,
+        retirement or termination payouts, or settlements for unused leave.
       </p>
       <p>
         Share-based pay includes employee share options and restricted stock
         units, often called ESOPs and RSUs. Foreign salary and unresolved tax
         adjustments for provident or other retirement funds are also outside
-        this version.
+        this app.
       </p>
       <p>
-        This version calculates the salary standard deduction and supported
-        employer contributions to the National Pension System, or NPS. It does
-        not cover tax-relief claims, personal NPS deduction claims, Agniveer
-        deductions or other deductions. These are product limits, not a
-        statement that every excluded deduction is disallowed by law.
+        This app calculates the salary standard deduction and supported employer
+        contributions to the National Pension System, or NPS. It does not cover
+        tax-relief claims, personal NPS deduction claims, Agniveer deductions or
+        other deductions. These are product limits, not a statement that every
+        excluded deduction is disallowed by law.
       </p>
       <p>
         If any condition does not fit, choose No. If you cannot confirm it,
@@ -118,9 +118,10 @@ export function SalaryHelp() {
       <p>
         Include salary due for this year even if it has not reached your bank,
         taxable allowances, bonuses and employer-valued benefits. Subtract only
-        exemptions confirmed under the new regime. Do not subtract employee PF,
-        professional tax or personal NPS contributions. Include employer NPS
-        contributions once, before the employer NPS deduction.
+        exemptions confirmed under the new regime. Do not subtract your own
+        provident-fund contributions, professional tax or personal NPS
+        contributions. Include employer NPS contributions once, before the
+        employer NPS deduction.
       </p>
       <p>
         If an employer's figure already subtracts a standard deduction, add that
@@ -158,7 +159,8 @@ export function EmployerNpsHelp() {
         Under the new regime, the employer deduction is up to 14% of basic pay
         plus eligible dearness allowance, or DA. DA counts only where your
         employment terms provide for it. Other allowances, bonuses, benefits,
-        CTC and freelance income do not increase this limit.
+        your total employment package and freelance income do not increase this
+        limit.
       </p>
       <p>
         Use each employer's records for this tax year. Enter every contributing
@@ -169,7 +171,7 @@ export function EmployerNpsHelp() {
       <p>
         For one employer with ₹10,00,000 of basic pay and eligible DA, a
         ₹1,50,000 contribution gives a maximum deduction of ₹1,40,000. If more
-        than one employer contributes, this version covers only cases where each
+        than one employer contributes, this app covers only cases where each
         contribution is within its own 14% limit. It does not transfer unused
         limits between employers.
       </p>
@@ -181,11 +183,11 @@ export function EmployerNpsHelp() {
         trigger is checked before this deduction.
       </p>
       <p>
-        Check total employer contributions across recognised PF, NPS and
-        approved superannuation funds, including all jobs. Amounts above
-        ₹7,50,000 and taxable growth linked to excess contributions can need
-        extra salary-tax calculations. This version does not cover those cases,
-        even where the excess arose in an earlier year.
+        Check total employer contributions across recognised provident funds,
+        NPS and approved superannuation pension funds, including all jobs.
+        Amounts above ₹7,50,000 and taxable growth linked to excess
+        contributions can need extra salary-tax calculations. This app does not
+        cover those cases, even where the excess arose in an earlier year.
       </p>
       <p>
         Do not enter transfers, investment growth, withdrawals, pension payouts,
@@ -210,9 +212,9 @@ export function InterestHelp() {
     >
       <p>
         If only TDS was deducted, net interest plus that TDS equals gross
-        interest. Exclude deposit principal and exempt interest. No TDS does not
-        mean no tax. Cross-check your Annual Information Statement, or AIS,
-        without counting the same interest twice.
+        interest. Exclude the money you deposited and interest that is exempt
+        from tax. No TDS does not mean no tax. Cross-check your Annual
+        Information Statement, or AIS, without counting the same interest twice.
       </p>
       <ExternalLink href="https://www.incometax.gov.in/iec/foportal/ais-faq">
         How to check your AIS
@@ -226,11 +228,12 @@ export function TdsHelp() {
     <HelpModal
       topic="Indian TDS credit"
       title="Which TDS amount?"
-      description="TDS is tax withheld by a payer. Enter the actual Indian credit for all income included in this estimate, including supported rental income, dividends, distributions and interest."
+      description="TDS means tax deducted at source. A client, employer or bank deducts it from your payment and pays it to the government. Your tax credit is the amount available to reduce your income-tax bill. Enter the actual Indian credit for all income included in this estimate, including supported rental income, dividends, distributions and interest."
     >
       <p>
-        Match payer certificates with AIS tax-credit entries for{' '}
-        {currentRules.taxPeriod}. Total the tax deducted, not the gross
+        Match the tax-deduction certificates from your clients, employers and
+        banks with your Annual Information Statement, or AIS, tax-credit entries
+        for {currentRules.taxPeriod}. Total the tax deducted, not the gross
         payments. Count each credit once, including employer TDS. Exclude
         foreign and GST withholding; enter TCS and advance tax separately.
         Resolve mismatches with the payer before proceeding; use 0 only if no
@@ -248,14 +251,15 @@ export function TcsHelp() {
     <HelpModal
       topic="Indian TCS credit"
       title="Which TCS amount?"
-      description="TCS is income tax collected from you on certain transactions. Enter only the credit available for this tax year."
+      description="TCS means tax collected at source. A seller or other collector collects it from you on certain transactions and pays it to the government. A tax credit reduces your income-tax bill. Enter only the credit available for this tax year."
     >
       <p>
-        Match the collector's certificate with AIS tax-credit entries for{' '}
-        {currentRules.taxPeriod}. Total the tax collected, not the transaction
-        value. Count each credit once; exclude GST TCS, reversed credits and
-        amounts used for another year. Resolve mismatches with the collector
-        before proceeding. Use 0 if none applies.
+        Match the collector's certificate with your Annual Information
+        Statement, or AIS, tax-credit entries for {currentRules.taxPeriod}.
+        Total the tax collected, not the transaction value. Count each credit
+        once; exclude GST TCS, reversed credits and amounts used for another
+        year. Resolve mismatches with the collector before proceeding. Use 0 if
+        none applies.
       </p>
       <ExternalLink href="https://www.incometaxindia.gov.in/documents/d/guest/fn-168">
         Official TCS credit guide, PDF
@@ -274,19 +278,22 @@ export function EquityGainsHelp({
       topic="domestic equity gains"
       buttonText={buttonText}
       title="Which equity gains and losses can I include?"
-      description={`Use your tax records for ${currentRules.taxPeriod}. Enter realised gains and allowable losses from investments, not sale proceeds or changes in portfolio value.`}
+      description={`Use your tax records for ${currentRules.taxPeriod}. Enter profit or allowable loss from investments you sold, not the full sale amount or changes in investments you still hold.`}
     >
       <p>
         Include Indian listed shares and Indian mutual funds confirmed as
-        equity-oriented for tax purposes. Your records must confirm the
-        short-term or long-term classification and all applicable securities
+        equity-oriented for tax purposes. Short-term and long-term describe how
+        long you held the investment. For these supported shares and funds, up
+        to 12 months is short-term; more than 12 months is long-term. Confirm
+        the classification in your tax records and all applicable securities
         transaction tax, or STT.
       </p>
       <p>
         Short-term sales must be chargeable to STT. For long-term shares, STT
         must have been paid on acquisition and sale; for long-term fund units,
-        on transfer. This version does not assess exceptions for acquisitions
-        without STT or IFSC transactions.
+        on transfer. This app does not assess exceptions for acquisitions
+        without STT or transactions in an International Financial Services
+        Centre, or IFSC.
       </p>
       <p>
         Combine all brokers and funds once. Your gain and loss amounts must
@@ -299,13 +306,16 @@ export function EquityGainsHelp({
         Enter gains from profitable sales and allowable losses from loss-making
         sales separately for each holding-period category. If a broker report
         gives only a net amount, obtain the separate totals before continuing.
-        Do not subtract losses twice. Your records must already resolve any
-        dividend or bonus stripping restriction. This section excludes
-        unconfirmed or ineligible earlier-year losses, foreign or unlisted
-        shares, debt and other nonqualifying funds, derivatives, intraday or
-        business trading, employee shares, buybacks, property,
-        REIT/InvIT/AIF/ULIP income, clubbing, reinvestment exemptions and
-        unresolved corporate actions.
+        Do not subtract losses twice. Your records must already account for
+        restrictions on losses from buying and selling around dividend or
+        bonus-unit dates. This section excludes unconfirmed or ineligible
+        earlier-year losses, foreign or unlisted shares, debt and other
+        nonqualifying funds, derivatives, intraday or business trading, employee
+        shares, buybacks, property, income from real-estate or infrastructure
+        investment trusts, alternative investment funds or unit-linked insurance
+        plans; another person's income taxed as yours; tax exemptions for
+        reinvesting sale proceeds; or unresolved changes such as mergers and
+        share splits.
       </p>
       <p>
         Enter eligible earlier-year losses in their separate section. After loss
@@ -318,8 +328,9 @@ export function EquityGainsHelp({
         short-term gains first, then remaining long-term gains. They cannot
         reduce salary, freelance income or bank interest. The plan shows the
         amounts used and any unused loss. A return filed by the applicable due
-        date and determination of the loss are needed to claim carry-forward; a
-        saved completion is not proof of either.
+        date and determination of the loss are needed to use unused losses in
+        later tax years, called carry-forward; a saved completion is not proof
+        of either.
       </p>
       <p>
         The normal presumptive advance-tax date remains 15 March. Unexpected
@@ -330,6 +341,49 @@ export function EquityGainsHelp({
       <ExternalLink href="https://www.incometaxindia.gov.in/documents/d/guest/income_tax_act_2025_as_amended_by_fa_act_2026-pdf">
         Official equity gains and losses rules, sections 108–109, 111, 121, 196
         and 198
+      </ExternalLink>
+    </HelpModal>
+  )
+}
+
+// Copy reviewed 2026-09-10 against Income-tax Rules, 2026, rule 163,
+// notified 2026-03-20 and effective 2026-04-01. This explains a declaration;
+// it does not add a separate eligibility calculation.
+export function AnnualReturnHelp() {
+  return (
+    <HelpModal
+      topic="other income-tax filing conditions"
+      title="When might I need to file even with no tax due?"
+      description="For this tax year, check whether any of these conditions applies. Add amounts across your accounts or payments; the limits are annual totals."
+    >
+      <ul className="list-disc space-y-2 pl-5">
+        <li>
+          You deposited more than ₹1 crore across current accounts with banks or
+          co-operative banks.
+        </li>
+        <li>
+          You spent more than ₹2 lakh on foreign travel for yourself or anyone
+          else. The rule excludes travel to neighbouring countries and notified
+          pilgrimage destinations; confirm any exception before leaving it out.
+        </li>
+        <li>You spent more than ₹1 lakh on electricity.</li>
+        <li>You deposited ₹50 lakh or more across savings bank accounts.</li>
+      </ul>
+      <p>
+        Current and savings accounts are different bank account types. Use the
+        type on your bank statement and total deposits, not the closing balance.
+        The first three limits must be exceeded; exactly ₹50 lakh meets the
+        savings-account condition.
+      </p>
+      <p>
+        Holding foreign assets or having authority to sign on an overseas
+        account can also require a return even with no income. This plan checks
+        your earlier foreign-asset answers, income, freelance receipts and TDS
+        and TCS separately. Choose Yes for another filing condition you know
+        applies. Choose No only after checking; use Not sure if unresolved.
+      </p>
+      <ExternalLink href="https://www.incometaxindia.gov.in/documents/d/guest/en-notified-it-rules-2026-20-03-2026-pdf#page=130">
+        Official filing conditions, rule 163, PDF
       </ExternalLink>
     </HelpModal>
   )

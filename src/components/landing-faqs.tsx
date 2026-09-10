@@ -2,6 +2,11 @@ import { Link } from 'react-router-dom'
 import { ExternalLink } from '@/components/external-link'
 import { formatDate } from '@/lib/format'
 import { currentRules } from '@/rules'
+import { taxYearDateRange } from '@/lib/tax-period'
+import { TaxMethodHelp } from '@/routes/check/tax-method-help'
+import { ResidenceHelp } from '@/routes/check/residence-help'
+import { RentalIncomeHelp } from '@/routes/check/rental-income-fields'
+import { ForeignAssetsHelp } from '@/routes/check/foreign-assets-fields'
 import {
   AdditionalIncomeHelp,
   EquityGainsHelp,
@@ -20,13 +25,31 @@ export function LandingFaqs() {
         <article>
           <h3>What can My Next Filing help me with?</h3>
           <p>
-            It gives you a best-effort income-tax estimate, checks whether GST
-            registration may apply, and puts the supported filing and payment
-            dates in order.
+            It estimates income tax on the freelance profit and other income you
+            enter, checks whether Goods and Services Tax, or GST, registration
+            may apply, and puts the filing and payment dates it can establish in
+            order. GST is separate from income tax.
           </p>
           <p>
             It does not file or pay anything, send reminders, confirm government
             acceptance, or replace a tax professional.
+          </p>
+        </article>
+
+        <article>
+          <h3>What should I have ready?</h3>
+          <p>
+            This tax year runs from {taxYearDateRange}. Have your full-year
+            work-income totals before fees and tax deductions, other income
+            records, and details of tax already paid. If you have a job,
+            investments, rental income or GST registration, keep those records
+            nearby too. You will not need to upload anything.
+          </p>
+          <p>
+            The first step checks whether your work and tax method fit this app.
+            The form explains unfamiliar terms as you go. If a fact is not
+            confirmed, choose Not sure instead of guessing. Some tax
+            classifications still need your records or a tax adviser's help.
           </p>
         </article>
 
@@ -43,20 +66,19 @@ export function LandingFaqs() {
         <article>
           <h3>What happens to my answers?</h3>
           <p>
-            When you open the questionnaire, this tab automatically keeps a
-            recovery draft of your answers. You can refresh and continue your
-            estimate or unsaved plan. Closing the tab may remove this draft. If
-            this browser cannot keep the draft, a warning explains that
-            refreshing may lose your answers. You can still calculate in this
-            tab.
+            When you open the questionnaire, this tab automatically keeps your
+            in-progress answers so you can resume your estimate or unsaved plan
+            after a refresh. Closing the tab may remove this draft. If this
+            browser cannot keep the draft, a warning explains that refreshing
+            may lose your answers. You can still calculate in this tab.
           </p>
           <p>
             After a supported result, you can choose to save a workspace for
             later visits. This browser then keeps the answers needed to run your
-            estimate again and the dates you mark actions complete. It does not
-            put drafts, examples, calculated results, or tax rules in the saved
-            workspace. Saving a workspace is available only if you confirm that
-            you are 18 or older.
+            estimate again and the dates you mark actions complete. Your
+            estimate is worked out again when you return, using your saved
+            answers and the available tax rules. Saving a workspace is available
+            only if you confirm that you are 18 or older.
           </p>
           <p>
             My Next Filing does not ask for or save your name, PAN, Aadhaar
@@ -70,8 +92,8 @@ export function LandingFaqs() {
           <p>
             Your in-progress answers stay in this tab's browser storage. Your
             saved workspace stays in this browser profile. My Next Filing does
-            not upload either copy or put your answers in URLs, page titles,
-            logs, external links, or sharing.
+            not upload either copy or include your answers in page addresses,
+            titles, logs, external links or shared links.
           </p>
           <p>
             Other people using the same browser profile, and code running on
@@ -98,13 +120,14 @@ export function LandingFaqs() {
             On Your plan, choose <em>Delete saved data</em> to remove your saved
             answers and completion dates from this browser, then your
             in-progress answers from this tab. Other tabs may retain their own
-            in-progress answers. A partial or unverified deletion explains what
-            remains or could not be checked and gives you a retry action.
+            in-progress answers. If anything cannot be deleted or checked, a
+            message explains what happened and lets you try again.
           </p>
           <p>
-            This version removes previously saved answers and completion dates
-            that use the old workspace format. Those removed values cannot be
-            restored, including by returning to an older version of the site.
+            This version of the app removes previously saved answers and
+            completion dates that use the old workspace format. Those removed
+            values cannot be restored, including by returning to an older
+            version of the site.
           </p>
         </article>
 
@@ -139,46 +162,49 @@ export function LandingFaqs() {
         <article id="faq-tax-support">
           <h3>Can My Next Filing estimate my tax?</h3>
           <p>
-            This version is for an adult individual who is resident and
-            ordinarily resident in India, uses the new tax regime, and runs one
-            solo service practice. It can also include supported domestic
-            salary, with one standard deduction of up to ₹75,000 across all
-            employers, and supported employer NPS contributions.{' '}
-            <SalaryCoverageHelp />
+            This app is for adults who freelance on their own, run one service
+            business or profession from India, and use the new tax regime. Your
+            confirmed tax residence must be resident and ordinarily resident in
+            India. <ResidenceHelp />
           </p>
           <p>
-            It can also include confirmed domestic equity gains and current-year
-            losses, ordinary Indian-company dividends, taxable Indian
-            mutual-fund distributions, taxable post-office interest and
-            income-tax refund interest when your records confirm the amounts.{' '}
-            <AdditionalIncomeHelp buttonText="About dividends and interest" />{' '}
+            Your whole freelance practice must use one confirmed presumptive tax
+            method. This uses a minimum share of work income as profit. Your job
+            title alone does not decide the method. <TaxMethodHelp />
+          </p>
+          <p>
+            Alongside freelancing, you can include certain Indian salary,
+            employer contributions to the National Pension System, bank and
+            post-office interest, interest on an income-tax refund,
+            Indian-company dividends and Indian mutual-fund payouts. The form
+            asks about the conditions for each income type.{' '}
+            <SalaryCoverageHelp />{' '}
+            <AdditionalIncomeHelp buttonText="About dividends and interest" />
+          </p>
+          <p>
+            It also covers confirmed profits and losses from eligible Indian
+            shares and equity mutual funds, including eligible unused losses
+            from earlier returns. Taxable income must be no more than ₹1 crore.
+            Extra tax on higher income, called surcharge, and any applicable
+            relief are included within that limit.{' '}
             <EquityGainsHelp buttonText="About equity gains and losses" />
           </p>
           <p>
-            It also supports one Indian home owned alone or with a documented
-            co-ownership share let for residential use, with resolved
-            annual-value records and a non-negative property-income result.
-            Municipal taxes, the standard deduction and eligible loan interest
-            are included. Rental GST treatment is checked separately.
+            Rent from one home in India used as a residence can be included when
+            you own it alone or have a documented share and the tax amounts are
+            confirmed. A rental loss is outside this app. <RentalIncomeHelp />
           </p>
           <p>
-            Foreign assets and overseas signing authority can be included when
-            they add no unsupported income or unresolved tax effects. The plan
-            includes their filing trigger and disclosure guidance. Unclear
-            account classification still needs review; foreign income and
-            foreign-tax relief remain outside this version.
-          </p>
-          <p>
-            The estimate covers taxable income up to ₹1 crore, including
-            first-band surcharge and marginal relief above ₹50 lakh. Supported
-            equity gains use the same ceiling after current-year and eligible
-            earlier-year losses.
+            Overseas assets and accounts can be included when they add no income
+            or unresolved tax effects outside this app. They may require extra
+            reporting in your return. <ForeignAssetsHelp />
           </p>
           <p>It stops without showing a personal estimate if you have:</p>
           <ul>
             <li>
-              A company, non-resident status, a regular-books case, an audit, a
-              surcharge outside the supported band, or another tax regime.
+              A company, non-resident status, tax based on actual profit from
+              regular accounts, a required audit, taxable income above the
+              supported limit, or another tax regime.
             </li>
             <li>
               Salary or house-property income outside the supported conditions,
@@ -195,31 +221,33 @@ export function LandingFaqs() {
             <li>
               Unsupported deductions, losses outside the domestic equity
               conditions or tax credits, employee or deductor duties, or amounts
-              above this version's limits.
+              above this app's limits.
             </li>
           </ul>
           <p>
-            Some GST facts affect only the GST part of your plan. For example,
-            another reason for compulsory registration or an unknown filing
-            frequency can leave GST guidance incomplete while your income-tax
-            estimate remains available. If a fact also changes your income-tax
+            An unknown GST answer may leave GST guidance incomplete while your
+            income-tax estimate remains available. The plan explains which part
+            needs a separate check. If a fact also changes your income-tax
             treatment, the estimate stops.
           </p>
           <p>
             It also does not calculate late interest, fees, penalties, GST
             payable, credits or refunds, or choose a tax return form. For one
             continuously active normal GST registration, it can show monthly or
-            QRMP return dates and conditional payment reviews. Confirmed service
-            exporters can also receive a before-export LUT action. Unknown
-            quarters or LUT facts leave the other established dates available.
+            quarterly return dates and monthly payment checks under the
+            Quarterly Return Monthly Payment scheme, called QRMP. Confirmed
+            service exporters can also receive an action to submit a Letter of
+            Undertaking, called LUT, before exporting without upfront GST
+            payment. Unknown quarters or LUT facts leave the other established
+            dates available.
           </p>
         </article>
 
         <article>
           <h3>How is the estimate worked out?</h3>
           <p>
-            Your estimate starts with the presumptive tax method you confirm and
-            uses a higher declared profit if you enter one. It then:
+            Your estimate starts with the minimum profit under your confirmed
+            tax method, or the higher profit you enter. It then:
           </p>
           <ol>
             <li>
@@ -233,20 +261,23 @@ export function LandingFaqs() {
               income to the nearest ₹10.
             </li>
             <li>
-              Applies the {currentRules.taxPeriod} new-regime slabs, rebate or
-              marginal relief to ordinary-income tax. Equity gains use their
-              separate rates and thresholds. It then adds 4% Health and
-              Education Cess.
+              Applies the {currentRules.taxPeriod} new-regime rates for each
+              income band, then any tax reduction, called a rebate, or relief
+              for income just above its limit. Equity gains use their separate
+              rates and thresholds. It then adds 4% Health and Education Cess.
             </li>
             <li>
-              Subtracts TDS, TCS, and advance tax already paid, then rounds the
-              final estimate to the nearest ₹10.
+              Subtracts income tax deducted by payers, called TDS, tax collected
+              on transactions, called TCS, and advance tax you already paid,
+              then rounds the final estimate to the nearest ₹10.
             </li>
           </ol>
           <p>
-            It shows advance tax when the amount left after TDS and TCS is at
-            least ₹10,000. The GST result uses your GST aggregate turnover and
-            state threshold, not your income-tax receipts.
+            Advance tax is income tax paid during the year. A payment action
+            appears when the estimated annual tax after TDS and TCS is at least
+            ₹10,000. GST registration is checked separately using the full value
+            of supplies under your tax identity and the limit for your state,
+            rather than freelance profit.
           </p>
         </article>
 
@@ -254,8 +285,8 @@ export function LandingFaqs() {
           <h3>How should I use this estimate?</h3>
           <p>
             Use it as a starting point. It is based on the answers you provide
-            and the rules this version supports. It is not tax, accounting, or
-            legal advice and does not create a professional relationship.
+            and the rules this app supports. It is not tax, accounting, or legal
+            advice and does not create a professional relationship.
           </p>
           <p>
             The rules and official sources were last checked on{' '}

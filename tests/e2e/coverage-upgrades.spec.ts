@@ -20,11 +20,11 @@ async function choose(page: Page, id: string, name: string) {
 async function calculate(page: Page) {
   const path = new URL(page.url()).pathname
   if (path === '/check/income')
-    await page.getByRole('button', { name: 'Continue', exact: true }).click()
+    await page.getByRole('button', { name: 'Next', exact: true }).click()
   if (new URL(page.url()).pathname === '/check/clients')
-    await page.getByRole('button', { name: 'Continue', exact: true }).click()
+    await page.getByRole('button', { name: 'Next', exact: true }).click()
   if (new URL(page.url()).pathname === '/check/taxes-and-gst')
-    await page.getByRole('button', { name: 'Continue', exact: true }).click()
+    await page.getByRole('button', { name: 'Next', exact: true }).click()
   await page
     .getByRole('button', { name: 'Calculate my plan', exact: true })
     .click()
@@ -65,7 +65,7 @@ test('earlier loss balances combine with co-owned rent and survive Recovery and 
   await choose(page, 'broughtForwardLossesConfirmed', 'Yes')
   await page
     .getByRole('combobox', {
-      name: 'Loss 1: originating financial year',
+      name: 'Loss 1: financial year when the loss arose',
       exact: true,
     })
     .click()
@@ -198,8 +198,8 @@ test('platform GST uncertainty permits tax and confirmed RCM produces a registra
   await choose(page, 'platformReverseCharge', 'Not sure')
   await expect(
     await questionField(page, '#platformReverseCharge-coverage'),
-  ).toContainText('Partial plan')
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  ).toContainText('Some guidance needs review')
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
   await calculate(page)
   await expect(page.locator('.tax-summary h2')).toHaveText('₹55,160')
   await expect(
@@ -218,12 +218,12 @@ test('platform GST uncertainty permits tax and confirmed RCM produces a registra
     'Yes, and I have confirmed how GST applies',
   )
   await choose(page, 'platformReverseCharge', 'Confirmed: I must pay GST')
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
   await (await questionField(page, '#platformRcmLiabilityDate')).click()
   // The new picker opens at the beginning of the Tax Year.
   await page.getByRole('button', { name: '15 April 2026', exact: true }).click()
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
   await page
     .getByRole('button', { name: 'Calculate my plan', exact: true })
     .click()
@@ -269,11 +269,11 @@ test('captured Recovery asks about prior balances and captured workspace remains
     }),
   ).toHaveAttribute('aria-checked', 'false')
   await expect(
-    page.getByRole('button', { name: 'Continue', exact: true }),
+    page.getByRole('button', { name: 'Next', exact: true }),
   ).toBeDisabled()
   await choose(page, 'hasBroughtForwardLosses', 'No')
   await expect(
-    page.getByRole('button', { name: 'Continue', exact: true }),
+    page.getByRole('button', { name: 'Next', exact: true }),
   ).toBeEnabled()
   await page.evaluate(
     ({ key, value, recoveryKey }) => {

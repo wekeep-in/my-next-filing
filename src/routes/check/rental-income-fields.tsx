@@ -12,14 +12,14 @@ export function RentalIncomeHelp() {
     <HelpModal
       topic="rental income"
       title="Which rental income can I include?"
-      description="This version covers one Indian residential property owned alone or with a definite, documented co-ownership share let for use as a residence, with its tax treatment resolved in your records."
+      description="This app covers rent from one home in India used as a residence. You must own it alone or have a documented share, and know how its rental income is treated for tax."
     >
       <p>
         Enter your own tax-record share of annual value before deducting
         municipal taxes. It considers expected rent and rent received or
         receivable. Do not simply total bank credits, subtract TDS, or enter
-        income after deductions. Resolve vacancy and unrealised rent before
-        entering an amount.
+        income after deductions. Account for periods when the property was empty
+        and rent owed but not received before entering an amount.
       </p>
       <p>
         Enter your qualifying share of the municipal-tax deduction, based on
@@ -37,12 +37,13 @@ export function RentalIncomeHelp() {
         pre-construction instalments and unrelated borrowing.
       </p>
       <p>
-        Disputed ownership, deemed ownership, clubbing, other properties with
-        taxable income or losses, foreign property, self-occupied or
-        deemed-let-out property, arrears or recovered rent, commercial letting,
-        subletting and accommodation businesses need separate review. This
-        version does not apply brought-forward property losses or calculate a
-        negative property result.
+        Special ownership rules and clubbing, where another person's income is
+        taxed as yours, need separate review. So do disputed ownership, other
+        properties with taxable income or losses, foreign property, a home you
+        live in or one treated as rented under tax law, arrears or recovered
+        rent, commercial letting, subletting and accommodation businesses need
+        separate review. This app does not apply brought-forward property losses
+        or calculate a negative property result.
       </p>
       <p>
         Rental income stays separate from freelance receipts. Include actual
@@ -117,10 +118,12 @@ export function RentalIncomeFields({
                     from your freelance practice.
                   </li>
                   <li>
-                    Your records resolve annual value, ownership, vacancy and
-                    unrealised rent. Your entered annual value and deductions
-                    belong to your share only. There is no disputed ownership,
-                    clubbing, deemed ownership, arrears, recovered rent or other
+                    Your records confirm the rental value used for tax, your
+                    ownership share, periods without tenants and unpaid rent.
+                    Your entered annual value and deductions belong to your
+                    share only. There is no disputed ownership, income taxed as
+                    someone else's or ownership assigned under special tax
+                    rules, late or recovered rent from earlier periods, or other
                     property income or loss to include.
                   </li>
                   <li>
@@ -156,10 +159,10 @@ export function RentalIncomeFields({
                 label={label}
                 help={
                   key === 'rentalAnnualValue'
-                    ? 'Use your tax-record share of annual value before municipal taxes, standard deduction, loan interest or TDS. Bank rent credits alone may be insufficient.'
+                    ? 'Annual value is the rental value used for tax, which may differ from rent received. Enter your confirmed share before municipal property taxes, deductions or tax withheld by a tenant. It must already account for expected rent, empty periods and unpaid rent.'
                     : key === 'rentalMunicipalTaxes'
                       ? 'Enter your qualifying deduction for local-authority property taxes actually paid by owners this Tax Year. Exclude maintenance charges and unpaid or tenant-paid taxes. Use 0 if none.'
-                      : 'Enter your eligible current-year interest from your loan records. Do not infer it from the ownership percentage alone. Exclude principal, the full EMI and pre-construction interest. Use 0 if none.'
+                      : 'Enter your eligible current-year interest from your loan records. Do not infer it from the ownership percentage alone. Exclude loan repayments other than interest, the full monthly instalment and interest from before construction was completed. Use 0 if none.'
                 }
                 value={draft.amounts[key]}
                 error={errors[key]}
@@ -173,18 +176,18 @@ export function RentalIncomeFields({
                 <>
                   <ul className="mt-3 list-disc space-y-2 pl-5">
                     <li>
-                      Your rental share is treated as your own supply under your
-                      PAN and registration, not a separate association or
-                      entity. The dwelling and rental supply are in the same
-                      state or Union territory as your freelance practice and
-                      any GST registration entered here.
+                      Your share of rent belongs to you for GST under your own
+                      tax identity, called PAN, rather than to a separate
+                      association or organisation. The dwelling and rental
+                      supply are in the same state or Union territory as your
+                      freelance practice and any GST registration entered here.
                     </li>
                     <li>
                       The dwelling is used only as a residence. Throughout the
                       letting, every tenant is either unregistered for GST or a
-                      registered sole proprietor renting in their personal
-                      capacity for their own residence, on their own behalf
-                      rather than for their proprietorship.
+                      GST-registered sole proprietor, someone who owns a
+                      business alone, renting the home personally to live in,
+                      not for their business.
                     </li>
                   </ul>
                   <p className="mt-3">

@@ -107,8 +107,11 @@ export function PaymentEditor({
     <Card className="inline-editor">
       {!embedded && <h3>How much advance tax have you paid?</h3>}
       <p>
-        Enter the total advance tax already paid for this Tax Year. Your plan
-        will be recalculated.
+        Enter all advance tax paid for this tax year, including earlier
+        payments, not just your latest payment. Exclude tax deducted or
+        collected by others and self-assessment tax paid when settling your
+        return. Updating this amount recalculates your plan; it does not make a
+        payment.
       </p>
       <label htmlFor="advance-tax-update">Total advance tax already paid</label>
       <div className="relative max-w-96">
@@ -146,7 +149,7 @@ export function PaymentEditor({
             if ('value' in parsed) onSubmit(String(parsed.value))
           }}
         >
-          Save and recalculate
+          Update and recalculate
         </Button>
         <Button variant="link" type="button" onClick={onCancel}>
           Cancel
@@ -367,7 +370,7 @@ export function SavedDataState({
         <Badge variant="state">Saving unavailable</Badge>
         <h1 id="saved-unavailable-title">You can continue in this tab</h1>
         <p>
-          This browser did not make saved storage available. Your current work
+          This browser could not access your saved workspace. Your current work
           remains in this tab.
         </p>
         <div className="button-row">

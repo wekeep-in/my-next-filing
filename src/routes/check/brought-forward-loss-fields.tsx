@@ -65,20 +65,22 @@ export function BroughtForwardLossFields({
           label="Do you have eligible capital losses left from earlier years?"
           help={
             <>
-              Enter balances from your tax records after previous use and
-              adjustments. Keep this year's losses in the current-year fields.{' '}
+              These are investment losses reported in an earlier tax return that
+              are still available to reduce this year's gains. Enter only the
+              unused, confirmed amounts. Keep this year's losses above.{' '}
               <HelpModal
                 topic="earlier-year capital losses"
                 title="Which earlier losses can I use?"
-                description="Use determined loss balances from timely filed returns, not an unconfirmed estimate from this plan or a broker's net total."
+                description="Use losses established through the tax-return process for returns filed on time. Your records must confirm how much remains after losses used in earlier years."
               >
                 <p>
-                  This branch covers still-available losses from the supported
+                  This section covers still-available losses from the supported
                   Indian listed shares and equity-oriented mutual funds. Your
                   records must resolve filing eligibility, determination,
-                  previous use, amendments and the original loss year. Disputed,
-                  condoned, foreign, trading or other unsupported losses need
-                  separate review.
+                  previous use, amendments and the original loss year. Disputed
+                  losses, losses from late returns accepted by special
+                  permission, foreign or trading losses, and other unsupported
+                  losses need separate review.
                 </p>
                 <p>
                   Use the financial year in which the loss arose, not its
@@ -90,8 +92,9 @@ export function BroughtForwardLossFields({
                 </p>
                 <p>
                   Unused earlier balances keep their original last usable year.
-                  This plan does not certify them or promise future set-off. Do
-                  not enter a balance that has already been used elsewhere.
+                  This plan does not certify them or confirm that they can
+                  reduce tax in a future year. Do not enter a balance that has
+                  already been used elsewhere.
                 </p>
               </HelpModal>
             </>
@@ -134,7 +137,8 @@ export function BroughtForwardLossFields({
                 <div className="field-stack">
                   <SelectField
                     id={`broughtForwardYears.${index}.originYear`}
-                    label={`Loss ${index + 1}: originating financial year`}
+                    label={`Loss ${index + 1}: financial year when the loss arose`}
+                    help="Use the April-to-March year in which you made the loss, not the later assessment year shown on the return."
                     value={row.originYear}
                     options={
                       yearOptions.some(
@@ -155,7 +159,7 @@ export function BroughtForwardLossFields({
                   <MoneyField
                     id={`broughtForwardYears.${index}.shortTerm`}
                     label={`Loss ${index + 1}: remaining short-term balance`}
-                    help="Enter the eligible balance before this year's set-off. Use 0 if none."
+                    help="Enter the loss still available before reducing this year's gains. Use 0 if none."
                     value={row.shortTerm}
                     error={errors[`broughtForwardYears.${index}.shortTerm`]}
                     onChange={(value) => update(index, 'shortTerm', value)}
@@ -163,7 +167,7 @@ export function BroughtForwardLossFields({
                   <MoneyField
                     id={`broughtForwardYears.${index}.longTerm`}
                     label={`Loss ${index + 1}: remaining long-term balance`}
-                    help="Enter the eligible balance before this year's set-off. Use 0 if none."
+                    help="Enter the loss still available before reducing this year's gains. Use 0 if none."
                     value={row.longTerm}
                     error={errors[`broughtForwardYears.${index}.longTerm`]}
                     onChange={(value) => update(index, 'longTerm', value)}

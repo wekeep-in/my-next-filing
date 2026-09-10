@@ -8,18 +8,25 @@ export function DeclaredProfitHelp() {
     <HelpModal
       topic="declared profit and freelancer expenses"
       title="What profit should I enter?"
-      description="Enter your confirmed declared profit. Presumptive profit already accounts for expenses; do not subtract them again."
+      description="Declared profit is the amount you report as profit for tax purposes. Under the presumptive method, use at least the minimum percentage shown beside the field, or your higher confirmed profit."
     >
+      <p>
+        For example, 50% of ₹10 lakh in gross receipts is ₹5 lakh of profit, not
+        ₹5 lakh of tax. Your tax is calculated on profit together with your
+        other income. Do not subtract expenses again from presumptive profit.
+      </p>
       <p>
         To review actual profit, start with gross work income minus business
         costs: software, internet, workspace, platform fees, work travel and
         accounting. Count only documented business use. Exclude personal costs,
-        your withdrawals and income tax; TDS is a credit, not an expense.
+        your withdrawals and income tax; tax deducted by a client, called TDS,
+        reduces tax owed rather than profit.
       </p>
       <p>
-        Equipment may need depreciation instead of a full deduction. Confirm
+        Equipment may need depreciation, spreading its allowed cost across
+        years, instead of deducting the whole purchase at once. Confirm
         adjustments with your adviser. A claim below the minimum shown beside
-        this field is outside this version.
+        this field is outside this app.
       </p>
       <div className="space-y-2">
         <p>

@@ -15,6 +15,12 @@ import type { Draft, DraftChoice, DraftPath } from '@/routes/check/model'
 import { ResidenceHelp } from '@/routes/check/residence-help'
 import { TaxRegimeHelp } from '@/routes/check/tax-regime-help'
 import { TaxMethodHelp } from '@/routes/check/tax-method-help'
+import {
+  AdditionalIncomeHelp,
+  EquityGainsHelp,
+  SalaryCoverageHelp,
+} from '@/routes/check/other-income-help'
+import { RentalIncomeHelp } from '@/routes/check/rental-income-fields'
 
 export function SituationStep({
   className,
@@ -30,8 +36,8 @@ export function SituationStep({
   return (
     <div className={className}>
       <CheckHeading
-        title="Fit for this version"
-        description="Answer a few questions about you and your work. We will stop before the money questions if this version does not fit."
+        title="Fit for this app"
+        description="First, check whether this app covers your work and tax situation. Choose Not sure when you cannot confirm an answer. Some answers will stop the estimate; that does not mean you have done anything wrong."
         first
       />
       <QuestionSections initialOpen="about-you">
@@ -39,7 +45,8 @@ export function SituationStep({
           <div className="field-stack">
             <ChoiceField
               id="personKind"
-              label="Are you an individual, not a company or firm?"
+              label="Are you answering for yourself as an individual?"
+              help="Choose Yes if you freelance in your own name or as a sole proprietor, meaning you own the business yourself. Choose No for a company, partnership firm or other organisation."
               value={draft.personKind}
               options={['individual', 'not-individual', 'not-sure']}
               labels={{ individual: 'Yes', 'not-individual': 'No' }}
@@ -55,7 +62,7 @@ export function SituationStep({
             <ChoiceField
               id="adult"
               label="Are you 18 or older?"
-              help="This version can only estimate tax for adults. You must also confirm this before saving."
+              help="This app can only estimate tax for adults. You must also confirm this before saving."
               value={draft.adult}
               error={errors.adult}
               onChange={(value) =>
@@ -68,11 +75,12 @@ export function SituationStep({
             />
             <ChoiceField
               id="residence"
-              label={`What was your Indian tax residence status for ${taxYearShort}?`}
+              label={`What is your Indian tax residence status for ${taxYearShort}?`}
               help={
                 <>
-                  Use the status in your tax records or confirmed by your tax
-                  adviser. Choose Not sure if you have not confirmed it.{' '}
+                  Tax residence depends on time spent in India and rules about
+                  earlier years, not just citizenship or your address. Use a
+                  status confirmed for this tax year, or choose Not sure.{' '}
                   <ResidenceHelp />
                 </>
               }
@@ -97,8 +105,9 @@ export function SituationStep({
               label={`Which tax regime are you using for ${taxYearShort}?`}
               help={
                 <>
-                  This version only supports the new tax regime.{' '}
-                  <TaxRegimeHelp />
+                  A tax regime is a set of income-tax rates and deductions.
+                  Deductions reduce the income on which tax is calculated. This
+                  app supports only the new regime. <TaxRegimeHelp />
                 </>
               }
               value={draft.taxRegime}
@@ -115,12 +124,12 @@ export function SituationStep({
           </div>
         </QuestionSection>
 
-        <QuestionSection id="about-practice" title="About your practice">
+        <QuestionSection id="about-practice" title="About your freelance work">
           <div className="field-stack">
             <ChoiceField
               id="onePractice"
-              label="Do you run one self-employed service practice?"
-              help="Choose No if you have more than one business or profession."
+              label="Do you run one freelance service business or profession?"
+              help="This means the work you do for clients on your own account. Several clients can belong to one practice. Choose No if you run another business or profession too."
               value={draft.onePractice}
               error={errors.onePractice}
               onChange={(value) =>
@@ -133,7 +142,7 @@ export function SituationStep({
             />
             <ChoiceField
               id="setupInIndia"
-              label="Is the practice set up and managed in India?"
+              label="Is your freelance practice set up and managed in India?"
               value={draft.setupInIndia}
               error={errors.setupInIndia}
               onChange={(value) =>
@@ -204,7 +213,8 @@ export function SituationStep({
             />
             <ChoiceField
               id="hasClientWorkSubcontractor"
-              label="Does a subcontractor help deliver work to your clients?"
+              label="Do you pay another freelancer or business to do any of your client work?"
+              help="This is subcontracting. Include anyone who delivers part of the work you sell to clients."
               value={draft.hasClientWorkSubcontractor}
               error={errors.hasClientWorkSubcontractor}
               onChange={(value) =>
@@ -218,7 +228,7 @@ export function SituationStep({
               <ChoiceField
                 id="contractorBoundary"
                 label="Do you use a contractor in India for support work only?"
-                help="Choose Yes only if they do not deliver client work, become an employee or agent, create another business, involve a foreign operation, or require you to deduct tax from their payments."
+                help="Support work could be bookkeeping or maintaining your own website. Choose Yes only if the contractor does no client work, is not an employee or agent, and creates no separate business, overseas operation or duty for you to deduct tax from their pay. Choose Not sure if any of this is unclear."
                 options={['none', 'incidental-domestic', 'not-sure']}
                 labels={{ none: 'No', 'incidental-domestic': 'Yes' }}
                 value={draft.contractorBoundary}
@@ -255,8 +265,9 @@ export function SituationStep({
             />
             {draft.activity === 'not-sure' && (
               <p className="field-help" role="status">
-                Not sure stops the estimate. Choose a specific option if you can
-                confirm one.
+                This app needs a confirmed type of work to estimate tax. Keep
+                Not sure until you can identify it from your contracts or with a
+                tax adviser.
               </p>
             )}
             <ChoiceField
@@ -264,9 +275,11 @@ export function SituationStep({
               label="Which tax method do you use for this work?"
               help={
                 <>
-                  Choose the method in your records or the one confirmed by your
-                  tax adviser. We cannot estimate your tax without a confirmed
-                  method. <TaxMethodHelp />
+                  Both options use a minimum percentage of work income as
+                  profit. This is called the presumptive method. Choose only the
+                  path confirmed in your tax records or by a tax adviser. If you
+                  do not know it, read the help before choosing.{' '}
+                  <TaxMethodHelp />
                 </>
               }
               options={['specified-profession', 'eligible-business']}
@@ -284,7 +297,7 @@ export function SituationStep({
                     ? 'Is your whole practice an eligible business?'
                     : 'Is your whole practice a specified profession?'
                 }
-                help="Choose Yes only if this matches your records or professional advice."
+                help="This must cover all your freelance work, not just your main service. Choose Not sure if the classification is unconfirmed."
                 value={draft.pathConfirmed}
                 error={errors.pathConfirmed}
                 onChange={(value) =>
@@ -326,7 +339,8 @@ export function SituationStep({
                 />
                 <ChoiceField
                   id="noChapterViiiCDeduction"
-                  label="Are you claiming no Chapter VIII-C deduction?"
+                  label="Can you confirm you are not claiming a Chapter VIII-C deduction?"
+                  help="These are special deductions for certain incomes and businesses under the Income-tax Act. They are different from ordinary business costs. Check the deduction section of your tax computation, or ask your adviser whether any claim falls under Chapter VIII-C. Choose Not sure if you cannot confirm."
                   value={draft.noChapterViiiCDeduction}
                   error={errors.noChapterViiiCDeduction}
                   onChange={(value) =>
@@ -340,7 +354,7 @@ export function SituationStep({
                 <ChoiceField
                   id="fiveYearExclusion"
                   label="Does the five-year exclusion apply to this method?"
-                  help="This checks whether an earlier use of this method affects you now. Choose Not sure if you need to review earlier years."
+                  help="If you used this business method and then stopped following it within the next five tax years, you can be barred from using it for five years after the year you stopped. Check your past returns or ask your adviser. This question is about that restriction, not how long you have freelanced."
                   options={['none', 'applies', 'not-sure']}
                   value={draft.fiveYearExclusion}
                   error={errors.fiveYearExclusion}
@@ -368,7 +382,18 @@ export function SituationStep({
                 <ChoiceField
                   id={field}
                   label={question}
-                  help={help}
+                  help={
+                    <>
+                      {help}{' '}
+                      {key === 'salaryInvestments' && (
+                        <>
+                          <SalaryCoverageHelp /> <AdditionalIncomeHelp />{' '}
+                          <EquityGainsHelp />
+                        </>
+                      )}
+                      {key === 'otherIncome' && <RentalIncomeHelp />}
+                    </>
+                  }
                   value={draft.unsupportedSituationAnswers[key]}
                   error={errors[field]}
                   onChange={(value) =>

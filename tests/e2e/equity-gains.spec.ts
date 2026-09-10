@@ -49,11 +49,11 @@ test('combines salary dividends and equity gains through review save reload and 
   await expect(await questionField(page, '#longTermGains')).toHaveValue(
     '2,00,000',
   )
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
   await expect(page).toHaveURL(/\/check\/clients$/)
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
   await expect(page).toHaveURL(/\/check\/taxes-and-gst$/)
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
   await page.getByRole('button', { name: 'Other income', exact: true }).click()
   await expect(
     page.getByText('Short-term equity gains', { exact: true }),
@@ -89,7 +89,7 @@ test('combines salary dividends and equity gains through review save reload and 
     .click()
   await (await questionField(page, '#advance-tax-update')).fill('10000')
   await page
-    .getByRole('button', { name: 'Save and recalculate', exact: true })
+    .getByRole('button', { name: 'Update and recalculate', exact: true })
     .click()
   await expect(page.locator('.tax-summary h2')).toHaveText('₹99,110')
   const saved = await page.evaluate(
@@ -133,7 +133,7 @@ test('keeps equity help keyboard accessible and fields usable at desktop tablet 
     .click()
   const help = (await questionField(page, '#hasEquityGains')).getByRole(
     'button',
-    { name: 'Learn more about domestic equity gains' },
+    { name: 'Which equity gains and losses can I include?' },
   )
   await help.focus()
   await page.keyboard.press('Enter')
@@ -203,9 +203,9 @@ test('withholds uncertain equity treatment and supports confirmed mixed basic ex
   await page.goto('/check/income')
   await (await questionField(page, '#grossReceipts')).fill('600000')
   await (await questionField(page, '#declaredProfit')).fill('300000')
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
   await expect(page).toHaveURL(/\/check\/review$/)
   await openQuestionStep(page, 1)
   await (
@@ -215,7 +215,7 @@ test('withholds uncertain equity treatment and supports confirmed mixed basic ex
     .click()
   await expect(
     await questionField(page, '#hasEquityGains-unsupported'),
-  ).toContainText('Outside this version')
+  ).toContainText('Estimate unavailable for this answer')
   await (
     await questionField(page, '#hasEquityGains')
   )
@@ -232,7 +232,7 @@ test('withholds uncertain equity treatment and supports confirmed mixed basic ex
   await (await questionField(page, '#longTermLosses')).fill('0')
   await expect(page.locator('#equityGainsConfirmed-unsupported')).toHaveCount(0)
   await expect(
-    page.getByRole('button', { name: 'Continue', exact: true }),
+    page.getByRole('button', { name: 'Next', exact: true }),
   ).toBeEnabled()
   await (await questionField(page, '#longTermGains')).fill('0')
   await expect(page.locator('#equityGainsConfirmed-unsupported')).toHaveCount(0)
@@ -242,7 +242,7 @@ test('withholds uncertain equity treatment and supports confirmed mixed basic ex
   )
   await (await questionField(page, '#shortTermGains')).fill('')
   await expect(
-    page.getByRole('button', { name: 'Continue', exact: true }),
+    page.getByRole('button', { name: 'Next', exact: true }),
   ).toBeDisabled()
   await expect(page).toHaveURL(/\/check\/income$/)
   await expect(await questionField(page, '#shortTermGains-error')).toBeVisible()
@@ -275,7 +275,7 @@ test('restores the captured workspace and writes the new schema only on an ordin
     .click()
   await (await questionField(page, '#advance-tax-update')).fill('1000')
   await page
-    .getByRole('button', { name: 'Save and recalculate', exact: true })
+    .getByRole('button', { name: 'Update and recalculate', exact: true })
     .click()
   expect(
     await page.evaluate(

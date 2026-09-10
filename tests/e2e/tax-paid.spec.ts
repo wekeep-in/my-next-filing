@@ -6,15 +6,15 @@ test('tax-paid choices control fields, validation, recovery and later plan payme
   await seedPersonal(page)
   await page.goto('/check/income')
   await expect(page.locator('#hasTaxPaid')).toHaveCount(0)
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
   await expect(page).toHaveURL(/\/check\/clients$/)
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
   await expect(page).toHaveURL(/\/check\/taxes-and-gst$/)
   const choose = async (name: string) =>
     (await questionField(page, '#hasTaxPaid'))
       .getByRole('radio', { name, exact: true })
       .click()
-  const next = page.getByRole('button', { name: 'Continue', exact: true })
+  const next = page.getByRole('button', { name: 'Next', exact: true })
   await choose('Not sure')
   await expect(page.locator('#tds')).toHaveCount(0)
   await expect(next).toBeDisabled()
@@ -64,7 +64,7 @@ test('tax-paid choices control fields, validation, recovery and later plan payme
     .click()
   await page.locator('#advance-tax-update').fill('1000')
   await page
-    .getByRole('button', { name: 'Save and recalculate', exact: true })
+    .getByRole('button', { name: 'Update and recalculate', exact: true })
     .click()
   await page.getByRole('button', { name: 'Back', exact: true }).click()
   await page

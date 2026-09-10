@@ -7,9 +7,17 @@ export function ResidenceHelp() {
   return (
     <HelpModal
       topic="Indian tax residence"
-      title="Ordinarily resident or RNOR?"
-      description="Ordinarily resident means you meet the residence test and the additional rules based on earlier years in India. RNOR means resident but not ordinarily resident."
+      title="What does tax residence mean?"
+      description="Tax residence determines how India taxes your income. It is based on days in India and other legal conditions, not just your passport or where you live today."
     >
+      <p>
+        <strong>Resident and ordinarily resident</strong> means you meet both
+        the residence tests and the additional conditions based on earlier
+        years. <strong>Resident but not ordinarily resident</strong>, often
+        shortened to RNOR, is a different status for some residents.
+        <strong> Non-resident</strong> means you do not meet the applicable
+        residence tests for the year. This app covers only the first status.
+      </p>
       <p>
         Use your travel and tax records to check the full tests and exceptions
         for {currentRules.taxPeriod}. Choose Not sure until confirmed.

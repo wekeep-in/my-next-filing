@@ -9,17 +9,33 @@ export function GstLiabilityDateHelp() {
     <HelpModal
       topic="the GST registration liability date"
       title="When did I cross the threshold?"
-      description="Use the first date your cumulative GST aggregate turnover exceeded your applicable threshold. Exactly reaching it does not count."
+      description="Add up your GST turnover from the start of the tax year. Use the first date the running total went above the registration limit. Exactly reaching the limit does not count."
     >
+      <p>
+        For the service business covered here, the limit is ₹
+        {currentRules.groups.gstRegistration.values.lowerThreshold.toLocaleString(
+          'en-IN',
+        )}{' '}
+        in{' '}
+        {currentRules.groups.gstRegistration.values.lowerThresholdStates.join(
+          ', ',
+        )}
+        , and ₹
+        {currentRules.groups.gstRegistration.values.standardThreshold.toLocaleString(
+          'en-IN',
+        )}{' '}
+        elsewhere. Other registration requirements can apply below these limits.
+      </p>
       <p>
         Check all-India GST turnover records under your PAN for{' '}
         {currentRules.taxPeriod}. Use the confirmed crossing date, not a bank
         payout or application date.
       </p>
       <p>
-        Leave blank if at or below the threshold, or unsure. An unknown date
-        withholds the deadline, not a possible obligation. Seek advice for
-        earlier-year liability.
+        Leave blank if at or below the threshold, or unsure. If registration is
+        required but the date is unknown, the plan says you need to register
+        without guessing a deadline. Ask an adviser if the requirement began in
+        an earlier tax year.
       </p>
       <div className="space-y-2">
         <p>

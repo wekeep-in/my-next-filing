@@ -26,9 +26,10 @@ export function EmployerNpsFields({
         label="Do your employers contribute to your NPS?"
         help={
           <>
-            Include employer-funded contributions to your NPS Tier I account for
-            this tax year. Do not include your own contributions deducted from
-            pay. <EmployerNpsHelp />
+            NPS is the National Pension System. Include money your employer pays
+            into your NPS Tier I retirement account for this tax year. Do not
+            include your own contributions deducted from pay.{' '}
+            <EmployerNpsHelp />
           </>
         }
         value={draft.hasEmployerNps}
@@ -59,14 +60,15 @@ export function EmployerNpsFields({
                   once, before any NPS deduction.
                 </li>
                 <li>
-                  Total employer contributions to recognised PF, NPS and
-                  approved superannuation funds across all your employers are no
-                  more than ₹7,50,000 this year.
+                  Total employer contributions to recognised provident funds,
+                  NPS and approved superannuation pension funds across all your
+                  employers are no more than ₹7,50,000 this year.
                 </li>
                 <li>
                   You have no taxable fund growth from current or earlier excess
-                  contributions, unresolved fund adjustments, or UPS, Tier II or
-                  NPS Vatsalya treatment.
+                  contributions, unresolved fund adjustments, or amounts under
+                  the Unified Pension Scheme, NPS Tier II investment accounts or
+                  NPS Vatsalya accounts for children.
                 </li>
                 <li>
                   If more than one employer contributes, each contribution is
@@ -149,7 +151,7 @@ export function EmployerNpsFields({
                         Basic pay and eligible DA
                       </>
                     }
-                    help="Enter this year's basic pay plus dearness allowance that qualifies under your employment terms. Exclude other allowances, bonuses, benefits and employer NPS."
+                    help="DA means dearness allowance, a salary allowance for living costs. Enter this year's basic pay plus DA that qualifies under your employment terms. Exclude other allowances, bonuses, benefits and employer NPS."
                     value={employer.eligibleSalary}
                     error={
                       errors[`employerNpsEmployers.${index}.eligibleSalary`]

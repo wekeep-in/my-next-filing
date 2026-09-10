@@ -55,8 +55,8 @@ export function LandingRoute() {
           <h1 id="landing-title">My Next Filing</h1>
         </div>
         <p className="landing-intro">
-          Estimate your taxes and see the next filing dates. This app runs in
-          your browser and is made for Indian freelancers.
+          Estimate your income tax and see which filing and payment dates apply
+          to your freelance work in India.
         </p>
         <p className="landing-example">
           Try a{' '}

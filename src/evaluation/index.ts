@@ -2065,7 +2065,7 @@ function parseRentalIncome(
       'inconsistent',
       `${path}.rentalMunicipalTaxes`,
       'other-income',
-      'This version needs municipal taxes no higher than annual value. Check the amounts; a property loss needs separate review.',
+      'This app needs municipal taxes no higher than annual value. Check the amounts; a property loss needs separate review.',
     )
   return income
 }
@@ -2779,35 +2779,35 @@ function factForSharedProfile(profile: Profile, sourceIds: readonly string[]) {
       'tax-year',
       'tax-year',
       'Tax Year',
-      `This version evaluates ${TAX_YEAR} only.`,
+      `This app evaluates ${TAX_YEAR} only.`,
     ],
     [
       profile.person.kind === 'individual',
       'person-kind',
       'tax-year',
       'Individual',
-      'This version supports individuals only.',
+      'This app supports individuals only.',
     ],
     [
       profile.person.adult === 'yes',
       'adult',
       'tax-year',
       'Adult user',
-      'Saving and this supported calculation are for adults who confirm this fact.',
+      'This app can estimate tax and save a workspace only for someone who confirms they are 18 or older.',
     ],
     [
       profile.person.residence === 'resident-ordinarily-resident',
       'residence',
       'tax-year',
       'Resident and ordinarily resident',
-      'RNOR and non-resident rules are outside this version.',
+      'This app covers only confirmed resident and ordinarily resident status. Resident but not ordinarily resident, non-resident and unconfirmed status need separate guidance.',
     ],
     [
       profile.taxRegime === 'new',
       'tax-regime',
       'tax-year',
       'New tax regime',
-      'This version uses the new-regime Rules only.',
+      'This app can estimate tax only when you confirm you use the new tax regime.',
     ],
     [
       profile.practice.onePractice === 'yes',
@@ -2835,14 +2835,14 @@ function factForSharedProfile(profile: Profile, sourceIds: readonly string[]) {
       'partner',
       'tax-year',
       'No partner',
-      'Partnership income is outside this version.',
+      'Partnership income is outside this app.',
     ],
     [
       profile.practice.hasEmployee === 'no',
       'employee',
       'tax-year',
       'No employee',
-      'Payroll and deductor duties are outside this version.',
+      'Paying employees and deducting tax from their pay are outside this app.',
     ],
     [
       profile.practice.hasForeignOperation === 'no',
@@ -2856,7 +2856,7 @@ function factForSharedProfile(profile: Profile, sourceIds: readonly string[]) {
       'client-work-subcontractor',
       'tax-year',
       'No client-work subcontractor',
-      'The supported boundary excludes subcontracted client delivery.',
+      'This app does not cover paying someone else to deliver any part of your client work.',
     ],
     [
       profile.practice.hasClientWorkSubcontractor !== 'no' ||
@@ -2864,7 +2864,7 @@ function factForSharedProfile(profile: Profile, sourceIds: readonly string[]) {
       'contractor-boundary',
       'tax-year',
       'Contractor boundary',
-      'Uncertainty about a contractor who may create another duty stops the calculation.',
+      'Confirm whether the contractor does only support work and creates no other tax or employment duty. The estimate cannot continue while this is unclear.',
     ],
     [
       profile.activity !== 'not-sure',
@@ -2893,8 +2893,8 @@ function factForPath(
         'income-path-confirmation',
         'income-tax',
         'activity',
-        'Income path confirmation',
-        'Choose the presumptive path used in your records. Not sure cannot produce an estimate.',
+        'Tax method not confirmed',
+        'Confirm which presumptive tax method covers all your freelance work. Keep Not sure until your records or adviser establish it; the estimate cannot continue without this.',
         sourceIds,
       ),
     )
@@ -2916,7 +2916,7 @@ function factForPath(
           'income-tax',
           'receipts',
           'Declared professional profit',
-          'The supported professional path needs profit of at least 50% of gross receipts.',
+          'This app needs declared profit of at least 50% of gross receipts. Check for a typing error; if you intend to report lower profit, ask a tax adviser rather than raising it just to continue.',
           sourceIds,
         ),
       )
@@ -2958,13 +2958,13 @@ function factForPath(
         path.noChapterViiiCDeduction === 'yes',
         'business-no-deduction',
         'Chapter VIII-C deduction excluded',
-        'This path does not calculate a Chapter VIII-C deduction.',
+        'A claim under Chapter VIII-C, the special income and business deductions, is outside this path. Confirm your deduction claims before continuing.',
       ],
       [
         path.fiveYearExclusion === 'none',
         'business-five-year-exclusion',
         'Five-year exclusion',
-        'The five-year presumptive-method exclusion must not apply.',
+        'This method is unavailable if the five-year restriction from earlier returns applies. Check your past returns or ask a tax adviser if unsure.',
       ],
     ]
     for (const [condition, code, label, reason] of conditions)
@@ -2996,7 +2996,7 @@ function factForPath(
           'income-tax',
           'receipts',
           'Declared business profit',
-          'The supported business path needs profit of at least 6% of qualifying receipts plus 8% of other receipts.',
+          'This app needs declared profit of at least 6% of qualifying receipts plus 8% of other receipts. Check for a typing error; a lower-profit claim needs separate guidance.',
           sourceIds,
         ),
       )
@@ -3013,8 +3013,8 @@ function factForClients(profile: Profile, sourceIds: readonly string[]) {
         'client-branch-uncertain',
         'income-tax',
         'clients',
-        'Client branch',
-        'Choose whether clients are domestic, foreign, or mixed and whether work is direct, platform-mediated, or both.',
+        'Client details',
+        'Confirm whether your clients are in India, outside India or both, and whether you work directly or through a freelance platform.',
         sourceIds,
       ),
     )
@@ -3029,25 +3029,25 @@ function factForClients(profile: Profile, sourceIds: readonly string[]) {
         clients.platform.ownAccount === 'yes',
         'platform-own-account',
         'Platform relationship',
-        'The freelancer must supply the main service on their own account.',
+        'You must provide your own service to the client, rather than arrange a service supplied by someone else.',
       ],
       [
         clients.platform.recipientIdentifiable === 'yes',
         'platform-recipient',
-        'Contractual recipient',
-        'The contractual recipient must be identifiable in the records.',
+        'Buyer named in the contract',
+        'Your contract must identify who buys your service. Check the contract; a payment sender alone is not enough.',
       ],
       [
         clients.platform.grossBeforeFees === 'yes',
         'platform-gross',
-        'Gross platform consideration',
-        'Records must show gross customer consideration before platform fees and withholding.',
+        'Full client payment before fees',
+        'Your records must show the full client payment before platform fees and tax deductions.',
       ],
       [
         clients.platform
           .notEmploymentCommissionBrokerageRoyaltyLicensingAgency === 'yes',
         'platform-income-character',
-        'Platform income character',
+        'Type of platform income',
         'Employment, commission, brokerage, royalty, licensing, and agency receipts are outside this path.',
       ],
     ]
@@ -3071,25 +3071,25 @@ function factForClients(profile: Profile, sourceIds: readonly string[]) {
         foreign.recipientIdentifiable === 'yes',
         'foreign-recipient',
         'Foreign recipient',
-        'The overseas contractual recipient must be identifiable in the records.',
+        'Your contract must identify the overseas buyer of your service.',
       ],
       [
         foreign.ownAccount === 'yes',
         'foreign-own-account',
         'Foreign own-account supply',
-        'The freelancer must supply the main service on their own account.',
+        'You must provide your own service to the client, rather than arrange a service supplied by someone else.',
       ],
       [
         foreign.ordinaryPlaceOfSupply === 'yes',
         'foreign-place-of-supply',
         'Place of supply',
-        'The ordinary cross-border place-of-supply rule must apply.',
+        "Confirm that the general GST rule places your service at the overseas client's location and no special rule applies.",
       ],
       [
         foreign.sameEstablishment === 'no',
         'foreign-establishment',
         'Establishment relationship',
-        'The supplier and recipient cannot be establishments of the same person.',
+        'You and the overseas buyer cannot be branches or offices of the same legal entity.',
       ],
       [
         foreign.paymentRoute !== 'not-sure',
@@ -3131,7 +3131,7 @@ function factForClients(profile: Profile, sourceIds: readonly string[]) {
         foreign.currencyResolved === 'yes',
         'foreign-currency-resolved',
         'Resolved currency effects',
-        'Fees, withholding, refunds, chargebacks, receivables, and exchange effects must already be resolved.',
+        'Your annual total must account for fees, tax deducted, refunds, reversed payments, unpaid invoices and currency gains or losses. Confirm the total from your records.',
       ],
     ]
     for (const [condition, code, label, reason] of foreignConditions)
@@ -3207,7 +3207,7 @@ function annualReturnTriggers(
     )
   if (hasUnusedEquityLoss(tax))
     triggers.push(
-      'To claim carry-forward of unused capital losses, file a return reporting them by the due date. This action preserves that option even if no other filing condition applies.',
+      'To use unused investment losses against future gains, file a return reporting them by the due date. This keeps that option open even if no other filing condition applies.',
     )
   if (tax.roundedIncomeBeforeNpsDeduction > rules.filingIncomeThreshold)
     triggers.push(
@@ -3236,7 +3236,7 @@ function annualReturnTriggers(
     )
   if (profile.otherIncome.otherAnnualReturnTrigger === 'yes')
     triggers.push(
-      'You confirmed that another prescribed return trigger applies.',
+      'You confirmed another condition that requires an income-tax return.',
     )
   return triggers
 }
@@ -3257,14 +3257,14 @@ function calculateAnnualReturn(
       coverage: coverageUnavailable(
         'annual-return',
         uncertainty,
-        'My Next Filing cannot determine every annual-return trigger from these answers.',
-        'Check the prescribed triggers and current return guidance before relying on this part of your plan.',
+        'Your answers do not yet establish whether you need to file an income-tax return.',
+        'Check the filing conditions in Taxes and GST, including bank deposits, travel and electricity spending. Confirm any uncertain answers before relying on this part of your plan.',
         sourceIds,
       ),
       review: [
         reviewAction(
           'annual-return-review',
-          'Review annual-return triggers',
+          'Check whether you need to file a return',
           'annual-return',
           uncertainty === 'annual-return-foreign-assets-uncertain'
             ? 'other-income'
@@ -3811,7 +3811,7 @@ function calculateGst(
       coverage: coverageUnavailable(
         'gst',
         'gst-fact-uncertain',
-        'The GST threshold conclusion needs complete turnover and compulsory-registration facts.',
+        'To check whether you need GST registration, the plan needs your complete turnover and any other reason you must register.',
         'Confirm these GST facts before relying on a registration conclusion.',
         sourceIds,
       ),
@@ -3854,8 +3854,8 @@ function calculateGst(
           : coverageUnavailable(
               'gst',
               'gst-liability-date-uncertain',
-              'Turnover is above the starting threshold but the liability date is not an established past date.',
-              'Review the date when liability arose. My Next Filing does not invent a registration deadline.',
+              'Turnover is above the registration limit, but the date you first crossed it has not been confirmed.',
+              'Confirm when you first became required to register. The plan cannot show an application deadline without that date.',
               sourceIds,
             ),
       review: [
@@ -3961,7 +3961,7 @@ function coreSupportFacts(
         'income-tax',
         'other-income',
         'Income effects of foreign assets',
-        'Confirm that these arrangements add no unsupported income, gains, losses, benefits, foreign tax or unresolved amounts. Otherwise this version cannot estimate your tax.',
+        'Confirm that these arrangements add no unsupported income, gains, losses, benefits, foreign tax or unresolved amounts. Otherwise this app cannot estimate your tax.',
         sourceIds,
       ),
     )
@@ -3990,7 +3990,7 @@ function coreSupportFacts(
         'income-tax',
         'other-income',
         'House-property loss',
-        'Interest exceeds property income after municipal taxes and the standard deduction. This version does not calculate property losses. Check the amounts or get a separate review.',
+        'Interest exceeds property income after municipal taxes and the standard deduction. This app does not calculate property losses. Check the amounts or get a separate review.',
         sourceIds,
       ),
     )
@@ -4005,7 +4005,7 @@ function coreSupportFacts(
         'income-tax',
         'other-income',
         'Earlier-year capital losses',
-        'Confirm the determined, timely filed and still-available earlier-year losses before using this estimate.',
+        'Use losses established through returns filed on time. Confirm the original years and amounts still unused before continuing.',
         sourceIds,
       ),
     )
@@ -4024,7 +4024,7 @@ function coreSupportFacts(
         'income-tax',
         'other-income',
         'Expired capital loss',
-        'An entered loss is outside its eight-year set-off window. Review the year and balance; this version will not silently discard it.',
+        'An entered loss is too old to use within its eight-year limit. Check the original loss year and remaining amount; this app cannot use that balance.',
         sourceIds,
       ),
     )
@@ -4064,7 +4064,7 @@ function coreSupportFacts(
         'income-tax',
         'other-income',
         'Employer NPS limits across jobs',
-        'An NPS contribution exceeds 14% of the basic pay and eligible DA entered for that employer. This version does not resolve unused limits across multiple employers. Check the amounts or get a separate review.',
+        'An NPS contribution exceeds 14% of the basic pay and eligible DA entered for that employer. This app does not resolve unused limits across multiple employers. Check the amounts or get a separate review.',
         sourceIds,
       ),
     )
@@ -4099,7 +4099,7 @@ function coreSupportFacts(
         'income-tax',
         'other-income',
         'Dividends and additional interest',
-        'Confirm the supported income types and annual taxable amounts before this version can estimate your tax.',
+        'Confirm the supported income types and annual taxable amounts before this app can estimate your tax.',
         sourceIds,
       ),
     )
@@ -4113,7 +4113,7 @@ function coreSupportFacts(
         'income-tax',
         'other-income',
         'Domestic salary',
-        'Confirm the supported domestic salary conditions. Other or uncertain salary treatment needs a separate review before this version can estimate tax.',
+        'Confirm the supported domestic salary conditions. Other or uncertain salary treatment needs a separate review before this app can estimate tax.',
         sourceIds,
       ),
     )
@@ -4126,7 +4126,7 @@ function coreSupportFacts(
         unsupportedFactLabels[fact],
         fact === 'unsupportedFactsNotSure'
           ? 'Confirm whether any listed situation applies before calculating your plan.'
-          : 'This fact needs Rules that this version does not calculate.',
+          : 'This fact needs Rules that this app does not calculate.',
         sourceIds,
       ),
     )
@@ -4150,7 +4150,7 @@ function coreSupportFacts(
           ? 'receipts'
           : 'other-income',
         'Total income above ₹1 crore',
-        'This version supports taxable income up to ₹1 crore. Higher surcharge bands need separate review.',
+        'This app supports taxable income up to ₹1 crore. Higher surcharge bands need separate review.',
         sourceIds,
       ),
     )
@@ -4448,7 +4448,7 @@ export function evaluate(
       'foreign-guidance',
       'foreign-guidance-rules-stale',
       'Foreign-asset and receipt guidance needs review before it can be shown.',
-      'The income-tax estimate remains available. Ask an authorised dealer or qualified adviser about cross-border steps.',
+      'The income-tax estimate remains available. Ask your bank authorised to handle foreign exchange or a qualified adviser about overseas payment steps.',
       sources,
     )
     reviewActions.push(

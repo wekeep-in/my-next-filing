@@ -17,24 +17,25 @@ export function ForeignAssetsHelp() {
       <p>
         Include assets and financial interests you held outside India as owner
         or beneficial owner, and signing authority over any overseas account,
-        even when someone else owns the money. A beneficial owner has provided
-        consideration for an asset held for their own or another person's
-        benefit. Include accounts or assets held at any time during the Tax
-        Year, even if closed or sold later or if they earned no income.
+        even when someone else owns the money. A beneficial owner has paid for
+        an asset held for their own or another person's benefit. Include
+        accounts or assets held at any time during the Tax Year, even if closed
+        or sold later or if they earned no income.
       </p>
       <p>
         For a virtual receiving account, wallet or platform balance, check who
         legally holds the account, where it is located, and whether you have a
         separate balance or claim against an overseas provider. Routing details
         alone do not establish ownership. Choose Not sure if the arrangement is
-        unresolved; this version does not classify a provider by brand.
+        unresolved; this app does not classify a provider by brand.
       </p>
       <p>
         Foreign bank interest, dividends, rent, gains, losses, employee-share
-        benefits, foreign tax and treaty relief remain outside this version. A
-        beneficiary-only or trust arrangement also needs separate review. Do not
-        treat these amounts as zero or include them in the domestic income
-        fields.
+        benefits, foreign tax and treaty relief remain outside this app. An
+        arrangement where you only receive benefits from an asset without owning
+        or funding it, or where a trust holds the asset, also needs separate
+        review. Do not treat these amounts as zero or include them in the
+        domestic income fields.
       </p>
       <p>
         Supported freelance fees can already be included in your annual gross
@@ -78,9 +79,10 @@ export function ForeignAssetsFields({
           label={`Did you hold foreign assets or have signing authority during ${taxYearShort}?`}
           help={
             <>
-              Include assets, financial interests and overseas accounts held at
-              any time in this Tax Year, even with no income or a zero closing
-              balance. <ForeignAssetsHelp />
+              Include overseas bank accounts, investments and property held at
+              any time this tax year, even if later closed or sold. Signing
+              authority means you can authorise account transactions even when
+              someone else owns the money. <ForeignAssetsHelp />
             </>
           }
           value={draft.hasForeignAssets}
@@ -116,10 +118,10 @@ export function ForeignAssetsFields({
                   </li>
                   <li>
                     There is no foreign tax or relief claim, beneficiary-only or
-                    trust arrangement, foreign operation, overseas business
-                    control, cross-border related-party transaction,
-                    transfer-pricing report requirement, or unresolved income or
-                    tax treatment.
+                    trust arrangement, foreign office or business operation,
+                    control over an overseas business, dealings with a related
+                    person or business abroad, required report on prices in
+                    those dealings, or unresolved income or tax treatment.
                   </li>
                 </ul>
                 <p className="mt-3">

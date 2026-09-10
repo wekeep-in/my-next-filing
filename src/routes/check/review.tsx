@@ -67,15 +67,15 @@ function GroupSummary({
   const groups = [
     {
       id: 'review-fit',
-      title: 'Fit for this version',
+      title: 'Fit for this app',
       step: groupStep('tax-year'),
       answers: [
-        { label: 'Person', value: answer(draft.personKind) },
+        { label: 'Who you are answering for', value: answer(draft.personKind) },
         { label: '18 or older', value: answer(draft.adult) },
         { label: 'Residence status', value: answer(draft.residence) },
         { label: 'Tax regime', value: answer(draft.taxRegime) },
         {
-          label: 'One self-employed service practice',
+          label: 'One freelance business or profession',
           value: answer(draft.onePractice),
         },
         {
@@ -130,13 +130,13 @@ function GroupSummary({
                 value: answer(draft.noChapterViiiCDeduction),
               },
               {
-                label: 'Five-year exclusion',
+                label: 'Five-year restriction on the business method',
                 value: answer(draft.fiveYearExclusion),
               },
             ]
           : []),
         {
-          label: 'Situations outside this version',
+          label: 'Situations outside this app',
           value:
             draft.unsupportedCertainty === 'selected'
               ? draft.unsupportedFacts
@@ -202,7 +202,7 @@ function GroupSummary({
                 value: answer(draft.platformOwnAccount),
               },
               {
-                label: 'Who the service contract is with',
+                label: 'Service buyer identified in your contract',
                 value: answer(draft.platformRecipientIdentifiable),
               },
               {
@@ -231,7 +231,7 @@ function GroupSummary({
               },
               {
                 label: 'Reverse-charge registration liability date',
-                value: draft.platformRcmLiabilityDate || 'Not established',
+                value: date(draft.platformRcmLiabilityDate),
               },
             ]
           : []),
@@ -242,7 +242,7 @@ function GroupSummary({
                 value: answer(draft.foreignWorkInIndia),
               },
               {
-                label: 'Who the overseas service contract is with',
+                label: 'Overseas service buyer identified in your contract',
                 value: answer(draft.foreignRecipientIdentifiable),
               },
               {
@@ -578,8 +578,8 @@ export function ReviewStep({
   return (
     <div className={className}>
       <CheckHeading
-        title="Check your answers before calculating"
-        description="We'll use these answers to calculate your estimate and plan. Edit any section that isn't right."
+        title="Review your answers"
+        description="Check the full-year amounts and confirmed choices below. Edit anything that is incorrect. Calculating your plan does not file a return or make a payment."
       />
       <GroupSummary draft={draft} onEdit={onEdit} />
       <ErrorSummary errors={errors} />

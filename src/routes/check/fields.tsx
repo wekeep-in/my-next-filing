@@ -36,8 +36,8 @@ export function FieldError({
           id={id.replace(/-error$/, '-unsupported')}
           role="alert"
         >
-          <strong>Outside this version.</strong> {warning}{' '}
-          <Link to="/#faq-tax-support">See what this version supports</Link>.
+          <strong>Estimate unavailable for this answer.</strong> {warning}{' '}
+          <Link to="/#faq-tax-support">See what this app supports</Link>.
         </p>
       )}
       {coverage && (
@@ -46,8 +46,8 @@ export function FieldError({
           id={id.replace(/-error$/, '-coverage')}
           role="status"
         >
-          <strong>Partial plan.</strong> {coverage} Your income-tax estimate
-          remains available.
+          <strong>Some guidance needs review.</strong> {coverage} Your
+          income-tax estimate remains available.
         </p>
       )}
       {error ? (
@@ -241,10 +241,10 @@ export function MoneyField({
             type="button"
             variant="ghost"
             className="shrink-0 rounded-none px-3 text-sm"
-            aria-label={zeroLabel}
+            aria-label={`Use 0: ${zeroLabel}`}
             onClick={() => onChange('0')}
           >
-            None
+            Use 0
           </Button>
         )}
       </div>

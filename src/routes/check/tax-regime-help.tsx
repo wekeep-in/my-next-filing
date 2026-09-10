@@ -8,13 +8,14 @@ export function TaxRegimeHelp() {
     <HelpModal
       topic="tax regimes"
       title="Which regime am I using?"
-      description="The new regime is the default and allows fewer deductions. The old regime uses different rates and allows more deductions."
+      description="The new and old regimes are two sets of income-tax rates and deductions. Deductions reduce taxable income. The new regime is the default and allows fewer deductions; the old regime uses different rates and allows more."
     >
       <p>
         Check your latest return and any regime-choice forms on the Income Tax
-        portal. Freelancers face switching restrictions, so confirm what applies
-        for {currentRules.taxPeriod} with your adviser. Choose Not sure until
-        confirmed.
+        portal. Choosing an option here does not change your regime with the
+        government. Freelancers face switching restrictions, so confirm what
+        applies for {currentRules.taxPeriod} with your adviser. Choose Not sure
+        until confirmed.
       </p>
       <div className="space-y-2">
         <p>

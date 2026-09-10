@@ -49,15 +49,15 @@ test('includes additional income and preserves established filing and GST conclu
   await expect(
     await questionField(page, '#mutualFundDistributions'),
   ).toHaveValue('20,000')
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
   await expect(page).toHaveURL(/\/check\/clients$/)
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
   await expect(page).toHaveURL(/\/check\/taxes-and-gst$/)
   await (await questionField(page, '#aggregateTurnover')).fill('2000001')
   await expect(
     await questionField(page, '#thresholdLiabilityDate-coverage'),
   ).toContainText('exceeds the registration threshold')
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
   await page.getByRole('button', { name: 'Other income', exact: true }).click()
   await expect(
     page.getByText('Indian-company dividends', { exact: true }),
@@ -139,7 +139,7 @@ test('preserves income through Resources navigation with responsive help and fie
   const help = (await questionField(page, '#hasAdditionalIncome')).getByRole(
     'button',
     {
-      name: 'Learn more about dividends and additional interest',
+      name: 'Which dividends and interest can I include?',
     },
   )
   await help.focus()
@@ -224,7 +224,7 @@ test('loads the published workspace and upgrades it on an ordinary save', async 
     .click()
   await (await questionField(page, '#advance-tax-update')).fill('1000')
   await page
-    .getByRole('button', { name: 'Save and recalculate', exact: true })
+    .getByRole('button', { name: 'Update and recalculate', exact: true })
     .click()
   const saved = await page.evaluate(
     (key) => JSON.parse(localStorage.getItem(key)!) as unknown,

@@ -2,7 +2,11 @@ import {
   QuestionSection,
   QuestionSections,
 } from '@/routes/check/question-section'
-import { TcsHelp, TdsHelp } from '@/routes/check/other-income-help'
+import {
+  AnnualReturnHelp,
+  TcsHelp,
+  TdsHelp,
+} from '@/routes/check/other-income-help'
 import { useContext } from 'react'
 import { currentRules } from '@/rules'
 import { taxYearShort } from '@/lib/tax-period'
@@ -58,7 +62,8 @@ export function GstStep({
     <div className="field-stack">
       <ChoiceField
         id="gstKind"
-        label="Have you ever had a GSTIN for this practice?"
+        label="Have you ever registered this freelance practice for GST?"
+        help="GST means Goods and Services Tax, separate from income tax. Registration gives you a GST identification number, or GSTIN. Choose Yes even if a past registration is now cancelled."
         options={['unregistered', 'registered', 'not-sure']}
         value={draft.gstKind}
         error={errors.gstKind}
@@ -73,16 +78,16 @@ export function GstStep({
         draft.platformReverseCharge === 'due' && (
           <div className="field">
             <label htmlFor="platformRcmLiabilityDate">
-              When did the platform-fee reverse-charge registration liability
-              arise?
+              When did paying GST on platform fees first require you to
+              register?
             </label>
             <p
               id="platformRcmLiabilityDate-help"
               className="text-muted-foreground"
             >
-              Use the date established by your records or adviser. Leave it
-              unknown for earlier-year or unresolved timing; the plan will still
-              show that registration is required.
+              Use the date confirmed by your records or adviser. Leave blank if
+              it is unknown or falls before this tax year. The plan will still
+              show that registration is required, but cannot give its deadline.
             </p>
             <DatePicker
               id="platformRcmLiabilityDate"
@@ -112,8 +117,10 @@ export function GstStep({
             label="Which describes your GST registration?"
             help={
               <>
-                Choose Something else for multiple GSTINs, composition,
-                suspension or cancellation. <GstRegistrationHelp />
+                Use the taxpayer type on your GST registration certificate.
+                Choose Something else if you have several registrations, use the
+                composition scheme, or a registration is suspended or cancelled.{' '}
+                <GstRegistrationHelp />
               </>
             }
             options={['one-normal', 'other', 'not-sure']}
@@ -147,7 +154,7 @@ export function GstStep({
               />
               <div className="field">
                 <label htmlFor="gstRegisteredFrom">
-                  Effective GST registration date
+                  Effective GST registration date, if known
                 </label>
                 <p className="field-help" id="gstRegisteredFrom-help">
                   Use the effective date in your registration records, not the
@@ -216,7 +223,7 @@ export function GstStep({
         <>
           <SelectField
             id="gstState"
-            label="Which state or Union territory do you make taxable supplies from?"
+            label="Which state or Union territory do you provide your services from?"
             value={draft.gstState}
             error={errors.gstState}
             onChange={(value) =>
@@ -234,7 +241,7 @@ export function GstStep({
           <MoneyField
             id="aggregateTurnover"
             label="GST aggregate turnover for this PAN"
-            help={`Enter your all-India total for ${taxYearShort}. Include taxable, exempt, export, and inter-State supplies, including exempt rental supply value. Do not use taxable rental income after deductions. Exclude employment salary, GST, cess, and inward supplies taxed under reverse charge. This may differ from the receipts entered earlier.`}
+            help={`Aggregate turnover is the total value of goods and services you supply across India under your PAN, your income-tax identity. For ${taxYearShort}, include services sold to Indian and overseas clients and supplies exempt from GST, including qualifying rental value. Exclude salary, GST, cess and purchases on which you pay reverse-charge GST. Use your GST records; this is not profit or bank deposits and may differ from freelance receipts.`}
             value={draft.amounts.aggregateTurnover}
             error={errors.aggregateTurnover}
             onChange={(value) => setAmount('aggregateTurnover', value)}
@@ -263,7 +270,7 @@ export function GstStep({
                 ? 'Could another reason require GST registration, besides turnover and the platform-fee duty?'
                 : 'Could you need to register for GST for a reason other than turnover?'
             }
-            help="Choose Not sure if you haven't confirmed this."
+            help="Some activities require registration even below the turnover limit, such as having to pay GST yourself under reverse charge. Selling through a platform or to another state can need a check of the applicable exemptions. Choose No only if you have confirmed that no other registration requirement applies; otherwise choose Not sure."
             value={draft.compulsoryRegistration}
             error={errors.compulsoryRegistration}
             onChange={(value) =>
@@ -276,12 +283,12 @@ export function GstStep({
           />
           <div className="field">
             <label htmlFor="thresholdLiabilityDate">
-              If your turnover is above the threshold, when did you become
-              liable to register?
+              When did your GST turnover first cross the registration threshold?
             </label>
             <p className="field-help" id="threshold-date-help">
-              Choose a past or present date in {taxYearShort}. Leave this blank
-              if your turnover is at or below the threshold or you don't know
+              The threshold is the turnover limit that can require registration.
+              Enter the first date you exceeded it in {taxYearShort}, no later
+              than today. Leave blank if you have not crossed it or do not know
               the date. <GstLiabilityDateHelp />
             </p>
             <DatePicker
@@ -313,7 +320,7 @@ export function GstStep({
     <div className={className}>
       <CheckHeading
         title="Taxes and GST"
-        description="Add tax credits and payments, check other filing conditions, and confirm your GST details."
+        description="First, include income tax already paid so it is not counted twice. Then check whether you need to file a return and how GST, Goods and Services Tax, applies."
       />
       <QuestionSections initialOpen="tax-paid-title">
         <QuestionSection id="tax-paid-title" title="Tax already paid">
@@ -321,7 +328,7 @@ export function GstStep({
             <ChoiceField
               id="hasTaxPaid"
               label={`Do you have Indian tax credits or advance tax payments to include for ${taxYearShort}?`}
-              help="Include Indian TDS or TCS credits and advance tax already paid. Choose No only if all three are zero. Choose Not sure if you need to check your records."
+              help="TDS is income tax deducted by clients, employers or banks. TCS is income tax collected from you on certain transactions. Advance tax is income tax you pay during the year. Include only amounts already paid or available as credits, not expected payments. Choose No only if all three are zero; choose Not sure if you need to check."
               value={draft.hasTaxPaid}
               error={errors.hasTaxPaid}
               onChange={(value) =>
@@ -339,8 +346,10 @@ export function GstStep({
                   label="Indian TDS credit"
                   help={
                     <>
-                      Enter actual Indian TDS for all income included in this
-                      estimate. Count each credit once. <TdsHelp />
+                      Add tax deducted by Indian clients, employers and banks
+                      for all income in this estimate. Use your tax-credit
+                      records and count each amount once. Enter 0 if none.{' '}
+                      <TdsHelp />
                     </>
                   }
                   value={draft.amounts.tds}
@@ -352,8 +361,9 @@ export function GstStep({
                   label="Indian TCS credit"
                   help={
                     <>
-                      Enter the TCS credit available for {taxYearShort}.{' '}
-                      <TcsHelp />
+                      Enter income tax collected from you and available as a
+                      credit for {taxYearShort}. Exclude GST collections. Enter
+                      0 if none. <TcsHelp />
                     </>
                   }
                   value={draft.amounts.tcs}
@@ -363,7 +373,7 @@ export function GstStep({
                 <MoneyField
                   id="advanceTaxPaid"
                   label="Advance tax already paid"
-                  help={`Enter only advance tax paid for ${taxYearShort}. Do not include self-assessment tax.`}
+                  help={`Enter all income tax you have already paid as advance tax for ${taxYearShort}. Exclude self-assessment tax, the balance paid when settling your annual return. Enter 0 if none.`}
                   value={draft.amounts.advanceTaxPaid}
                   error={errors.advanceTaxPaid}
                   onChange={(value) => setAmount('advanceTaxPaid', value)}
@@ -396,7 +406,15 @@ export function GstStep({
             <ChoiceField
               id="otherAnnualReturnTrigger"
               label="Does another condition require you to file an income-tax return?"
-              help="Choose Not sure if you need to review the banking, travel, electricity, or foreign-asset conditions."
+              help={
+                <>
+                  An income-tax return is the annual report of your income and
+                  tax sent to the government. You may need to file even when no
+                  tax is due. Check the banking, travel, electricity and
+                  foreign-asset conditions before answering.{' '}
+                  <AnnualReturnHelp />
+                </>
+              }
               value={draft.otherAnnualReturnTrigger}
               error={errors.otherAnnualReturnTrigger}
               onChange={(value) =>
@@ -419,8 +437,10 @@ export function GstStep({
               title="GST filing frequency"
             >
               <p className="field-help mb-0!" id="gst-cadence-help">
-                Choose the filing frequency shown in the GST portal for each
-                quarter. Choose Not sure if you haven't confirmed it.{' '}
+                A GST return is a report you file with the government. Choose
+                the frequency shown in the GST portal for each three-month
+                quarter. QRMP means quarterly returns with monthly payment
+                checks. Choose Not sure if you haven't confirmed it.{' '}
                 <GstFrequencyHelp />
               </p>
               <div className="field-stack">
@@ -460,9 +480,11 @@ export function GstStep({
                   label="How are you handling GST on service exports?"
                   help={
                     <>
-                      Use the treatment in your records for this year. Overseas
-                      clients alone do not establish export eligibility.{' '}
-                      <GstExportHelp />
+                      LUT means Letter of Undertaking, used by eligible
+                      exporters to export without paying Integrated GST, or
+                      IGST, upfront. SEZ means Special Economic Zone. Use the
+                      route confirmed in your records; an overseas client alone
+                      is not enough. <GstExportHelp />
                     </>
                   }
                   value={draft.gstExportRoute}
@@ -531,7 +553,7 @@ export function GstStep({
                     />
                     <div className="field">
                       <label htmlFor="gstFirstExportDate">
-                        First service export date in {taxYearShort}
+                        First service export date in {taxYearShort}, if known
                       </label>
                       <p className="field-help" id="gstFirstExportDate-help">
                         Use the first export under this GST registration,

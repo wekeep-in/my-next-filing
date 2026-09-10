@@ -22,7 +22,7 @@ export function ReceiptsStep({
       {heading && (
         <CheckHeading
           title="Your receipts and profit"
-          description="Enter whole-rupee amounts from your records. Receipt amounts should be before expenses, platform fees, and Indian withholding."
+          description="Receipts are your freelance work income before expenses, platform fees and tax deducted by clients. Enter full-year totals in whole rupees from your records."
         />
       )}
       {isBusinessPath(draft) ? (
@@ -30,7 +30,7 @@ export function ReceiptsStep({
           <MoneyField
             id="grossReceipts"
             label="Gross business receipts"
-            help="Enter the full gross amount for this practice."
+            help="Enter your full-year work income before expenses, platform fees and tax deducted by clients. This is your gross receipts, not just the amount that reached your bank."
             value={draft.amounts.grossReceipts}
             error={errors.grossReceipts}
             onChange={(value) => setAmount('grossReceipts', value)}
@@ -38,7 +38,7 @@ export function ReceiptsStep({
           <MoneyField
             id="qualifyingReceipts"
             label="Qualifying bank or online receipts"
-            help={`Use the amount your records classify as qualifying bank or online receipts. Include payments received during ${taxYearShort} or by the return due date.`}
+            help={`Enter the part of gross receipts received through permitted banking or online modes during ${taxYearShort} or by the income-tax return deadline. Examples include account-payee cheques, bank transfers and UPI. Confirm the amount from your records; do not count cash deposited into a bank as a bank payment.`}
             value={draft.amounts.qualifyingReceipts}
             error={errors.qualifyingReceipts}
             onChange={(value) => setAmount('qualifyingReceipts', value)}
@@ -58,7 +58,7 @@ export function ReceiptsStep({
             id="cashReceipts"
             zeroLabel="No cash receipts, non-account-payee cheques or drafts"
             label="Receipts paid in cash"
-            help="Include cash, non-account-payee cheques, and drafts."
+            help="Include cash and cheques or bank drafts that are not marked account payee. Account-payee means only the named recipient can receive the money into their account."
             value={draft.amounts.cashReceipts}
             error={errors.cashReceipts}
             onChange={(value) => setAmount('cashReceipts', value)}
@@ -68,8 +68,9 @@ export function ReceiptsStep({
             label="Declared profit"
             help={
               <>
-                Enter at least 6% of qualifying receipts plus 8% of other
-                receipts. <DeclaredProfitHelp />
+                Declared profit is the profit you will report for tax. Enter at
+                least 6% of qualifying receipts plus 8% of other receipts, or
+                your higher confirmed profit. <DeclaredProfitHelp />
               </>
             }
             value={draft.amounts.declaredProfit}
@@ -82,7 +83,7 @@ export function ReceiptsStep({
           <MoneyField
             id="grossReceipts"
             label="Gross professional receipts"
-            help="Enter the total before expenses, platform fees, or Indian withholding."
+            help="Enter your full-year work income before expenses, platform fees and tax deducted by clients. This is your gross receipts, not just the amount that reached your bank."
             value={draft.amounts.grossReceipts}
             error={errors.grossReceipts}
             onChange={(value) => setAmount('grossReceipts', value)}
@@ -91,7 +92,7 @@ export function ReceiptsStep({
             id="cashReceipts"
             zeroLabel="No cash receipts, non-account-payee cheques or drafts"
             label="Professional receipts received in cash"
-            help="Include cash, non-account-payee cheques, and drafts. If cash is exactly 5%, the higher receipt limit applies."
+            help="Include cash and cheques or bank drafts that are not marked account payee. Account-payee means only the named recipient can receive the money into their account. Enter 0 if none."
             value={draft.amounts.cashReceipts}
             error={errors.cashReceipts}
             onChange={(value) => setAmount('cashReceipts', value)}
@@ -101,7 +102,8 @@ export function ReceiptsStep({
             label="Declared profit"
             help={
               <>
-                Enter at least 50% of gross professional receipts.{' '}
+                Declared profit is the profit you will report for tax. Enter at
+                least 50% of gross receipts, or your higher confirmed profit.{' '}
                 <DeclaredProfitHelp />
               </>
             }

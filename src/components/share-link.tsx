@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 
 const sharePayload = {
   title: 'My Next Filing',
-  text: 'A clear, best-effort tax and filing overview for supported solo freelancers in India.',
+  text: 'Estimate income tax and see filing and payment dates for supported solo freelancers in India.',
   url: 'https://mynextfiling.wekeep.in/',
 } as const
 
@@ -41,13 +41,12 @@ export function ShareLink() {
         type="button"
         onClick={share}
       >
-        share
-      </Button>{' '}
-      My Next Filing
+        share My Next Filing
+      </Button>
       {status === 'copied' && (
         <span className="font-extrabold text-primary" role="status">
           {' '}
-          Link copied
+          Site link copied
         </span>
       )}
       {status === 'failed' && (

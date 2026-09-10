@@ -249,8 +249,7 @@ export function CheckRoute() {
           </QuestionIssues>
           {assessment.stale && (
             <p className="choice-warning" role="alert">
-              The rules need an update before this version can calculate your
-              plan.
+              The rules need an update before this app can calculate your plan.
             </p>
           )}
         </AutoSize>
@@ -284,7 +283,7 @@ export function CheckRoute() {
         action={
           <FieldHelp
             id="continue-blocked"
-            label="Why Continue is unavailable"
+            label="Why the next step is unavailable"
             disabled={assessment.progression.kind !== 'blocked'}
             trigger={
               <span
@@ -303,13 +302,13 @@ export function CheckRoute() {
                       : undefined
                   }
                 >
-                  {route === 'review' ? 'Calculate my plan' : 'Continue'}
+                  {route === 'review' ? 'Calculate my plan' : 'Next'}
                 </Button>
               </span>
             }
           >
             {assessment.stale
-              ? 'The rules need an update before this version can calculate your plan.'
+              ? 'This app needs updated tax rules before it can calculate your plan. You can review your answers, but changing them cannot update the rules.'
               : (assessment.progression.kind === 'blocked' &&
                   assessment.progression.issue?.message) ||
                 'Complete the required answers before continuing.'}

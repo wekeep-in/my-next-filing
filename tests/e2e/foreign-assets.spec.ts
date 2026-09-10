@@ -37,9 +37,9 @@ test('established foreign assets reach the disclosure card and survive saving an
       exact: true,
     }),
   ).toBeChecked()
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
   await page.getByRole('button', { name: 'Other income', exact: true }).click()
   await expect(
     page.getByText('Foreign assets or signing authority', { exact: true }),
@@ -99,7 +99,7 @@ test('classification uncertainty permits a partial plan but unresolved income bl
 }) => {
   await seedPersonal(page)
   await page.goto('/check/income')
-  const next = page.getByRole('button', { name: 'Continue', exact: true })
+  const next = page.getByRole('button', { name: 'Next', exact: true })
   await choose(page, 'hasForeignAssets', 'Not sure')
   await choose(page, 'assetIncomeConfirmed', 'Not sure')
   await expect(
@@ -143,7 +143,7 @@ test('foreign-asset help and guidance fit desktop tablet and mobile with keyboar
   await page.goto('/check/income')
   await choose(page, 'hasForeignAssets', 'Yes')
   const help = page.getByRole('button', {
-    name: 'Learn more about foreign assets and signing authority',
+    name: 'Which overseas arrangements count?',
     exact: true,
   })
   await help.focus()
@@ -231,7 +231,7 @@ test('historical Recovery retains the foreign-assets exclusion until the new sco
   await choose(page, 'assetIncomeConfirmed', 'Yes')
   await choose(page, 'hasBroughtForwardLosses', 'No')
   await expect(
-    page.getByRole('button', { name: 'Continue', exact: true }),
+    page.getByRole('button', { name: 'Next', exact: true }),
   ).toBeEnabled()
 })
 
@@ -260,7 +260,7 @@ test('historical saved data remains unchanged on load and upgrades only through 
     .click()
   await (await questionField(page, '#advance-tax-update')).fill('1000')
   await page
-    .getByRole('button', { name: 'Save and recalculate', exact: true })
+    .getByRole('button', { name: 'Update and recalculate', exact: true })
     .click()
   expect(
     await page.evaluate(
@@ -288,9 +288,9 @@ test('a nil-tax freelancer with foreign assets sees the annual return as the nex
   await (await questionField(page, '#tds')).fill('0')
   await choose(page, 'hasForeignAssets', 'Yes')
   await choose(page, 'assetIncomeConfirmed', 'Yes')
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
   await (await questionField(page, '#aggregateTurnover')).fill('0')
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
   await page
     .getByRole('button', { name: 'Calculate my plan', exact: true })
     .click()

@@ -16,8 +16,8 @@ async function openPortfolio(page: Page, ordinary = 1_000_000) {
   await page.goto('/check/income')
   await (await questionField(page, '#grossReceipts')).fill(String(ordinary * 2))
   await (await questionField(page, '#declaredProfit')).fill(String(ordinary))
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
   await expect(page).toHaveURL(/\/check\/taxes-and-gst$/)
   await openQuestionStep(page, 1)
   await (await questionField(page, '#taxableBankInterest')).fill('0')
@@ -47,9 +47,9 @@ async function enterPortfolio(
 }
 async function calculate(page: Page) {
   await openQuestionStep(page, 1)
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
+  await page.getByRole('button', { name: 'Next', exact: true }).click()
   await page
     .getByRole('button', { name: 'Calculate my plan', exact: true })
     .click()
@@ -186,7 +186,7 @@ test('reassesses basic exemption after loss set-off and clears all four amounts'
   await enterPortfolio(page, ['50000', '25000', '300000', '0'])
   await expect(page.locator('#equityGainsConfirmed-unsupported')).toHaveCount(0)
   await expect(
-    page.getByRole('button', { name: 'Continue', exact: true }),
+    page.getByRole('button', { name: 'Next', exact: true }),
   ).toBeEnabled()
   await (await questionField(page, '#shortTermLosses')).fill('75000')
   await expect(page.locator('#equityGainsConfirmed-unsupported')).toHaveCount(0)
@@ -265,7 +265,7 @@ test('migrates the captured equity workspace without changing its gains or compl
     .click()
   await (await questionField(page, '#advance-tax-update')).fill('1000')
   await page
-    .getByRole('button', { name: 'Save and recalculate', exact: true })
+    .getByRole('button', { name: 'Update and recalculate', exact: true })
     .click()
   expect(
     await page.evaluate(
@@ -321,6 +321,6 @@ test('restores historical Recovery with gains preserved but loss amounts and exp
   )
   await expect(await questionField(page, '#longTermLosses')).toHaveValue('')
   await expect(
-    page.getByRole('button', { name: 'Continue', exact: true }),
+    page.getByRole('button', { name: 'Next', exact: true }),
   ).toBeDisabled()
 })

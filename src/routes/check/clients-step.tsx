@@ -37,13 +37,16 @@ export function ClientsStep({
         description="Tell us where your clients are and how you work with them. Use your contracts and payment records for the follow-up questions."
       />
       <QuestionSections initialOpen="client-routing">
-        <QuestionSection id="client-routing" title="Client routing">
+        <QuestionSection
+          id="client-routing"
+          title="Where and how you find clients"
+        >
           <div className="field-stack">
             <ChoiceField
               id="clientKind"
               label="Where are your clients based?"
               options={['domestic', 'foreign', 'mixed', 'not-sure']}
-              labels={{ mixed: 'Both domestic and foreign clients' }}
+              labels={{ mixed: 'Both in India and outside India' }}
               value={draft.clientKind}
               error={errors.clientKind}
               onChange={(value) =>
@@ -56,6 +59,7 @@ export function ClientsStep({
             <ChoiceField
               id="delivery"
               label="How do you work with these clients?"
+              help="A platform is a freelance marketplace that arranges client work or handles the contract and payment. A bank or payment service used only to receive money does not by itself mean platform work."
               options={['direct', 'platform', 'both', 'not-sure']}
               labels={{
                 direct: 'Directly',
@@ -93,7 +97,7 @@ export function ClientsStep({
               <ChoiceField
                 id="platformRecipientIdentifiable"
                 label="Do your records identify who your service contract is with?"
-                help="This may be the client or the platform. A payer name alone is not enough."
+                help="Check who buys your service under the contract. This may be the client or the platform. The name on a bank payment alone is not enough."
                 value={draft.platformRecipientIdentifiable}
                 error={errors.platformRecipientIdentifiable}
                 onChange={(value) =>
@@ -160,9 +164,11 @@ export function ClientsStep({
                 }}
                 help={
                   <>
-                    Use confirmed tax treatment from your records or adviser.
-                    Uncertain fee GST keeps your income-tax estimate available
-                    but needs a separate GST review. <PlatformFeeHelp />
+                    Reverse charge means you, as the buyer of the platform
+                    service, must pay its GST directly to the government. Check
+                    the fee invoice with your adviser. Choose Not sure if
+                    unresolved; your income-tax estimate can still be available.{' '}
+                    <PlatformFeeHelp />
                   </>
                 }
                 value={draft.platformReverseCharge}
@@ -188,7 +194,7 @@ export function ClientsStep({
                     <p className="field-help">
                       Your earlier answers about working in India and overseas
                       business operations also apply here. You can change them
-                      in You and your practice.
+                      in Fit for this app.
                     </p>
                   )}
                 {draft.foreignWorkInIndia !== draft.workInIndia && (
@@ -238,8 +244,11 @@ export function ClientsStep({
                   label="Have you confirmed that the general GST rule places the service at your overseas client's location?"
                   help={
                     <>
-                      Choose Not sure unless your records or adviser confirm the
-                      rule. <PlaceOfSupplyHelp />
+                      GST assigns a location to a service, called its place of
+                      supply. An overseas client address alone is not enough.
+                      Choose Yes only if your records or adviser confirm that
+                      the general rule applies, with no special rule.{' '}
+                      <PlaceOfSupplyHelp />
                     </>
                   }
                   value={draft.foreignPlaceOfSupply}
@@ -275,8 +284,9 @@ export function ClientsStep({
                   label="How do your records say these overseas payments were received?"
                   help={
                     <>
-                      Use the route confirmed by your bank or payment provider.{' '}
-                      <PaymentRouteHelp />
+                      Use the route confirmed by your bank or payment provider.
+                      A payment arriving in rupees may have started in foreign
+                      currency. <PaymentRouteHelp />
                     </>
                   }
                   options={[
@@ -369,7 +379,13 @@ export function ClientsStep({
                 <ChoiceField
                   id="foreignTreatyRelief"
                   label="Are you claiming tax relief for foreign tax or under a tax treaty?"
-                  help={<ForeignTaxReliefHelp />}
+                  help={
+                    <>
+                      This means reducing Indian tax using tax paid abroad or an
+                      agreement between India and another country.{' '}
+                      <ForeignTaxReliefHelp />
+                    </>
+                  }
                   value={draft.foreignTreatyRelief}
                   error={errors.foreignTreatyRelief}
                   onChange={(value) =>
@@ -383,7 +399,7 @@ export function ClientsStep({
                 <ChoiceField
                   id="foreignReceiptsResolved"
                   label="Have you confirmed the full year's gross receipts from these clients in rupees?"
-                  help="Keep fees and tax deductions in gross receipts. Reconcile refunds, reversed payments and amounts still owed using your accounting method."
+                  help="Use work income before platform fees and tax deductions. Check how refunds, reversed payments and unpaid invoices belong in the annual total under your accounting method."
                   value={draft.foreignReceiptsResolved}
                   error={errors.foreignReceiptsResolved}
                   onChange={(value) =>
