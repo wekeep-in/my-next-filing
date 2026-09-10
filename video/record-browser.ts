@@ -427,19 +427,27 @@ try {
     })
     await seedPersonal()
     await shot('practice', async (at) => {
-      await at(0.6, () => move(button('Continue')))
+      await at(0.6, () => move(button('Next')))
+    })
+    await shot('work', async (at) => {
+      await at(0.05, () => click(button('Your work and tax method')))
+      await wait(260)
+      await at(0.8, () => reveal(page.locator('#work-and-tax-method'), 120))
     })
     for (const [id, route] of [
-      ['work', 'activity'],
-      ['receipts', 'receipts'],
+      ['receipts', 'income'],
       ['clients-preview', 'clients'],
-      ['tax-paid', 'other-income'],
-      ['gst-preview', 'gst'],
+      ['tax-paid', 'taxes-and-gst'],
+      ['gst-preview', 'taxes-and-gst'],
       ['review', 'review'],
     ]) {
       await shot(id, async (at) => {
         await at(0.05, async () => {
-          await click(button('Continue'))
+          if (id === 'gst-preview') {
+            await click(button('GST registration'))
+            await wait(260)
+            await reveal(page.locator('#gst-registration-title'), 120)
+          } else await click(button('Next'))
           await page.waitForURL(new URL(`/check/${route}`, options.url).href)
           await ready()
         })
@@ -588,21 +596,25 @@ try {
     await shot('clients', async (at) => {
       await at(1.0, () =>
         click(
-          page
-            .locator('#clientKind')
-            .getByText('Both domestic and foreign clients', { exact: true }),
+          page.locator('#clientKind').getByRole('radio', {
+            name: 'Both in India and outside India',
+            exact: true,
+          }),
         ),
       )
       await at(2.1, () =>
         click(
-          page
-            .locator('#delivery')
-            .getByText('Directly and through a platform', { exact: true }),
+          page.locator('#delivery').getByRole('radio', {
+            name: 'Directly and through a platform',
+            exact: true,
+          }),
         ),
       )
-      await at(3.2, () =>
-        page.evaluate(() => scrollBy({ top: 190, behavior: 'smooth' })),
-      )
+      await at(3.2, async () => {
+        await click(button('Platform work'))
+        await wait(260)
+        await reveal(page.locator('#platform-work'), 120)
+      })
     })
     await newSource()
     await shot('return-home', async (at) => {
@@ -640,7 +652,7 @@ try {
     })
     await shot('payment-entered', async (at) => {
       await at(0.05, () => page.keyboard.type(balance, { delay: 55 }))
-      await at(1.35, () => click(button('Save and recalculate')))
+      await at(1.35, () => click(button('Update and recalculate')))
     })
     await shot('zero-balance', async (at) => {
       await at(0.05, () => reveal(card()))
@@ -681,10 +693,14 @@ try {
         reveal(page.getByRole('heading', { name: 'Your agenda', exact: true })),
       )
     })
-    await reviewStep('1. Fit for this version')
+    await reviewStep('1. Fit for this app')
+    await click(button('Your work and tax method'))
+    await wait(260)
+    await reveal(page.locator('#work-and-tax-method'), 120)
     await shot('help', async (at) => {
       const learn = page.getByRole('button', {
-        name: /Learn more about.*tax method/,
+        name: 'Which method fits my work?',
+        exact: true,
       })
       await at(0.25, async () => {
         await move(learn, 1)

@@ -111,9 +111,9 @@ The poster uses frame 1026, before the plan callouts. Packaging also writes stan
 | If I Google "Indian freelancer tax filing," there's plenty of information. | Type the query into an illustrated search field. Scribbled search results fill a long paper sheet that scrolls upward, accelerating as it leaves the screen. |
 | But which parts apply to me, and what do I actually do next? | Reveal the handwritten question "What do I do next?" in green, with an underline. |
 | That's why I built My Next Filing. Let me show you an example. | Turn the paper away to reveal the current homepage. Click "Start your estimate". |
-| I start by answering a few questions about my work, | Keep the fictional example pre-filled. Show "Fit for this version", then click Continue to "Income and profit". |
-| enter my income and taxes already paid, | Click Continue through "Income and profit", "Clients and payments", and "Taxes and GST". Scroll to "Tax already paid", then continue to "Review your answers". |
-| review my answers, and calculate my plan. | Click Continue to "Review your answers", hold on the pre-filled summary, then click "Calculate my plan". |
+| I start by answering a few questions about my work, | Keep the fictional example pre-filled. Show "Fit for this app" and open "Your work and tax method", then click Next to "Income and profit". |
+| enter my income and taxes already paid, | Click Next through "Income and profit", "Clients and payments", and "Taxes and GST". Show the open "Tax already paid" card, then open "GST registration". |
+| review my answers, and calculate my plan. | Click Next to "Review your answers", hold on the pre-filled summary, then click "Calculate my plan". |
 | Here's my next action, the date, and the estimated amount left to pay. | Hold on the next-action card. Move the cursor slowly toward the date and keep it visible. Circle the date first, then the estimated amount, in green. |
 | Below it, you can view all upcoming compliances for the whole tax year. | Scroll down to "Your agenda" and show the upcoming actions. |
 | I can also check the calculation here | Scroll to the tax summary and expand "How this estimate was calculated". |
@@ -123,15 +123,15 @@ The poster uses frame 1026, before the plan callouts. Packaging also writes stan
 | but this app gives me some much needed peace of mind. | Turn to a paper page reading "Prepare here." in green and "File and pay on official portals." below it. |
 | My last submission was a proof of concept built in 24 hours. | Show the original homepage screenshot, tilted slightly with a sketched border. Handwrite and underline "In 24 hours" beside it. |
 | This round, I built a more user-friendly app with a lot more features. | Turn to the handwritten feature checklist and begin revealing its five lines. |
-| It now supports more work types, including eligible work through platforms like Upwork and overseas clients. | Write and check five feature lines: salary alongside freelancing; rent from one Indian home; dividends and bank interest; Indian equity gains and losses; GST checks and filing dates. Switch directly to "Clients and payments". Select "Both domestic and foreign clients" and "Directly and through a platform", and scroll to the follow-up questions. |
+| It now supports more work types, including eligible work through platforms like Upwork and overseas clients. | Write and check five feature lines: salary alongside freelancing; rent from one Indian home; dividends and bank interest; Indian equity gains and losses; GST checks and filing dates. Switch directly to "Clients and payments". Select "Both in India and outside India" and "Directly and through a platform", and open the "Platform work" card. |
 | But the biggest change? What happens when I come back? | Turn to a paper page reading "Come back." and "See what's next." Write the second line in green and underline it. |
 | I reopen my saved plan, | Show the returning homepage, click "Continue your saved workspace", and reveal the restored next-action card. |
-| update the amount paid, and recalculate. | Open "Update amount paid", enter the fictional payment in "Total advance tax already paid", and click "Save and recalculate". |
+| update the amount paid, and recalculate. | Open "Update amount paid", enter the fictional payment in "Total advance tax already paid", and click "Update and recalculate". |
 | The balance is now 0. | Show the recalculated card and underline "No estimated amount left" in green. |
 | I mark that action completed, and the next action changes. | Move onto "Mark completed", hold the hover, then click. Hold on the replacement next-action card and underline its heading. |
 | The plan constantly reflects my progress. | Scroll to the updated agenda and show the recorded completion. |
 | All my answers stay in this browser, and the calculations happen here, too. | Turn to a paper page reading "Your answers." and "Your browser." Write the second line in green and underline it. |
-| I've simplified the questions and added help text wherever necessary. | Return to the work and tax-method questions. Move onto the tax-method "Learn more" control, pause before clicking, and hold the dialog open to show its explanation. |
+| I've simplified the questions and added help text wherever necessary. | Open "Your work and tax method" in "Fit for this app". Move onto "Which method fits my work?", pause before clicking, and hold the dialog open to show its explanation. |
 | Unsupported answers get an immediate explanation, so I know when this tool can't help. | Select "Not sure" for the tax-method confirmation and scroll to its unsupported-answer explanation. |
 | The question stays the same: What should I file next? | Turn to a paper page and handwrite "What should I file next?" with a green underline. |
 | Now, I can keep coming back to the answer. | Turn to the final paper page. Handwrite "mynextfiling.wekeep.in" in green and hold through the ending. |
