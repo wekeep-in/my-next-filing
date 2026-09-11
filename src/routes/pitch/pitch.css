@@ -157,9 +157,7 @@
 .pitch-slide:is(
   [data-kind='portals'],
   [data-kind='opening'],
-  [data-kind='clarity'],
-  [data-kind='freelancer'],
-  [data-kind='closing']
+  [data-kind='freelancer']
 ) {
   padding: 76px 100px;
   color: var(--primary-foreground);
@@ -229,15 +227,11 @@
   font: inherit;
   color: inherit;
 }
-.pitch-boundaries li span {
-  width: 1.2em;
-  font-family:
-    'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
-  font-size: 40px;
-  font-weight: 400;
-  line-height: 1;
-  letter-spacing: normal;
-  text-align: center;
+.pitch-boundaries li svg {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  stroke-width: 1.5;
 }
 .pitch-slide[data-kind='codex'] {
   padding: 0;

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ChartNoAxesCombined, Laptop, ShieldCheck, Unplug } from 'lucide-react'
 import {
   AbsoluteFill,
   Html5Video,
@@ -209,9 +210,7 @@ function Content({ index, still = false }: { index: number; still?: boolean }) {
             <Capture clip={clip} still={still} />
           </Safari>
         )}
-        {['statement', 'clarity', 'product', 'freelancer', 'closing'].includes(
-          slide.kind,
-        ) && (
+        {['statement', 'product', 'freelancer'].includes(slide.kind) && (
           <div className="pitch-statement">
             <h1>{slide.title}</h1>
           </div>
@@ -251,16 +250,20 @@ function Content({ index, still = false }: { index: number; still?: boolean }) {
         {slide.kind === 'boundaries' && (
           <ul className="pitch-boundaries" role="list">
             <li>
-              <span aria-hidden="true">💻</span>No account registration.
+              <Laptop aria-hidden="true" />
+              Calculations in your browser.
             </li>
             <li>
-              <span aria-hidden="true">🔌</span>No portal connection
+              <Unplug aria-hidden="true" />
+              No third-party APIs.
             </li>
             <li>
-              <span aria-hidden="true">📊</span>No web analytics
+              <ChartNoAxesCombined aria-hidden="true" />
+              No web analytics.
             </li>
             <li>
-              <span aria-hidden="true">🛡️</span>No compromises on privacy.
+              <ShieldCheck aria-hidden="true" />
+              No financial data uploads.
             </li>
           </ul>
         )}

@@ -1,18 +1,19 @@
 import { readFileSync } from 'node:fs'
 import type { Page } from '@playwright/test'
 import { expect, seedPersonal, stored, test } from './fixtures'
+import recordings from '../../src/routes/pitch/recordings.json'
 
 async function expectSlide(page: Page, slide: number) {
   await expect(page.locator('.pitch-stage')).toHaveAttribute(
     'aria-label',
-    new RegExp(`^Slide ${slide} of 13:`),
+    new RegExp(`^Slide ${slide} of 14:`),
   )
 }
 
 test('keeps complete videos and fallback posters inside their frames', async ({
   page,
 }) => {
-  for (const slide of [7, 8, 9]) {
+  for (const slide of [8, 9, 10]) {
     await page.goto(`/pitch#${slide}`)
     const media = page
       .locator('.pitch-stage .pitch-capture')
@@ -60,8 +61,8 @@ test('navigates all slides without changing the saved workspace or draft', async
     name: 'Slides',
     exact: true,
   })
-  await expect(navigation.getByRole('button')).toHaveCount(13)
-  await expect(navigation.locator('.pitch-preview')).toHaveCount(13)
+  await expect(navigation.getByRole('button')).toHaveCount(14)
+  await expect(navigation.locator('.pitch-preview')).toHaveCount(14)
   await expect(navigation.locator('video')).toHaveCount(0)
   const scrollArea = navigation.locator('[data-slot="scroll-area"]')
   const scrollbar = scrollArea.locator('[data-slot="scroll-area-scrollbar"]')
@@ -77,7 +78,7 @@ test('navigates all slides without changing the saved workspace or draft', async
   )
   await expect(page.locator('.pitch-controls')).not.toContainText('Present')
   const privacySlide = navigation.getByRole('button', {
-    name: 'Slide 10: No compromises on privacy.',
+    name: 'Slide 12: No financial data uploads. No third-party APIs. No web analytics.',
     exact: true,
   })
   await privacySlide.click()
@@ -87,7 +88,7 @@ test('navigates all slides without changing the saved workspace or draft', async
   ).toHaveCount(0)
   await expect(page.getByRole('link', { name: 'Open the app' })).toHaveCount(0)
   await expect(page.locator('.pitch-stage')).toContainText(
-    'No compromises on privacy.',
+    'No financial data uploads.',
   )
   expect(
     await page.locator('.pitch-page').evaluate((element) => element.scrollTop),
@@ -97,25 +98,25 @@ test('navigates all slides without changing the saved workspace or draft', async
   ).toHaveCount(6)
   await navigation
     .getByRole('button', {
-      name: 'Slide 1: Compliance is complicated.',
+      name: 'Slide 1: When is my next tax filing?',
       exact: true,
     })
     .click()
   await expect(page.locator('.pitch-stage')).toHaveAttribute(
     'aria-label',
-    /^Slide 1 of 13/,
+    /^Slide 1 of 14/,
   )
   await page.keyboard.press('ArrowLeft')
   await expectSlide(page, 1)
-  for (let slide = 2; slide <= 13; slide++) {
+  for (let slide = 2; slide <= 14; slide++) {
     await page.keyboard.press('ArrowRight')
     await expectSlide(page, slide)
   }
   await page.keyboard.press('ArrowRight')
-  await expectSlide(page, 13)
+  await expectSlide(page, 14)
   await page.reload()
-  await expectSlide(page, 13)
-  await page.goto('/pitch#14')
+  await expectSlide(page, 14)
+  await page.goto('/pitch#15')
   await expectSlide(page, 1)
   await page.keyboard.press('Home')
   await expectSlide(page, 1)
@@ -131,7 +132,9 @@ test('plays chapters with end holds and replay, or shows stills without an MP4 d
   page,
   baseURL,
 }) => {
-  test.setTimeout(180000)
+  test.setTimeout(
+    recordings.reduce((ms, clip) => ms + (clip.frames * 1000) / 30, 60000),
+  )
   const canPlay = await page.evaluate(() =>
     Boolean(document.createElement('video').canPlayType('video/mp4')),
   )
@@ -157,9 +160,9 @@ test('plays chapters with end holds and replay, or shows stills without an MP4 d
     } else await route.continue()
   })
   for (const [slide, chapter] of [
-    [7, 'profile-demo'],
-    [8, 'plan-demo'],
-    [9, 'workspace-demo'],
+    [8, 'profile-demo'],
+    [9, 'plan-demo'],
+    [10, 'workspace-demo'],
   ] as const) {
     await page.goto(`/pitch#${slide}`)
     const video = page.locator('.pitch-stage video')
@@ -204,7 +207,11 @@ test('plays chapters with end holds and replay, or shows stills without an MP4 d
     )
     await expect(
       page.getByRole('button', { name: 'Play slide', exact: true }),
-    ).toBeVisible({ timeout: 25000 })
+    ).toBeVisible({
+      timeout:
+        (recordings.find((clip) => clip.id === chapter)!.frames * 1000) / 30 +
+        15000,
+    })
     await expectSlide(page, slide)
     await expect(page.locator('.pitch-stage audio')).toHaveCount(0)
     await expect(page.locator('.pitch-stage .pitch-media-error')).toHaveCount(0)
@@ -237,7 +244,7 @@ test('keeps reduced-motion slides still and fits desktop, tablet and mobile', as
     [320, 740],
   ]) {
     await page.setViewportSize({ width, height })
-    await page.goto('/pitch#7')
+    await page.goto('/pitch#8')
     await expect(
       page.getByRole('button', { name: 'Play slide', exact: true }),
     ).toBeVisible()
@@ -300,7 +307,7 @@ test('keeps reduced-motion slides still and fits desktop, tablet and mobile', as
   }
   await page.getByRole('button', { name: 'Next slide', exact: true }).focus()
   await page.keyboard.press('Enter')
-  await expectSlide(page, 8)
+  await expectSlide(page, 9)
   await expect(
     page.getByRole('button', { name: 'Next slide', exact: true }),
   ).toBeFocused()
@@ -319,7 +326,7 @@ test('enters fullscreen on supported browsers and explains a rejected request', 
     await expect
       .poll(() => page.evaluate(() => document.fullscreenElement?.className))
       .toBe('pitch-stage-wrap')
-    for (let slide = 1; slide <= 13; slide++) {
+    for (let slide = 1; slide <= 14; slide++) {
       if (slide > 1) await page.keyboard.press('ArrowRight')
       await expectSlide(page, slide)
       const color = await page
@@ -340,7 +347,7 @@ test('enters fullscreen on supported browsers and explains a rejected request', 
     await expectSlide(page, 2)
     await page.keyboard.press('ArrowRight')
     await expectSlide(page, 3)
-    await expect(page.locator('.pitch-stage .pitch-portals')).toBeVisible()
+    await expect(page.locator('.pitch-stage .pitch-word-cloud')).toBeVisible()
     await expect(page.locator('.pitch-stage .pitch-slide-footer')).toHaveCount(
       0,
     )
@@ -377,10 +384,10 @@ test('shows the narrative visuals and controls the animated Codex terminal', asy
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
   for (const [slide, title] of [
-    [5, 'When is my next tax filing?'],
-    [4, 'But, what if tax planning was quick and easy?'],
-    [11, 'Built for freelancers by a freelancer.'],
-    [13, 'mynextfiling.wekeep.in'],
+    [1, 'When is my next tax filing?'],
+    [5, 'From notes to a tool.'],
+    [14, 'Built for freelancers. By a freelancer.'],
+    [11, 'And none of those answers were sent to us.'],
   ] as const) {
     await page.goto(`/pitch#${slide}`)
     const heading = page.locator('.pitch-stage h1')
@@ -395,7 +402,7 @@ test('shows the narrative visuals and controls the animated Codex terminal', asy
       .evaluate((element) => getComputedStyle(element).color)
     await expect(canvas).toHaveCSS('background-color', ink)
   }
-  await page.goto('/pitch#3')
+  await page.goto('/pitch#4')
   const portals = page.locator('.pitch-stage img')
   await expect(portals).toHaveCount(25)
   await expect
@@ -431,17 +438,20 @@ test('shows the narrative visuals and controls the animated Codex terminal', asy
     )
   })
   expect(mosaicFits).toBe(true)
-  await page.goto('/pitch#10')
+  await page.goto('/pitch#12')
   await expect(page.locator('.pitch-stage ul')).toHaveCSS(
     'list-style-type',
     'none',
   )
   await expect(page.locator('.pitch-stage li')).toHaveText([
-    '💻No account registration.',
-    '🔌No portal connection',
-    '📊No web analytics',
-    '🛡️No compromises on privacy.',
+    'Calculations in your browser.',
+    'No third-party APIs.',
+    'No web analytics.',
+    'No financial data uploads.',
   ])
+  await expect(
+    page.locator('.pitch-stage li svg[aria-hidden="true"]'),
+  ).toHaveCount(4)
   await expect(page.locator('.pitch-stage li').first()).toHaveCSS(
     'font-family',
     /Fraunces Variable/,
@@ -451,7 +461,7 @@ test('shows the narrative visuals and controls the animated Codex terminal', asy
     '48px',
   )
   await expect(page.locator('.pitch-stage h1, .pitch-stage p')).toHaveCount(0)
-  await page.goto('/pitch#12')
+  await page.goto('/pitch#13')
   const terminal = page.locator('.pitch-stage .pitch-terminal')
   await expect(terminal).toBeVisible()
   await expect(page.locator('.pitch-stage h1')).toHaveText('Built with Codex')

@@ -1,106 +1,195 @@
-[1. Compliance is complicated.]
+# My Next Filing — speaker script
 
-Why is complince so complicated?
-- A tax system has to work for people with very different lives. 
-- All that complexity needs structure. 
-- Structure means standardizations and that leads to complexity.
-- By standardization, I mean, everybody agreening on things - things like terminology.
+The Pledge, the Turn and the Prestige shape the live 14-slide deck. The act labels and bracketed cues are presenter notes, not spoken copy. All product demonstrations use a fictional supported freelancer, not the agency from the origin story.
 
-[2. Terminology cloud]
+## The Pledge
 
-In compliance all these different words can almost feel like learning a whole new language.
+[1. When is my next tax filing?]
 
-When you try searching for something like "upwork freelancer tax filing" you'll get 1000s of results.
+When I was setting up my design agency, I wanted to spend my time doing the work. Finding clients. Designing things. Getting paid.
 
-[ add slide with results with complicated wording]
-
-But when you start reading through some of them, you keep going back to google searching for the terms mentioned and what they mean. Which leads to some other site. And so on and so forth.
-
-[3. Portal screenshots]
-
-Then you have to work out where to go. And which of all these instructions actually applies to you.
-
-[4. But, what if tax planning was quick and easy?]
-
-What if...
-- there were a tool that could understand your specifc situation and turn it into an actionable plan?
-
-[slide with the questions below]
-
-This plan could include:
-- What you might owe
-- What is due next
-- And, explain the "why" in simple terms. 
-
-A tool that answers a simple question:
-
-[5. When is my next tax filing?]
+And somewhere in between, I needed to answer this:
 
 When is my next tax filing?
 
-[6. My Next Filing]
+It felt like a simple enough question. I hired a CA to help me with it, and got on with building the agency.
 
-Say hello to "My Next Filing".
+[Pause. Leave the question on screen.]
 
-[slide playing the current video shown on the website]
+[2. Then the replies stopped.]
 
-This tool started its life as an internal tool for me. 
+A few months later, my CA stopped responding.
 
-At the time I was just setting up my design agency and figuring out the ins and outs of compliances was too much of a headche for me to take on.
+Calls. Emails. WhatsApp. Nothing.
 
-I had hired a CA to help with it but after a few months, he just vanished into thin air.
-Didnt pick my cals, didnt answer to my emails, whatsapps, nothing!
+But the notices kept arriving.
 
-I was getting emailed a whole bunch of scary notices and I had no idea what any of them meant.
+I didn't understand what they meant. I didn't know which ones needed me to do something, or where to even begin.
 
-I had to constantly google terms, look for how to videos on youtube and ask ChatGPT for cases that I couldnot find any results on.
+So I did what most of us would do.
 
-I started keeping notes in notion, then thoses notes turned into a simple streamlit app with a calendar view, the added a tool to parse different kinds of statement and calculate taxes.
+I Googled it.
 
-And this tool is a culmination of all that experience.
+## The Turn
 
-[7. Demo: the person behind the income]
+[3. Terminology cloud]
 
-Coming to the tool...
+Try searching for something like “Upwork freelancer tax filing.”
 
-We start with a fit analysis to confirm whether the tool supports your specific situation.
+You find an explanation. But there's a term in it you don't understand. So you search for that term. That explanation sends you to another page.
 
-The goal here is to make sure we dont give an misleading information to the user, as even the smallest of changes here opens up a whole new can of worms with separate registration and filing requirements that needs to be handled in some separate portal.
+Then you're watching a YouTube tutorial. Then asking ChatGPT about the part you still can't work out.
 
-[list the supported options]
+Every answer seems to come with another question.
 
-Additionally, I made sure the unsupported use cases are flagged as early as possible so the user wont waste their time and move on. This is something that has bugged me a lot with many tools.
+[Let the audience take in the terminology cloud.]
 
-[8. Demo: from answers to a plan]
+[4. Portal screenshots]
 
-The plan starts with the next action, its date and the estimated amount left.
-I can open why it applies, inspect the official sources, and see the calculation.
-The agenda brings the other supported actions together and flags areas needing review. 
+And even when you understand the words, you still have to work out which instructions apply to your situation.
 
-I still file and pay on the official portals. This gets me there knowing what I'm there to do.
+Where do I go? Does this apply to me? Is there something else I need to do first?
 
-[9. Demo: come back and see what remains]
+I started with one question. Now I had a collection of tabs, videos and notices—and I was still trying to piece the answer together.
 
-I can choose to save in this browser and return to my plan. After paying outside the app, I update the amount paid and recalculate. Then I record completion, and the next action changes. That is my record. The app cannot verify government acceptance. I can return without putting the whole picture together again.
+[5. From notes to a tool.]
 
-Follow save, return, payment update and completion. Completion requires a saved workspace and remains user-declared.
+So I started keeping notes in Notion.
 
-[10. No compromises on privacy.]
+Those notes became a small Streamlit app with a calendar. Later, I added tools to parse statements and calculate taxes.
 
-Privacy drove some limits. There is no account or cross-device sync. Browser saving is optional, and clearing that data can erase it. There is no connection to government systems, so the app cannot file, pay or verify completion. Others using the same browser profile may access saved data.
+That was my internal setup. Something I built because I kept running into the same problem.
 
-[11. Built for freelancers by a freelancer.]
+Over time, it gave me a clearer idea of what I wanted to build for solo freelancers:
 
-Built for freelancers by a freelancer. I wanted a tool I could come back to between doing the work.
+A tool that shows what they might owe, what's due next, and why it applies.
 
-Product story ends here.
+[6. When is my next tax filing?]
 
-[12. Built with Codex]
+A way to come back to that first question:
 
-And I built it with Codex. The interesting part was learning which decisions I still needed to make myself.
+When is my next tax filing?
 
-A dark heading on the muted background leads into a centered, dark Magic UI terminal. Its lower edge extends beyond the slide. The illustrative Codex command and prompt type first, followed by green checkmarks for product work and a request for review. This is an animation of the build process, not a captured session or certification.
+[7. My Next Filing]
 
-[13. mynextfiling.wekeep.in]
+That's where My Next Filing came from.
 
-Try the fictional example. Can you tell what to do next? If something makes you stop and guess, tell me where.
+[Let the product name land before starting the demo.]
+
+Let me show you how it works. I've filled in a fictional freelancer's answers so we can follow the whole journey.
+
+[8. Demo: the person behind the income]
+
+First, it checks whether your situation is supported.
+
+Who you work for. How you earn. Which other income or circumstances need to be taken into account.
+
+Those details matter. A small difference can change which rules apply.
+
+If the situation falls outside what the tool supports, it says so early. I wanted people to find that out before spending time entering all their numbers.
+
+[Follow Fit for this app, Income and profit, Clients and payments, and Taxes and GST in order. Let each section settle before explaining it. Pause playback when needed.]
+
+[Income and profit]
+
+Next are income and profit. This example includes freelance income, salary, interest and dividends, rental income, and Indian equity gains.
+
+Each has its own section, so I can check the amounts and the conditions that apply to it.
+
+[Clients and payments]
+
+This freelancer works with clients in India and overseas, both directly and through a platform.
+
+The follow-up questions help establish how that work and those payments fit within what the app supports.
+
+[Taxes and GST]
+
+Then I check tax already paid, the income-tax filing conditions, and the GST situation.
+
+All of that forms the picture the plan will use.
+
+[9. Demo: from answers to a plan]
+
+Before calculating, I can review the answers together and check that they reflect my situation.
+
+[Follow the review. Click Calculate my plan, then hold on the result.]
+
+Here is the plan.
+
+The next supported action. Its date. The estimated amount left to pay.
+
+I can open the explanation, inspect the official sources, and see how the estimate was calculated.
+
+The agenda brings the other supported actions together. If something needs further review, that appears too.
+
+[Hold on the plan long enough for the audience to inspect it.]
+
+[10. Demo: come back and see what remains]
+
+I can also choose to save the plan in this browser.
+
+[Open the save notice. Let it remain visible before confirming.]
+
+Later, after making a payment on the official portal, I come back to my saved workspace.
+
+I update the amount paid and recalculate. Then I record that I've completed the action.
+
+That's my own record; the app cannot verify government acceptance. I still file and pay outside the app.
+
+[Follow the update, the new balance, the completion action and the updated agenda. Pause on each result.]
+
+Now I can see what remains, without putting the whole picture together again.
+
+## The Prestige
+
+[11. And none of those answers were sent to us.]
+
+You've just seen the whole journey.
+
+The answers. The estimate. The explanation. The saved plan and the progress when I return.
+
+And none of those answers or financial details were sent to us.
+
+[Pause. Let the audience connect this to everything they just watched.]
+
+[12. No financial data uploads. No third-party APIs. No web analytics.]
+
+The calculations run right here, in the browser. The rules and source references are bundled with the app. There is no third-party API doing the calculation or receiving your answers.
+
+There's no account to create, and no government portal integration.
+
+I went a step further: there are no web analytics, session recordings or remote error trackers either.
+
+If you choose to save, your answers and completion records stay in this browser's saved workspace. They aren't uploaded to us.
+
+That comes with limits: there's no cross-device sync, clearing the browser data can erase it, and someone using the same browser profile may be able to access it.
+
+[Presenter note: the hosting provider handles ordinary website request metadata. The claim is that the app does not upload questionnaire answers or financial details; do not describe hosting as collecting no data whatsoever or browser storage as guaranteed protection.]
+
+I wanted to make it easier to understand your taxes without asking you to hand over your financial life.
+
+[Pause.]
+
+[13. Built with Codex]
+
+And I built it with Codex.
+
+The interesting part was learning which decisions I still needed to make myself.
+
+What should the tool support? When should it stop and ask someone to get advice? How could the whole thing work without sending your answers anywhere?
+
+Those decisions shaped the product you've just seen.
+
+[Play the illustrative terminal animation. It represents the build process; it is not a captured session or certification.]
+
+[14. Built for freelancers. By a freelancer.]
+
+I wanted something I could come back to between doing the work.
+
+See what remains. Know where to pick up.
+
+Then get back to the thing I was trying to do in the first place.
+
+That's why I built My Next Filing.
+
+[Hold this slide. End here.]

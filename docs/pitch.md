@@ -1,6 +1,6 @@
 # Stage pitch
 
-The 13-slide deck lives at `/pitch`, separate from the filing journey. All slide backgrounds are dark with white text, except slide six, which is green with white text. It does not read or change questionnaire drafts or saved workspaces. Product footage uses fictional details. The private [speaker script](../.scratch/stage-pitch/content.md) is not published with the site and does not control playback timing.
+The 14-slide deck lives at `/pitch`, separate from the filing journey. All slide backgrounds are dark with white text, except slide seven, which is green with white text. It does not read or change questionnaire drafts or saved workspaces. Product footage uses fictional details. The private [speaker script](../.scratch/stage-pitch/content.md) is not published with the site and does not control playback timing.
 
 ## Present
 
@@ -22,21 +22,24 @@ Use the slide previews or arrow keys to navigate. Each slide plays once and hold
 
 | Slide | Content | Treatment |
 | --- | --- | --- |
-| 1 | Compliance is complicated. | Centered white type on dark ink |
-| 2 | Tax terminology | White cloud on dark ink with varied size, weight and letter spacing |
-| 3 | Public tax portals | 25-image mosaic on dark ink |
-| 4 | But, what if tax planning was quick and easy? | White type on dark ink |
-| 5 | When is my next tax filing? | White type on dark ink |
-| 6 | My Next Filing | Extra words fade and close up into the white product name on green when advancing from slide five |
-| 7 | The person behind the income | Continuous 12.4-second demo |
-| 8 | From answers to a plan | Continuous 11.8-second demo |
-| 9 | Come back and see what remains | Continuous 17.8-second demo |
-| 10 | No compromises on privacy. | Four centered white serif lines with emojis on dark ink |
-| 11 | Built for freelancers / by a freelancer. | Explicit two-line statement on dark ink |
-| 12 | Built with Codex | White heading on dark ink, dark animated terminal below |
-| 13 | mynextfiling.wekeep.in | URL only on dark ink |
+| 1 | When is my next tax filing? | White type on dark ink |
+| 2 | Then the replies stopped. | Origin story statement |
+| 3 | Tax terminology | White cloud on dark ink |
+| 4 | Public tax portals | 25-image mosaic |
+| 5 | From notes to a tool. | Origin story statement |
+| 6 | When is my next tax filing? | Return to the opening question |
+| 7 | My Next Filing | Question collapses into the product name on green |
+| 8 | The person behind the income | Fit, income, clients, taxes and GST in order |
+| 9 | From answers to a plan | Review, calculation, reasons, sources and agenda |
+| 10 | Come back and see what remains | Save notice, return, payment update and completion |
+| 11 | And none of those answers were sent to us. | Privacy reveal after the complete demo |
+| 12 | Privacy details | Browser calculations; no third-party APIs, web analytics or financial data uploads |
+| 13 | Built with Codex | White heading and illustrative terminal |
+| 14 | Built for freelancers. / By a freelancer. | Final statement; hold here |
 
-Slide 10 says "No account registration.", "No portal connection", "No web analytics", and "No compromises on privacy."
+The three recordings run for 173.0 seconds (profile), 40.1 seconds (plan), 56.7 seconds (workspace). They total about 4 minutes 30 seconds before presenter pauses.
+
+The privacy claim concerns application answers and financial values. Ordinary hosting request metadata still exists; the script does not promise that the hosting provider collects nothing or that browser storage guarantees protection. There is no separate closing URL or feedback request.
 
 The demos fit the local [Magic UI Safari](https://magicui.design/docs/components/safari) frame without cropping. Each uses one MP4 and its matching cursor timeline. The frame-driven [Magic UI Terminal](https://magicui.design/docs/components/terminal) adaptation types a Codex prompt, reveals green checkmarks, then asks for review. Its lower edge extends beyond the slide and is clipped. It is an illustrative sequence, not a recorded session. Both adaptations retain the [Magic UI MIT notice](../public/pitch/magicui-LICENSE.txt).
 
@@ -50,7 +53,7 @@ pnpm build
 pnpm pitch:present
 ```
 
-The preview command serves `dist` at `http://127.0.0.1:4174/pitch`. Keep it running. Fonts, scripts and media are local. Test on the presentation laptop with Wi-Fi disabled; browser offline simulation can also block localhost. The deck must be served over HTTP. The public URL on the final slide requires internet access.
+The preview command serves `dist` at `http://127.0.0.1:4174/pitch`. Keep it running. Fonts, scripts and media are local. Test on the presentation laptop with Wi-Fi disabled; browser offline simulation can also block localhost. The deck must be served over HTTP.
 
 ## Edit and record
 
@@ -58,7 +61,7 @@ The preview command serves `dist` at `http://127.0.0.1:4174/pitch`. Keep it runn
 - `src/routes/pitch/scene.tsx`, `terminal.tsx`, `safari.tsx` and `pitch.css`: presentation visuals.
 - `src/routes/pitch/index.tsx`: playback, navigation and fullscreen controls.
 - `video/record-pitch.ts`: synthetic browser capture.
-- `video/pitch-media.ts`: idle cuts, cursor retiming and chapter assembly.
+- `video/pitch-media.ts`: chapter assembly and matching cursor offsets.
 - `src/routes/pitch/recordings.json`: generated metadata for the three demos.
 
 Start the app with `pnpm dev`, then record:
@@ -69,11 +72,11 @@ pnpm pitch:record
 
 Use `--url http://127.0.0.1:5174` if the dev server is on a different port. Chromium and FFmpeg prerequisites are described in the [video guide](../video/README.md).
 
-The recorder validates a synthetic profile and fixes the example date to 10 September 2026. It captures clients, supported income, the plan, saving, payment updates and user-declared completion. It does not visit government portals or edit calculation results independently of their inputs.
+The recorder uses explicitly prefilled fictional answers, validates the synthetic profile and fixes the example date to 10 September 2026. It follows all six journey steps through their visible controls, opens each questionnaire section, and captures the plan, saving, payment updates and user-declared completion. It does not visit government portals or edit calculation results independently of their inputs.
 
-The editor removes intervals where both the footage and cursor are idle, retaining 0.4 seconds across each interval's two ends. It preserves cursor movement, every click and click ripples. One retained-frame map edits the video and cursor together. FFmpeg assembles three continuous MP4s, verifies their frame counts and publishes their metadata. The player uses these exact durations without script padding.
+The editor preserves every recorded frame, including reading holds, visible navigation and smooth scrolling. Overlapping scroll positions keep long question groups readable. FFmpeg joins the four questionnaire sections into one chapter and keeps the plan and workspace chapters continuous, applying the same offsets to cursor events. It verifies the final frame counts. Pause with Space whenever the audience needs more reading time.
 
-Only final chapter videos and posters, the 25 portal images and the required license ship under `public/pitch`. Recording fragments are removed after successful assembly. The unused QR code, form screenshot and old underline audio option have been removed. Original footage from the pause edit is retained in ignored local artifacts under `artifacts/pitch-tighten/source/`.
+Only final chapter videos and posters, the 25 portal images and the required license ship under `public/pitch`. Recording fragments are removed after successful assembly. The unused QR code, form screenshot and old underline audio option have been removed. Original footage from the earlier compact edit is retained in ignored local artifacts under `artifacts/pitch-tighten/source/`. The obsolete idle-compaction test was retired when that edit was removed; capture timing, clicks, navigation and playback remain covered.
 
 ## Verify
 
@@ -86,7 +89,7 @@ pnpm verify:build
 pnpm exec playwright test tests/e2e/pitch.spec.ts
 ```
 
-Checks cover cursor retiming, early visible motion, continuous playback, final-frame holds, replay, storage preservation, local assets under the production CSP, keyboard controls, fullscreen, reduced motion and responsive layout. Inspect a fresh recording after changing the questionnaire or rules.
+Checks cover recorder timing, continuous chapter playback, final-frame holds, replay, storage preservation, local assets under the production CSP, keyboard controls, fullscreen, reduced motion and responsive layout. Inspect a fresh recording after changing the questionnaire or rules.
 
 ## Narrative references and portal images
 

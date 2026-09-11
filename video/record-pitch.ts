@@ -20,7 +20,7 @@ import {
   viewport,
 } from './browser-recorder'
 import { humanPath } from './human-cursor'
-import { compactPitchRecordings, type PitchRecording } from './pitch-media'
+import { assemblePitchRecordings, type PitchRecording } from './pitch-media'
 
 const { values } = parseArgs({
   options: { url: { type: 'string', default: 'http://127.0.0.1:5173' } },
@@ -111,6 +111,21 @@ const context = await browser.newContext({
   timezoneId: 'Asia/Kolkata',
   reducedMotion: 'no-preference',
 })
+const outsideRequests: string[] = []
+await context.route('**/*', async (route) => {
+  const url = new URL(route.request().url())
+  if (url.origin !== new URL(values.url!).origin) {
+    outsideRequests.push(url.origin)
+    await route.abort()
+  } else {
+    assert.equal(
+      route.request().method(),
+      'GET',
+      'The demo must not upload answers.',
+    )
+    await route.continue()
+  }
+})
 const page = await context.newPage()
 await setRecordingDate(page, '2026-09-10T12:00:00+05:30')
 const events = await trackPointer(page)
@@ -125,7 +140,7 @@ const card = () => page.locator('.attention-card')
 async function ready() {
   await page.locator('main h1').waitFor()
   await page.evaluate(() => document.fonts.ready)
-  await wait(250)
+  await wait(450)
 }
 async function visit(route: string) {
   await page.goto(new URL(route, values.url).href)
@@ -135,10 +150,10 @@ async function reveal(locator: Locator) {
   await locator.evaluate((el) =>
     scrollTo({
       top: Math.max(0, scrollY + el.getBoundingClientRect().top - 90),
-      behavior: 'instant',
+      behavior: 'smooth',
     }),
   )
-  await wait(180)
+  await wait(750)
 }
 async function click(locator: Locator) {
   const bounds = await locator.boundingBox()
@@ -163,7 +178,7 @@ async function click(locator: Locator) {
   await locator.click({
     position: { x: Math.min(box.width / 2, 230), y: box.height / 2 },
   })
-  await wait(250)
+  await wait(450)
 }
 async function shot(id: string, title: string, run: () => Promise<void>) {
   await page.mouse.move(1200, 710)
@@ -212,25 +227,39 @@ async function shot(id: string, title: string, run: () => Promise<void>) {
   )
   console.log(`Recorded ${id}`)
 }
-async function incomeSection(name: string, id: string) {
-  const target = button(name)
-  await reveal(target)
-  await shot(id, name, async () => {
-    await click(target)
-    await reveal(target)
-    const fields: Record<string, string> = {
-      salary: 'grossSalary',
-      interest: 'dividends',
-      rent: 'rentalAnnualValue',
-      equity: 'shortTermGains',
+// Keep the real navigation and every revealed section in the capture. These
+// deliberate reading holds are part of the presentation, not idle footage.
+async function inspectSections() {
+  const sections = page.locator('.question-disclosure')
+  for (let index = 0; index < (await sections.count()); index++) {
+    const section = sections.nth(index)
+    const trigger = section.locator('.question-card-trigger')
+    await reveal(trigger)
+    if (!(await section.evaluate((el) => el.hasAttribute('data-open'))))
+      await click(trigger)
+    await wait(1600)
+    const bounds = await section.boundingBox()
+    assert.ok(bounds)
+    // Overlapping screens retain context while revealing long answer groups.
+    for (let offset = 520; offset < bounds.height - 280; offset += 520) {
+      await section.evaluate(
+        (el, distance) =>
+          scrollTo({
+            top: scrollY + el.getBoundingClientRect().top - 90 + distance,
+            behavior: 'smooth',
+          }),
+        offset,
+      )
+      await wait(2000)
     }
-    await reveal(
-      page
-        .locator('.field')
-        .filter({ has: page.locator(`#${fields[id]}`) })
-        .last(),
-    )
-  })
+  }
+}
+async function nextStep(title: string) {
+  await click(button('Next'))
+  await expect(
+    page.getByRole('heading', { level: 1, name: title, exact: true }),
+  ).toBeVisible()
+  await wait(1400)
 }
 
 try {
@@ -239,99 +268,133 @@ try {
     key: RECOVERY_KEY,
     draft: JSON.stringify(recovery),
   })
-  await visit('/check/clients')
-  await reveal(page.locator('#clientKind'))
+  await visit('/check/fit')
+  await shot('fit', 'Confirm the fit for this app', async () => {
+    await inspectSections()
+    await nextStep('Income and profit')
+  })
+  await shot('income', 'Review income and profit', async () => {
+    await inspectSections()
+    await nextStep('Clients and payments')
+  })
+  await shot('clients', 'Review clients and payments', async () => {
+    await inspectSections()
+    await nextStep('Taxes and GST')
+  })
+  await shot('taxes', 'Account for tax already paid and GST', async () => {
+    await inspectSections()
+    await nextStep('Review your answers')
+  })
   await shot(
-    'clients',
-    'Clients here, overseas and through platforms',
-    async () => {},
+    'plan',
+    'Review answers, calculate and inspect the plan',
+    async () => {
+      await wait(2000)
+      const review = page.locator('main')
+      const height = await review.evaluate((el) => el.scrollHeight)
+      for (let offset = 520; offset < height - 500; offset += 520) {
+        await page.evaluate(
+          (top) => scrollTo({ top, behavior: 'smooth' }),
+          offset,
+        )
+        await wait(1800)
+      }
+      await click(button('Calculate my plan'))
+      await ready()
+      await card().waitFor()
+      await reveal(card())
+      await wait(3000)
+      const reasons = card()
+        .locator('summary')
+        .filter({ hasText: /Why/ })
+        .first()
+      await click(reasons)
+      await wait(2500)
+      const sources = card()
+        .locator('summary')
+        .filter({ hasText: /[Ss]ources/ })
+        .first()
+      await reveal(sources)
+      await click(sources)
+      await wait(2500)
+      await reveal(page.locator('.tax-summary'))
+      await wait(2000)
+      await click(
+        page.getByText('How this estimate was calculated', { exact: true }),
+      )
+      await reveal(page.locator('.calculation-list'))
+      await wait(3000)
+      await reveal(
+        page.getByRole('heading', { name: 'Your agenda', exact: true }),
+      )
+      await wait(3000)
+    },
   )
-  await visit('/check/income')
-  await incomeSection('Salary', 'salary')
-  await incomeSection('Interest and dividends', 'interest')
-  await incomeSection('Rental income', 'rent')
-  await incomeSection('Domestic equity gains and losses', 'equity')
-  await visit('/check/review')
-  await shot('calculate', 'Review the details', async () => {
-    await click(button('Calculate my plan'))
-    await ready()
-  })
-  await card().waitFor()
-  await reveal(card())
-  await shot('action', 'The next action, date and estimate', async () => {})
-  const reasons = card().locator('summary').filter({ hasText: /Why/ }).first()
-  await shot('why', 'Why this applies', async () => {
-    await click(reasons)
-    await reveal(reasons)
-  })
-  const sources = card()
-    .locator('summary')
-    .filter({ hasText: /[Ss]ources/ })
-    .first()
-  await reveal(sources)
-  await shot('sources', 'Official sources beside the answer', async () => {
-    await click(sources)
-    await reveal(sources)
-  })
-  await reveal(page.locator('.tax-summary'))
-  await shot('calculation', 'Inspect the calculation', async () => {
-    await click(
-      page.getByText('How this estimate was calculated', { exact: true }),
-    )
-    await reveal(page.locator('.calculation-list'))
-  })
-  await reveal(page.getByRole('heading', { name: 'Your agenda', exact: true }))
-  await shot('agenda', 'The other supported actions', async () => {})
-  await visit('/plan')
-  await reveal(button('Save data in this browser'))
-  await shot('save', 'Save in this browser', async () => {
-    await click(button('Save data in this browser'))
-    await click(
-      page
-        .getByRole('dialog')
-        .getByRole('button', { name: 'Save data', exact: true }),
-    )
-  })
-  await visit('/')
-  await shot('return', 'Pick up where you left off', async () => {
-    await click(
-      page.getByRole('link', {
-        name: 'Continue your saved workspace',
-        exact: true,
-      }),
-    )
-    await ready()
-    await reveal(card())
-  })
-  const outstanding = (
-    await page.locator('.tax-summary h2').innerText()
-  ).replace(/[^0-9]/g, '')
-  assert.ok(Number(outstanding) > 0)
-  await shot('payment', 'Update the amount paid', async () => {
-    await click(
-      card().getByRole('button', { name: 'Update amount paid', exact: true }),
-    )
-    const input = page.getByLabel('Total advance tax already paid')
-    await reveal(input)
-    await click(input)
-    await input.fill(outstanding)
-    await click(button('Update and recalculate'))
-    await reveal(card())
-  })
-  await expect(card()).toContainText('No estimated amount left')
-  await shot('complete', 'Record completion. See what remains.', async () => {
-    await click(
-      card().getByRole('button', { name: 'Mark completed', exact: true }),
-    )
-    await reveal(card())
-  })
-  await expect(card()).not.toContainText('No estimated amount left')
+  await shot(
+    'workspace',
+    'Save, return, update payment and record completion',
+    async () => {
+      await reveal(button('Save data in this browser'))
+      await click(button('Save data in this browser'))
+      await wait(3500)
+      await click(
+        page
+          .getByRole('dialog')
+          .getByRole('button', { name: 'Save data', exact: true }),
+      )
+      await wait(1800)
+      await click(page.getByRole('link', { name: 'Home', exact: true }))
+      await ready()
+      await wait(2000)
+      await click(
+        page.getByRole('link', {
+          name: 'Continue your saved workspace',
+          exact: true,
+        }),
+      )
+      await ready()
+      await reveal(card())
+      await wait(2500)
+      const outstanding = (
+        await page.locator('.tax-summary h2').innerText()
+      ).replace(/[^0-9]/g, '')
+      assert.ok(Number(outstanding) > 0)
+      await click(
+        card().getByRole('button', { name: 'Update amount paid', exact: true }),
+      )
+      const input = page.getByLabel('Total advance tax already paid')
+      await reveal(input)
+      await click(input)
+      await input.fill('')
+      await input.pressSequentially(outstanding, { delay: 160 })
+      await wait(1600)
+      await click(button('Update and recalculate'))
+      await reveal(card())
+      await expect(card()).toContainText('No estimated amount left')
+      await wait(3000)
+      await click(
+        card().getByRole('button', { name: 'Mark completed', exact: true }),
+      )
+      await reveal(card())
+      await expect(card()).not.toContainText('No estimated amount left')
+      await wait(3000)
+      await reveal(
+        page.getByRole('heading', { name: 'Your agenda', exact: true }),
+      )
+      await wait(3000)
+    },
+  )
   assert.deepEqual(errors, [], 'Recording must have no application errors.')
+  assert.deepEqual(
+    outsideRequests,
+    [],
+    'The whole journey must work without third-party requests.',
+  )
   await mkdir('src/routes/pitch', { recursive: true })
-  const compact = await compactPitchRecordings(clips)
+  const chapters = await assemblePitchRecordings(clips)
   await writeFile(
     'src/routes/pitch/recordings.json',
-    JSON.stringify(compact, null, 2) + '\n',
+    JSON.stringify(chapters, null, 2) + '\n',
   )
   for (const clip of clips) {
     await rm(`public${clip.video}`)
