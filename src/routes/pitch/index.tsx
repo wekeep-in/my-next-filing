@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Player, Thumbnail } from '@remotion/player'
-import type { PlayerRef } from '@remotion/player'
+import type { CallbackListener, PlayerRef } from '@remotion/player'
 import {
   ArrowLeft,
   ArrowRight,
@@ -14,7 +14,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Kbd, KbdGroup } from '@/components/ui/kbd'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { PitchScene, framesForSlide } from './scene'
+import { PitchScene, framesForSlide, productRevealBackground } from './scene'
 import { slides } from './slides'
 import './pitch.css'
 
@@ -87,6 +87,31 @@ export function PitchRoute() {
       instance.removeEventListener('ended', pause)
     }
   }, [index, reduced])
+
+  useLayoutEffect(() => {
+    const instance = player.current
+    const wrapper = stage.current
+    if (
+      !instance ||
+      !wrapper ||
+      reduced ||
+      slide.kind !== 'product' ||
+      previous === null ||
+      slides[previous].kind !== 'opening'
+    )
+      return
+    const update: CallbackListener<'frameupdate'> = ({ detail }) => {
+      wrapper.style.background = productRevealBackground(detail.frame)
+    }
+    wrapper.style.background = productRevealBackground(
+      instance.getCurrentFrame(),
+    )
+    instance.addEventListener('frameupdate', update)
+    return () => {
+      instance.removeEventListener('frameupdate', update)
+      wrapper.style.removeProperty('background')
+    }
+  }, [index, previous, reduced, slide.kind])
 
   const move = (next: number) => {
     if (next < 0 || next >= slides.length || next === index) return

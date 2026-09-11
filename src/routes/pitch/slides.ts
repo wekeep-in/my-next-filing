@@ -1,10 +1,5 @@
 export const slides = [
   {
-    title: 'When is my next tax filing?',
-    seconds: 8,
-    kind: 'opening',
-  },
-  {
     title: 'Compliance is complicated.',
     seconds: 12,
     kind: 'statement',
@@ -19,6 +14,11 @@ export const slides = [
     title: 'But, what if tax planning was quick and easy?',
     seconds: 10,
     kind: 'clarity',
+  },
+  {
+    title: 'When is my next tax filing?',
+    seconds: 8,
+    kind: 'opening',
   },
   { title: 'My Next Filing', seconds: 8, kind: 'product' },
   {

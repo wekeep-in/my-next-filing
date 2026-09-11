@@ -1,6 +1,6 @@
 # Stage pitch
 
-The 13-slide deck lives at `/pitch`, separate from the filing journey. It does not read or change questionnaire drafts or saved workspaces. Product footage uses fictional details. The private [speaker script](../.scratch/stage-pitch/content.md) is not published with the site and does not control playback timing.
+The 13-slide deck lives at `/pitch`, separate from the filing journey. All slide backgrounds are dark with white text, except slide six, which is green with white text. It does not read or change questionnaire drafts or saved workspaces. Product footage uses fictional details. The private [speaker script](../.scratch/stage-pitch/content.md) is not published with the site and does not control playback timing.
 
 ## Present
 
@@ -22,18 +22,18 @@ Use the slide previews or arrow keys to navigate. Each slide plays once and hold
 
 | Slide | Content | Treatment |
 | --- | --- | --- |
-| 1 | When is my next tax filing? | White type on dark ink |
-| 2 | Compliance is complicated. | Centered dark type on muted ground |
-| 3 | Tax terminology | Compact cloud with varied size, weight and letter spacing |
-| 4 | Public tax portals | 25-image mosaic on dark ink |
-| 5 | But, what if tax planning was quick and easy? | White type on dark ink |
-| 6 | My Next Filing | Product name only, centered in green |
+| 1 | Compliance is complicated. | Centered white type on dark ink |
+| 2 | Tax terminology | White cloud on dark ink with varied size, weight and letter spacing |
+| 3 | Public tax portals | 25-image mosaic on dark ink |
+| 4 | But, what if tax planning was quick and easy? | White type on dark ink |
+| 5 | When is my next tax filing? | White type on dark ink |
+| 6 | My Next Filing | Extra words fade and close up into the white product name on green when advancing from slide five |
 | 7 | The person behind the income | Continuous 12.4-second demo |
 | 8 | From answers to a plan | Continuous 11.8-second demo |
 | 9 | Come back and see what remains | Continuous 17.8-second demo |
-| 10 | No compromises on privacy. | Four centered serif lines with emojis |
+| 10 | No compromises on privacy. | Four centered white serif lines with emojis on dark ink |
 | 11 | Built for freelancers / by a freelancer. | Explicit two-line statement on dark ink |
-| 12 | Built with Codex | Dark heading on muted ground, dark animated terminal below |
+| 12 | Built with Codex | White heading on dark ink, dark animated terminal below |
 | 13 | mynextfiling.wekeep.in | URL only on dark ink |
 
 Slide 10 says "No account registration.", "No portal connection", "No web analytics", and "No compromises on privacy."

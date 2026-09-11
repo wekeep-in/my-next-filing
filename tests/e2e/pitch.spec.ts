@@ -97,7 +97,7 @@ test('navigates all slides without changing the saved workspace or draft', async
   ).toHaveCount(6)
   await navigation
     .getByRole('button', {
-      name: 'Slide 1: When is my next tax filing?',
+      name: 'Slide 1: Compliance is complicated.',
       exact: true,
     })
     .click()
@@ -340,7 +340,7 @@ test('enters fullscreen on supported browsers and explains a rejected request', 
     await expectSlide(page, 2)
     await page.keyboard.press('ArrowRight')
     await expectSlide(page, 3)
-    await expect(page.locator('.pitch-stage .pitch-word-cloud')).toBeVisible()
+    await expect(page.locator('.pitch-stage .pitch-portals')).toBeVisible()
     await expect(page.locator('.pitch-stage .pitch-slide-footer')).toHaveCount(
       0,
     )
@@ -377,8 +377,8 @@ test('shows the narrative visuals and controls the animated Codex terminal', asy
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
   for (const [slide, title] of [
-    [1, 'When is my next tax filing?'],
-    [5, 'But, what if tax planning was quick and easy?'],
+    [5, 'When is my next tax filing?'],
+    [4, 'But, what if tax planning was quick and easy?'],
     [11, 'Built for freelancers by a freelancer.'],
     [13, 'mynextfiling.wekeep.in'],
   ] as const) {
@@ -395,7 +395,7 @@ test('shows the narrative visuals and controls the animated Codex terminal', asy
       .evaluate((element) => getComputedStyle(element).color)
     await expect(canvas).toHaveCSS('background-color', ink)
   }
-  await page.goto('/pitch#4')
+  await page.goto('/pitch#3')
   const portals = page.locator('.pitch-stage img')
   await expect(portals).toHaveCount(25)
   await expect
@@ -488,6 +488,9 @@ test('shows the narrative visuals and controls the animated Codex terminal', asy
   const ink = await page
     .locator('.pitch-stage')
     .evaluate((element) => getComputedStyle(element).color)
-  await expect(page.locator('.pitch-stage h1')).toHaveCSS('color', ink)
+  await expect(page.locator('.pitch-stage h1')).toHaveCSS(
+    'color',
+    'rgb(255, 255, 255)',
+  )
   await expect(terminal).toHaveCSS('background-color', ink)
 })

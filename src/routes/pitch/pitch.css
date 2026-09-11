@@ -116,7 +116,7 @@
   position: relative;
   width: 100%;
   outline: none;
-  background: var(--background);
+  background: var(--foreground);
 }
 .pitch-stage {
   width: 100%;
@@ -130,8 +130,8 @@
 }
 .pitch-slide {
   padding: 48px 72px 28px;
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--foreground);
+  color: var(--primary-foreground);
   font-family: 'Inter Variable', sans-serif;
 }
 .pitch-slide-body {
@@ -164,16 +164,6 @@
   padding: 76px 100px;
   color: var(--primary-foreground);
 }
-:is(.pitch-slide, .pitch-stage-wrap):is(
-  [data-kind='portals'],
-  [data-kind='opening'],
-  [data-kind='clarity'],
-  [data-kind='freelancer'],
-  [data-kind='closing'],
-  [data-kind='demo']
-) {
-  background: var(--foreground);
-}
 .pitch-statement {
   text-align: center;
   position: relative;
@@ -190,8 +180,8 @@
 .pitch-slide:is([data-kind='product'], [data-kind='boundaries']) {
   padding-block: 48px;
 }
-.pitch-slide[data-kind='product'] h1 {
-  color: var(--primary);
+:is(.pitch-slide, .pitch-stage-wrap)[data-kind='product'] {
+  background: var(--primary);
 }
 .pitch-portals {
   position: absolute;
@@ -252,8 +242,6 @@
 .pitch-slide[data-kind='codex'] {
   padding: 0;
   overflow: hidden;
-  background: var(--background);
-  color: var(--foreground);
 }
 .pitch-slide[data-kind='codex'] .pitch-statement {
   position: absolute;
@@ -552,4 +540,12 @@
     height: auto;
     overflow: visible;
   }
+}
+
+.pitch-filing-title {
+  display: inline-flex;
+  white-space: nowrap;
+}
+.pitch-title-extra {
+  overflow: hidden;
 }

@@ -1,5 +1,11 @@
 import { useState } from 'react'
-import { AbsoluteFill, Html5Video, Img, useCurrentFrame } from 'remotion'
+import {
+  AbsoluteFill,
+  Html5Video,
+  Img,
+  interpolate,
+  useCurrentFrame,
+} from 'remotion'
 import { Safari } from './safari'
 import { Terminal } from './terminal'
 import { SimulatedCursor } from '../../../video/src/components/remocn/simulated-cursor'
@@ -143,6 +149,50 @@ const portalTiles = [
   ['25.jpg', 'UTIITSL PAN services', 459, 215, 49, 47],
 ] as const
 
+export function productRevealBackground(frame: number) {
+  if (frame >= 36) return 'var(--primary)'
+  const progress = interpolate(frame, [24, 36], [0, 100], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  })
+  return `color-mix(in srgb, var(--primary) ${progress}%, var(--foreground))`
+}
+
+function FilingTitle({ frame = 0 }: { frame?: number }) {
+  const fade = interpolate(frame, [0, 10], [1, 0], {
+    extrapolateRight: 'clamp',
+  })
+  const collapse = interpolate(frame, [10, 28], [1, 0], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  })
+  const product = frame >= 28
+  const extra = (text: string, width: number) => (
+    <span
+      className="pitch-title-extra"
+      style={{ opacity: fade, maxWidth: `${width * collapse}em` }}
+    >
+      {text}
+    </span>
+  )
+  return (
+    <div className="pitch-statement">
+      <h1
+        aria-label={product ? 'My Next Filing' : 'When is my next tax filing?'}
+      >
+        <span className="pitch-filing-title" aria-hidden="true">
+          {extra('When is\u00a0', 4.5)}
+          <span>{product ? 'My' : 'my'}&nbsp;</span>
+          <span>{product ? 'Next' : 'next'}&nbsp;</span>
+          {extra('tax\u00a0', 2)}
+          <span>{product ? 'Filing' : 'filing'}</span>
+          {extra('?', 1)}
+        </span>
+      </h1>
+    </div>
+  )
+}
+
 function Content({ index, still = false }: { index: number; still?: boolean }) {
   const slide = slides[index]
   const clip = slide.kind === 'demo' ? recordingForSlide(slide.recording) : null
@@ -159,18 +209,14 @@ function Content({ index, still = false }: { index: number; still?: boolean }) {
             <Capture clip={clip} still={still} />
           </Safari>
         )}
-        {[
-          'opening',
-          'statement',
-          'clarity',
-          'product',
-          'freelancer',
-          'closing',
-        ].includes(slide.kind) && (
+        {['statement', 'clarity', 'product', 'freelancer', 'closing'].includes(
+          slide.kind,
+        ) && (
           <div className="pitch-statement">
             <h1>{slide.title}</h1>
           </div>
         )}
+        {slide.kind === 'opening' && <FilingTitle />}
         {slide.kind === 'words' && (
           <div className="pitch-word-cloud" aria-label="Tax terminology">
             {taxWords.map(([word, left, top, fontSize, rotation]) => (
@@ -243,8 +289,29 @@ export function PitchScene({
   preview?: boolean
 }) {
   const frame = useCurrentFrame()
+  const reveal =
+    !preview &&
+    !reduced &&
+    slides[index].kind === 'product' &&
+    previous !== null &&
+    slides[previous].kind === 'opening'
+  if (reveal && frame < 36) {
+    return (
+      <AbsoluteFill
+        className="pitch-slide"
+        data-kind="product"
+        style={{
+          background: productRevealBackground(frame),
+        }}
+      >
+        <div className="pitch-slide-body">
+          <FilingTitle frame={frame} />
+        </div>
+      </AbsoluteFill>
+    )
+  }
   return (
-    <AbsoluteFill style={{ background: 'var(--background)' }}>
+    <AbsoluteFill style={{ background: 'var(--foreground)' }}>
       <Content index={index} still={preview || (reduced && frame === 0)} />
       {!reduced && previous !== null && frame < 6 && (
         <AbsoluteFill className="pitch-slide-fade" aria-hidden="true" inert>
