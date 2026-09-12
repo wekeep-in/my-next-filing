@@ -1,6 +1,6 @@
 'use client'
 
-import { useCurrentFrame } from 'remotion'
+import { Freeze, useCurrentFrame } from 'remotion'
 import { PenSound } from '../../SoundEffects'
 import { Handwrite, handwriteDuration } from './handwrite'
 import {
@@ -198,6 +198,8 @@ const strikePath = (
 }
 
 export interface CheckListProps {
+  strikeOnly?: boolean
+  tickOnStrike?: boolean
   items: (string | CheckListItem)[]
   width: number
   fontSize?: number
@@ -218,6 +220,8 @@ export interface CheckListProps {
 export function CheckList({
   items,
   width,
+  strikeOnly = false,
+  tickOnStrike = false,
   fontSize = 40,
   color = '#26242c',
   boxColor = '#26242c',
@@ -256,11 +260,26 @@ export function CheckList({
       }}
     >
       {entries.map((item, i) => {
-        const beat = schedule[i]
-        const boxProgress = steppedRamp(frame, beat.boxFrom, beat.boxTo, {
-          ease: easeOutCubic,
-          step,
-        })
+        const originalBeat = schedule[i]
+        const beat = strikeOnly
+          ? {
+              ...originalBeat,
+              tickFrom: delay + i * (closeGap ?? 30),
+              tickTo: delay + i * (closeGap ?? 30) + step * 2,
+              strikeFrom:
+                delay + i * (closeGap ?? 30) + (tickOnStrike ? step * 2 : 0),
+              strikeTo:
+                delay +
+                i * (closeGap ?? 30) +
+                (tickOnStrike ? step * 4 : step * 2),
+            }
+          : originalBeat
+        const boxProgress = strikeOnly
+          ? 1
+          : steppedRamp(frame, beat.boxFrom, beat.boxTo, {
+              ease: easeOutCubic,
+              step,
+            })
         const tickProgress =
           beat.tickFrom === undefined || beat.tickTo === undefined
             ? 0
@@ -286,7 +305,7 @@ export function CheckList({
               height: rowHeight,
             }}
           >
-            {beat.tickFrom !== undefined && (
+            {(!strikeOnly || tickOnStrike) && beat.tickFrom !== undefined && (
               <PenSound
                 from={Math.floor(beat.tickFrom / step) * step + step}
                 length={step * 2}
@@ -307,6 +326,7 @@ export function CheckList({
               style={{ display: 'block', overflow: 'visible', flexShrink: 0 }}
             >
               <path
+                data-checklist-box
                 d={boxPath(boxSize, seed, i)}
                 stroke={boxColor}
                 strokeWidth={strokeWidth}
@@ -318,8 +338,9 @@ export function CheckList({
                 strokeDashoffset={1 - boxProgress}
                 opacity={boxProgress > 0 ? 0.9 : 0}
               />
-              {item.checked ? (
+              {item.checked && (!strikeOnly || tickOnStrike) ? (
                 <path
+                  data-checklist-tick
                   d={tickPath(boxSize)}
                   stroke={tickColor}
                   strokeWidth={strokeWidth + 1}
@@ -341,16 +362,18 @@ export function CheckList({
                 height: rowHeight,
               }}
             >
-              <Handwrite
-                text={item.text}
-                fontSize={fontSize}
-                color={color}
-                delay={beat.labelAt}
-                perStep={perStep}
-                weight={weight}
-                align="left"
-                step={step}
-              />
+              <Freeze frame={beat.labelEnd} active={strikeOnly}>
+                <Handwrite
+                  text={item.text}
+                  fontSize={fontSize}
+                  color={color}
+                  delay={beat.labelAt}
+                  perStep={perStep}
+                  weight={weight}
+                  align="left"
+                  step={step}
+                />
+              </Freeze>
               {item.checked ? (
                 <svg
                   width={labelWidth}
@@ -364,6 +387,7 @@ export function CheckList({
                   }}
                 >
                   <path
+                    data-checklist-strike
                     d={strikePath(
                       checkListStrikeWidth(item.text, fontSize, labelWidth),
                       fontSize,

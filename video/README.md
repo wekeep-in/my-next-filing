@@ -1,5 +1,7 @@
 # My Next Filing video
 
+For the stage presentation without narration, see [Comparison video](COMPARISON.md). Render it with `pnpm video:render:comparison`; the narrated website demo below remains a separate composition.
+
 An editable Remotion project for the demo shown on the website. [Direction](#direction) pairs the complete narration with the finished screen sequence.
 
 The composition is 2560 × 1440 at 30 fps. The export is 1920 × 1080 and 3890 frames long, about 2:10. The supplied narration plays in full at its original speed, with two-second pauses after "my work", after "taxes already paid", and after "peace of mind". The last of these keeps its 200 ms narration fade. Later scene cuts and captions follow those pauses; the Crate in the Sea music edit preserves the original tempo and ends with the video. Narration, prepared sound effects, fonts, browser recordings, and the historical homepage screenshot are included, so previewing and rendering need no original recording session.

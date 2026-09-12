@@ -635,21 +635,6 @@ const loadingScreen = (
 
 export const router = createBrowserRouter([
   {
-    path: '/pitch',
-    caseSensitive: true,
-    hydrateFallbackElement: loadingScreen,
-    lazy: async () => ({
-      Component: (await import('@/routes/pitch')).PitchRoute,
-    }),
-    errorElement: (
-      <section className="reference-page" role="alert">
-        <h1>The pitch couldn't load</h1>
-        <p>Reload this page to try again.</p>
-        <Link to="/">Open My Next Filing</Link>
-      </section>
-    ),
-  },
-  {
     element: <AppFrame />,
     hydrateFallbackElement: loadingScreen,
     children: [

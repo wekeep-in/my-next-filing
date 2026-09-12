@@ -1,7 +1,7 @@
-import { Fragment, useId } from 'react'
-import type { ReactNode } from 'react'
+import { Fragment } from 'react'
 import {
   AbsoluteFill,
+  Freeze,
   Easing,
   Html5Audio,
   Sequence,
@@ -16,7 +16,7 @@ import { Handwrite, handwriteDuration } from './components/remocn/handwrite'
 import { CheckList } from './components/remocn/check-list'
 import { InkUnderline } from './components/remocn/ink-underline'
 import { BrushGrain, brushFilterId } from './components/remocn/brush'
-import { PaperWobble } from './components/remocn/paper-wobble'
+import { Paper } from './components/paper'
 import { pageTurn } from './components/remocn/page-turn'
 import {
   PaperEdge,
@@ -35,160 +35,6 @@ const green = '#006f26'
 const paper = PAPER_COLOR
 const muted = '#465365'
 const clamp = { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' } as const
-
-function Paper({
-  children,
-  height = 720,
-}: {
-  children: ReactNode
-  height?: number
-}) {
-  const textureId = useId().replaceAll(':', '')
-  return (
-    <AbsoluteFill
-      style={{
-        height,
-        bottom: 'auto',
-        background: paper,
-        color: ink,
-        fontFamily: 'Inter',
-        overflow: 'hidden',
-      }}
-    >
-      <PaperWobble
-        seed="paper-sheet"
-        amp={0.7}
-        rotAmp={0.035}
-        step={3}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          width: 1280,
-          height,
-          transform: 'scale(1.004)',
-          transformOrigin: '640px 360px',
-        }}
-      >
-        <AbsoluteFill data-paper-surface style={{ background: paper }}>
-          <svg
-            width="1280"
-            height={height}
-            data-paper-grain
-            aria-hidden
-            style={{
-              position: 'absolute',
-              inset: 0,
-              pointerEvents: 'none',
-              mixBlendMode: 'multiply',
-            }}
-          >
-            <defs>
-              <filter id={`${textureId}-grain`}>
-                <feTurbulence
-                  type="fractalNoise"
-                  baseFrequency="0.24"
-                  numOctaves="4"
-                  seed="9"
-                  stitchTiles="stitch"
-                  result="pulp"
-                />
-                <feDiffuseLighting
-                  in="pulp"
-                  surfaceScale="1.35"
-                  diffuseConstant="1.08"
-                  lightingColor="#ffffff"
-                >
-                  <feDistantLight azimuth="45" elevation="60" />
-                </feDiffuseLighting>
-              </filter>
-              <filter id={`${textureId}-fibers`}>
-                <feTurbulence
-                  type="fractalNoise"
-                  baseFrequency="0.045 0.22"
-                  numOctaves="3"
-                  seed="21"
-                  stitchTiles="stitch"
-                />
-                <feColorMatrix
-                  type="matrix"
-                  values="1.3 0 0 0 0.25 1.3 0 0 0 0.25 1.3 0 0 0 0.25 0 0 0 0 1"
-                />
-              </filter>
-              <filter id={`${textureId}-mottle`}>
-                <feTurbulence
-                  type="fractalNoise"
-                  baseFrequency="0.012"
-                  numOctaves="3"
-                  seed="35"
-                  stitchTiles="stitch"
-                />
-                <feColorMatrix
-                  type="matrix"
-                  values="2 0 0 0 -0.15 2 0 0 0 -0.15 2 0 0 0 -0.15 0 0 0 0 1"
-                />
-              </filter>
-              <filter
-                id={`${textureId}-ink`}
-                filterUnits="userSpaceOnUse"
-                x="0"
-                y="0"
-                width="1280"
-                height={height}
-              >
-                <feTurbulence
-                  type="fractalNoise"
-                  baseFrequency="0.24"
-                  numOctaves="4"
-                  seed="9"
-                  stitchTiles="stitch"
-                  result="ink-grain"
-                />
-                <feColorMatrix
-                  in="ink-grain"
-                  type="matrix"
-                  values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.7 0.53"
-                  result="ink-opacity"
-                />
-                <feComposite
-                  in="SourceGraphic"
-                  in2="ink-opacity"
-                  operator="in"
-                />
-              </filter>
-            </defs>
-            <rect
-              width="100%"
-              height="100%"
-              filter={`url(#${textureId}-mottle)`}
-              opacity="0.14"
-            />
-            <rect
-              width="100%"
-              height="100%"
-              filter={`url(#${textureId}-grain)`}
-              opacity="0.5"
-            />
-            <rect
-              width="100%"
-              height="100%"
-              filter={`url(#${textureId}-fibers)`}
-              opacity="0.12"
-            />
-          </svg>
-          <AbsoluteFill
-            data-paper-ink
-            style={{
-              filter: `url(#${textureId}-ink)`,
-              mixBlendMode: 'multiply',
-            }}
-          >
-            {children}
-          </AbsoluteFill>
-        </AbsoluteFill>
-      </PaperWobble>
-    </AbsoluteFill>
-  )
-}
 
 function Writing({
   text,
@@ -303,16 +149,30 @@ const searchResults = Array.from({ length: 24 }, (_, row) =>
   })),
 )
 
-function SearchStory() {
+export function SearchStory({
+  looping = false,
+  query = 'Indian freelancer tax filing',
+  scrollStart = 66,
+  scrollEnd = frameAt(14.5 - 7.1),
+}: {
+  looping?: boolean
+  query?: string
+  scrollStart?: number
+  scrollEnd?: number
+}) {
   const frame = useCurrentFrame()
-  const query = 'Indian freelancer tax filing'
-  const questionAt = frameAt(14.5 - 7.1)
+  const questionAt = scrollEnd
   const pageHeight = 505 + searchResults.length * 144
-  const lifted = interpolate(qf(frame), [66, questionAt], [0, 1], clamp)
+  const lifted = interpolate(
+    qf(frame),
+    [scrollStart, questionAt],
+    [0, 1],
+    clamp,
+  )
   const jitter = paperJitter(frame, 'search-lift', { amp: 1.6, rotAmp: 0.06 })
   const scrollY = interpolate(
     qf(frame),
-    [66, questionAt],
+    [scrollStart, questionAt],
     [0, -pageHeight - PAPER_EDGE_EXTRA],
     {
       ...clamp,
@@ -321,20 +181,26 @@ function SearchStory() {
   )
   return (
     <AbsoluteFill style={{ background: paper, overflow: 'hidden' }}>
-      <Paper>
-        {frame >= questionAt && (
-          <div data-search-question>
-            <Writing
-              text="What do I do next?"
-              top={305}
-              size={82}
-              delay={questionAt}
-              color={green}
-              underline
-            />
-          </div>
-        )}
-      </Paper>
+      {looping ? (
+        <Freeze frame={0}>
+          <SearchStory />
+        </Freeze>
+      ) : (
+        <Paper>
+          {frame >= questionAt && (
+            <div data-search-question>
+              <Writing
+                text="What do I do next?"
+                top={305}
+                size={82}
+                delay={questionAt}
+                color={green}
+                underline
+              />
+            </div>
+          )}
+        </Paper>
+      )}
       {frame < questionAt && (
         <div
           data-search-scroll
@@ -561,7 +427,7 @@ function Prototype() {
   )
 }
 
-function PaperBeat({ id }: { id: BeatId }) {
+export function PaperBeat({ id }: { id: BeatId }) {
   switch (id) {
     case 'hook':
       return (

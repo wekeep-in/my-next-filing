@@ -22,9 +22,9 @@ Statutory values in this specification come from the planning research dated 2 S
 
 ## Product outcome
 
-### Stage presentation
+### Presentation video
 
-The public `/pitch` route presents a 14-slide product and Codex build story with concise statement slides, standalone video slides and a rehearsal script kept only in `.scratch/stage-pitch/content.md`, outside the published site. It is separate from the filing journey and must not restore, read or modify Profile, Saved workspace or Recovery data. The story opens with the filing question, follows the origin and complete supported journey, reveals that answers and financial details are not uploaded and no third-party APIs or web analytics are used, then presents the Codex build story before closing with “Built for freelancers. By a freelancer.” All demonstrated amounts belong to a fictional recorded example. The presenter controls slide advancement and fullscreen; silent chapters hold at their end. Reduced motion opens still frames with explicit playback. The presentation does not add a filing, payment, feedback-submission or government-integration capability. See [stage pitch](docs/pitch.md) for presentation controls and local playback workflow.
+The former `/pitch` deck is retired. A standalone Remotion presentation with sound effects but no narration or music uses the landing-page video’s illustrated search and original app recordings, including optional browser saving. It follows the stage speaker notes and ends by crossing off the questions introduced at the start. It adds no public route or filing capability. Speaker pointers remain in `.scratch/stage-pitch/content.md`. See [comparison video](video/COMPARISON.md).
 
 ### Filing journey
 

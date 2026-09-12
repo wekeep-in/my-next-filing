@@ -21,6 +21,8 @@ const levels = {
   music: 0.09,
 }
 
+export const AudioEnabledContext = createContext(true)
+
 export const ScribbleGainContext = createContext(1)
 
 export function SoundCue({
@@ -40,7 +42,9 @@ export function SoundCue({
   fadeOut?: number
   label: string
 }) {
+  const enabled = useContext(AudioEnabledContext)
   const scribbleGain = useContext(ScribbleGainContext)
+  if (!enabled) return null
   const level = levels[kind] * (kind === 'pen' ? scribbleGain : 1)
   return (
     <Sequence from={from} durationInFrames={length} layout="none" name={label}>
@@ -71,6 +75,38 @@ export function SoundCue({
   )
 }
 
+// Split long phrases into measured strokes rather than selecting from an empty list.
+export function penSoundSegments(length: number, seed: string) {
+  const regions = [
+    [0.35, 0.9],
+    [1.1, 1.5],
+    [2, 2.8],
+    [3.1, 4.18],
+    [4.3, 4.78],
+    [3.1, 4.78],
+  ].map(([start, end]) => [frameAt(start), frameAt(end)])
+  const maximum = Math.max(...regions.map(([start, end]) => end - start))
+  const segments: { from: number; length: number; offset: number }[] = []
+  const chunkLength =
+    length > 0 ? Math.ceil(length / Math.ceil(length / maximum)) : maximum
+  for (let from = 0; from < length; from += chunkLength) {
+    const duration = Math.min(chunkLength, length - from)
+    const fitting = regions.filter(([start, end]) => end - start >= duration)
+    const sampleSeed = from === 0 ? seed : `${seed}:${from}`
+    const [start, end] =
+      fitting[
+        Math.floor(hashRange(`scribble-12:${sampleSeed}`, 0, fitting.length))
+      ]
+    segments.push({
+      from,
+      length: duration,
+      offset: Math.round(
+        hashRange(`scribble-cut:${sampleSeed}`, start, end - duration),
+      ),
+    })
+  }
+  return segments
+}
 export function PenSound({
   from,
   length,
@@ -80,28 +116,21 @@ export function PenSound({
   length: number
   seed: string
 }) {
-  // Measured strokes avoid the take's long pauses; the last region fits longer phrases.
-  const regions = [
-    [0.35, 0.9],
-    [1.1, 1.5],
-    [2, 2.8],
-    [3.1, 4.18],
-    [4.3, 4.78],
-    [3.1, 4.78],
-  ].filter(([start, end]) => frameAt(end) - frameAt(start) >= length)
-  const [start, end] =
-    regions[Math.floor(hashRange(`scribble-12:${seed}`, 0, regions.length))]
-  const offset = Math.round(
-    hashRange(`scribble-cut:${seed}`, frameAt(start), frameAt(end) - length),
-  )
+  const enabled = useContext(AudioEnabledContext)
+  if (!enabled) return null
   return (
-    <SoundCue
-      kind="pen"
-      from={from}
-      length={length}
-      offset={offset}
-      label={seed}
-    />
+    <>
+      {penSoundSegments(length, seed).map((segment) => (
+        <SoundCue
+          key={segment.from}
+          kind="pen"
+          from={from + segment.from}
+          length={segment.length}
+          offset={segment.offset}
+          label={seed}
+        />
+      ))}
+    </>
   )
 }
 

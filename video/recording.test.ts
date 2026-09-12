@@ -1,3 +1,11 @@
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import {
+  AudioEnabledContext,
+  PenSound,
+  SoundCue,
+  penSoundSegments,
+} from './src/SoundEffects'
 import { humanPath, exitTarget } from './human-cursor.ts'
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
@@ -323,4 +331,56 @@ test('the narration pauses keep every step, captions, and music duration aligned
   )
   assert.ok(captions.includes('cue-19\n00:01:08.840 --> 00:01:12.620'))
   assert.ok(captions.includes('00:02:06.900 --> 00:02:09.360'))
+})
+
+// Silent compositions must not select samples or mount media, even for long writing.
+test('silent drawing cues render no audio and long handwriting cannot select a missing sample', () => {
+  const output = renderToStaticMarkup(
+    createElement(
+      AudioEnabledContext.Provider,
+      { value: false },
+      createElement(PenSound, {
+        from: 0,
+        length: 300,
+        seed: 'long silent title',
+      }),
+      createElement(SoundCue, {
+        kind: 'typing',
+        length: 90,
+        label: 'silent typing',
+      }),
+    ),
+  )
+  assert.equal(output, '')
+})
+
+test('long handwriting uses contiguous finite samples within measured scribble strokes', () => {
+  for (const length of [0, 9, 50, 51, 300]) {
+    const segments = penSoundSegments(length, 'long stage handwriting')
+    let end = 0
+    for (const segment of segments) {
+      assert.equal(segment.from, end)
+      assert.ok(segment.length > 0 && segment.length <= 50)
+      assert.ok(Number.isFinite(segment.offset))
+      assert.ok(
+        [
+          [11, 27],
+          [33, 45],
+          [60, 84],
+          [93, 125],
+          [129, 143],
+          [93, 143],
+        ].some(
+          ([start, stop]) =>
+            segment.offset >= start && segment.offset + segment.length <= stop,
+        ),
+      )
+      end += segment.length
+    }
+    assert.equal(end, length)
+    assert.deepEqual(
+      segments,
+      penSoundSegments(length, 'long stage handwriting'),
+    )
+  }
 })

@@ -36,6 +36,6 @@ The [editable video project](video/README.md) includes the Remotion source, narr
 
 [Apache License 2.0](LICENSE).
 
-## Stage pitch
+## Presentation video
 
-Open `/pitch` for the 13-slide presentation, fullscreen controls and standalone video slides. After building, `pnpm pitch:present` serves a local copy for venue playback. See [the pitch guide](docs/pitch.md) for controls, recording and verification.
+Render the stage presentation without narration with `pnpm video:render:comparison`. See [the comparison guide](video/COMPARISON.md) for playback and speaker pointers.

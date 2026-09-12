@@ -1,0 +1,61 @@
+[thoughtful] When I was setting up my design agency, I wanted to focus on clients and design. But my accountant stopped responding, and the notices kept arriving. [short pause] I needed a few clear answers.
+
+[curious] What do I do NEXT? How much do I owe? How do I pay it? And WHEN do I pay it?
+
+[conversational] I started with a Google search. But every result introduced another term I didn’t understand, so I searched again. [short pause] Even finding the official guide meant figuring out how to use it. [reflective] Maybe I could bookmark it and be done. If only things stayed the same.
+
+[emphasized] But things keep CHANGING. [matter-of-fact] Maybe you expand and hire employees. Maybe you face losses. Or your income crosses a threshold. Keeping up takes time away from your work.
+
+[reassuring] This doesn’t have to be so hard.
+
+[excited] That’s why I built My Next Filing.
+
+[rushed] I answer a few questions about my work...
+
+[conversational] Then I enter my income and the taxes I’ve already paid...
+
+[confident] I review my answers, and CALCULATE my plan.
+
+[pleased] Here’s my next action... its due date, and the estimated amount left to pay.
+
+[matter-of-fact] Below it are the other supported actions for the tax year.
+
+[matter-of-fact] I can check the calculation,
+
+[conversational] and open the official payment portal from the related action.
+
+[emphasized] I can also SAVE my data in this browser, and record the actions I’ve completed.
+
+[deliberate] I still file and pay through the OFFICIAL portals.
+
+[relieved] But I can prepare here, with more peace of mind.
+
+[reflective] My initial submission was a proof of concept, built in twenty-four hours.
+
+[confident] This round, I’ve made the app easier to use, with clearer questions, more guidance, and a plan I can RETURN to.
+
+[matter-of-fact] It also supports eligible work through platforms and overseas clients.
+
+[conversational] And what happens when I come back? [short pause] [pleased] I can see what’s NEXT.
+
+[conversational] I reopen my saved plan,
+
+[confident] update what I’ve paid, and recalculate.
+
+[pleased] This action now has NO estimated amount left to pay.
+
+[deliberate] I mark it completed.
+
+[emphasized] The next action reflects the progress I’ve recorded.
+
+[matter-of-fact] My answers and calculations stay in THIS browser. No account, and no government connection.
+
+[conversational] The questions are simpler, with help where I need it.
+
+[matter-of-fact] And if an answer is unsupported, the app explains where it can’t help.
+
+[reflective] Back to those four questions. [short pause] [pleased] The next action, the estimate, the payment instructions, and the date. ALL together.
+
+[thoughtful] WHAT should I file NEXT?
+
+[conclude] Now I can keep coming back. [deliberate] My Next Filing, dot we keep, dot in.

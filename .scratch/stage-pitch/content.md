@@ -1,195 +1,146 @@
-# My Next Filing — speaker script
+# My Next Filing — speaker notes
 
-The Pledge, the Turn and the Prestige shape the live 14-slide deck. The act labels and bracketed cues are presenter notes, not spoken copy. All product demonstrations use a fictional supported freelancer, not the agency from the origin story.
+Speaking bullets for the 31-scene presentation with sound effects and no narration. Scene 2 draws empty checkboxes; scene 29 starts with that same list already visible and ticks the boxes and crosses off the questions.
 
-## The Pledge
+Sequence checked against `comparisonSceneGuide` in `video/src/Comparison.tsx`: all 31 scene titles and their order match. The former standalone “What do I do next?” reveal is gone; that question remains in the checklist. Search and repeated scrolling are combined in scene 3. The return visit comes before privacy, and the checklist reprise comes immediately before the closing question and domain.
 
-[1. When is my next tax filing?]
+The separate [full transcript](transcript-elevenlabs.txt) has one paragraph per scene, in this same order, with no scene labels to be spoken aloud. Use Eleven v3 for its bracketed delivery and pause tags; see the official [audio-tag guidance](https://elevenlabs.io/docs/overview/capabilities/text-to-speech/best-practices) and [pause guidance](https://elevenlabs.io/docs/help-center/product/core-capabilities/text-to-speech/how-can-i-add-pauses). Tags guide delivery rather than guaranteeing exact timestamps. The transcript is for separate narration preparation; the current MP4 contains sound effects only.
 
-When I was setting up my design agency, I wanted to spend my time doing the work. Finding clients. Designing things. Getting paid.
+[Scene 1 — When is my next tax filing?]
 
-And somewhere in between, I needed to answer this:
+- Setting up my design agency; wanted to focus on clients and design.
+- My CA stopped responding, but notices kept arriving.
+- All I needed was a clear answer to these questions.
 
-When is my next tax filing?
+[Scene 2 — The questions]
 
-It felt like a simple enough question. I hired a CA to help me with it, and got on with building the agency.
+- What do I do next?
+- How much do I owe?
+- How do I pay it?
+- When do I pay it?
 
-[Pause. Leave the question on screen.]
+[Scene 3 — A never-ending search for guidance]
 
-[2. Then the replies stopped.]
+- Search for freelancer tax information; sort through the results.
+- Unfamiliar terms lead to more searches.
+- Even finding the official guide leaves instructions to understand.
+- Bookmarking it only helps if the situation stays the same.
 
-A few months later, my CA stopped responding.
+[Scene 4 — It keeps changing]
 
-Calls. Emails. WhatsApp. Nothing.
+- But in reality, rules keep changing.
+- Your situation changes too, and different steps may apply.
+- Maybe you expand and hire employees.
+- Maybe you face losses.
+- Or your income grows enough to cross a threshold.
+- Keeping track takes time away from freelance work.
 
-But the notices kept arriving.
+[Scene 5 — This doesn’t have to be so hard.]
 
-I didn't understand what they meant. I didn't know which ones needed me to do something, or where to even begin.
+- The next action and its instructions could be easier to find.
 
-So I did what most of us would do.
+[Scene 6 — My Next Filing]
 
-I Googled it.
+- That's why I built My Next Filing. Let me show you an example.
 
-## The Turn
+[Scene 7 — Answer questions about my work]
 
-[3. Terminology cloud]
+- Answer a few questions about my work.
 
-Try searching for something like “Upwork freelancer tax filing.”
+[Scene 8 — Income and taxes already paid]
 
-You find an explanation. But there's a term in it you don't understand. So you search for that term. That explanation sends you to another page.
+- Enter my income and taxes already paid.
 
-Then you're watching a YouTube tutorial. Then asking ChatGPT about the part you still can't work out.
+[Scene 9 — Review and calculate]
 
-Every answer seems to come with another question.
+- Review my answers and calculate my plan.
 
-[Let the audience take in the terminology cloud.]
+[Scene 10 — My next action]
 
-[4. Portal screenshots]
+- Here's my next action, the date, and the estimated amount left to pay.
 
-And even when you understand the words, you still have to work out which instructions apply to your situation.
+[Scene 11 — Upcoming compliances]
 
-Where do I go? Does this apply to me? Is there something else I need to do first?
+- Below it, view the other supported actions for the tax year.
 
-I started with one question. Now I had a collection of tabs, videos and notices—and I was still trying to piece the answer together.
+[Scene 12 — Check the calculation]
 
-[5. From notes to a tool.]
+- Check how the estimate was calculated.
 
-So I started keeping notes in Notion.
+[Scene 13 — Open the official portal]
 
-Those notes became a small Streamlit app with a calendar. Later, I added tools to parse statements and calculate taxes.
+- Open the official e-Pay Tax portal from the related action.
 
-That was my internal setup. Something I built because I kept running into the same problem.
+[Scene 14 — Save data and record completion]
 
-Over time, it gave me a clearer idea of what I wanted to build for solo freelancers:
+- I can also save my data in this browser and record what I've completed.
 
-A tool that shows what they might owe, what's due next, and why it applies.
+[Scene 15 — File and pay through the official portals]
 
-[6. When is my next tax filing?]
+- File and pay through the official portals.
 
-A way to come back to that first question:
+[Scene 16 — Prepare here.]
 
-When is my next tax filing?
+- Prepare here; get some much-needed peace of mind.
 
-[7. My Next Filing]
+[Scene 17 — In 24 hours]
 
-That's where My Next Filing came from.
+- My initial submission was a proof of concept built in 24 hours.
 
-[Let the product name land before starting the demo.]
+[Scene 18 — A more user-friendly app]
 
-Let me show you how it works. I've filled in a fictional freelancer's answers so we can follow the whole journey.
+- This round, I built a more user-friendly app with a lot more features.
 
-[8. Demo: the person behind the income]
+[Scene 19 — More work types]
 
-First, it checks whether your situation is supported.
+- It now supports more work types, including eligible work through platforms like Upwork and overseas clients.
 
-Who you work for. How you earn. Which other income or circumstances need to be taken into account.
+[Scene 20 — Come back. See what’s next.]
 
-Those details matter. A small difference can change which rules apply.
+- But the biggest change? What happens when I come back?
 
-If the situation falls outside what the tool supports, it says so early. I wanted people to find that out before spending time entering all their numbers.
+[Scene 21 — Reopen my saved plan]
 
-[Follow Fit for this app, Income and profit, Clients and payments, and Taxes and GST in order. Let each section settle before explaining it. Pause playback when needed.]
+- Reopen my saved plan.
 
-[Income and profit]
+[Scene 22 — Update and recalculate]
 
-Next are income and profit. This example includes freelance income, salary, interest and dividends, rental income, and Indian equity gains.
+- Update the amount paid and recalculate.
 
-Each has its own section, so I can check the amounts and the conditions that apply to it.
+[Scene 23 — No estimated amount left]
 
-[Clients and payments]
+- This action now has no estimated amount left to pay.
 
-This freelancer works with clients in India and overseas, both directly and through a platform.
+[Scene 24 — Mark completed]
 
-The follow-up questions help establish how that work and those payments fit within what the app supports.
+- Mark the action completed.
 
-[Taxes and GST]
+[Scene 25 — The plan reflects my progress]
 
-Then I check tax already paid, the income-tax filing conditions, and the GST situation.
+- The next action changes to reflect the progress I recorded.
 
-All of that forms the picture the plan will use.
+[Scene 26 — Your answers. Your browser.]
 
-[9. Demo: from answers to a plan]
+- Answers and calculations stay in this browser.
+- No account or government connection.
 
-Before calculating, I can review the answers together and check that they reflect my situation.
+[Scene 27 — Questions and help text]
 
-[Follow the review. Click Calculate my plan, then hold on the result.]
+- I've simplified the questions and added help text wherever necessary.
 
-Here is the plan.
+[Scene 28 — Unsupported answers]
 
-The next supported action. Its date. The estimated amount left to pay.
+- Unsupported answers get an immediate explanation, so I know when this tool can't help.
 
-I can open the explanation, inspect the official sources, and see how the estimate was calculated.
+[Scene 29 — The questions, answered]
 
-The agenda brings the other supported actions together. If something needs further review, that appears too.
+- Return to the four questions: what to do, the estimated amount, how to pay, and when.
+- The plan brings those answers together.
 
-[Hold on the plan long enough for the audience to inspect it.]
+[Scene 30 — What should I file next?]
 
-[10. Demo: come back and see what remains]
+- The question stays the same: What should I file next?
 
-I can also choose to save the plan in this browser.
+[Scene 31 — mynextfiling.wekeep.in]
 
-[Open the save notice. Let it remain visible before confirming.]
-
-Later, after making a payment on the official portal, I come back to my saved workspace.
-
-I update the amount paid and recalculate. Then I record that I've completed the action.
-
-That's my own record; the app cannot verify government acceptance. I still file and pay outside the app.
-
-[Follow the update, the new balance, the completion action and the updated agenda. Pause on each result.]
-
-Now I can see what remains, without putting the whole picture together again.
-
-## The Prestige
-
-[11. And none of those answers were sent to us.]
-
-You've just seen the whole journey.
-
-The answers. The estimate. The explanation. The saved plan and the progress when I return.
-
-And none of those answers or financial details were sent to us.
-
-[Pause. Let the audience connect this to everything they just watched.]
-
-[12. No financial data uploads. No third-party APIs. No web analytics.]
-
-The calculations run right here, in the browser. The rules and source references are bundled with the app. There is no third-party API doing the calculation or receiving your answers.
-
-There's no account to create, and no government portal integration.
-
-I went a step further: there are no web analytics, session recordings or remote error trackers either.
-
-If you choose to save, your answers and completion records stay in this browser's saved workspace. They aren't uploaded to us.
-
-That comes with limits: there's no cross-device sync, clearing the browser data can erase it, and someone using the same browser profile may be able to access it.
-
-[Presenter note: the hosting provider handles ordinary website request metadata. The claim is that the app does not upload questionnaire answers or financial details; do not describe hosting as collecting no data whatsoever or browser storage as guaranteed protection.]
-
-I wanted to make it easier to understand your taxes without asking you to hand over your financial life.
-
-[Pause.]
-
-[13. Built with Codex]
-
-And I built it with Codex.
-
-The interesting part was learning which decisions I still needed to make myself.
-
-What should the tool support? When should it stop and ask someone to get advice? How could the whole thing work without sending your answers anywhere?
-
-Those decisions shaped the product you've just seen.
-
-[Play the illustrative terminal animation. It represents the build process; it is not a captured session or certification.]
-
-[14. Built for freelancers. By a freelancer.]
-
-I wanted something I could come back to between doing the work.
-
-See what remains. Know where to pick up.
-
-Then get back to the thing I was trying to do in the first place.
-
-That's why I built My Next Filing.
-
-[Hold this slide. End here.]
+- Now, I can keep coming back to the answer.
